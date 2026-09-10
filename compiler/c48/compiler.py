@@ -16,6 +16,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from .limits import ResourceBudget
 from .parser import Parser
 from .preprocessor import Preprocessor
 from .semantics import SemanticAnalyzer
@@ -23,16 +24,24 @@ from .semantics import SemanticAnalyzer
 
 def compile_bytes(data: bytes, *, source_name: str = "<source>", base_dir: Path | None = None,
                   builtin_header: str = "") -> dict[str, Any]:
-    pp = Preprocessor(builtin_header=builtin_header)
-    tokens = pp.preprocess_bytes(data, source_name=source_name,
-                                 base_dir=base_dir or Path.cwd(), include_depth=0)
-    tree = Parser(tokens).parse()
-    return SemanticAnalyzer().analyze(tree)
+    budget = ResourceBudget()
+    pp = Preprocessor(builtin_header=builtin_header, budget=budget)
+    tokens = pp.preprocess_bytes(
+        data,
+        source_name=source_name,
+        base_dir=base_dir or Path.cwd(),
+        include_depth=0,
+    )
+    tree = Parser(tokens, budget=budget).parse()
+    budget.check_ast(tree, tokens[0].pos if tokens else None)
+    return SemanticAnalyzer(budget=budget).analyze(tree)
 
 
 def compile_file(path: Path, *, builtin_header: str = "") -> dict[str, Any]:
     path = path.resolve()
-    pp = Preprocessor(builtin_header=builtin_header)
+    budget = ResourceBudget()
+    pp = Preprocessor(builtin_header=builtin_header, budget=budget)
     tokens = pp.preprocess_file(path)
-    tree = Parser(tokens).parse()
-    return SemanticAnalyzer().analyze(tree)
+    tree = Parser(tokens, budget=budget).parse()
+    budget.check_ast(tree, tokens[0].pos if tokens else None)
+    return SemanticAnalyzer(budget=budget).analyze(tree)

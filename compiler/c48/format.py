@@ -21,6 +21,15 @@ import tempfile
 from typing import Any
 
 from .errors import RuntimeC48Error
+from .limits import (
+    C48B1_AST_NODES,
+    C48B1_BYTES,
+    C48B1_CONTAINERS,
+    C48B1_JSON_DEPTH,
+    C48B1_STRING_BYTES,
+    C48B1_TYPE_DEPTH,
+    POINTER_DEPTH,
+)
 
 MAGIC = b"C48B1\n"
 
@@ -38,11 +47,83 @@ def _invalid(detail: str) -> None:
     raise RuntimeC48Error(f"invalid C48B1 schema: {detail}")
 
 
+def _resource(detail: str) -> None:
+    raise RuntimeC48Error(f"C48B1 resource limit: {detail}")
+
+
+def _check_json_nesting(payload: bytes) -> None:
+    """Bound JSON nesting before handing attacker bytes to json.loads()."""
+    depth = 0
+    in_string = False
+    escaped = False
+    for byte in payload:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif byte == 0x5C:  # backslash
+                escaped = True
+            elif byte == 0x22:  # quote
+                in_string = False
+            continue
+        if byte == 0x22:
+            in_string = True
+        elif byte in (0x7B, 0x5B):  # { [
+            depth += 1
+            if depth > C48B1_JSON_DEPTH:
+                _resource(f"JSON nesting exceeds {C48B1_JSON_DEPTH}")
+        elif byte in (0x7D, 0x5D):  # } ]
+            depth -= 1
+            if depth < 0:
+                # json.loads() will provide the controlled malformed-JSON result.
+                return
+
+
+def _check_loaded_structure(value: Any) -> None:
+    """Iteratively bound decoded container/AST width and depth."""
+    containers = 0
+    ast_nodes = 0
+    stack: list[tuple[Any, int]] = [(value, 1)]
+    while stack:
+        current, depth = stack.pop()
+        if isinstance(current, dict):
+            containers += 1
+            if isinstance(current.get("kind"), str):
+                ast_nodes += 1
+            if depth > C48B1_JSON_DEPTH:
+                _resource(f"decoded nesting exceeds {C48B1_JSON_DEPTH}")
+            if containers > C48B1_CONTAINERS:
+                _resource(f"container count exceeds {C48B1_CONTAINERS}")
+            if ast_nodes > C48B1_AST_NODES:
+                _resource(f"AST node count exceeds {C48B1_AST_NODES}")
+            for child in current.values():
+                if isinstance(child, (dict, list)):
+                    stack.append((child, depth + 1))
+        elif isinstance(current, list):
+            containers += 1
+            if depth > C48B1_JSON_DEPTH:
+                _resource(f"decoded nesting exceeds {C48B1_JSON_DEPTH}")
+            if containers > C48B1_CONTAINERS:
+                _resource(f"container count exceeds {C48B1_CONTAINERS}")
+            for child in current:
+                if isinstance(child, (dict, list)):
+                    stack.append((child, depth + 1))
+
+
 def _is_int(v: Any) -> bool:
     return isinstance(v, int) and not isinstance(v, bool)
 
 
-def _validate_ctype(d: Any, where: str = "type") -> None:
+def _str_choice(value: Any, allowed: set[str]) -> bool:
+    return isinstance(value, str) and value in allowed
+
+
+def _optional_str_choice(value: Any, allowed: set[str]) -> bool:
+    return value is None or _str_choice(value, allowed)
+
+
+def _validate_ctype(d: Any, where: str = "type", depth: int = 0) -> None:
+    if depth > C48B1_TYPE_DEPTH:
+        _resource(f"type nesting exceeds {C48B1_TYPE_DEPTH}")
     if not isinstance(d, dict) or not isinstance(d.get("kind"), str):
         _invalid(f"{where} is not a type object")
     k = d["kind"]
@@ -53,19 +134,21 @@ def _validate_ctype(d: Any, where: str = "type") -> None:
     if k == "pointer":
         if set(d) != {"kind", "base"}:
             _invalid(f"{where} pointer type has invalid fields")
-        _validate_ctype(d["base"], f"{where}.base")
+        _validate_ctype(d["base"], f"{where}.base", depth + 1)
         return
     if k == "array":
         if set(d) != {"kind", "base", "length"} or not _is_int(d["length"]) or d["length"] <= 0:
             _invalid(f"{where} array type is invalid")
-        _validate_ctype(d["base"], f"{where}.base")
+        if d["length"] > 65535:
+            _resource("array length exceeds 65535")
+        _validate_ctype(d["base"], f"{where}.base", depth + 1)
         return
     if k == "function":
         if set(d) != {"kind", "params", "ret"} or not isinstance(d["params"], list):
             _invalid(f"{where} function type is invalid")
         for i, p in enumerate(d["params"]):
-            _validate_ctype(p, f"{where}.params[{i}]")
-        _validate_ctype(d["ret"], f"{where}.ret")
+            _validate_ctype(p, f"{where}.params[{i}]", depth + 1)
+        _validate_ctype(d["ret"], f"{where}.ret", depth + 1)
         return
     _invalid(f"{where} has unknown type kind {k!r}")
 
@@ -88,6 +171,8 @@ def _validate_const(c: Any, where: str) -> None:
         b = v["string"]
         if not isinstance(b, list) or any(not _is_int(x) or not 0 <= x <= 255 for x in b):
             _invalid(f"{where} string constant is invalid")
+        if len(b) > C48B1_STRING_BYTES:
+            _resource(f"string constant exceeds {C48B1_STRING_BYTES} bytes")
         return
     if set(v) == {"global", "offset"}:
         if not isinstance(v["global"], str) or not _is_int(v["offset"]):
@@ -103,6 +188,8 @@ def _validate_type_name(n: Any, where: str) -> None:
         _invalid(f"{where}.spelling is invalid")
     if not _is_int(n.get("pointers")) or n["pointers"] < 0:
         _invalid(f"{where}.pointers is invalid")
+    if n["pointers"] > POINTER_DEPTH:
+        _resource(f"pointer indirection exceeds {POINTER_DEPTH}")
 
 
 def _validate_declarator(n: Any, where: str) -> None:
@@ -110,6 +197,8 @@ def _validate_declarator(n: Any, where: str) -> None:
         _invalid(f"{where} is not a declarator")
     if not _is_int(n.get("pointers")) or n["pointers"] < 0:
         _invalid(f"{where}.pointers is invalid")
+    if n["pointers"] > POINTER_DEPTH:
+        _resource(f"pointer indirection exceeds {POINTER_DEPTH}")
     s = n.get("suffix")
     if s is None:
         return
@@ -147,9 +236,14 @@ def _validate_node(n: Any, where: str = "program") -> None:
             if not isinstance(name, str) or not isinstance(s, dict): _invalid("symbol table entry invalid")
             if set(s) != {"type", "entity", "linkage", "defined", "storage"}: _invalid(f"symbol {name!r} fields invalid")
             _validate_ctype(s["type"], f"symbol {name!r}.type")
-            if s["entity"] not in {"object", "function"} or s["linkage"] not in {"internal", "external"} or not isinstance(s["defined"], bool):
+            if (
+                not _str_choice(s["entity"], {"object", "function"})
+                or not _str_choice(s["linkage"], {"internal", "external"})
+                or not isinstance(s["defined"], bool)
+            ):
                 _invalid(f"symbol {name!r} metadata invalid")
-            if s["storage"] not in {None, "static", "extern"}: _invalid(f"symbol {name!r} storage invalid")
+            if not _optional_str_choice(s["storage"], {"static", "extern"}):
+                _invalid(f"symbol {name!r} storage invalid")
         return
 
     if k == "type_name": _validate_type_name(n, where); return
@@ -157,12 +251,19 @@ def _validate_node(n: Any, where: str = "program") -> None:
     if k == "parameter":
         _validate_type_name(n.get("type"), f"{where}.type"); _validate_ctype(n.get("ctype"), f"{where}.ctype")
         if n.get("name") is not None and not isinstance(n["name"], str): _invalid(f"{where}.name invalid")
-        if not _is_int(n.get("pointers")) or n["pointers"] < 0: _invalid(f"{where}.pointers invalid")
+        if not _is_int(n.get("pointers")) or n["pointers"] < 0:
+            _invalid(f"{where}.pointers invalid")
+        if n["pointers"] > POINTER_DEPTH:
+            _resource(f"pointer indirection exceeds {POINTER_DEPTH}")
         return
     if k == "declaration":
         _validate_type_name(n.get("base_type"), f"{where}.base_type")
         scope = n.get("scope")
-        if scope not in {"file", "block"} or n.get("storage") not in {None, "static", "extern"} or not isinstance(n.get("declarators"), list):
+        if (
+            not _str_choice(scope, {"file", "block"})
+            or not _optional_str_choice(n.get("storage"), {"static", "extern"})
+            or not isinstance(n.get("declarators"), list)
+        ):
             _invalid(f"{where} declaration metadata invalid")
         for i, x in enumerate(n["declarators"]):
             _validate_node(x, f"{where}.declarators[{i}]")
@@ -170,20 +271,40 @@ def _validate_node(n: Any, where: str = "program") -> None:
             # the host loader.  Block-scope records deliberately do not: their
             # storage/lifetime is established by the containing declaration.
             if scope == "file":
-                if not isinstance(x.get("definition"), bool) or x.get("linkage") not in {"internal", "external"}:
-                    _invalid(f"{where}.declarators[{i}] file-scope flags invalid")
+                if (
+                    not isinstance(x.get("definition"), bool)
+                    or not _str_choice(
+                        x.get("linkage"), {"internal", "external"}
+                    )
+                ):
+                    _invalid(
+                        f"{where}.declarators[{i}] file-scope flags invalid"
+                    )
             elif "definition" in x or "linkage" in x:
                 _invalid(f"{where}.declarators[{i}] block-scope flags invalid")
         return
     if k == "init_declarator":
         _validate_declarator(n.get("declarator"), f"{where}.declarator"); _validate_ctype(n.get("ctype"), f"{where}.ctype")
         if "definition" in n and not isinstance(n["definition"], bool): _invalid(f"{where}.definition invalid")
-        if "linkage" in n and n["linkage"] not in {"internal", "external"}: _invalid(f"{where}.linkage invalid")
+        if "linkage" in n and not _str_choice(
+            n["linkage"], {"internal", "external"}
+        ):
+            _invalid(f"{where}.linkage invalid")
         if n.get("initializer") is not None: _validate_node(n["initializer"], f"{where}.initializer")
         return
     if k == "function_definition":
-        _validate_type_name(n.get("base_type"), f"{where}.base_type"); _validate_declarator(n.get("declarator"), f"{where}.declarator"); _validate_ctype(n.get("ctype"), f"{where}.ctype")
-        if n.get("storage") not in {None, "static"}: _invalid(f"{where}.storage invalid")
+        _validate_type_name(n.get("base_type"), f"{where}.base_type")
+        decl = n.get("declarator")
+        _validate_declarator(decl, f"{where}.declarator")
+        suffix = decl.get("suffix") if isinstance(decl, dict) else None
+        if not isinstance(suffix, dict) or suffix.get("kind") != "function":
+            _invalid(f"{where}.declarator must declare a function")
+        _validate_ctype(n.get("ctype"), f"{where}.ctype")
+        ctype = n.get("ctype")
+        if not isinstance(ctype, dict) or ctype.get("kind") != "function":
+            _invalid(f"{where}.ctype must be a function type")
+        if not _optional_str_choice(n.get("storage"), {"static"}):
+            _invalid(f"{where}.storage invalid")
         _validate_node(n.get("body"), f"{where}.body"); return
     if k == "compound":
         if not isinstance(n.get("declarations"), list) or not isinstance(n.get("statements"), list): _invalid(f"{where} compound invalid")
@@ -221,7 +342,11 @@ def _validate_node(n: Any, where: str = "program") -> None:
     _validate_ctype(n.get("ctype"), f"{where}.ctype")
     if not isinstance(n.get("lvalue"), bool) or not isinstance(n.get("modifiable"), bool): _invalid(f"{where} expression value-category flags invalid")
     if k == "identifier":
-        if not isinstance(n.get("name"), str) or n.get("entity") not in {"object", "function"}: _invalid(f"{where} identifier invalid")
+        if (
+            not isinstance(n.get("name"), str)
+            or not _str_choice(n.get("entity"), {"object", "function"})
+        ):
+            _invalid(f"{where} identifier invalid")
         return
     if k == "integer_literal":
         if not _is_int(n.get("value")) or not isinstance(n.get("unsigned_suffix"), bool) or not isinstance(n.get("spelling"), str): _invalid(f"{where} integer literal invalid")
@@ -233,7 +358,10 @@ def _validate_node(n: Any, where: str = "program") -> None:
         if not isinstance(n.get("value"), str) or not isinstance(n.get("spelling"), str) or not isinstance(n.get("float5"), str) or len(n["float5"]) != 10: _invalid(f"{where} floating literal invalid")
         return
     if k == "string_literal":
-        if not isinstance(n.get("bytes"), list) or any(not _is_int(x) or not 0 <= x <= 255 for x in n["bytes"]) or not _is_int(n.get("sid")) or not isinstance(n.get("spelling"), str): _invalid(f"{where} string literal invalid")
+        if not isinstance(n.get("bytes"), list) or any(not _is_int(x) or not 0 <= x <= 255 for x in n["bytes"]) or not _is_int(n.get("sid")) or not isinstance(n.get("spelling"), str):
+            _invalid(f"{where} string literal invalid")
+        if len(n["bytes"]) > C48B1_STRING_BYTES:
+            _resource(f"string literal exceeds {C48B1_STRING_BYTES} bytes")
         return
     if k == "sizeof_type":
         _validate_type_name(n.get("type_name"), f"{where}.type_name")
@@ -249,7 +377,8 @@ def _validate_node(n: Any, where: str = "program") -> None:
         _validate_node(n.get("left"), f"{where}.left"); _validate_node(n.get("right"), f"{where}.right"); return
     if k in {"unary", "postfix"}:
         allowed = {"++","--"} if k == "postfix" else {"++","--","+","-","!","~","&","*"}
-        if n.get("op") not in allowed: _invalid(f"{where}.op invalid")
+        if not _str_choice(n.get("op"), allowed):
+            _invalid(f"{where}.op invalid")
         _validate_node(n.get("operand"), f"{where}.operand"); return
     if k == "index":
         _validate_node(n.get("base"), f"{where}.base"); _validate_node(n.get("index"), f"{where}.index"); return
@@ -260,16 +389,29 @@ def _validate_node(n: Any, where: str = "program") -> None:
         for i,x in enumerate(n["args"]): _validate_node(x,f"{where}.args[{i}]")
         return
     if k == "binary":
-        if n.get("op") not in {"+","-","*","/","%","<<",">>","<","<=",">",">=","==","!=","&","|","^","&&","||"}: _invalid(f"{where}.op invalid")
+        if not _str_choice(
+            n.get("op"),
+            {"+","-","*","/","%","<<",">>","<","<=",">",">=",
+             "==","!=","&","|","^","&&","||"},
+        ):
+            _invalid(f"{where}.op invalid")
         _validate_node(n.get("left"), f"{where}.left"); _validate_node(n.get("right"), f"{where}.right")
-        if "shift_width" in n and n["shift_width"] not in {8,16}: _invalid(f"{where}.shift_width invalid")
+        if "shift_width" in n and (
+            not _is_int(n["shift_width"]) or n["shift_width"] not in (8, 16)
+        ):
+            _invalid(f"{where}.shift_width invalid")
         return
     _invalid(f"{where} contains unsupported or unknown C48B1 node kind {k!r}")
 
 
 def validate_program(program: Any) -> dict[str, Any]:
-    _validate_node(program)
-    assert isinstance(program, dict)
+    _check_loaded_structure(program)
+    try:
+        _validate_node(program)
+    except RecursionError:
+        _resource("schema nesting exceeded host recursion safety")
+    if not isinstance(program, dict):
+        _invalid("program root is not an object")
     return program
 
 
@@ -308,6 +450,8 @@ def encode(program: dict[str, Any]) -> bytes:
 
 
 def decode(data: bytes) -> dict[str, Any]:
+    if len(data) > C48B1_BYTES:
+        _resource(f"file exceeds {C48B1_BYTES} bytes")
     if not data.startswith(MAGIC):
         raise RuntimeC48Error("not a C48B1 host executable")
     rest = data[len(MAGIC):]
@@ -320,12 +464,17 @@ def decode(data: bytes) -> dict[str, Any]:
     if not payload_line.endswith(b"\n"):
         raise RuntimeC48Error("truncated C48B1 payload")
     payload = payload_line[:-1]
+    _check_json_nesting(payload)
     if hashlib.sha256(payload).hexdigest().encode("ascii") != digest:
         raise RuntimeC48Error("C48B1 payload integrity failure")
     try:
         obj = json.loads(payload.decode("ascii"))
     except (UnicodeDecodeError, json.JSONDecodeError):
         raise RuntimeC48Error("malformed C48B1 JSON payload") from None
+    except RecursionError:
+        _resource("JSON nesting exceeded host recursion safety")
+    except MemoryError:
+        _resource("JSON allocation exceeded host memory safety")
     if not isinstance(obj, dict) or obj.get("kind") != "translation_unit":
         raise RuntimeC48Error("invalid C48B1 translation-unit payload")
     # Reject structurally malformed but correctly re-hashed internal IR before
@@ -334,7 +483,11 @@ def decode(data: bytes) -> dict[str, Any]:
     # C48B1 is a canonical deterministic format, not merely arbitrary JSON with
     # a matching digest.  Re-encoding also rejects duplicate-key or noncanonical
     # representations that Python's JSON parser would otherwise normalize.
-    if canonical_payload(obj) != payload:
+    try:
+        canonical = canonical_payload(obj)
+    except (RecursionError, MemoryError):
+        _resource("canonicalization exceeded host safety")
+    if canonical != payload:
         raise RuntimeC48Error("noncanonical C48B1 JSON payload")
     return obj
 
@@ -365,4 +518,14 @@ def write(path: Path, program: dict[str, Any]) -> None:
 
 
 def read(path: Path) -> dict[str, Any]:
-    return decode(path.read_bytes())
+    try:
+        size = path.stat().st_size
+    except OSError as exc:
+        raise RuntimeC48Error(f"cannot stat C48B1 program: {exc}") from None
+    if size > C48B1_BYTES:
+        _resource(f"file exceeds {C48B1_BYTES} bytes")
+    try:
+        data = path.read_bytes()
+    except OSError as exc:
+        raise RuntimeC48Error(f"cannot read C48B1 program: {exc}") from None
+    return decode(data)

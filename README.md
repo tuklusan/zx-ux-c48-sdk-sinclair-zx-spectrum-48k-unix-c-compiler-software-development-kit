@@ -232,6 +232,14 @@ For host development:
 
 `--heap` accepts even values from `0` through `8192`. The host allocator enforces the selected byte ceiling but does not claim byte-identical native allocator metadata or native process-stack placement.
 
+For hostile-input testing and CI, `c48run` also provides a deterministic VM execution budget:
+
+```sh
+./c48run --max-steps 10000 dev/bin/program.c48b
+```
+
+`--max-steps 0` (the default) leaves normal interactive execution unlimited. A positive value terminates execution with a controlled runtime error when the VM reaches the requested evaluation/statement-step budget. The host VM separately caps C48 function-call depth so recursive programs cannot fall through to Python's recursion limit.
+
 ## Spectrum five-byte Float5 status
 
 The SDK implements five-byte storage, parsing, integer conversion, comparison, and deterministic core arithmetic without allowing IEEE host values to become persistent C48 stored state.
@@ -256,6 +264,35 @@ The `dev/src/` directory contains small deterministic programs intended both as 
 - `argv.c` - C48 `argc` / `argv` behavior.
 
 The matching frozen `C48B1` files are under `dev/bin/`.
+
+All shipped C48 `.c` and `.h` files under `dev/src/` obey a **64-character physical-line ceiling**, matching the ZX-UX tty64 presentation model rather than modern 80-column source formatting. The release verifier enforces this mechanically.
+
+## Adversarial security fixtures
+
+The pre-1.0 tree includes C48 programs written specifically to attack the host compiler/runtime safety envelope. Their source is under `dev/src/`, and runnable C48B1 forms are under `dev/bin/` where compilation is expected to succeed.
+
+- `secguard.c` - successful dashboard for recoverable heap, screen-coordinate, UDG, and compiler-forgery protections;
+- `secoob.c` - one-past pointer write;
+- `secuaf.c` - use-after-free dereference;
+- `secfree.c` - interior-pointer `free`;
+- `secdbl.c` - double free;
+- `secforge.c` - raw pointer-byte forgery without provenance;
+- `secloop.c` - infinite loop stopped by `--max-steps`;
+- `secrecur.c` - unbounded C48 recursion stopped by the VM call-depth guard;
+- `seckern.c` - compile-negative attempt to manufacture a pointer to reserved address `0x5B00`; C48 must reject the arbitrary integer-to-pointer cast, so this fixture intentionally has no C48B1 binary.
+
+The runnable fixtures place explicit `ATTEMPT:` and `MITIGATION:` text on the emulated 64-column Spectrum screen before the security boundary is exercised. Fatal tests are expected to terminate with controlled C48 runtime errors rather than continue after an invalid operation.
+
+For example:
+
+```bat
+c48 dev\src\secguard.c
+c48run dev\bin\secguard.c48b
+
+c48run --max-steps 300 dev\bin\secloop.c48b
+```
+
+The hostile-input regression suite additionally attacks recursive parser structures, macro-expansion bombs, oversized source/C48B1 inputs, malformed-but-correctly-checksummed C48B1 schemas, stale-pointer address reuse, and raw pointer representation forgery. See `doc/ZX-UX C48 SDK Adversarial Security Review.docx` for the threat model and findings.
 
 ## Verification and zero-gap release discipline
 
@@ -284,10 +321,12 @@ The release verifier checks, among other things:
 - Python source parseability against the supported Python baseline;
 - the repository-wide license-header policy;
 - exact font resource structure and hashes;
+- the 64-column physical-line contract for shipped C48 source;
 - launcher behavior;
 - version/about attribution output;
 - manifest integrity;
-- the full compiler/runtime conformance and regression suite;
+- the full compiler/runtime conformance, regression, and adversarial-security suite;
+- deterministic reconstruction of every security-fixture binary;
 - deterministic reconstruction of every frozen demo binary;
 - exact 6912-byte Spectrum screen hashes for the demos;
 - absence of transient cache/test debris.
@@ -356,7 +395,8 @@ Start with:
 - `doc/HOST-DIVERGENCES.md` - explicit host/native differences;
 - `doc/FLOAT5-ORACLE.md` - five-byte floating-point verification boundary;
 - `doc/DEMO-HASHES.md` - deterministic demo hashes;
-- `doc/RELEASE-NOTES.md` - release notes.
+- `doc/RELEASE-NOTES.md` - release notes;
+- `doc/ZX-UX C48 SDK Adversarial Security Review.docx` - hostile-input and memory-boundary security assessment.
 
 ## License
 

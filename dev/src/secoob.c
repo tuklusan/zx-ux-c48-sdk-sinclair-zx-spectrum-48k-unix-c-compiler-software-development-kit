@@ -13,16 +13,14 @@
 
 int main(void)
 {
-    int x;
+    int a[2];
+    int *p;
     cls();
-    ink(7);
-    draw(0, 0, 255, 191);
-    draw(0, 191, 255, 0);
-    circle(128, 96, 70);
-    circle(128, 96, 35);
-    for (x = 0; x < 256; x++) {
-        if ((x & 7) == 0) plot(x, 96);
-    }
-    print_at(1, 22, "c48 graphics");
-    return 0;
+    print_at(0, 0, "SECURITY TEST: ONE-PAST WRITE");
+    print_at(2, 0, "ATTEMPT: write through a + 2");
+    print_at(3, 0, "MITIGATION: range guard must trap write");
+    p = a + 2;
+    *p = 7;
+    print_at(5, 0, "FAILED: write escaped guard");
+    return 99;
 }

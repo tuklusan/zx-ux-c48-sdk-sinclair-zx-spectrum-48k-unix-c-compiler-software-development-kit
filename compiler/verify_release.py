@@ -88,12 +88,20 @@ def check_required_files() -> None:
         "VERSION", "README.md", "LICENSE", ".gitignore", ".gitattributes",
         ".github/workflows/verify.yml",
         "c48", "c48run", "c48.bat", "c48run.bat",
-        "compiler/check_license_headers.py",
+        "compiler/check_license_headers.py", "compiler/c48/limits.py",
+        "compiler/tests/test_security.py",
         "compiler/assets/font4x8-tasword.bin", "compiler/assets/font4x8-zxux.bin",
         "doc/C48 Language Specification Rev 0.11.docx",
         "doc/ZX-UX C48 Compiler User Manual Rev 0.11.docx",
         "doc/FLOAT5-ORACLE.md", "doc/HOST-DIVERGENCES.md", "doc/CONFORMANCE.md",
-        "doc/RELEASE-NOTES.md", "doc/LICENSE-HEADER-POLICY.md", "dev/src/c48host.h",
+        "doc/RELEASE-NOTES.md", "doc/LICENSE-HEADER-POLICY.md",
+        "doc/ZX-UX C48 SDK Adversarial Security Review.docx",
+        "dev/src/c48host.h",
+        "dev/src/secguard.c", "dev/src/secoob.c",
+        "dev/src/secuaf.c", "dev/src/secfree.c",
+        "dev/src/secdbl.c", "dev/src/secloop.c",
+        "dev/src/secrecur.c", "dev/src/seckern.c",
+        "dev/src/secforge.c",
     ]
     for rel in required:
         if not (SDK / rel).is_file():
@@ -151,6 +159,24 @@ def check_font() -> None:
         fail("Tasword F4X8 does not mechanically match the raw Tasword font")
 
 
+def check_c48_source_columns() -> None:
+    failures = []
+    for path in sorted((SDK / "dev" / "src").glob("*")):
+        if path.suffix.lower() not in {".c", ".h"}:
+            continue
+        try:
+            lines = path.read_text(encoding="ascii").splitlines()
+        except UnicodeError as exc:
+            fail(f"non-ASCII shipped C48 source {path.name}: {exc}")
+        for line_no, line in enumerate(lines, 1):
+            if len(line) > 64:
+                failures.append(
+                    f"{path.name}:{line_no}={len(line)} columns"
+                )
+    if failures:
+        fail("C48 64-column source contract violated: " + ", ".join(failures))
+
+
 def check_tests() -> None:
     cp = run([sys.executable, "-B", str(ROOT / "run_tests.py")])
     if cp.returncode != 0:
@@ -191,6 +217,27 @@ def check_demos() -> None:
             if screen.stat().st_size != 6912 or sha(screen) != exp["screen_sha256"]:
                 fail(f"{name}: exact screen hash mismatch")
             print(f"VERIFY: demo {name} PASS", flush=True)
+
+
+def check_security_programs() -> None:
+    with tempfile.TemporaryDirectory(prefix="c48-security-verify-") as td:
+        root = Path(td)
+        for name, expected_hash in EXPECT["security_programs"].items():
+            source = SDK / "dev" / "src" / f"{name}.c"
+            frozen = SDK / "dev" / "bin" / f"{name}.c48b"
+            if not source.is_file() or not frozen.is_file():
+                fail(f"security fixture missing: {name}")
+            if sha(frozen) != expected_hash:
+                fail(f"security fixture binary hash mismatch: {name}")
+            rebuilt = root / f"{name}.c48b"
+            cp = run([
+                sys.executable, "-B", str(ROOT / "c48.py"),
+                str(source), "-o", str(rebuilt),
+            ])
+            if cp.returncode != 0:
+                fail(f"security fixture rebuild failed: {name}: {cp.stderr.strip()}")
+            if rebuilt.read_bytes() != frozen.read_bytes():
+                fail(f"security fixture deterministic rebuild mismatch: {name}")
 
 
 def check_license_policy() -> None:
@@ -282,10 +329,12 @@ def main() -> int:
         ("Python source", check_python_source),
         ("license/header policy", check_license_policy),
         ("font assets", check_font),
+        ("C48 64-column sources", check_c48_source_columns),
         ("launchers", check_launchers),
         ("version/about", check_versions),
         ("manifest", check_manifest),
         ("automated tests", check_tests),
+        ("security fixture binaries", check_security_programs),
         ("deterministic demos", check_demos),
         ("clean-tree postflight", check_clean_tree),
     )

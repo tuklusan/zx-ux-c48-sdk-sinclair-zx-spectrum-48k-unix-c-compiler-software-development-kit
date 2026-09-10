@@ -34,16 +34,21 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - portable Tk GUI plus headless screen-dump mode;
 - Windows `.bat` and Linux shell command launchers;
 - provisional host-game API header;
-- specification-driven conformance/regression suite and deterministic demos.
+- specification-driven conformance/regression suite and deterministic demos;
+- adversarial hostile-input/resource ceilings and C48B1 hardening;
+- provenance-preserving stale-pointer/forgery defenses;
+- visible C48 security fixtures and mechanically enforced 64-column C48 source.
 
 ## Frozen verification surface
 
-- automated conformance/regression tests: 175;
+- automated conformance/regression/security tests: 200;
 - deterministic demos: 6 (`hello`, `colors`, `graphics`, `udg`, `maze`, `argv`);
 - default Tasword F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339`;
 - alternate ZX-UX F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339` (currently byte-identical to the supplied Tasword asset);
 - all release files except the manifest itself are covered by `MANIFEST.sha256`;
-- demo source/C48B1/screen hashes are in `DEMO-HASHES.md`.
+- demo source/C48B1/screen hashes are in `DEMO-HASHES.md`;
+- eight runnable security C48B1 fixtures are deterministically rebuilt by the verifier,
+  while `seckern.c` remains intentionally compile-negative.
 
 Release acceptance requires three independent fresh-filesystem executions of
 `compiler/verify_release.py` against identical frozen bytes, followed by creation of the

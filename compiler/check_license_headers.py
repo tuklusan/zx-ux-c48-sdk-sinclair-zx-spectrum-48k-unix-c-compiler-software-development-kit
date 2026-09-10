@@ -60,9 +60,23 @@ def check_tree(root: Path) -> list[str]:
             continue
         # Header must be near the top; shebang/@echo-off may precede it.
         top = text[:3000]
-        for required in (COPYRIGHT, PROJECT, ATTRIBUTION_PREFIX, ATTRIBUTION_SUFFIX, "root LICENSE file"):
+        if rel.startswith("dev/src/") and path.suffix.lower() in {".c", ".h"}:
+            # C48 artifacts use a deliberately compact <=64-column header.
+            required_markers = (
+                COPYRIGHT, PROJECT, "Non-Commercial License",
+                "Attribution required: Based on original work by Supratim",
+                "Sanyal of SANYALnet Labs. See root LICENSE for full terms.",
+            )
+        else:
+            required_markers = (
+                COPYRIGHT, PROJECT, ATTRIBUTION_PREFIX, ATTRIBUTION_SUFFIX,
+                "root LICENSE file",
+            )
+        for required in required_markers:
             if required not in top:
-                errors.append(f"missing license header marker {required!r}: {rel}")
+                errors.append(
+                    f"missing license header marker {required!r}: {rel}"
+                )
         # The header itself must contain a copyright marker. User-facing CLI
         # --about text may legitimately repeat the same copyright notice later.
         if COPYRIGHT not in top[:1800]:

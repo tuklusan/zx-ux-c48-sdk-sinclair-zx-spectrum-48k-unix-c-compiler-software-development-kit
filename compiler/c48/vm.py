@@ -20,6 +20,7 @@ import os, time
 
 from .errors import RuntimeC48Error, RuntimeExit
 from .float5 import Float5,Float5Error
+from .limits import VM_CALL_DEPTH
 from .memory import C48Memory,Allocation,PointerRecord
 from .screen import ZXScreen
 from .typesys import CHAR,FLOAT,INT,SHORT,UCHAR,UINT,USHORT,VOID,CType,arithmetic_common,integer_promotion,ptr
@@ -43,9 +44,14 @@ class ContinueSignal(Exception):pass
 class C48VM:
     def __init__(self,program:dict[str,Any],screen:ZXScreen,*,argv:list[str]|None=None,
                  approximate_rom_math:bool=False,input_provider:Callable[[],int]|None=None,
-                 display_update:Callable[[],None]|None=None, heap_size:int=1024):
+                 display_update:Callable[[],None]|None=None, heap_size:int=1024,
+                 max_steps:int|None=None):
         if not isinstance(heap_size,int) or isinstance(heap_size,bool) or heap_size < 0 or heap_size > 8192 or (heap_size & 1):
             raise RuntimeC48Error("host heap size must be an even value from 0..8192")
+        if max_steps is not None and (
+            not isinstance(max_steps, int) or isinstance(max_steps, bool) or max_steps <= 0
+        ):
+            raise RuntimeC48Error("host max_steps must be a positive integer or None")
         self.program=program;self.screen=screen;self.mem=C48Memory(screen)
         self.argv=argv or ["program"]
         self.heap_size=heap_size
@@ -60,6 +66,9 @@ class C48VM:
         self.string_allocs:dict[int,Allocation]={}
         self.heap_allocs:set[int]=set()
         self.start_time=time.monotonic()
+        self.max_steps=max_steps
+        self.steps=0
+        self.call_depth=0
         self.builtins=self._builtin_table()
         self._index_program()
 
@@ -86,6 +95,15 @@ class C48VM:
     def _stdin_char()->int:
         b=os.sys.stdin.buffer.read(1)
         return -1 if not b else b[0]
+
+    def _tick(self)->None:
+        if self.max_steps is None:
+            return
+        self.steps += 1
+        if self.steps > self.max_steps:
+            raise RuntimeC48Error(
+                f"C48 execution step limit exceeded ({self.max_steps})"
+            )
 
     def run(self)->int:
         f=self.functions.get("main")
@@ -143,8 +161,13 @@ class C48VM:
     def _call_user(self,name:str,args:list[Value])->Value|None:
         f=self.functions.get(name)
         if f is None:return self._call_builtin(name,args)
+        if self.call_depth >= VM_CALL_DEPTH:
+            raise RuntimeC48Error(
+                f"C48 function-call depth limit exceeded ({VM_CALL_DEPTH})"
+            )
         ft=CType.from_dict(f["ctype"]);params=ft.params or ()
         if len(args)!=len(params):raise RuntimeC48Error("internal argument-count mismatch")
+        self.call_depth += 1
         self._push_scope()
         try:
             pnodes=f["declarator"]["suffix"]["params"]
@@ -158,7 +181,9 @@ class C48VM:
                 return self._convert(r.value,ft.ret)
             if ft.ret==VOID:return None
             raise RuntimeExit(1)  # required non-void fall-through runtime-error path
-        finally:self._pop_scope()
+        finally:
+            self._pop_scope()
+            self.call_depth -= 1
 
     def _exec_compound(self,b:dict[str,Any],*,reuse_scope:bool=False)->None:
         if not reuse_scope:self._push_scope()
@@ -173,6 +198,7 @@ class C48VM:
             if not reuse_scope:self._pop_scope()
 
     def _exec_stmt(self,s:dict[str,Any])->None:
+        self._tick()
         k=s["kind"]
         if k=="compound":self._exec_compound(s);return
         if k=="expr_stmt":
@@ -209,6 +235,7 @@ class C48VM:
         raise RuntimeC48Error(f"unknown statement {k}")
 
     def eval(self,n:dict[str,Any])->Value:
+        self._tick()
         k=n["kind"]
         if k=="identifier":
             if n.get("entity")=="function":raise RuntimeC48Error("function designator used as value")
@@ -450,8 +477,10 @@ class C48VM:
 
     def _read_cstr(self,p:PointerRecord)->bytes:
         if p.address==0:raise RuntimeC48Error("null string pointer")
-        a=self.mem.allocation(p.aid) or self.mem.allocation(self.mem.infer_pointer(p.address).aid)
+        a=self.mem.allocation(p.aid)
         if a is None:raise RuntimeC48Error("string pointer outside live object")
+        if p.offset is None or p.offset != p.address - a.start:
+            raise RuntimeC48Error("string pointer provenance/offset mismatch")
         out=bytearray();addr=p.address
         while addr<a.end:
             b=self.mem.read8(addr)
@@ -462,8 +491,10 @@ class C48VM:
         """Read at most n source bytes, stopping at NUL without reading beyond n."""
         if n==0:return b"",False
         if p.address==0:raise RuntimeC48Error("null string pointer")
-        a=self.mem.allocation(p.aid) or self.mem.allocation(self.mem.infer_pointer(p.address).aid)
+        a=self.mem.allocation(p.aid)
         if a is None:raise RuntimeC48Error("string pointer outside live object")
+        if p.offset is None or p.offset != p.address - a.start:
+            raise RuntimeC48Error("string pointer provenance/offset mismatch")
         out=bytearray();addr=p.address
         for _ in range(n):
             if addr>=a.end:raise RuntimeC48Error("bounded string read leaves live object")
@@ -509,30 +540,33 @@ class C48VM:
     def _b_strcmp(self,a):
         x=self._read_cstr(self._as_pointer(a[0]));y=self._read_cstr(self._as_pointer(a[1]));return Value(INT,0 if x==y else (-1 if x<y else 1))
     def _b_strcpy(self,a):
-        dst=self._as_pointer(a[0]);data=self._read_cstr(self._as_pointer(a[1]))+b'\0';self.mem.require_range(dst.address,len(data),write=True);self.mem.write_bytes(dst.address,data);return Value(a[0].ctype,dst)
+        dst=self._as_pointer(a[0]);data=self._read_cstr(self._as_pointer(a[1]))+b'\0';self.mem.require_range(dst,len(data),write=True);self.mem.write_bytes(dst.address,data);return Value(a[0].ctype,dst)
     def _b_strncpy(self,a):
         dst=self._as_pointer(a[0]);srcp=self._as_pointer(a[1]);n=self._to_unsigned(a[2])
         if n==0:return Value(a[0].ctype,dst)
-        self.mem.require_range(dst.address,n,write=True)
+        self.mem.require_range(dst,n,write=True)
         prefix,terminated=self._read_cstr_prefix(srcp,n)
         data=prefix+(b'\0'*(n-len(prefix)) if terminated else b'')
         self.mem.write_bytes(dst.address,data);return Value(a[0].ctype,dst)
     def _b_memcpy(self,a):
         d=self._as_pointer(a[0]);s=self._as_pointer(a[1]);n=self._to_unsigned(a[2])
         if n==0:return Value(a[0].ctype,d)
-        self.mem.copy_bytes(d.address,s.address,n);return Value(a[0].ctype,d)
+        self.mem.copy_bytes(d,s,n);return Value(a[0].ctype,d)
     def _b_memmove(self,a):return self._b_memcpy(a)
     def _b_memchr(self,a):
         p=self._as_pointer(a[0]);c=self._to_unsigned(a[1])&255;n=self._to_unsigned(a[2])
         if n==0:return Value(ptr(VOID),PointerRecord(0,None,None))
-        self.mem.require_range(p.address,n)
+        al=self.mem.require_range(p,n)
         for i in range(n):
-            if self.mem.read8(p.address+i)==c:return Value(ptr(VOID),self.mem.infer_pointer(p.address+i))
+            if self.mem.read8(p.address+i)==c:
+                off=p.address-al.start+i
+                found=PointerRecord(p.address+i,al.aid,off)
+                return Value(ptr(VOID),found)
         return Value(ptr(VOID),PointerRecord(0,None,None))
     def _b_memset(self,a):
         p=self._as_pointer(a[0]);c=self._to_unsigned(a[1])&255;n=self._to_unsigned(a[2])
         if n==0:return Value(a[0].ctype,p)
-        self.mem.memset(p.address,c,n);return Value(a[0].ctype,p)
+        self.mem.memset(p,c,n);return Value(a[0].ctype,p)
     def _b_malloc(self,a):
         n=self._to_unsigned(a[0])
         if n==0:return Value(ptr(VOID),PointerRecord(0,None,None))
@@ -568,12 +602,12 @@ class C48VM:
     def _b_udg_define(self,a):
         slot=self._int_math(a[0])
         if not 0<=slot<32:return Value(INT,1)
-        p=self._as_pointer(a[1]);self.mem.require_range(p.address,8);data=self.mem.read_bytes(p.address,8)
+        p=self._as_pointer(a[1]);self.mem.require_range(p,8);data=self.mem.read_bytes(p.address,8)
         return Value(INT,self.screen.udg_define(slot,data))
     def _b_udg_get(self,a):
         slot=self._int_math(a[0])
         if not 0<=slot<32:return Value(INT,1)
-        p=self._as_pointer(a[1]);self.mem.require_range(p.address,8,write=True);data=self.screen.udg_get(slot)
+        p=self._as_pointer(a[1]);self.mem.require_range(p,8,write=True);data=self.screen.udg_get(slot)
         self.mem.write_bytes(p.address,data);return Value(INT,0)
     def _b_udg_draw(self,a):
         r=self.screen.udg_draw(self._int_math(a[0]),self._int_math(a[1]),self._int_math(a[2]));self.display_update();return Value(INT,r)

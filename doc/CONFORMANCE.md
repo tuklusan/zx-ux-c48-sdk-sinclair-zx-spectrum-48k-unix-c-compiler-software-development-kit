@@ -53,7 +53,14 @@ Coverage includes:
 - C48B1 deterministic serialization, integrity, canonical JSON/schema rejection,
   transactional output and stale-temp ownership;
 - command-line compilation/execution, argv limits/immutability, heap ceiling, bounded
-  libc-like memory/string behavior and GUI key mapping.
+  libc-like memory/string behavior and GUI key mapping;
+- adversarial source nesting, macro-expansion, source-size and line-size limits with no
+  Python traceback leakage;
+- hostile C48B1 size/nesting/schema-type rejection before malformed data reaches the VM;
+- deterministic VM call-depth/step limits, one-past/UAF/free misuse, stale-pointer ABA
+  reuse, and raw pointer-byte forgery defenses;
+- on-screen C48 security fixtures and the <=64-character source-line contract for every
+  shipped `dev/src` C48 C/header artifact.
 
 ## Static/source review
 
@@ -80,9 +87,10 @@ A release is accepted only after:
    from the extracted package.
 
 The frozen automated-test count is recorded in `RELEASE-NOTES.md`; deterministic demo
-hashes are recorded in `DEMO-HASHES.md`; every release file is covered by
-`MANIFEST.sha256`.  The ZIP SHA-256 is reported with the delivered archive because a ZIP
-cannot contain a non-circular hash of itself.
+hashes are recorded in `DEMO-HASHES.md`; security fixture binaries are rebuilt during
+release verification; every release file is covered by `MANIFEST.sha256`. The ZIP
+SHA-256 is reported with the delivered archive because a ZIP cannot contain a
+non-circular hash of itself.
 
 ## Explicit non-claims
 

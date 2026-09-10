@@ -85,6 +85,30 @@ uninitialized-byte reads, stale automatic pointers, invalid `free`, and provably
 unrelated pointer ordering/subtraction.  These diagnostics make portability failures
 visible; they are not a claim that native hardware can trap the same accesses.
 
+Pointer provenance is deliberately stronger than a numeric 16-bit address. A pointer
+that refers to freed storage keeps its original allocation identity and remains stale
+even if a later allocation reuses the same numeric address. Raw bytes written into a
+pointer object do not acquire provenance merely because they happen to equal the address
+of a live object. Memory/string/UDG helpers validate the original pointer record rather
+than re-inferring provenance from the address. This prevents ABA-style stale-pointer
+resurrection and representation-level pointer forgery in the host safety checker.
+
+## 6A. Host safety ceilings
+
+Hostile source and C48B1 files are bounded before they can consume Python recursion or
+unbounded host memory. `compiler/c48/limits.py` centralizes these defensive ceilings.
+They are **host safety ceilings, not new C48 language rules**: P11.02/P11.42 remain the
+authority for permanent native compiler/workspace capacities. The 32768-byte per-source
+object bound is the already-frozen ZX-UX logical RAM-object limit; the additional host
+limits exist solely to make untrusted-input failure deterministic and controlled.
+
+The host compiler bounds parser/constant-expression/type nesting, macro expansion,
+translation-unit source/tokens/AST size, and physical line size. C48B1 loading has
+pre-read file-size, JSON nesting/container, AST-node, string, and type-depth ceilings.
+The VM independently caps C48 function-call depth. `c48run --max-steps N` adds an
+optional deterministic statement/expression execution budget for fuzzing and CI; zero
+(the default) leaves ordinary interactive execution unlimited.
+
 ## 7. Display and graphics
 
 The backing display is the exact 6912-byte Spectrum screen representation: 6144 bitmap

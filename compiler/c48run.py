@@ -68,10 +68,20 @@ def main(argv: list[str] | None = None) -> int:
                     help="enable explicitly non-certified host approximations for transcendental ROM math")
     ap.add_argument("--heap", type=int, default=1024, metavar="BYTES",
                     help="host C48 heap reserve: even 0..8192 bytes (default: 1024)")
+    ap.add_argument(
+        "--max-steps", type=int, default=0, metavar="STEPS",
+        help=(
+            "deterministic VM safety budget; 0 means unlimited "
+            "(default: 0)"
+        ),
+    )
     ns = ap.parse_args(argv)
     try:
         if ns.heap < 0 or ns.heap > 8192 or (ns.heap & 1):
             raise RuntimeC48Error("--heap must be an even value from 0..8192")
+        if ns.max_steps < 0:
+            raise RuntimeC48Error("--max-steps must be zero or positive")
+        max_steps = None if ns.max_steps == 0 else ns.max_steps
         program_path = Path(ns.program)
         program = read(program_path)
         font = Font4x8.load(ns.font)
@@ -79,13 +89,21 @@ def main(argv: list[str] | None = None) -> int:
         # Preserve argv[0] as the exact host command token supplied for the program.
         pargv = [ns.program, *ns.args]
         if ns.headless:
-            vm = C48VM(program, screen, argv=pargv, approximate_rom_math=ns.allow_approx_rom_math, heap_size=ns.heap)
+            vm = C48VM(
+                program, screen, argv=pargv,
+                approximate_rom_math=ns.allow_approx_rom_math,
+                heap_size=ns.heap, max_steps=max_steps,
+            )
             status = vm.run()
         else:
             display = TkDisplay(screen, scale=ns.scale, title=f"ZX-UX C48 - {program_path.name}")
-            vm = C48VM(program, screen, argv=pargv,
-                       approximate_rom_math=ns.allow_approx_rom_math, heap_size=ns.heap,
-                       input_provider=display.input_char, display_update=display.update)
+            vm = C48VM(
+                program, screen, argv=pargv,
+                approximate_rom_math=ns.allow_approx_rom_math,
+                heap_size=ns.heap, max_steps=max_steps,
+                input_provider=display.input_char,
+                display_update=display.update,
+            )
             status = display.run_vm(vm.run)
         if ns.dump_screen:
             ns.dump_screen.parent.mkdir(parents=True, exist_ok=True)
@@ -94,6 +112,18 @@ def main(argv: list[str] | None = None) -> int:
             ns.ppm.parent.mkdir(parents=True, exist_ok=True)
             screen.save_ppm(ns.ppm)
         return int(status) & 0xFF
+    except MemoryError:
+        print(
+            "c48run: runtime error: host memory safety ceiling exceeded",
+            file=sys.stderr,
+        )
+        return 1
+    except RecursionError:
+        print(
+            "c48run: runtime error: host recursion safety ceiling exceeded",
+            file=sys.stderr,
+        )
+        return 1
     except (C48Error, RuntimeError, OSError, ValueError) as exc:
         print(f"c48run: {exc}", file=sys.stderr)
         return 1

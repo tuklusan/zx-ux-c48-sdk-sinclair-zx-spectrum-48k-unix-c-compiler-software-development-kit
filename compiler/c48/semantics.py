@@ -20,6 +20,7 @@ from typing import Any
 from .errors import (C48Error, ConstantExpressionError, DeclarationError, SourcePos,
                      TypeC48Error, UnsupportedFeatureError)
 from .float5 import Float5, Float5Error
+from .limits import CONST_EVAL_DEPTH, ResourceBudget
 from .typesys import (CHAR, FLOAT, INT, SHORT, UCHAR, UINT, USHORT, VOID, CType,
                       TYPE_SPELLINGS, arithmetic_common, array, can_assign,
                       function, integer_promotion, ptr)
@@ -39,7 +40,9 @@ def type_from_node(n: dict[str, Any], pointer_extra: int = 0) -> CType:
     if spelling not in TYPE_SPELLINGS:
         raise TypeC48Error(f"unsupported type spelling {' '.join(spelling)}", spos(n))
     t = TYPE_SPELLINGS[spelling]
-    for _ in range(int(n.get("pointers", 0)) + pointer_extra):
+    depth = int(n.get("pointers", 0)) + pointer_extra
+    ResourceBudget.check_pointer_depth(depth, spos(n))
+    for _ in range(depth):
         t = ptr(t)
     return t
 
@@ -64,7 +67,8 @@ class ConstValue:
 
 
 class SemanticAnalyzer:
-    def __init__(self):
+    def __init__(self, *, budget: ResourceBudget | None = None):
+        self.budget = budget or ResourceBudget()
         self.globals: dict[str, Symbol] = {}
         self.functions: dict[str, Symbol] = {}
         self.scopes: list[dict[str, Symbol]] = []
@@ -561,6 +565,15 @@ class SemanticAnalyzer:
 
     # ---- constant evaluator ----
     def const_eval(self,n:dict[str,Any])->ConstValue:
+        with self.budget.nested(
+            "const-eval",
+            CONST_EVAL_DEPTH,
+            "constant-expression depth",
+            spos(n),
+        ):
+            return self._const_eval(n)
+
+    def _const_eval(self,n:dict[str,Any])->ConstValue:
         k=n["kind"]
         if k=="integer_literal":
             t=UINT if n["unsigned_suffix"] or n["value"]>32767 else INT

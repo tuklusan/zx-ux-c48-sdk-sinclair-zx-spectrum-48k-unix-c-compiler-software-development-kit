@@ -13,16 +13,26 @@
 
 int main(void)
 {
-    int x;
+    int *p;
+    char *heap;
+    char *dst;
+    char *src;
+    void *v;
     cls();
-    ink(7);
-    draw(0, 0, 255, 191);
-    draw(0, 191, 255, 0);
-    circle(128, 96, 70);
-    circle(128, 96, 35);
-    for (x = 0; x < 256; x++) {
-        if ((x & 7) == 0) plot(x, 96);
-    }
-    print_at(1, 22, "c48 graphics");
-    return 0;
+    print_at(0, 0, "SECURITY TEST: RAW POINTER FORGERY");
+    print_at(2, 0,
+             "ATTEMPT: copy pointer bytes by char writes");
+    print_at(3, 0, "MITIGATION: raw bytes have no provenance");
+    heap = malloc(2);
+    if (heap == 0) return 2;
+    p = 0;
+    v = &p;
+    dst = v;
+    v = &heap;
+    src = v;
+    dst[0] = src[0];
+    dst[1] = src[1];
+    *p = 7;
+    print_at(5, 0, "FAILED: forged pointer escaped guard");
+    return 99;
 }

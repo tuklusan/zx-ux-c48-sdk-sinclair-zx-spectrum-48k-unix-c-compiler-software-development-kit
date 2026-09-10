@@ -81,25 +81,18 @@ class C48Memory:
         if not a or not a.live:raise RuntimeC48Error("free/use of non-live allocation")
         a.live=False
         self.init[a.start:a.end]=b'\x00'*a.size
-        for loc,pr in list(self.ptr_shadow.items()):
-            if a.start<=loc<a.end or pr.aid==aid: self.ptr_shadow.pop(loc,None)
+        # Pointer objects stored *inside* the freed allocation disappear with
+        # that storage.  Pointer objects elsewhere deliberately keep their old
+        # allocation id so a later allocation at the same numeric address can
+        # never resurrect a stale pointer (ABA defense).
+        for loc in list(self.ptr_shadow):
+            if a.start <= loc < a.end:
+                self.ptr_shadow.pop(loc, None)
 
     def allocation(self,aid:int|None)->Allocation|None:
         if aid is None:return None
         a=self.allocations.get(aid)
         return a if a and a.live else None
-
-    def infer_pointer(self,address:int)->PointerRecord:
-        address &= 0xFFFF
-        if address==0:return PointerRecord(0,None,None)
-        candidates=[]
-        for a in self._segments():
-            if a.start<=address<=a.end:
-                candidates.append(a)
-        # Prefer a containing object over another object's one-past boundary.
-        inside=[a for a in candidates if a.start<=address<a.end]
-        a=inside[0] if len(inside)==1 else (candidates[0] if len(candidates)==1 else None)
-        return PointerRecord(address,a.aid if a else None,address-a.start if a else None)
 
     def pointer_for(self,a:Allocation,offset:int=0)->PointerRecord:
         if offset<0 or offset>a.size:raise RuntimeC48Error("pointer outside allocation/provenance")
@@ -111,10 +104,12 @@ class C48Memory:
         if pr.address % t.alignment:raise RuntimeC48Error("misaligned C48 pointer dereference")
         a=self.allocation(pr.aid)
         if a is None:
-            # A provenance-less pointer may be reconstructed if its exact address is inside one live object.
-            pr2=self.infer_pointer(pr.address);a=self.allocation(pr2.aid);pr=pr2
-        if a is None:raise RuntimeC48Error("pointer does not designate live C48 object storage")
-        off=pr.address-a.start
+            raise RuntimeC48Error(
+                "pointer does not designate live C48 object storage"
+            )
+        off = pr.address - a.start
+        if pr.offset is None or pr.offset != off:
+            raise RuntimeC48Error("pointer provenance/offset mismatch")
         if off<0 or off+t.size>a.size:raise RuntimeC48Error("pointer dereference outside live object or at one-past")
         if write and a.readonly:raise RuntimeC48Error("write through pointer to read-only C48 object")
         # Exact aliasing rule except byte views and heap/raw storage.
@@ -158,29 +153,50 @@ class C48Memory:
     def load_pointer(self,address:int)->PointerRecord:
         lo=self.read8(address);hi=self.read8(address+1);addr=lo|(hi<<8)
         pr=self.ptr_shadow.get(address)
-        if pr and pr.address==addr and (pr.aid is None or self.allocation(pr.aid)):return pr
-        return self.infer_pointer(addr)
+        if pr is not None and pr.address == addr:
+            # Preserve stale provenance.  Never infer a new allocation id merely
+            # because a dead pointer's numeric address has been reused.
+            return pr
+        if addr == 0:
+            return PointerRecord(0,None,None)
+        # Bytes that did not originate from a pointer store/copy have no C48
+        # provenance.  They may compare as an address but cannot be dereferenced.
+        return PointerRecord(addr,None,None)
     def store_pointer(self,address:int,pr:PointerRecord)->None:
         self.write8(address,pr.address&0xFF);self.write8(address+1,(pr.address>>8)&0xFF)
         self.ptr_shadow[address]=pr
 
-    def require_range(self,address:int,count:int,*,write:bool=False)->Allocation:
+    def require_range(
+        self, pr:PointerRecord, count:int, *, write:bool=False
+    )->Allocation:
         if count<0:raise RuntimeC48Error("negative byte count")
-        if count==0:
-            pr=self.infer_pointer(address);a=self.allocation(pr.aid)
-            if a is None:raise RuntimeC48Error("range pointer not in live allocation")
-            return a
-        pr=self.infer_pointer(address);a=self.allocation(pr.aid)
-        if a is None or not (a.start<=address and address+count<=a.end):raise RuntimeC48Error("byte range outside live allocation")
-        if write and a.readonly:raise RuntimeC48Error("write to read-only allocation")
+        if pr.address==0:
+            raise RuntimeC48Error("null range pointer")
+        a=self.allocation(pr.aid)
+        if a is None:
+            raise RuntimeC48Error("range pointer not in live allocation")
+        off=pr.address-a.start
+        if pr.offset is None or pr.offset!=off:
+            raise RuntimeC48Error("range pointer provenance/offset mismatch")
+        if off<0 or off+count>a.size:
+            raise RuntimeC48Error("byte range outside live allocation")
+        if write and a.readonly:
+            raise RuntimeC48Error("write to read-only allocation")
         return a
 
-    def copy_bytes(self,dst:int,src:int,count:int,*,move:bool=False)->None:
-        da=self.require_range(dst,count,write=True);sa=self.require_range(src,count)
-        data=self.read_bytes(src,count)
-        shadows=[(loc-src,pr) for loc,pr in self.ptr_shadow.items() if src<=loc and loc+2<=src+count]
-        self.write_bytes(dst,data)
-        for rel,pr in shadows:self.ptr_shadow[dst+rel]=pr
-    def memset(self,dst:int,value:int,count:int)->None:
+    def copy_bytes(
+        self, dst:PointerRecord, src:PointerRecord, count:int, *, move:bool=False
+    )->None:
         self.require_range(dst,count,write=True)
-        self.write_bytes(dst,bytes([value&0xFF])*count)
+        self.require_range(src,count)
+        data=self.read_bytes(src.address,count)
+        shadows=[
+            (loc-src.address,pr)
+            for loc,pr in self.ptr_shadow.items()
+            if src.address<=loc and loc+2<=src.address+count
+        ]
+        self.write_bytes(dst.address,data)
+        for rel,pr in shadows:self.ptr_shadow[dst.address+rel]=pr
+    def memset(self,dst:PointerRecord,value:int,count:int)->None:
+        self.require_range(dst,count,write=True)
+        self.write_bytes(dst.address,bytes([value&0xFF])*count)

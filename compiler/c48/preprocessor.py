@@ -17,8 +17,10 @@ from dataclasses import dataclass
 from pathlib import Path
 import re
 
-from .errors import C48Error, IOC48Error, LexicalError, PreprocessorError, SourcePos, UnsupportedFeatureError
+from .errors import (C48Error, IOC48Error, LexicalError, PreprocessorError,
+                     ResourceLimitError, SourcePos, UnsupportedFeatureError)
 from .lexer import Lexer, Token, SUPPORTED_KEYWORDS, UNSUPPORTED_KEYWORDS
+from .limits import ResourceBudget
 
 PORTABLE_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,10}$")
 
@@ -38,16 +40,32 @@ class Preprocessor:
     for `.c`, `.h`, or `.txt` filenames in the host SDK; this host mapping is documented
     and does not alter the native language rule.
     """
-    def __init__(self, *, normalize_crlf: bool = True, builtin_header: str = ""):
+    def __init__(self, *, normalize_crlf: bool = True, builtin_header: str = "",
+                 budget: ResourceBudget | None = None):
         self.normalize_crlf = normalize_crlf
         self.builtin_header = builtin_header
+        self.budget = budget or ResourceBudget()
         self.macros: dict[str, Macro] = {}
         self._header_included = False
 
     def preprocess_file(self, path: Path) -> list[Token]:
-        return self.preprocess_bytes(path.read_bytes(), source_name=str(path), base_dir=path.parent, include_depth=0)
+        pos = SourcePos(str(path), 1, 1)
+        try:
+            size = path.stat().st_size
+        except OSError as exc:
+            raise IOC48Error(f"cannot stat source object: {exc}", pos) from None
+        self.budget.check_source_object_size(size, pos)
+        try:
+            data = path.read_bytes()
+        except OSError as exc:
+            raise IOC48Error(f"cannot read source object: {exc}", pos) from None
+        return self.preprocess_bytes(
+            data, source_name=str(path), base_dir=path.parent, include_depth=0
+        )
 
     def preprocess_bytes(self, data: bytes, *, source_name: str, base_dir: Path, include_depth: int = 0) -> list[Token]:
+        source_pos = SourcePos(source_name, 1, 1)
+        self.budget.add_source_object(len(data), source_pos)
         try:
             text = data.decode("ascii")
         except UnicodeDecodeError as e:
@@ -129,6 +147,12 @@ class Preprocessor:
         lines = text.splitlines(keepends=True)
         if text and not lines:
             lines = [text]
+        self.budget.add_lines(len(lines), SourcePos(source_name, 1, 1))
+        for lineno, physical in enumerate(lines, 1):
+            body_len = len(physical[:-1] if physical.endswith("\n") else physical)
+            self.budget.check_line_length(
+                body_len, SourcePos(source_name, lineno, 1)
+            )
         tokens: list[Token] = []
         in_block = False
         block_start: SourcePos | None = None
@@ -162,9 +186,11 @@ class Preprocessor:
                     rt = Token(t.kind,t.text,t.value,p)
                     if rt.kind in {"IDENT","IMPL_IDENT"} and rt.text in self.macros:
                         macro = self.macros[rt.text]
+                        self.budget.add_tokens(len(macro.replacement), p)
                         for mt in macro.replacement:
                             tokens.append(Token(mt.kind, mt.text, mt.value, p))
                     else:
+                        self.budget.add_tokens(1, p)
                         tokens.append(rt)
             in_block = end_block
             if not in_block: block_start = None
@@ -211,17 +237,23 @@ class Preprocessor:
             if t.kind in {"IDENT","IMPL_IDENT"}:
                 old=self.macros.get(t.text)
                 if old is None: raise PreprocessorError(f"#define replacement references unresolved identifier {t.text!r}",pos)
+                self.budget.check_macro_replacement(
+                    len(expanded) + len(old.replacement), pos
+                )
                 expanded.extend(old.replacement)
-            else: expanded.append(t)
+            else:
+                self.budget.check_macro_replacement(len(expanded) + 1, pos)
+                expanded.append(t)
         if not expanded: raise PreprocessorError("#define replacement must be nonempty after comment removal",pos)
         self._validate_constant_replacement(expanded, pos)
         canonical=tuple((t.kind,t.text) for t in expanded)
         old=self.macros.get(name)
         if old and old.canonical!=canonical: raise PreprocessorError(f"different redefinition of macro {name!r}",pos)
+        if old is None:
+            self.budget.add_macro_definition(pos)
         self.macros[name]=Macro(name,expanded,canonical,pos)
 
-    @staticmethod
-    def _validate_constant_replacement(tokens: list[Token], pos: SourcePos) -> None:
+    def _validate_constant_replacement(self, tokens: list[Token], pos: SourcePos) -> None:
         """Require a complete, type-valid C48 constant token sequence.
 
         Macro identifiers have already been recursively expanded, so no ordinary
@@ -231,17 +263,18 @@ class Preprocessor:
         from .parser import Parser
         from .semantics import SemanticAnalyzer
         eof = Token("EOF", "", None, tokens[-1].pos if tokens else pos)
-        parser = Parser([*tokens, eof])
+        parser = Parser([*tokens, eof], budget=self.budget)
         try:
             expr = parser._expression()
+            self.budget.check_ast(expr, pos)
             if parser.cur.kind != "EOF":
                 raise PreprocessorError("#define replacement is not one complete C48 constant expression", pos)
             if expr["kind"] == "string_literal":
                 return
-            cv = SemanticAnalyzer().const_eval(expr)
+            cv = SemanticAnalyzer(budget=self.budget).const_eval(expr)
             if not (cv.ctype.is_integer or cv.ctype.is_float):
                 raise PreprocessorError("#define replacement is not an integer/floating/character/string constant", pos)
-        except PreprocessorError:
+        except (PreprocessorError, ResourceLimitError):
             raise
         except C48Error as exc:
             raise PreprocessorError(f"#define replacement is not a valid C48 constant: {exc}", pos) from None
@@ -253,6 +286,10 @@ class Preprocessor:
             if self._header_included:return
             self._header_included=True
             if self.builtin_header:
+                header_bytes = self.builtin_header.encode("ascii")
+                self.budget.add_source_object(
+                    len(header_bytes), SourcePos("<c48.h>", 1, 1)
+                )
                 toks=self._preprocess_text(self.builtin_header,source_name="<c48.h>",base_dir=base_dir,include_depth=include_depth)
                 out.extend(toks[:-1])
             return
@@ -273,6 +310,11 @@ class Preprocessor:
         if len(matches) != 1:
             raise IOC48Error(f"local include object not found with exact case: {name}",pos)
         path=matches[0]
+        try:
+            size = path.stat().st_size
+        except OSError as exc:
+            raise IOC48Error(f"cannot stat local include object {name}: {exc}", pos) from None
+        self.budget.check_source_object_size(size, pos)
         try:
             data = path.read_bytes()
         except OSError as exc:

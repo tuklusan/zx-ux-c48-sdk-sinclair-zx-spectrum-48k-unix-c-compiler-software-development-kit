@@ -79,6 +79,18 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print(f"c48: {exc.category}: {exc.message}", file=sys.stderr)
         return exc.exit_status
+    except RecursionError:
+        print(
+            "c48: resource-limit: host recursion safety ceiling exceeded",
+            file=sys.stderr,
+        )
+        return 1
+    except MemoryError:
+        print(
+            "c48: resource-limit: host memory safety ceiling exceeded",
+            file=sys.stderr,
+        )
+        return 1
     except OSError as exc:
         print(f"c48: io: {exc}", file=sys.stderr)
         return 1

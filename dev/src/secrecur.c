@@ -11,18 +11,16 @@
 // ============================================================
 #include "c48host.h"
 
+int dive(int n)
+{
+    return dive(n + 1);
+}
+
 int main(void)
 {
-    int x;
     cls();
-    ink(7);
-    draw(0, 0, 255, 191);
-    draw(0, 191, 255, 0);
-    circle(128, 96, 70);
-    circle(128, 96, 35);
-    for (x = 0; x < 256; x++) {
-        if ((x & 7) == 0) plot(x, 96);
-    }
-    print_at(1, 22, "c48 graphics");
-    return 0;
+    print_at(0, 0, "SECURITY TEST: CALL RECURSION");
+    print_at(2, 0, "ATTEMPT: recurse without base case");
+    print_at(3, 0, "MITIGATION: VM call-depth guard must trap");
+    return dive(0);
 }

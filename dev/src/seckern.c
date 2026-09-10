@@ -9,20 +9,14 @@
 // Attribution required: Based on original work by Supratim
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
-#include "c48host.h"
-
+/* Compile-negative security fixture.
+ * ATTEMPT: forge a pointer into reserved address 0x5B00.
+ * MITIGATION: C48 rejects arbitrary integer-to-pointer casts.
+ */
 int main(void)
 {
-    int x;
-    cls();
-    ink(7);
-    draw(0, 0, 255, 191);
-    draw(0, 191, 255, 0);
-    circle(128, 96, 70);
-    circle(128, 96, 35);
-    for (x = 0; x < 256; x++) {
-        if ((x & 7) == 0) plot(x, 96);
-    }
-    print_at(1, 22, "c48 graphics");
+    int *p;
+    p = (int *)0x5b00u;
+    *p = 7;
     return 0;
 }

@@ -18,6 +18,13 @@ from typing import Any
 from .astutil import node
 from .errors import SyntaxC48Error, UnsupportedFeatureError
 from .lexer import Token
+from .limits import (
+    PARSER_ASSIGNMENT_DEPTH,
+    PARSER_EXPRESSION_DEPTH,
+    PARSER_STATEMENT_DEPTH,
+    PARSER_UNARY_DEPTH,
+    ResourceBudget,
+)
 
 TYPE_START = {"void", "char", "unsigned", "short", "int", "float"}
 STORAGE = {"static", "extern"}
@@ -31,9 +38,12 @@ class Parser:
     are enforced by SemanticAnalyzer.
     """
 
-    def __init__(self, tokens: list[Token]):
+    def __init__(
+        self, tokens: list[Token], *, budget: ResourceBudget | None = None
+    ):
         self.tokens = tokens
         self.i = 0
+        self.budget = budget or ResourceBudget()
 
     @property
     def cur(self) -> Token:
@@ -106,6 +116,7 @@ class Parser:
         depth = 0
         while self.accept("*"):
             depth += 1
+            self.budget.check_pointer_depth(depth, self.tokens[self.i - 1].pos)
         t["pointers"] = depth
         return t
 
@@ -114,6 +125,7 @@ class Parser:
         depth = 0
         while self.accept("*"):
             depth += 1
+            self.budget.check_pointer_depth(depth, self.tokens[self.i - 1].pos)
         name_t = self._identifier()
         suffix = None
         if self.accept("["):
@@ -135,6 +147,7 @@ class Parser:
         depth = 0
         while self.accept("*"):
             depth += 1
+            self.budget.check_pointer_depth(depth, self.tokens[self.i - 1].pos)
         name_t = self._identifier()
         self.expect("(")
         params = self._parameter_clause(definition=True)
@@ -160,6 +173,9 @@ class Parser:
             depth = 0
             while self.accept("*"):
                 depth += 1
+                self.budget.check_pointer_depth(
+                    depth, self.tokens[self.i - 1].pos
+                )
             name = None
             if self.cur.kind in {"IDENT", "IMPL_IDENT"}:
                 name = self.cur.text
@@ -256,6 +272,15 @@ class Parser:
                     declarators=decls, scope="block")
 
     def _statement(self) -> dict[str, Any]:
+        with self.budget.nested(
+            "statement",
+            PARSER_STATEMENT_DEPTH,
+            "statement nesting depth",
+            self.cur.pos,
+        ):
+            return self._statement_impl()
+
+    def _statement_impl(self) -> dict[str, Any]:
         t = self.cur
         if self.at("{"):
             return self._compound_statement()
@@ -292,9 +317,24 @@ class Parser:
 
     # Expression grammar, lowest precedence first.
     def _expression(self) -> dict[str, Any]:
-        return self._assignment()
+        with self.budget.nested(
+            "expression",
+            PARSER_EXPRESSION_DEPTH,
+            "expression nesting depth",
+            self.cur.pos,
+        ):
+            return self._assignment()
 
     def _assignment(self):
+        with self.budget.nested(
+            "assignment",
+            PARSER_ASSIGNMENT_DEPTH,
+            "assignment nesting depth",
+            self.cur.pos,
+        ):
+            return self._assignment_impl()
+
+    def _assignment_impl(self):
         left = self._logical_or()
         if self.accept("="):
             op_pos = self.tokens[self.i-1].pos
@@ -321,6 +361,15 @@ class Parser:
     def _multiplicative(self): return self._left_assoc(self._unary, {"*", "/", "%"})
 
     def _unary(self):
+        with self.budget.nested(
+            "unary",
+            PARSER_UNARY_DEPTH,
+            "unary-expression depth",
+            self.cur.pos,
+        ):
+            return self._unary_impl()
+
+    def _unary_impl(self):
         t = self.cur
         if t.text in {"++", "--", "+", "-", "!", "~", "&", "*"}:
             self.i += 1
