@@ -524,6 +524,8 @@ class SemanticAnalyzer:
                 nbytes=len(init["value"]["bytes"])+1
                 length=t.length if t.length is not None else nbytes
                 if nbytes>length: raise TypeC48Error("string plus terminating NUL exceeds array bound", spos(init))
+                cv=ConstValue(ptr(CHAR),("string",bytes(init["value"]["bytes"])))
+                init["const"] = self._const_json(cv)
                 return array(t.base,length)
             if k!="init_list": raise TypeC48Error("array initializer must be braced list or character string", spos(init))
             vals=init["values"]
@@ -544,7 +546,8 @@ class SemanticAnalyzer:
                 self.expr(e)
                 st=ptr(CHAR)
                 if not self._assignment_compatible(t,st,e): raise TypeC48Error("string address incompatible with pointer initializer", spos(init))
-                init["const"]={"kind":"string","bytes":e["bytes"]}
+                cv=ConstValue(ptr(CHAR),("string",bytes(e["bytes"])))
+                init["const"] = self._const_json(cv)
                 return t
             raise TypeC48Error("scalar object requires scalar constant initializer", spos(init))
         self.expr(init["value"])

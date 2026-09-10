@@ -90,13 +90,14 @@ def check_required_files() -> None:
         "c48", "c48run", "c48.bat", "c48run.bat",
         "compiler/check_license_headers.py", "compiler/c48/limits.py",
         "compiler/tests/test_security.py",
+        "compiler/tests/test_game_regressions.py", "compiler/verify_games.py",
         "compiler/assets/font4x8-tasword.bin", "compiler/assets/font4x8-zxux.bin",
         "doc/C48 Language Specification Rev 0.11.docx",
         "doc/ZX-UX C48 Compiler User Manual Rev 0.11.docx",
         "doc/FLOAT5-ORACLE.md", "doc/HOST-DIVERGENCES.md", "doc/CONFORMANCE.md",
-        "doc/RELEASE-NOTES.md", "doc/LICENSE-HEADER-POLICY.md",
+        "doc/RELEASE-NOTES.md", "doc/LICENSE-HEADER-POLICY.md", "doc/GAMES.md",
         "doc/ZX-UX C48 SDK Adversarial Security Review.docx",
-        "dev/src/c48host.h",
+        "dev/src/c48host.h", "dev/src/games/gameapi.h",
         "dev/src/secguard.c", "dev/src/secoob.c",
         "dev/src/secuaf.c", "dev/src/secfree.c",
         "dev/src/secdbl.c", "dev/src/secloop.c",
@@ -161,17 +162,19 @@ def check_font() -> None:
 
 def check_c48_source_columns() -> None:
     failures = []
-    for path in sorted((SDK / "dev" / "src").glob("*")):
-        if path.suffix.lower() not in {".c", ".h"}:
+    source_root = SDK / "dev" / "src"
+    for path in sorted(source_root.rglob("*")):
+        if not path.is_file() or path.suffix.lower() not in {".c", ".h"}:
             continue
+        rel = path.relative_to(source_root).as_posix()
         try:
             lines = path.read_text(encoding="ascii").splitlines()
         except UnicodeError as exc:
-            fail(f"non-ASCII shipped C48 source {path.name}: {exc}")
+            fail(f"non-ASCII shipped C48 source {rel}: {exc}")
         for line_no, line in enumerate(lines, 1):
             if len(line) > 64:
                 failures.append(
-                    f"{path.name}:{line_no}={len(line)} columns"
+                    f"{rel}:{line_no}={len(line)} columns"
                 )
     if failures:
         fail("C48 64-column source contract violated: " + ", ".join(failures))
@@ -217,6 +220,19 @@ def check_demos() -> None:
             if screen.stat().st_size != 6912 or sha(screen) != exp["screen_sha256"]:
                 fail(f"{name}: exact screen hash mismatch")
             print(f"VERIFY: demo {name} PASS", flush=True)
+
+
+def check_games() -> None:
+    cp = run(
+        [sys.executable, "-B", str(ROOT / "verify_games.py")],
+        timeout=180,
+    )
+    if cp.returncode != 0:
+        sys.stderr.write(cp.stdout + cp.stderr)
+        fail("game corpus verification failed")
+    marker = f"GAME VERIFY PASS: {len(EXPECT['games'])} games | quick"
+    if marker not in cp.stdout:
+        fail("game verifier did not report the expected completion marker")
 
 
 def check_security_programs() -> None:
@@ -334,6 +350,7 @@ def main() -> int:
         ("version/about", check_versions),
         ("manifest", check_manifest),
         ("automated tests", check_tests),
+        ("game corpus", check_games),
         ("security fixture binaries", check_security_programs),
         ("deterministic demos", check_demos),
         ("clean-tree postflight", check_clean_tree),
@@ -342,7 +359,13 @@ def main() -> int:
         print(f"VERIFY: {label} ...", flush=True)
         func()
         print(f"VERIFY: {label} PASS", flush=True)
-    print(f"VERIFY PASS: C48 SDK {EXPECT['version']} | {EXPECT['test_count']} tests | {len(EXPECT['demos'])} deterministic demos", flush=True)
+    print(
+        f"VERIFY PASS: C48 SDK {EXPECT['version']} | "
+        f"{EXPECT['test_count']} tests | "
+        f"{len(EXPECT['demos'])} deterministic demos | "
+        f"{len(EXPECT['games'])} games",
+        flush=True,
+    )
     return 0
 
 
