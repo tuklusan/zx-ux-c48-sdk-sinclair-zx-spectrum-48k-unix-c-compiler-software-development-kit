@@ -17,6 +17,6 @@ int main(void)
 {
     cls();
     print_at(10, 22, "hello from c48");
-    print_at(12, 14, "zx-ux portable host sdk 1.0");
+    print_at(12, 14, "zx-ux portable host sdk");
     return 0;
 }

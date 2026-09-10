@@ -23,8 +23,8 @@ as part of `compiler/verify_release.py`.
 
 The gate requires the approved project header near the beginning of every project-owned
 file where an in-band text comment or heading is safe: Python, C48/C source, headers,
-Markdown, ordinary text, Windows batch files, the POSIX launchers, `.gitignore`, and
-`.gitattributes`.
+Markdown, ordinary text, YAML (including GitHub Actions workflows), Windows batch
+files, the POSIX launchers, `.gitignore`, and `.gitattributes`.
 
 The POSIX shebang remains physical line 1. Windows batch launchers keep `@echo off` at
 line 1. The license heading follows immediately so those files retain their execution

@@ -13,7 +13,7 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# Deterministic Demo Hashes - SDK 1.0
+# Deterministic Demo Hashes - Pre-1.0 SDK
 
 These hashes are release invariants verified by `compiler/verify_release.py`. Each demo is rebuilt from source, executed from the rebuilt C48B1, and required to produce the exact 6912-byte Spectrum screen hash below.
 
@@ -21,7 +21,7 @@ These hashes are release invariants verified by `compiler/verify_release.py`. Ea
 
 | Demo | Source SHA-256 | C48B1 SHA-256 | Screen SHA-256 |
 |---|---|---|---|
-| `hello` | `b7dcd76b69f913a22088086122c19cb8811577279d99ae7efddb098ebfb38aa7` | `0bbd2d3a3e9c28d5448d2a904ff22988fe888d0f972867d5959c5262b7bdf4f7` | `f4410439aaff9f19972f9b7c5c853d2e2ea786cfc2dcf433cd1e6456f9e5ee28` |
+| `hello` | `bc22ea1b7f63cd89678402ed6f1089423dc4685e1195d6144fceeab3d99c1387` | `4dfbcdb0bc821a94054ef468f5ebe32e59e05e34e6e203284cce6ddceb842665` | `20e491b86cb68ca65eef144c760feaef80995242b258dc2421beda30a68a69f9` |
 | `colors` | `abc01331d700471fbd4000f446c53dd49255d5c4f744e5edc05f14b5da023471` | `5e9411e2b3f818017373ba389039c169a5d757f913df045443e15410c7eefab4` | `82687c81ba0208c728b1a4643f03b67745b947a39cd252929f4b383d9fba6d55` |
 | `graphics` | `866689771ea1df6ca718f759e49b013f76cf6a27bd184f646ac05276b3f4d09d` | `5d667ab8c3841d91cd97eb4ddd82389c98568dc23bbd979607af4fe7ce4c12ac` | `d2611838b3071ed7e658178d38a7bdd11a0d7fdf2aeffbb15bd65803a878053c` |
 | `udg` | `38aafd04c42c1211868821b6678a8d0f3a8fbb46295a1d52812d73c70fc469cb` | `e6a33f15c8b0990d0c1dab06fddaa38ffdb431dff98f8cf05243dc7e124ffc23` | `297ef51aa92911f090027668d02bc5bd92eac82c72678a708cc9a1097b13081c` |

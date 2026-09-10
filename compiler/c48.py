@@ -25,7 +25,7 @@ ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-SDK_VERSION = "1.0"
+SDK_VERSION = "0.9.0-dev"
 
 from c48.compiler import compile_file
 from c48.errors import C48Error, UsageC48Error

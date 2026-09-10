@@ -43,6 +43,20 @@ def sha(path: Path) -> str:
     return h.hexdigest()
 
 
+def manifest_sha(path: Path) -> str:
+    """Hash a working-tree file in its canonical repository representation.
+
+    Git intentionally checks *.bat files out as CRLF on Windows while storing
+    their normalized blobs with LF.  MANIFEST.sha256 records the canonical LF
+    representation so the same manifest verifies on Windows and POSIX hosts.
+    Binary/container formats remain byte-for-byte exact.
+    """
+    data = path.read_bytes()
+    if path.suffix.lower() == ".bat":
+        data = data.replace(b"\r\n", b"\n")
+    return hashlib.sha256(data).hexdigest()
+
+
 def run(cmd: list[str], *, cwd: Path = SDK, timeout: int = 60) -> subprocess.CompletedProcess[str]:
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
@@ -72,6 +86,7 @@ def check_clean_tree() -> None:
 def check_required_files() -> None:
     required = [
         "VERSION", "README.md", "LICENSE", ".gitignore", ".gitattributes",
+        ".github/workflows/verify.yml",
         "c48", "c48run", "c48.bat", "c48run.bat",
         "compiler/check_license_headers.py",
         "compiler/assets/font4x8-tasword.bin", "compiler/assets/font4x8-zxux.bin",
@@ -112,7 +127,6 @@ def check_font() -> None:
     tasword = SDK / "compiler/assets/font4x8-tasword.bin"
     zxux = SDK / "compiler/assets/font4x8-zxux.bin"
     raw = SDK / "compiler/tasword2-font4x8-raw-768.bin"
-    packed = SDK / "compiler/zxux-font4x8-F4X8-392.bin"
     for label, path, key in (
         ("Tasword", tasword, "tasword_sha256"),
         ("ZX-UX", zxux, "zxux_sha256"),
@@ -122,12 +136,8 @@ def check_font() -> None:
         data = path.read_bytes()
         if len(data) != 392 or data[:8] != b"F4X8" + bytes((1, 0x20, 96, 0)):
             fail(f"{label} F4X8 header/size mismatch")
-    if sha(packed) != EXPECT["font"]["tasword_sha256"]:
-        fail("canonical packed Tasword F4X8 hash mismatch")
     if sha(raw) != EXPECT["font"]["raw_sha256"]:
         fail("raw Tasword font hash mismatch")
-    if tasword.read_bytes() != packed.read_bytes():
-        fail("default Tasword font and canonical packed F4X8 files differ")
     # Prove the packed Tasword file is the mechanical two-row-per-byte transform of raw.
     expected = bytearray(b"F4X8" + bytes((1, 0x20, 96, 0)))
     raw_data = raw.read_bytes()
@@ -239,22 +249,29 @@ def check_manifest() -> None:
         missing = sorted(set(actual) - set(listed)); extra = sorted(set(listed) - set(actual))
         fail(f"manifest member set mismatch: missing={missing} extra={extra}")
     for rel in actual:
-        if sha(SDK / rel) != listed[rel]:
+        if manifest_sha(SDK / rel) != listed[rel]:
             fail(f"manifest hash mismatch: {rel}")
 
 
 def check_versions() -> None:
+    from c48 import __version__ as package_version
+    if package_version != EXPECT["version"]:
+        fail(f"c48 package __version__ mismatch: {package_version!r}")
     for tool in (ROOT / "c48.py", ROOT / "c48run.py"):
         cp = run([sys.executable, "-B", str(tool), "--version"])
         if cp.returncode != 0 or cp.stdout.strip() != f"{tool.stem} {EXPECT['version']}":
             fail(f"{tool.name}: --version mismatch: {cp.stdout.strip()!r} {cp.stderr.strip()!r}")
         about = run([sys.executable, "-B", str(tool), "--about"])
+        # argparse may wrap version/about text according to terminal width.  The
+        # license requirement is textual discoverability, not a frozen physical
+        # line break, so compare after canonical whitespace folding.
+        about_text = " ".join(about.stdout.split())
         for marker in (
             "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.",
             "Based on original work by Supratim Sanyal of SANYALnet Labs.",
             "Non-Commercial License",
         ):
-            if about.returncode != 0 or marker not in about.stdout:
+            if about.returncode != 0 or marker not in about_text:
                 fail(f"{tool.name}: --about attribution mismatch for {marker!r}")
 
 

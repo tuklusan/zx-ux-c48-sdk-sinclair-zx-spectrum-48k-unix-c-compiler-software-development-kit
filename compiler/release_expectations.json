@@ -1,5 +1,5 @@
 {
-  "version": "1.0",
+  "version": "0.9.0-dev",
   "test_count": 175,
   "font": {
     "tasword_sha256": "90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339",
@@ -10,9 +10,9 @@
   "demos": {
     "hello": {
       "args": [],
-      "source_sha256": "b7dcd76b69f913a22088086122c19cb8811577279d99ae7efddb098ebfb38aa7",
-      "binary_sha256": "0bbd2d3a3e9c28d5448d2a904ff22988fe888d0f972867d5959c5262b7bdf4f7",
-      "screen_sha256": "f4410439aaff9f19972f9b7c5c853d2e2ea786cfc2dcf433cd1e6456f9e5ee28"
+      "source_sha256": "bc22ea1b7f63cd89678402ed6f1089423dc4685e1195d6144fceeab3d99c1387",
+      "binary_sha256": "4dfbcdb0bc821a94054ef468f5ebe32e59e05e34e6e203284cce6ddceb842665",
+      "screen_sha256": "20e491b86cb68ca65eef144c760feaef80995242b258dc2421beda30a68a69f9"
     },
     "colors": {
       "args": [],

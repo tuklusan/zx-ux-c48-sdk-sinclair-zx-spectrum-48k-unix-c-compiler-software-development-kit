@@ -14,11 +14,14 @@ patent, trademark, and governing-law provisions.
 
 C48 / ZX-UX Tasword Two 4x8 Font Extraction
 
-Source archive: TaswordTwo.tap.zip
-Contained TAP: TASWORD2.TAP
+Source provenance:
+  original archive contained TASWORD2.TAP
+  TASWORD2.TAP SHA-256: e9c7159c2319ef1c31059879635f37d99e681567e3731b2d9042ca88df9dcec0
 
-TAP SHA-256:
-e9c7159c2319ef1c31059879635f37d99e681567e3731b2d9042ca88df9dcec0
+The complete Tasword Two program archive is intentionally NOT redistributed in this
+repository.  It is unnecessary at runtime and is not required to verify the packed
+font.  The retained raw 768-byte character-generator extraction plus the mechanical
+packing check in compiler/verify_release.py are sufficient for reproducibility.
 
 Tasword Two CODE block:
   load address : 54784 (0xD600)
@@ -37,8 +40,8 @@ Extracted raw font:
   size         : 768
   SHA-256      : 0ccd55f30450231b4219f15c945af53a3eb418082a28b5062589723d8fa1834d
 
-ZX-UX F4X8 resource:
-  file         : zxux-font4x8-F4X8-392.bin
+Canonical packed F4X8 runtime resource:
+  file         : assets/font4x8-tasword.bin
   size         : 392
   SHA-256      : 90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339
   header       : "F4X8", version 1, first code 0x20, 96 glyphs, flags 0

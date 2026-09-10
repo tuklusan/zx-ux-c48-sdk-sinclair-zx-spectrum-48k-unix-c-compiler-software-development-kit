@@ -13,7 +13,7 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# Host Runtime Divergences - SDK 1.0
+# Host Runtime Divergences - Pre-1.0 SDK
 
 The SDK is designed to make C48 source behavior portable while avoiding claims about
 native ZX-UX facilities that have not yet been frozen or implemented.  The following
@@ -29,7 +29,7 @@ integrity field; it is never presented as an OBJ1 implementation.
 
 P11.01 freezes the required runtime *name inventory*, while P11.41 owns the exact
 built-in `<c48.h>` declarations, constants and prototypes.  P11.41 is not yet frozen in
-the project repository.  SDK 1.0 therefore does not invent those declarations.
+the project repository.  The pre-1.0 SDK therefore does not invent those declarations.
 
 `dev/src/c48host.h` is a provisional Host Game API profile used only by this SDK.  It
 provides useful console, memory, graphics, UDG, heap and selected math declarations so
@@ -63,7 +63,7 @@ and does not claim to enforce that native byte-for-byte stack budget.
 
 ## 4A. Translation units and linking
 
-SDK 1.0 compiles and executes one C48 translation unit at a time.  Compatible `extern`
+The pre-1.0 SDK compiles and executes one C48 translation unit at a time.  Compatible `extern`
 declarations are accepted so source can remain native-linker-ready, but C48B1 has no
 host multi-object linker: an external function or object that is not defined in that
 translation unit (and is not a documented host builtin) fails at host execution rather
@@ -116,6 +116,6 @@ transcendental approximation is opt-in and non-certified.
 ## 11. Sound
 
 The architecture-frozen `int beep(float duration, float pitch)` API is not exposed by
-Host Game API profile 0.1 because SDK 1.0 does not yet provide a portable backend that
+Host Game API profile 0.1 because the pre-1.0 SDK does not yet provide a portable backend that
 can honestly promise its synchronous Sinclair-compatible pitch/duration contract.
 No fake success/no-op implementation is supplied.

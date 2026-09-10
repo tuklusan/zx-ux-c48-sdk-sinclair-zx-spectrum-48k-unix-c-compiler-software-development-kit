@@ -15,7 +15,9 @@ patent, trademark, and governing-law provisions.
 -->
 # ZX-UX C48 SDK: Sinclair ZX Spectrum 48K C Compiler and Portable Unix-Like Development Runtime
 
-**ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows/Linux launchers.
+[![C48 SDK verification](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml)
+
+**ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is currently a **pre-1.0 development snapshot**; the final 1.0 release has not yet been declared. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows/Linux launchers.
 
 The SDK exists to make C48 programs practical to write, compile, test, and run on a modern **Windows or Linux command line** while the native Z80 implementation of the wider **ZX-UX Unix-like operating environment for the 48K ZX Spectrum** continues to evolve.
 
@@ -88,6 +90,14 @@ That makes the Python VM a useful portability and correctness laboratory for cod
 
 No third-party Python packages are required by the compiler or headless runtime.
 
+## Continuous verification
+
+Every push and pull request is verified on both **Windows and Linux** with the minimum
+supported Python 3.10 and a current Python 3.13 runtime. GitHub Actions runs the same
+`compiler/verify_release.py` gate used locally, plus platform-native launcher smoke tests.
+This keeps the public pre-1.0 development branch continuously checked against the frozen
+C48 conformance corpus, deterministic demos, manifest, font assets, and license-header policy.
+
 ## Clone and quick start
 
 ```text
@@ -140,7 +150,9 @@ c48run --font compiler\assets\font4x8-zxux.bin dev\bin\hello.c48b
 
 Any replacement font must satisfy the SDK's frozen `F4X8` format: 392 bytes total, `F4X8` magic, version 1, first character `0x20`, 96 glyphs, and four packed bytes per 4x8 glyph.
 
-**Current repository note:** the two supplied font attachments presently have identical bytes and the same SHA-256. They are intentionally retained under separate names so the ZX-UX font can diverge later without changing the CLI or runtime architecture.
+**Current repository note:** the two bundled font assets presently have identical bytes and the same SHA-256. They are intentionally retained under separate names so the ZX-UX font can diverge later without changing the CLI or runtime architecture.
+
+The complete Tasword Two program archive is **not redistributed** by this repository. The retained raw character-generator extraction and its SHA-256/provenance record are sufficient to verify the mechanical packing of the default runtime font.
 
 ## C48 compiler pipeline
 

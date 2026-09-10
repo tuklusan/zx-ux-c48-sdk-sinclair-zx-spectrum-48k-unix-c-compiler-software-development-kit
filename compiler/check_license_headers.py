@@ -24,7 +24,7 @@ ATTRIBUTION_SUFFIX = 'SANYALnet Labs.\" See LICENSE for full terms'
 PROJECT = "ZX-UX C48 SDK"
 
 # Header-safe source/document formats owned by this project.
-HEADER_SUFFIXES = {".py", ".c", ".h", ".md", ".txt", ".bat"}
+HEADER_SUFFIXES = {".py", ".c", ".h", ".md", ".txt", ".bat", ".yml", ".yaml"}
 HEADER_NAMES = {"c48", "c48run", ".gitignore", ".gitattributes"}
 
 # Deliberate exemptions: adding text would corrupt the syntax/format/container,

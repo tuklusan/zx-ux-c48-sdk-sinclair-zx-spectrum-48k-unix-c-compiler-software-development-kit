@@ -13,9 +13,9 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# ZX-UX C48 SDK 1.0 Release Notes
+# ZX-UX C48 SDK Pre-1.0 Development Notes
 
-Status: RELEASE 1.0
+Status: PRE-1.0 DEVELOPMENT SNAPSHOT
 
 ## Release purpose
 

@@ -13,7 +13,7 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# Float5 Oracle Boundary - SDK 1.0
+# Float5 Oracle Boundary - Pre-1.0 SDK
 
 ## Normative requirement
 
@@ -23,7 +23,7 @@ canonical Spectrum ROM conversion path, the native compiler/runtime, and the Win
 host implementation.  A host implementation may not certify itself solely against
 IEEE floating point.
 
-## What SDK 1.0 implements and tests
+## What the pre-1.0 SDK implements and tests
 
 `compiler/c48/float5.py` stores every C48 float as exactly five bytes.  Parsing from
 decimal text uses `Decimal`/`Fraction` only as exact host-side construction tools;
@@ -34,9 +34,9 @@ representative fractional and exponent forms, range failures, integer conversion
 comparisons, and operation-boundary quantization.  Core `+`, `-`, `*`, and `/` use
 exact rational intermediates and quantize after each C48 operation.
 
-## What is NOT certified in SDK 1.0
+## What is NOT certified in the pre-1.0 SDK
 
-SDK 1.0 does **not** claim complete byte-for-byte differential certification against
+The pre-1.0 SDK does **not** claim complete byte-for-byte differential certification against
 an executing canonical 48K ROM for every Float5 conversion/arithmetic path.  In
 particular, ROM calculator rounding/canonicalization details at difficult boundaries
 have not been proven exhaustively by an independent ROM execution harness.
@@ -58,6 +58,6 @@ formal certification boundary.
 
 ## Release claim
 
-Therefore SDK 1.0 may be described as passing its documented host conformance envelope,
+Therefore the pre-1.0 SDK may be described as passing its documented host conformance envelope,
 but not as completing the native C48 Section-94 three-way ROM/native/host float
 certification.  This is a bounded open conformance item, not a hidden PASS.
