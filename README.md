@@ -207,6 +207,8 @@ Headless mode can dump the exact 6912-byte screen for deterministic tests:
 
 The Tk frontend is only a visualizer over that underlying ZX-compatible screen state; it is not the source of truth.
 
+For Spectrum-style interactive control, **Shift+Space acts as BREAK**. While the program runs, the Tk footer shows `Shift+Space = BREAK`. After a program has returned and `c48run` is simply holding its final frame, the footer changes to `Program ended - Shift+Space to close`; pressing the chord closes the window while preserving the completed program status. If the VM is still running, Shift+Space aborts the host GUI session with status 130. The footer is host-window chrome and is never written into the emulated 6912-byte Spectrum screen.
+
 ## Host game API
 
 `dev/src/c48host.h` is the **Host Game API profile** used for practical development before the final native `<c48.h>` prototype surface is frozen by ZX-UX Phase 11.

@@ -99,8 +99,14 @@ interrupts and television signal timing are outside the host profile.
 ## 8. Keyboard/input
 
 `getchar()` is byte-oriented.  GUI Return maps to canonical LF (0x0A), Backspace to 8,
-and Escape to 27.  Non-ASCII GUI text is ignored.  The SDK does not emulate the raw
-Spectrum keyboard matrix.
+and Escape to 27.  Non-ASCII GUI text is ignored.  Host Shift+Space is reserved as the
+Spectrum-style BREAK chord: it closes a held final frame without changing the completed
+program status, or aborts a still-running GUI session with host status 130.  BREAK is a
+host-frontend control rather than a byte returned by `getchar()`.  The Tk frontend displays
+`Shift+Space = BREAK` below the emulated screen while execution is active and changes that
+host-only footer to `Program ended - Shift+Space to close` after completion.  The footer is
+not written into Spectrum screen memory.  The SDK does not emulate the raw Spectrum keyboard
+matrix.
 
 ## 9. Time/scheduling
 

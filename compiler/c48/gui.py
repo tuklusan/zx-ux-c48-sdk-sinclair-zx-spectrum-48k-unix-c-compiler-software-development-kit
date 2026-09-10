@@ -21,6 +21,18 @@ from dataclasses import dataclass
 from .screen import HEIGHT, WIDTH, ZXScreen
 
 
+def is_break_key(keysym: str, state: int) -> bool:
+    """Return True for the host equivalent of Spectrum BREAK (Shift+Space)."""
+    return keysym == "space" and bool(state & 0x0001)
+
+
+def footer_text(done: bool) -> str:
+    """Return host-chrome guidance without altering Spectrum screen memory."""
+    if done:
+        return "Program ended - Shift+Space to close"
+    return "Shift+Space = BREAK"
+
+
 def key_event_bytes(keysym: str, text: str) -> tuple[int, ...]:
     """Map one Tk key event to canonical C48 console bytes.
 
@@ -82,11 +94,23 @@ class TkDisplay:
         canvas = tk.Canvas(root, width=WIDTH*self.scale, height=HEIGHT*self.scale,
                            highlightthickness=0)
         canvas.pack()
-        result = {"status": 1, "error": None, "done": False}
+        footer = tk.Label(root, text=footer_text(False), anchor="w")
+        footer.pack(fill="x")
+        result = {"status": 1, "error": None, "done": False, "break_running": False}
 
         def key(event):
+            if is_break_key(event.keysym, int(event.state)):
+                # CAPS SHIFT+SPACE is BREAK on the Spectrum.  A host Shift+Space
+                # therefore closes a completed final frame, or aborts a still-running
+                # VM session.  The VM worker is a daemon so blocked getchar() calls do
+                # not keep the host process alive after the display exits.
+                result["break_running"] = not bool(result["done"])
+                self._stop = True
+                root.after_idle(root.destroy)
+                return "break"
             for b in key_event_bytes(event.keysym, event.char):
                 self.keys.put(b)
+            return None
 
         root.bind("<Key>", key)
         canvas.focus_set()
@@ -118,10 +142,15 @@ class TkDisplay:
                 self._dirty = False
             if result["done"]:
                 # Keep the final frame visible until the user closes the window.
+                # Completion guidance lives in host chrome, never in the 6912-byte
+                # Spectrum framebuffer, so deterministic program screen output stays exact.
                 root.title(f"{self.title} - exited {result['status']}")
+                footer.configure(text=footer_text(True))
             root.after(40, redraw)
         root.after(0, redraw)
         root.mainloop()
+        if result["break_running"]:
+            return 130
         if result["error"] is not None:
             raise result["error"]
         return int(result["status"])

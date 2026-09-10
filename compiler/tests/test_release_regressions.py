@@ -25,7 +25,7 @@ sys.path.insert(0, str(COMPILER))
 
 from c48.compiler import compile_bytes, compile_file
 from c48.errors import RuntimeC48Error
-from c48.gui import key_event_bytes
+from c48.gui import footer_text, is_break_key, key_event_bytes
 from c48.screen import Font4x8, ZXScreen
 from c48.vm import C48VM
 
@@ -129,6 +129,13 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
         self.assertEqual(key_event_bytes("a", "a"), (97,))
         self.assertEqual(key_event_bytes("Left", ""), ())
         self.assertEqual(key_event_bytes("eacute", "é"), ())
+        self.assertTrue(is_break_key("space", 0x0001))
+        self.assertTrue(is_break_key("space", 0x0005))
+        self.assertFalse(is_break_key("space", 0x0000))
+        self.assertFalse(is_break_key("Space", 0x0001))
+        self.assertFalse(is_break_key("a", 0x0001))
+        self.assertEqual(footer_text(False), "Shift+Space = BREAK")
+        self.assertEqual(footer_text(True), "Program ended - Shift+Space to close")
 
     def test_cli_rejects_same_input_output_without_modifying_source(self):
         import subprocess
