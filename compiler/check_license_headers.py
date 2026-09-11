@@ -30,7 +30,7 @@ HEADER_NAMES = {"c48", "c48run", ".gitignore", ".gitattributes"}
 # Deliberate exemptions: adding text would corrupt the syntax/format/container,
 # or LICENSE must remain the exact license text rather than recursively header itself.
 EXEMPT_NAMES = {"LICENSE", "VERSION", "MANIFEST.sha256"}
-EXEMPT_SUFFIXES = {".json", ".bin", ".png", ".c48b", ".docx", ".zip"}
+EXEMPT_SUFFIXES = {".json", ".bin", ".png", ".c48b", ".docx", ".zip", ".rom"}
 
 
 def classify(path: Path) -> str:
@@ -47,6 +47,10 @@ def check_tree(root: Path) -> list[str]:
         if not path.is_file() or ".git" in path.relative_to(root).parts:
             continue
         rel = path.relative_to(root).as_posix()
+        # Imported third-party reference material is preserved byte-for-byte
+        # and is governed by its own provenance/licensing, not the SDK header.
+        if rel.startswith("doc/reference/"):
+            continue
         kind = classify(path)
         if kind == "unknown":
             errors.append(f"unclassified artifact: {rel}")
