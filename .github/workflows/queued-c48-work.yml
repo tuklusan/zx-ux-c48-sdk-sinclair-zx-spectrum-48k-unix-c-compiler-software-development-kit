@@ -4,7 +4,7 @@
 #
 # ZX-UX C48 SDK
 # This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# root LICENSE file. Non-Commercial use permitted; Commercial Use and use
 # for AI/ML model training are prohibited unless separately authorized.
 #
 # Attribution is required: "Based on original work by Supratim Sanyal of
@@ -76,10 +76,7 @@ jobs:
           )
           PY
 
-      - name: Verify complete SDK from disk
-        run: python -B compiler/verify_release.py
-
-      - name: Commit verified result to main
+      - name: Create clean local candidate commit
         shell: bash
         run: |
           git config user.name "C48 queued-work builder"
@@ -87,4 +84,10 @@ jobs:
           git add -A
           git diff --cached --check
           git commit -m "Add C48 applications and animated sprite demo"
-          git push origin HEAD:main
+
+      - name: Verify complete SDK from committed disk bytes
+        run: python -B compiler/verify_release.py
+
+      - name: Push verified candidate to main
+        shell: bash
+        run: git push origin HEAD:main
