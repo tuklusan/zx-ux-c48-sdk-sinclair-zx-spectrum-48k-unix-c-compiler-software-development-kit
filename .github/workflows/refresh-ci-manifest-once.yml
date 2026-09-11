@@ -1,0 +1,100 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: One-shot CI manifest refresh
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/refresh-ci-manifest-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Remove one-shot workflow and rebuild canonical manifest
+        shell: bash
+        run: |
+          rm .github/workflows/refresh-ci-manifest-once.yml
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+
+          root = Path(".")
+          rows = []
+          for path in root.rglob("*"):
+              if not path.is_file():
+                  continue
+              rel = path.relative_to(root)
+              if ".git" in rel.parts or rel.as_posix() == "MANIFEST.sha256":
+                  continue
+              data = path.read_bytes()
+              if path.suffix.lower() == ".bat":
+                  data = data.replace(b"\r\n", b"\n")
+              rows.append((rel.as_posix(), hashlib.sha256(data).hexdigest()))
+          rows.sort()
+          Path("MANIFEST.sha256").write_text(
+              "".join(f"{digest}  {rel}\n" for rel, digest in rows),
+              encoding="ascii",
+              newline="\n",
+          )
+          print(f"MANIFEST ENTRIES: {len(rows)}")
+          PY
+
+      - name: Validate manifest membership and hashes
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+
+          root = Path(".")
+          listed = {}
+          for line in Path("MANIFEST.sha256").read_text(encoding="ascii").splitlines():
+              digest, rel = line.split("  ", 1)
+              listed[rel] = digest
+          actual = sorted(
+              p.relative_to(root).as_posix()
+              for p in root.rglob("*")
+              if p.is_file()
+              and ".git" not in p.relative_to(root).parts
+              and p.relative_to(root).as_posix() != "MANIFEST.sha256"
+          )
+          assert sorted(listed) == actual
+          for rel in actual:
+              data = (root / rel).read_bytes()
+              if (root / rel).suffix.lower() == ".bat":
+                  data = data.replace(b"\r\n", b"\n")
+              assert hashlib.sha256(data).hexdigest() == listed[rel], rel
+          print("MANIFEST VALID")
+          PY
+
+      - name: Commit final CI configuration
+        shell: bash
+        run: |
+          git config user.name "C48 CI maintenance"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Refresh manifest after CI trigger tuning"
+          git push origin HEAD:main

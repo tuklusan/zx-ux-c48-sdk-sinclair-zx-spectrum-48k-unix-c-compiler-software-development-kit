@@ -15,7 +15,25 @@ name: C48 SDK verification
 
 "on":
   push:
+    branches: [main]
+    paths-ignore:
+      - ".github/workflows/**"
+      - "MANIFEST.sha256"
+      - "README.md"
+      - "LICENSE"
+      - "doc/**"
   pull_request:
+    paths-ignore:
+      - ".github/workflows/**"
+      - "MANIFEST.sha256"
+      - "README.md"
+      - "LICENSE"
+      - "doc/**"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
