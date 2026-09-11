@@ -137,6 +137,22 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
         self.assertEqual(footer_text(False), "Shift+Space = BREAK")
         self.assertEqual(footer_text(True), "Program ended - Shift+Space to close")
 
+    def test_gui_numeric_keypad_sequence(self):
+        events = (
+            ("KP_1", ""),
+            ("KP_3", ""),
+            ("Return", "\r"),
+        )
+        actual = tuple(
+            byte
+            for keysym, text in events
+            for byte in key_event_bytes(keysym, text)
+        )
+        self.assertEqual(actual, (ord("1"), ord("3"), 10))
+        self.assertEqual(key_event_bytes("KP_Enter", ""), (10,))
+        self.assertEqual(key_event_bytes("KP_0", ""), (ord("0"),))
+        self.assertEqual(key_event_bytes("KP_9", ""), (ord("9"),))
+
     def test_cli_rejects_same_input_output_without_modifying_source(self):
         import subprocess
         with tempfile.TemporaryDirectory() as td:

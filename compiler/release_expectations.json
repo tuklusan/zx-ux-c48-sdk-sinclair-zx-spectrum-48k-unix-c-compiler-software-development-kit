@@ -1,6 +1,6 @@
 {
   "version": "0.9.0-dev",
-  "test_count": 203,
+  "test_count": 205,
   "font": {
     "tasword_sha256": "90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339",
     "zxux_sha256": "90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339",
@@ -66,8 +66,8 @@
       "binary_sha256": "a3a5f07001863a493a8c805fe19f0c97651b153e8281a96fe3527546fb9f9cb2"
     },
     "arith": {
-      "source_sha256": "185a610483beba15a480a5ee5481dfb4f3ae2f601519dd02a2ffef93207a8f02",
-      "binary_sha256": "083882a8997eb4578c3302196d03fe235f0bdf1cbc81dbb1af6537efc7b4d829"
+      "source_sha256": "4e69c9b1154464fdd120cd7476a72b88229bc83b897e304df277229974670875",
+      "binary_sha256": "2d42b6c252b712da8e425f8aba7ed6507e5da3bb8684ce5ff43248e093ab6868"
     },
     "bgammon": {
       "source_sha256": "c8ec95d89c55cd10e6810813de4c21c20fb8d93fd66c30a36d45a0d57d03f090",

@@ -38,14 +38,20 @@ def key_event_bytes(keysym: str, text: str) -> tuple[int, ...]:
 
     Control keys are selected by keysym before event.char because Tk commonly
     reports Return as ``\r``.  ZX-UX text input uses LF (0x0A), not CR.
-    Non-ASCII host text is ignored rather than leaking Unicode into C48.
+    Numeric-keypad digits are selected by keysym so they work even when Tk
+    supplies an empty event.char.  Non-ASCII host text is ignored rather than
+    leaking Unicode into C48.
     """
-    if keysym == "Return":
+    if keysym in {"Return", "KP_Enter"}:
         return (10,)
     if keysym == "BackSpace":
         return (8,)
     if keysym == "Escape":
         return (27,)
+    if len(keysym) == 4 and keysym.startswith("KP_"):
+        digit = keysym[3]
+        if "0" <= digit <= "9":
+            return (ord(digit),)
     if not text:
         return ()
     try:

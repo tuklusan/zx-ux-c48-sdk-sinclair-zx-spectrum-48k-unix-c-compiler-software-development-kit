@@ -22,6 +22,7 @@ int main(void)
     int answer;
     int want;
     int key;
+    int digits;
     ar_turns = 0;
     ar_right = 0;
     want = 0;
@@ -66,18 +67,26 @@ int main(void)
             game_putc(7, 12, '/');
         game_num(7, 16, (unsigned int)b);
         print_at(7, 20, "=");
-        key = game_key();
-        if (key == 'q')
-            return 0;
-        if (key < '0' || key > '9')
-            continue;
-        answer = key - '0';
+        answer = 0;
+        digits = 0;
         key = game_key();
         while (key != 10 && key != 13) {
-            if (key >= '0' && key <= '9')
+            if (key == 'q' && digits == 0)
+                return 0;
+            if (key == 8 && digits > 0) {
+                digits--;
+                answer = answer / 10;
+                game_putc(7, 22 + digits, ' ');
+            }
+            if (key >= '0' && key <= '9' && digits < 5) {
+                game_putc(7, 22 + digits, key);
                 answer = answer * 10 + key - '0';
+                digits++;
+            }
             key = game_key();
         }
+        if (digits == 0)
+            continue;
         ar_turns++;
         if (answer == want)
             ar_right++;

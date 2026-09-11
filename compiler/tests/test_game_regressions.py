@@ -20,11 +20,12 @@ import unittest
 
 HERE = Path(__file__).resolve().parent
 COMPILER = HERE.parent
+SDK = COMPILER.parent
 sys.path.insert(0, str(COMPILER))
 
-from c48.compiler import compile_bytes
+from c48.compiler import compile_bytes, compile_file
 from c48.format import decode, encode
-from c48.screen import Font4x8, ZXScreen
+from c48.screen import Font4x8, ZXScreen, bitmap_offset
 from c48.vm import C48VM
 
 FONT = Font4x8.load(COMPILER / "assets" / "font4x8-tasword.bin")
@@ -35,6 +36,20 @@ def roundtrip_run(source: bytes) -> int:
     restored = decode(encode(program))
     screen = ZXScreen(FONT)
     return C48VM(restored, screen, argv=["game-reg"]).run()
+
+
+def cell_glyph(screen: ZXScreen, row: int, col: int) -> tuple[int, ...]:
+    rows = []
+    x0 = col * 4
+    y0 = row * 8
+    high = (col & 1) == 0
+    for ry in range(8):
+        byte = screen.mem[bitmap_offset(x0, y0 + ry)]
+        if high:
+            rows.append((byte >> 4) & 15)
+        else:
+            rows.append(byte & 15)
+    return tuple(rows)
 
 
 class GameReleaseRegressions(unittest.TestCase):
@@ -75,6 +90,59 @@ class GameReleaseRegressions(unittest.TestCase):
                 self.assertIn("games/nested.c:1=65", str(caught.exception))
         finally:
             verify_release.SDK = original_sdk
+
+    def test_arithmetic_echo_and_backspace(self):
+        program = compile_file(SDK / "dev" / "src" / "games" / "arith.c")
+        screen = ZXScreen(FONT)
+        one = FONT.glyph(ord("1"))
+        three = FONT.glyph(ord("3"))
+        blank = FONT.glyph(ord(" "))
+
+        class Input:
+            def __init__(self):
+                self.calls = 0
+
+            def __call__(self):
+                call = self.calls
+                self.calls += 1
+                if call == 0:
+                    return ord("1")
+                if call == 1:
+                    self_outer.assertEqual(cell_glyph(screen, 7, 22), one)
+                    return 8
+                if call == 2:
+                    self_outer.assertEqual(cell_glyph(screen, 7, 22), blank)
+                    return ord("1")
+                if call == 3:
+                    self_outer.assertEqual(cell_glyph(screen, 7, 22), one)
+                    return ord("3")
+                if call == 4:
+                    self_outer.assertEqual(cell_glyph(screen, 7, 22), one)
+                    self_outer.assertEqual(cell_glyph(screen, 7, 23), three)
+                    return 10
+                if call == 5:
+                    return ord("q")
+                raise AssertionError("unexpected arithmetic input request")
+
+        self_outer = self
+        provider = Input()
+        vm = C48VM(
+            program,
+            screen,
+            argv=["arith"],
+            input_provider=provider,
+            max_steps=500000,
+        )
+        self.assertEqual(vm.run(), 0)
+        self.assertEqual(provider.calls, 6)
+        turns = vm.global_lvalues["ar_turns"]
+        right = vm.global_lvalues["ar_right"]
+        self.assertEqual(
+            vm.mem.load_integer(turns.pointer.address, turns.ctype), 1
+        )
+        self.assertEqual(
+            vm.mem.load_integer(right.pointer.address, right.ctype), 1
+        )
 
 
 if __name__ == "__main__":
