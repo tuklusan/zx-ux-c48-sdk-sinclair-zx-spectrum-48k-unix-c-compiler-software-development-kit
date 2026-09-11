@@ -116,6 +116,16 @@ bytes plus 768 attribute bytes.  High-resolution graphics coordinates use Spectr
 bottom-left `y`; physical bitmap rows used by tty64/UDG storage are top-down.  INK,
 PAPER, BRIGHT, FLASH, OVER and INVERSE are represented in Spectrum terms.
 
+The host tty64 console follows the approved deferred right-margin wrap contract. A
+printable byte written in column 63 remains in that cell and sets private pending-wrap
+state; only a later printable resolves the wrap. At the bottom row that resolution
+scrolls exactly once. CR, LF, BS, TAB and FF cancel pending wrap before applying their
+own operation, while ignored unsupported controls preserve it. `print_at()` uses a
+temporary positioned cursor and restores the sequential cursor including its private
+pending-wrap state. This behavior follows the approved
+`04-ZX-UX-CHANGE-REQUEST-DEFERRED-WRAP-REV01.md` pending its incorporation into the next
+ZX-UX architecture revision; it is not a host divergence.
+
 The graphical host frontend is Tkinter and is not a ULA/timing/contention emulator.
 FLASH timing is host-wall-clock visual behavior; contention, border timing, raster
 interrupts and television signal timing are outside the host profile.
