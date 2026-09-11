@@ -125,26 +125,6 @@ def patch_permanent_files() -> None:
     )
     release.write_text(text, encoding="utf-8", newline="\n")
 
-    workflow = SDK / ".github" / "workflows" / "graphics-demos.yml"
-    text = workflow.read_text(encoding="utf-8")
-    anchors = (
-        ("    branches: [main, graphics-demos-21]", "    branches: [main]"),
-        ("      max-parallel: 21", "      max-parallel: 22"),
-    )
-    for old, new in anchors:
-        if old not in text:
-            raise RuntimeError(f"missing graphics workflow anchor: {old!r}")
-        text = text.replace(old, new)
-    matrix_anchor = "          - {demo: sprites, os: windows-latest}\n"
-    if matrix_anchor not in text:
-        raise RuntimeError("missing sprites matrix anchor")
-    text = text.replace(
-        matrix_anchor,
-        matrix_anchor + "          - {demo: spriteanim, os: ubuntu-latest}\n",
-        1,
-    )
-    workflow.write_text(text, encoding="utf-8", newline="\n")
-
     doc = SDK / "doc" / "GRAPHICS-DEMOS.md"
     text = doc.read_text(encoding="utf-8")
     doc_anchors = (
