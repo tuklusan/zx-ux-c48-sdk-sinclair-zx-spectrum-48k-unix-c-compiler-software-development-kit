@@ -41,7 +41,7 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 
 ## Frozen verification surface
 
-- automated conformance/regression/security tests: 303, including the 84 ordered attacks from the adversarial security review and 12 direct tty64 deferred-wrap regressions;
+- automated conformance/regression/security tests: 306, including the 84 ordered attacks from the adversarial security review and 15 direct tty64 deferred-wrap regressions;
 - deterministic demos: 6 (`hello`, `colors`, `graphics`, `udg`, `maze`, `argv`);
 - default Tasword F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339`;
 - alternate ZX-UX F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339` (currently byte-identical to the supplied Tasword asset);
