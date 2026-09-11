@@ -36,11 +36,12 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Remove duplicate serial stress from bootstrap
+      - name: Bound serial bootstrap work
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
+          import ast
           p = Path('.github/bootstrap_graphics_demos.py')
           s = p.read_text(encoding='utf-8')
           old = '        vd.run_demo(name, stress)\n'
@@ -49,6 +50,22 @@ jobs:
           old = '''    run([\n        sys.executable,\n        "-B",\n        "compiler/verify_graphics_demos.py",\n        "--release",\n    ])\n'''
           assert s.count(old) == 1
           s = s.replace(old, '')
+          start = s.index('DEMOS = ')
+          end = s.index('\nWORKFLOW =', start)
+          demos = ast.literal_eval(s[start + 8:end])
+          frames = {
+              'goblet': 3, 'tunnel': 4, 'city': 3, 'terrain': 3,
+              'ocean': 3, 'torus': 3, 'mobius': 3, 'morph3d': 3,
+              'warp': 4, 'galaxy': 4, 'orrery': 4, 'firework': 4,
+              'sprites': 4, 'plasma': 2, 'kaleido': 3, 'moire': 3,
+              'mandel': 2, 'julia': 2, 'forest': 3, 'raymaze': 3,
+              'showcase': 4,
+          }
+          demos = [
+              (name, runner, frames[name], stress, title)
+              for name, runner, _frame, stress, title in demos
+          ]
+          s = s[:start] + 'DEMOS = ' + repr(demos) + s[end:]
           p.write_text(s, encoding='utf-8', newline='\n')
           PY
 
