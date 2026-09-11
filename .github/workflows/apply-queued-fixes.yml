@@ -1,0 +1,54 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: Apply queued C48 UI fixes
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/apply-queued-fixes.yml"
+      - ".github/workflows/apply-queued-fixes.payload.*"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: queued-c48-ui-fixes
+  cancel-in-progress: true
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Materialize queued-fix builder
+        shell: bash
+        run: |
+          cat .github/workflows/apply-queued-fixes.payload.* \
+            | base64 --decode \
+            | gzip --decompress \
+            > /tmp/apply-queued-fixes.py
+
+      - name: Apply, build, verify, commit and push
+        run: python -B /tmp/apply-queued-fixes.py
