@@ -45,6 +45,7 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - deterministic demos: 6 (`hello`, `colors`, `graphics`, `udg`, `maze`, `argv`);
 - default Tasword F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339`;
 - alternate ZX-UX F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339` (currently byte-identical to the supplied Tasword asset);
+- repository text and DOCX OOXML are fail-closed against the retired SDK tree path;
 - all release files except the manifest itself are covered by `MANIFEST.sha256`;
 - demo source/C48B1/screen hashes are in `DEMO-HASHES.md`;
 - eight runnable security C48B1 fixtures are deterministically rebuilt by the verifier,

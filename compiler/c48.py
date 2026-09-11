@@ -35,9 +35,9 @@ from c48.format import write
 def default_output(source: Path) -> Path:
     source = source.resolve()
     sdk = ROOT.parent
-    dev_src = (sdk / "usr" / "src").resolve()
+    usr_src = (sdk / "usr" / "src").resolve()
     try:
-        rel = source.relative_to(dev_src)
+        rel = source.relative_to(usr_src)
     except ValueError:
         return source.with_suffix(".c48b")
     return (sdk / "usr" / "bin" / rel).with_suffix(".c48b")

@@ -89,7 +89,8 @@ def check_required_files() -> None:
         ".github/workflows/verify.yml",
         ".github/workflows/graphics-demos.yml",
         "c48", "c48run", "c48.bat", "c48run.bat",
-        "compiler/check_license_headers.py", "compiler/c48/limits.py",
+        "compiler/check_license_headers.py",
+        "compiler/check_legacy_sdk_paths.py", "compiler/c48/limits.py",
         "compiler/tests/test_security.py",
         "compiler/tests/test_security_review.py",
         "compiler/tests/test_game_regressions.py", "compiler/verify_games.py",
@@ -98,6 +99,7 @@ def check_required_files() -> None:
         "compiler/assets/font4x8-tasword.bin", "compiler/assets/font4x8-zxux.bin",
         "doc/C48 Language Specification Rev 0.11.docx",
         "doc/ZX-UX C48 Compiler User Manual Rev 0.11.docx",
+        "doc/ZX-UX C48 SDK User Manual.docx",
         "doc/FLOAT5-ORACLE.md", "doc/HOST-DIVERGENCES.md", "doc/CONFORMANCE.md",
         "doc/RELEASE-NOTES.md", "doc/LICENSE-HEADER-POLICY.md", "doc/GAMES.md",
         "doc/GRAPHICS-DEMOS.md",
@@ -287,6 +289,13 @@ def check_license_policy() -> None:
         fail("license-header gate failed: " + "; ".join(errors))
 
 
+def check_legacy_path_policy() -> None:
+    from check_legacy_sdk_paths import check_tree
+    errors = check_tree(SDK)
+    if errors:
+        fail("legacy SDK path gate failed: " + "; ".join(errors))
+
+
 def check_launchers() -> None:
     expected_tail = {
         "c48": 'exec python3 -B "$(dirname "$0")/compiler/c48.py" "$@"',
@@ -368,6 +377,7 @@ def main() -> int:
         ("required files", check_required_files),
         ("Python source", check_python_source),
         ("license/header policy", check_license_policy),
+        ("legacy SDK path invariant", check_legacy_path_policy),
         ("font assets", check_font),
         ("C48 64-column sources", check_c48_source_columns),
         ("launchers", check_launchers),

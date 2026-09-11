@@ -341,6 +341,7 @@ The release verifier checks, among other things:
 
 - Python source parseability against the supported Python baseline;
 - the repository-wide license-header policy;
+- the legacy SDK tree-path invariant across repository text and DOCX OOXML;
 - exact font resource structure and hashes;
 - the 64-column physical-line contract for shipped C48 source;
 - launcher behavior;
@@ -372,7 +373,7 @@ zx-ux-c48-sdk/
 |   |-- c48/                 compiler + VM implementation
 |   |-- assets/              selectable F4X8 fonts
 |   `-- tests/               conformance/regression corpus
-|-- dev/
+|-- usr/
 |   |-- src/                 editable C48 programs
 |   `-- bin/                 deterministic C48B1 binaries
 |-- doc/                     C48 specification, manual, verification notes
