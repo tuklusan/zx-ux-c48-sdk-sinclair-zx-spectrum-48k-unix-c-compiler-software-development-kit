@@ -48,6 +48,8 @@ jobs:
             | base64 --decode \
             | gzip --decompress \
             > /tmp/apply-queued-fixes.py
+          rm -f .ci/apply-queued-fixes.payload.*
+          rmdir .ci 2>/dev/null || true
 
       - name: Apply final viewport corrections
         shell: bash
