@@ -14,27 +14,6 @@
 name: C48 graphics demo reel
 
 "on":
-  push:
-    branches: [main]
-    paths:
-      - "compiler/**"
-      - "usr/src/demos/**"
-      - "usr/bin/demos/**"
-      - "usr/src/c48host.h"
-      - "c48"
-      - "c48.bat"
-      - "c48run"
-      - "c48run.bat"
-  pull_request:
-    paths:
-      - "compiler/**"
-      - "usr/src/demos/**"
-      - "usr/bin/demos/**"
-      - "usr/src/c48host.h"
-      - "c48"
-      - "c48.bat"
-      - "c48run"
-      - "c48run.bat"
   workflow_dispatch:
 
 concurrency:

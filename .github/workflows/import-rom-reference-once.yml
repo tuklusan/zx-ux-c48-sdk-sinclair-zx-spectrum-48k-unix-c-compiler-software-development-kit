@@ -1,0 +1,190 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: Import ROM and reference corpus once
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/import-rom-reference-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Import pinned reference corpus and 48K ROM
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/zxref /tmp/zxemu
+
+          git init /tmp/zxref
+          git -C /tmp/zxref remote add origin https://github.com/tuklusan/zxuslinuxtestproject.git
+          git -C /tmp/zxref fetch --depth=1 origin ac520f05db734c650f67b62ba62f5490a91ab9c3
+          git -C /tmp/zxref checkout --detach FETCH_HEAD
+          test "$(git -C /tmp/zxref rev-parse HEAD)" = "ac520f05db734c650f67b62ba62f5490a91ab9c3"
+          rm -rf doc/reference
+          cp -a /tmp/zxref/reference doc/reference
+
+          git init /tmp/zxemu
+          git -C /tmp/zxemu remote add origin https://github.com/tuklusan/zx-spectrum-emulator.git
+          git -C /tmp/zxemu fetch --depth=1 origin f0ffed3f906409f21f07f32172b5592807166da8
+          git -C /tmp/zxemu checkout --detach FETCH_HEAD
+          test "$(git -C /tmp/zxemu rev-parse HEAD)" = "f0ffed3f906409f21f07f32172b5592807166da8"
+          mkdir -p compiler/assets
+          cp /tmp/zxemu/ROM/48.rom compiler/assets/48.rom
+          test "$(wc -c < compiler/assets/48.rom)" -eq 16384
+
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+
+          checker = Path("compiler/check_license_headers.py")
+          text = checker.read_text(encoding="utf-8")
+          old = 'EXEMPT_SUFFIXES = {".json", ".bin", ".png", ".c48b", ".docx", ".zip"}'
+          new = 'EXEMPT_SUFFIXES = {".json", ".bin", ".png", ".c48b", ".docx", ".zip", ".rom"}'
+          if text.count(old) != 1:
+              raise SystemExit("license suffix anchor mismatch")
+          text = text.replace(old, new)
+          old = '        rel = path.relative_to(root).as_posix()\n        kind = classify(path)\n'
+          new = (
+              '        rel = path.relative_to(root).as_posix()\n'
+              '        # Imported third-party reference material is preserved byte-for-byte\n'
+              '        # and is governed by its own provenance/licensing, not the SDK header.\n'
+              '        if rel.startswith("doc/reference/"):\n'
+              '            continue\n'
+              '        kind = classify(path)\n'
+          )
+          if text.count(old) != 1:
+              raise SystemExit("license reference anchor mismatch")
+          checker.write_text(text.replace(old, new), encoding="utf-8", newline="\n")
+
+          rom = Path("compiler/assets/48.rom")
+          digest = sha256(rom.read_bytes()).hexdigest()
+          notice = f'''<!--
+          ============================================================================
+          Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+          Proprietary rights reserved except as expressly licensed herein.
+
+          ZX-UX C48 SDK
+          This file is governed by the SANYALnet Labs Non-Commercial License in the
+          root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+          for AI/ML model training are prohibited unless separately authorized.
+
+          Attribution is required: "Based on original work by Supratim Sanyal of
+          SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+          patent, trademark, and governing-law provisions.
+          ============================================================================
+          -->
+          # Sinclair/Amstrad 48K ROM permission for hobby emulation
+
+          `48.rom` is the original 16 KiB Sinclair ZX Spectrum 48K ROM image copied
+          without modification from:
+
+          - source repository: `tuklusan/zx-spectrum-emulator`
+          - source path: `ROM/48.rom`
+          - source commit: `f0ffed3f906409f21f07f32172b5592807166da8`
+          - size: 16384 bytes
+          - SHA-256: `{digest}`
+
+          The ROM is copyrighted material. It is **not** licensed under the ZX-UX C48
+          SDK's root SANYALnet Labs license.
+
+          ## Historical Amstrad redistribution permission
+
+          In August 1999, Cliff Lawson of Amstrad plc publicly described Amstrad's
+          policy for Sinclair Spectrum ROM use by emulator authors. Amstrad permitted
+          emulator writers to redistribute Spectrum ROM images provided the copyright
+          messages were not altered, and requested acknowledgement that:
+
+          > Amstrad have kindly given their permission for the redistribution of their
+          > copyrighted material but retain that copyright.
+
+          The same statement made clear that the ROM code itself should not be charged
+          for separately. Emulator authors could charge for their own emulator code so
+          long as they were not charging for the Amstrad/Sinclair ROM portions. The
+          statement also allowed modified ROM images subject to the same copyright
+          proviso, and identified the Spectrum 48/128 and Amstrad-produced + models as
+          within that permission.
+
+          This repository includes the unmodified 48K ROM only for hobbyist,
+          emulation, compatibility, and conformance/reference work. No fee is charged
+          for the ROM image itself.
+
+          Historical permission references:
+
+          - archived World of Spectrum transcript:
+            https://web.archive.org/web/20180828125931/http://www.worldofspectrum.org/permits/amstrad-roms.txt
+          - preserved transcript and context:
+            https://github.com/z00m128/zxs-rom/blob/master/LICENSE.md
+
+          ## Rights note
+
+          The 1999 statement is a redistribution permission, not a transfer of
+          copyright. Corporate ownership of the relevant rights may have changed since
+          that statement. This file records provenance and the historical permission
+          relied upon by hobby Spectrum emulators; it is not legal advice and does not
+          broaden that permission.
+          '''
+          Path("compiler/assets/README-48K-ROM.md").write_text(
+              notice, encoding="utf-8", newline="\n"
+          )
+          PY
+
+      - name: Regenerate manifest and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+
+          root = Path(".")
+          lines = []
+          for path in sorted(root.rglob("*")):
+              if not path.is_file():
+                  continue
+              rel = path.relative_to(root)
+              if ".git" in rel.parts or path.name == "MANIFEST.sha256":
+                  continue
+              data = path.read_bytes()
+              if path.suffix.lower() == ".bat":
+                  data = data.replace(b"\r\n", b"\n")
+              lines.append(f"{sha256(data).hexdigest()}  {rel.as_posix()}\n")
+          Path("MANIFEST.sha256").write_text(
+              "".join(lines), encoding="ascii", newline="\n"
+          )
+          PY
+
+          git config user.name "C48 reference importer"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git commit -m "Import ZX Spectrum ROM and reference corpus"
+          python -B compiler/verify_release.py
+          test -z "$(git status --porcelain)"
+          git push origin HEAD:main
