@@ -183,12 +183,6 @@ jobs:
 
           sys.dont_write_bytecode = True
           sdk = Path.cwd().resolve()
-          source_names = [
-              "goblet", "tunnel", "city", "terrain", "ocean", "torus",
-              "mobius", "morph3d", "warp", "galaxy", "orrery",
-              "firework", "sprites", "plasma", "kaleido", "moire",
-              "mandel", "julia", "forest", "raymaze", "showcase",
-          ]
           config = [
               ("goblet", "ubuntu-latest", 2, 4, "Crystal Goblet"),
               ("tunnel", "windows-latest", 2, 8, "Infinity Tunnel"),
@@ -212,9 +206,11 @@ jobs:
               ("raymaze", "macos-latest", 2, 4, "Raycast Labyrinth"),
               ("showcase", "macos-latest", 2, 8, "C48 Grand Finale"),
           ]
-
+          names = {row[0] for row in config}
           helper_path = sdk / ".github" / "bootstrap_graphics_demos.py"
-          spec = importlib.util.spec_from_file_location("graphics_bootstrap", helper_path)
+          spec = importlib.util.spec_from_file_location(
+              "graphics_bootstrap", helper_path
+          )
           if spec is None or spec.loader is None:
               raise SystemExit("cannot load bootstrap helpers")
           bg = importlib.util.module_from_spec(spec)
@@ -223,17 +219,17 @@ jobs:
           root = Path(os.environ["RUNNER_TEMP"]) / "graphics-generated"
           found = {}
           for path in root.rglob("*.json"):
-              if path.stem in source_names:
-                  if path.stem in found:
-                      raise SystemExit(f"duplicate fragment: {path.stem}")
-                  found[path.stem] = (
-                      path,
-                      json.loads(path.read_text(encoding="ascii")),
-                  )
-          if set(found) != set(source_names):
+              if path.stem not in names:
+                  continue
+              if path.stem in found:
+                  raise SystemExit(f"duplicate fragment: {path.stem}")
+              found[path.stem] = (
+                  path,
+                  json.loads(path.read_text(encoding="ascii")),
+              )
+          if set(found) != names:
               raise SystemExit(
-                  f"fragment set mismatch: missing="
-                  f"{sorted(set(source_names) - set(found))}"
+                  f"fragment set mismatch: missing={sorted(names - set(found))}"
               )
 
           bindir = sdk / "dev" / "bin" / "demos"
@@ -248,13 +244,12 @@ jobs:
           demos = {}
           for name, runner, frames, stress, title in config:
               frag_path, frag = found[name]
-              checks = (
+              for actual, expected, label in (
                   (frag["runner"], runner, "runner"),
                   (int(frag["frames"]), frames, "frames"),
                   (int(frag["stress_frames"]), stress, "stress"),
                   (frag["title"], title, "title"),
-              )
-              for actual, expected, label in checks:
+              ):
                   if actual != expected:
                       raise SystemExit(f"{name}: {label} mismatch")
               parent = frag_path.parent
@@ -315,83 +310,84 @@ jobs:
               raise SystemExit("evidence timing anchor mismatch")
           bg.write_text(verifier, text.replace(old, new, 1))
 
+          header = [
+              "# ============================================================================",
+              "# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.",
+              "# Proprietary rights reserved except as expressly licensed herein.",
+              "#",
+              "# ZX-UX C48 SDK",
+              "# This file is governed by the SANYALnet Labs Non-Commercial License in the",
+              "# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use",
+              "# for AI/ML model training are prohibited unless separately authorized.",
+              "#",
+              "# Attribution is required: \"Based on original work by Supratim Sanyal of",
+              "# SANYALnet Labs.\" See LICENSE for full terms, warranty disclaimer, termination,",
+              "# patent, trademark, and governing-law provisions.",
+              "# ============================================================================",
+          ]
           dollar = "$"
-          matrix = "".join(
-              f"          - demo: {name}\n            os: {runner}\n"
-              for name, runner, _frames, _stress, _title in config
-          )
           ex_demo = dollar + "{{ matrix.demo }}"
           ex_os = dollar + "{{ matrix.os }}"
-          workflow = """# ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
-#
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
-#
-# Attribution is required: \"Based on original work by Supratim Sanyal of
-# SANYALnet Labs.\" See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
-# ============================================================================
-name: C48 graphics demo reel
+          lines = header + [
+              "name: C48 graphics demo reel", "", '"on":',
+              "  push:", "    branches: [main, graphics-demos-21]",
+              "  pull_request:", "  workflow_dispatch:", "",
+              "permissions:", "  contents: read", "", "jobs:", "  demo:",
+              f"    name: {ex_demo} / {ex_os}", "    strategy:",
+              "      fail-fast: false", "      max-parallel: 21",
+              "      matrix:", "        include:",
+          ]
+          for name, runner, _frames, _stress, _title in config:
+              lines.extend([
+                  f"          - demo: {name}",
+                  f"            os: {runner}",
+              ])
+          lines.extend([
+              f"    runs-on: {ex_os}", "    timeout-minutes: 180",
+              "    steps:", "      - name: Check out repository",
+              "        uses: actions/checkout@v4", "",
+              "      - name: Set up Python 3.10",
+              "        uses: actions/setup-python@v5", "        with:",
+              '          python-version: "3.10"', "",
+              "      - name: Verify assigned graphics demo", "        run: >-",
+              "          python -B compiler/verify_graphics_demos.py",
+              f'          --demo "{ex_demo}"', f'          --runner "{ex_os}"',
+              "          --evidence-dir runner-evidence", "",
+              "      - name: Upload runner evidence",
+              "        uses: actions/upload-artifact@v4", "        with:",
+              f"          name: graphics-{ex_demo}-{ex_os}",
+              "          path: runner-evidence/",
+              "          if-no-files-found: error",
+          ])
+          workflow = "\n".join(lines) + "\n"
 
-\"on\":
-  push:
-    branches: [main, graphics-demos-21]
-  pull_request:
-  workflow_dispatch:
-
-permissions:
-  contents: read
-
-jobs:
-  demo:
-"""
-          workflow += f"    name: {ex_demo} / {ex_os}\n"
-          workflow += "    strategy:\n      fail-fast: false\n      max-parallel: 21\n      matrix:\n        include:\n"
-          workflow += matrix
-          workflow += f"    runs-on: {ex_os}\n    timeout-minutes: 180\n    steps:\n"
-          workflow += "      - name: Check out repository\n        uses: actions/checkout@v4\n\n"
-          workflow += "      - name: Set up Python 3.10\n        uses: actions/setup-python@v5\n        with:\n          python-version: \"3.10\"\n\n"
-          workflow += "      - name: Verify assigned graphics demo\n        run: >-\n          python -B compiler/verify_graphics_demos.py\n"
-          workflow += f"          --demo \"{ex_demo}\"\n          --runner \"{ex_os}\"\n          --evidence-dir runner-evidence\n\n"
-          workflow += "      - name: Upload runner evidence\n        uses: actions/upload-artifact@v4\n        with:\n"
-          workflow += f"          name: graphics-{ex_demo}-{ex_os}\n          path: runner-evidence/\n          if-no-files-found: error\n"
-
-          doc = """<!--
-============================================================================
-Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-Proprietary rights reserved except as expressly licensed herein.
-
-ZX-UX C48 SDK
-This file is governed by the SANYALnet Labs Non-Commercial License in the
-root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-for AI/ML model training are prohibited unless separately authorized.
-
-Attribution is required: \"Based on original work by Supratim Sanyal of
-SANYALnet Labs.\" See LICENSE for full terms, warranty disclaimer, termination,
-patent, trademark, and governing-law provisions.
-============================================================================
--->
-# C48 Graphics Demo Reel
-
-The demo reel contains 21 clean-room C48 programs. Canonical screenshots are
-rendered from the exact 6912-byte Spectrum screen state produced by the C48 VM.
-The dedicated workflow launches exactly 21 independent GitHub-hosted jobs:
-seven Ubuntu, seven Windows, and seven macOS. Each job recompiles one demo,
-checks deterministic binary/screen/PNG hashes, runs a longer animation pass,
-and uploads SCR, PNG, and JSON evidence including measured stress duration.
-
-## Suite
-
-"""
+          md = [
+              "<!--", "============================================================================",
+              "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.",
+              "Proprietary rights reserved except as expressly licensed herein.", "",
+              "ZX-UX C48 SDK",
+              "This file is governed by the SANYALnet Labs Non-Commercial License in the",
+              "root LICENSE file. Non-Commercial use is permitted; Commercial Use and use",
+              "for AI/ML model training are prohibited unless separately authorized.", "",
+              'Attribution is required: "Based on original work by Supratim Sanyal of',
+              'SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,',
+              "patent, trademark, and governing-law provisions.",
+              "============================================================================", "-->",
+              "# C48 Graphics Demo Reel", "",
+              "The demo reel contains 21 clean-room C48 programs. Canonical screenshots are",
+              "rendered from the exact 6912-byte Spectrum screen state produced by the C48 VM.",
+              "The dedicated workflow launches exactly 21 independent GitHub-hosted jobs:",
+              "seven Ubuntu, seven Windows, and seven macOS. Each job recompiles one demo,",
+              "checks deterministic binary/screen/PNG hashes, runs a longer animation pass,",
+              "and uploads SCR, PNG, and JSON evidence including measured stress duration.", "",
+              "## Suite", "",
+          ]
           for index, (name, runner, frames, stress, title) in enumerate(config, 1):
-              doc += (
+              md.append(
                   f"{index}. **{title}** (`{name}.c`) — canonical frame "
-                  f"{frames}, stress {stress}, `{runner}`.\n"
+                  f"{frames}, stress {stress}, `{runner}`."
               )
+          doc = "\n".join(md) + "\n"
 
           cells = [
               f"![{title}](doc/images/demos/{name}.png)<br>**{title}**<br>"
@@ -404,12 +400,12 @@ and uploads SCR, PNG, and JSON evidence including measured stress duration.
           )
           gallery = (
               "## Graphics Demo Reel — 21 programs, 21 runners\n\n"
-              "Every image below is rendered from the exact 6912-byte Spectrum "
-              "screen state produced by the C48 VM. The dedicated GitHub Actions "
-              "workflow launches exactly **21 independent jobs** — seven Ubuntu, "
-              "seven Windows, and seven macOS — with one demo assigned to each "
-              "runner. Each job recompiles, verifies the canonical screen and PNG, "
-              "then runs a longer animation stress pass and uploads evidence.\n\n"
+              "Every image below is rendered from the exact 6912-byte Spectrum screen "
+              "state produced by the C48 VM. The dedicated GitHub Actions workflow "
+              "launches exactly **21 independent jobs** — seven Ubuntu, seven Windows, "
+              "and seven macOS — with one demo assigned to each runner. Each job "
+              "recompiles, verifies the canonical screen and PNG, then runs a longer "
+              "animation stress pass and uploads evidence.\n\n"
               "| Demo | Demo | Demo |\n|---|---|---|\n" + rows
               + "\nSee [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the "
               "verification contract.\n\n"
