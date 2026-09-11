@@ -64,7 +64,7 @@ class ZXScreen:
         self.mem=bytearray(SCREEN_SIZE)
         self.ink_color=7;self.paper_color=0;self.bright_flag=0;self.flash_flag=0
         self.inverse_flag=0;self.over_flag=0;self.border_color=0
-        self.row=0;self.col=0
+        self.row=0;self.col=0;self.wrap_pending=False
         self.udg=[bytearray(8) for _ in range(32)]
         self.cls()
     def attr(self)->int:
@@ -93,7 +93,7 @@ class ZXScreen:
     def cls(self)->int:
         self.mem[:BITMAP_SIZE]=b'\0'*BITMAP_SIZE
         self.mem[BITMAP_SIZE:]=bytes([self.attr()])*ATTR_SIZE
-        self.row=self.col=0;return 0
+        self.row=self.col=0;self.wrap_pending=False;return 0
     @staticmethod
     def _graphics_physical_y(y:int)->int:
         # Spectrum PLOT coordinates use a bottom-left origin; bitmap storage is top-down.
@@ -141,10 +141,14 @@ class ZXScreen:
         return 0
     def print_at(self,row:int,col:int,data:bytes)->int:
         if not (0<=row<24 and 0<=col<64):return 1
-        oldr,oldc=self.row,self.col;self.row,self.col=row,col
-        for b in data:
-            self.putchar(b)
-        self.row,self.col=oldr,oldc;return 0
+        oldr,oldc,oldw=self.row,self.col,self.wrap_pending
+        self.row,self.col,self.wrap_pending=row,col,False
+        try:
+            for b in data:
+                self.putchar(b)
+        finally:
+            self.row,self.col,self.wrap_pending=oldr,oldc,oldw
+        return 0
     def _glyph(self,row:int,col:int,rows:tuple[int,...])->None:
         if not (0<=row<24 and 0<=col<64):return
         x0=col*4;y0=row*8
@@ -156,17 +160,31 @@ class ZXScreen:
             if self.over_flag:self.mem[off]=old^nib
             else:self.mem[off]=(old&(~mask&0xFF))|nib
         self.mem[BITMAP_SIZE+row*32+(col>>1)]=self.attr()
+    def _line_advance(self)->None:
+        if self.row<23:self.row+=1
+        else:self.scroll();self.row=23
+        self.col=0
     def putchar(self,code:int)->int:
         code&=0xFF
         if code==10:
-            self.col=0;self.row+=1
-        elif code==13:self.col=0
+            self.wrap_pending=False;self._line_advance()
+        elif code==13:
+            self.wrap_pending=False;self.col=0
         elif code==8:
+            self.wrap_pending=False
             if self.col>0:self.col-=1
+        elif code==9:
+            self.wrap_pending=False
+            nxt=(self.col+8)&~7
+            if nxt<=63:self.col=nxt
+            else:self._line_advance()
+        elif code==12:self.cls()
         elif 0x20<=code<=0x7F:
-            self._glyph(self.row,self.col,self.font.glyph(code));self.col+=1
-            if self.col>=64:self.col=0;self.row+=1
-        if self.row>=24:self.scroll();self.row=23
+            if self.wrap_pending:
+                self.wrap_pending=False;self._line_advance()
+            self._glyph(self.row,self.col,self.font.glyph(code))
+            if self.col<63:self.col+=1
+            else:self.col=63;self.wrap_pending=True
         return code
     def puts(self,data:bytes)->int:
         for b in data:self.putchar(b)
