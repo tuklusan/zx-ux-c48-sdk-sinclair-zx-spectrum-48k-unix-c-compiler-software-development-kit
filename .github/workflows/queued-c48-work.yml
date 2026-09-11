@@ -42,11 +42,6 @@ jobs:
       - name: Build queued work from disk
         run: python -B compiler/finalize_queued_work.py
 
-      - name: Remove one-shot builder
-        run: >-
-          git rm .github/workflows/queued-c48-work.yml
-          compiler/finalize_queued_work.py
-
       - name: Rebuild canonical manifest
         shell: bash
         run: |
