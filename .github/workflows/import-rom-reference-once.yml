@@ -41,27 +41,22 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf /tmp/zxref /tmp/zxemu
 
-          git init /tmp/zxref
-          git -C /tmp/zxref remote add origin https://github.com/tuklusan/zxuslinuxtestproject.git
-          git -C /tmp/zxref fetch --depth=1 origin ac520f05db734c650f67b62ba62f5490a91ab9c3
-          git -C /tmp/zxref checkout --detach FETCH_HEAD
-          test "$(git -C /tmp/zxref rev-parse HEAD)" = "ac520f05db734c650f67b62ba62f5490a91ab9c3"
+          curl -fsSL 'https://sdmntprcentralus.oaiusercontent.com/files/00000000-f6d4-81f5-946f-cd67c5d1e57b/raw?se=2026-09-11T23%3A03%3A55Z&sp=r&sv=2026-02-06&sr=b&scid=4783a0de-f5fc-5a9e-bc82-7113136d030e&skoid=2757bbe4-5137-4324-975b-acedc0bad279&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2026-09-11T12%3A02%3A01Z&ske=2026-09-12T12%3A02%3A01Z&sks=b&skv=2026-02-06&sig=Ew8wRWJh47q/cEvxKRWYosr0cm8DGn06IU2mJDKzPvY%3D' -o /tmp/reference-transfer.zip
+          echo 'b69122db584d7e899fd6d7321b131ee98106c9e90cee00292bd041384157f3b4  /tmp/reference-transfer.zip' | sha256sum -c -
+          rm -rf /tmp/reference-artifact
+          mkdir -p /tmp/reference-artifact
+          unzip -q /tmp/reference-transfer.zip -d /tmp/reference-artifact
+          echo '269fbc2700c3205dd44ab5bb0d7a05debb0fbd7b6092d4ee269ee8de1e3b63d5  /tmp/reference-artifact/reference-transfer.tar.gz' | sha256sum -c -
           rm -rf doc/reference
-          cp -a /tmp/zxref/reference doc/reference
+          tar -xzf /tmp/reference-artifact/reference-transfer.tar.gz -C doc
+          test "$(find doc/reference -type f | wc -l)" -eq 959
 
-          git init /tmp/zxemu
-          git -C /tmp/zxemu remote add origin https://github.com/tuklusan/zx-spectrum-emulator.git
-          git -C /tmp/zxemu fetch --depth=1 origin f0ffed3f906409f21f07f32172b5592807166da8
-          git -C /tmp/zxemu checkout --detach FETCH_HEAD
-          test "$(git -C /tmp/zxemu rev-parse HEAD)" = "f0ffed3f906409f21f07f32172b5592807166da8"
-          mkdir -p compiler/assets
-          cp /tmp/zxemu/ROM/48.rom compiler/assets/48.rom
+          curl -fsSL 'https://raw.githubusercontent.com/tuklusan/zx-spectrum-emulator/f0ffed3f906409f21f07f32172b5592807166da8/ROM/48.rom' -o compiler/assets/48.rom
           test "$(wc -c < compiler/assets/48.rom)" -eq 16384
+          echo 'd55daa439b673b0e3f5897f99ac37ecb45f974d1862b4dadb85dec34af99cb42  compiler/assets/48.rom' | sha256sum -c -
 
           python - <<'PY'
-          from hashlib import sha256
           from pathlib import Path
 
           checker = Path("compiler/check_license_headers.py")
@@ -84,9 +79,7 @@ jobs:
               raise SystemExit("license reference anchor mismatch")
           checker.write_text(text.replace(old, new), encoding="utf-8", newline="\n")
 
-          rom = Path("compiler/assets/48.rom")
-          digest = sha256(rom.read_bytes()).hexdigest()
-          notice = f'''<!--
+          notice = '''<!--
           ============================================================================
           Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
           Proprietary rights reserved except as expressly licensed herein.
@@ -110,7 +103,7 @@ jobs:
           - source path: `ROM/48.rom`
           - source commit: `f0ffed3f906409f21f07f32172b5592807166da8`
           - size: 16384 bytes
-          - SHA-256: `{digest}`
+          - SHA-256: `d55daa439b673b0e3f5897f99ac37ecb45f974d1862b4dadb85dec34af99cb42`
 
           The ROM is copyrighted material. It is **not** licensed under the ZX-UX C48
           SDK's root SANYALnet Labs license.
@@ -151,12 +144,13 @@ jobs:
           relied upon by hobby Spectrum emulators; it is not legal advice and does not
           broaden that permission.
           '''
-          Path("compiler/assets/README-48K-ROM.md").write_text(
-              notice, encoding="utf-8", newline="\n"
-          )
+          # Remove YAML indentation inherited by this embedded block.
+          lines = notice.splitlines()
+          cleaned = "\n".join(line[10:] if line.startswith("          ") else line for line in lines) + "\n"
+          Path("compiler/assets/README-48K-ROM.md").write_text(cleaned, encoding="utf-8", newline="\n")
           PY
 
-      - name: Regenerate manifest and verify
+      - name: Regenerate manifest, verify, and publish
         shell: bash
         run: |
           set -euo pipefail
@@ -176,9 +170,7 @@ jobs:
               if path.suffix.lower() == ".bat":
                   data = data.replace(b"\r\n", b"\n")
               lines.append(f"{sha256(data).hexdigest()}  {rel.as_posix()}\n")
-          Path("MANIFEST.sha256").write_text(
-              "".join(lines), encoding="ascii", newline="\n"
-          )
+          Path("MANIFEST.sha256").write_text("".join(lines), encoding="ascii", newline="\n")
           PY
 
           git config user.name "C48 reference importer"
