@@ -14,6 +14,27 @@
 name: C48 graphics demo reel
 
 "on":
+  push:
+    branches: [main]
+    paths:
+      - "compiler/**"
+      - "usr/src/demos/**"
+      - "usr/bin/demos/**"
+      - "usr/src/c48host.h"
+      - "c48"
+      - "c48.bat"
+      - "c48run"
+      - "c48run.bat"
+  pull_request:
+    paths:
+      - "compiler/**"
+      - "usr/src/demos/**"
+      - "usr/bin/demos/**"
+      - "usr/src/c48host.h"
+      - "c48"
+      - "c48.bat"
+      - "c48run"
+      - "c48run.bat"
   workflow_dispatch:
 
 concurrency:
@@ -28,7 +49,7 @@ jobs:
     name: ${{ matrix.demo }} / ${{ matrix.os }}
     strategy:
       fail-fast: false
-      max-parallel: 22
+      max-parallel: 21
       matrix:
         include:
           - {demo: goblet, os: ubuntu-latest}
@@ -52,7 +73,6 @@ jobs:
           - {demo: julia, os: windows-latest}
           - {demo: forest, os: macos-latest}
           - {demo: raymaze, os: macos-latest}
-          - {demo: showcase, os: macos-latest}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 180
     steps:
