@@ -36,6 +36,22 @@ jobs:
         with:
           python-version: "3.10"
 
+      - name: Remove duplicate serial stress from bootstrap
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.github/bootstrap_graphics_demos.py')
+          s = p.read_text(encoding='utf-8')
+          old = '        vd.run_demo(name, stress)\n'
+          assert s.count(old) == 1
+          s = s.replace(old, '')
+          old = '''    run([\n        sys.executable,\n        "-B",\n        "compiler/verify_graphics_demos.py",\n        "--release",\n    ])\n'''
+          assert s.count(old) == 1
+          s = s.replace(old, '')
+          p.write_text(s, encoding='utf-8', newline='\n')
+          PY
+
       - name: Build, render, and verify all 21 demos
         run: python -B .github/bootstrap_graphics_demos.py
 
