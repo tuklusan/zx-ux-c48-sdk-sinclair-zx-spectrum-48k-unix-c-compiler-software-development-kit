@@ -20,6 +20,9 @@ patent, trademark, and governing-law provisions.
 - `C48 Language Specification Rev 0.11.docx`
 - `ZX-UX C48 Compiler User Manual Rev 0.11.docx`
 - ZX-UX Architecture REV11 where host-visible runtime behavior is already frozen.
+- For tty64 right-margin behavior, the approved
+  `04-ZX-UX-CHANGE-REQUEST-DEFERRED-WRAP-REV01.md` is the interim authority
+  pending incorporation into the next ZX-UX architecture revision.
 
 The language specification remains authoritative over this SDK.  This SDK does not
 replace the future native `cc.asm`, OBJ1 backend, linker/runtime library or P11.41
@@ -49,7 +52,8 @@ Coverage includes:
 - Float5 golden representations, range/domain behavior, conversion and operation-boundary
   quantization, with the Section-94 ROM-oracle limitation documented separately;
 - exact hashes/shape for both selectable F4X8 assets, Tasword-default and `--font` override behavior, native Spectrum screen interleave, tty64 nibble sharing,
-  graphics origin/OVER/INVERSE behavior, attributes and UDGs;
+  deferred right-margin wrap, bottom-right no-premature-scroll behavior, CR/LF/BS/TAB/FF
+  pending-wrap handling, graphics origin/OVER/INVERSE behavior, attributes and UDGs;
 - C48B1 deterministic serialization, integrity, canonical JSON/schema rejection,
   transactional output and stale-temp ownership;
 - command-line compilation/execution, argv limits/immutability, heap ceiling, bounded
