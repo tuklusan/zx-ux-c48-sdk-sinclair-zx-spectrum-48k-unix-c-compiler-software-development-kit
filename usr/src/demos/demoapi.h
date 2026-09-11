@@ -9,7 +9,7 @@
 // Attribution required: Based on original work by Supratim
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
-/* Shared helpers for the 21 graphics demonstrations. */
+/* Shared helpers for the graphics demonstrations. */
 int cls(void);
 int plot(int x, int y);
 int draw(int x1, int y1, int x2, int y2);
@@ -25,6 +25,7 @@ int udg_define(int slot, unsigned char *data);
 int udg_draw(int slot, int row, int col);
 int udg_draw_2x2(int base, int row, int col);
 int yield(void);
+int sleep(unsigned int ticks);
 
 int d_tab[65] = {
     0, 3, 6, 9, 13, 16, 19, 22, 25, 28, 31, 34, 37,
@@ -100,7 +101,7 @@ int d_px(int x, int z)
     int q;
     q = z + 176;
     if (q < 32) q = 32;
-    return 128 + x * 104 / q;
+    return 128 + x * 220 / q;
 }
 
 int d_py(int y, int z)
@@ -108,7 +109,7 @@ int d_py(int y, int z)
     int q;
     q = z + 176;
     if (q < 32) q = 32;
-    return 96 + y * 104 / q;
+    return 96 + y * 220 / q;
 }
 
 int d_ok(int x, int y)

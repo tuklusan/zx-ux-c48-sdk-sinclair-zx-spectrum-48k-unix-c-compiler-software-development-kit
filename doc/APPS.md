@@ -30,7 +30,8 @@ Keys: `5/8` left/right, `7/6` up/down, `E` edit, `Q` quit.
 ## write48
 
 `write48` is a small word processor with insertion, deletion, word-aware screen
-wrapping, movement, scrolling and find. It opens an original 1992-dated resume
+wrapping, movement, scrolling and find. It redraws only changed character cells,
+so cursor motion does not clear and reconstruct the whole screen. It opens an original 1992-dated resume
 for Sir Clive Sinclair. The prose is newly written from historical facts known
 by 1992; it is not copied from a historical resume.
 
@@ -42,7 +43,8 @@ Command keys: `I` insert, `5/8` or `H/L` move, `7/6` page, `X` delete,
 `wire3d` is an original cross-section wireframe model editor inspired by the
 class of 1982 Spectrum 3D design tools. Its startup model, the Imperial
 Battleship Aurelian, is original SDK geometry and is not copied from a film,
-game, Psion example, or external model.
+game, Psion example, or external model. Startup uses a large low-angle cruiser
+above a perspective arena grid for an immediate 1982 wireframe presentation.
 
 Keys: `N/P` select plane, `A/D` width, `W/S` height, `Z/X` depth, `5/8` yaw,
 `7/6` pitch, `+/-` zoom, `R` reset, `Q` quit.

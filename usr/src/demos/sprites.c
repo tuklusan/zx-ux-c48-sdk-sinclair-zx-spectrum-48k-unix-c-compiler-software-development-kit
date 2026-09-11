@@ -82,10 +82,11 @@ int main(int argc, char **argv)
     int f;
     int n;
     setup();
-    n = d_frames(argc, argv, 14);
+    n = d_frames(argc, argv, 100);
     for (f = 0; f < n; f++) {
         scene(f);
         yield();
+        sleep(3u);
     }
     return 0;
 }

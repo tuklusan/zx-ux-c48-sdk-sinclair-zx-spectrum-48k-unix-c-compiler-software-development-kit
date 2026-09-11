@@ -13,7 +13,6 @@
 # ============================================================================
 from __future__ import annotations
 
-import queue
 import threading
 import time
 from dataclasses import dataclass
@@ -29,28 +28,26 @@ from .screen import (
     bitmap_offset,
 )
 
+COPYRIGHT_TEXT = (
+    "ZX-UX | 48K ZX Spectrum Unix | © 2026 Supratim Sanyal | "
+    "SANYALnet Labs"
+)
+
 
 def is_break_key(keysym: str, state: int) -> bool:
-    """Return True for the host equivalent of Spectrum BREAK (Shift+Space)."""
+    """Return True for the host equivalent of Spectrum BREAK."""
     return keysym == "space" and bool(state & 0x0001)
 
 
 def footer_text(done: bool) -> str:
-    """Return host-chrome guidance without altering Spectrum screen memory."""
+    """Return host-chrome guidance without changing screen RAM."""
     if done:
         return "Program ended - Shift+Space to close"
     return "Shift+Space = BREAK"
 
 
 def key_event_bytes(keysym: str, text: str) -> tuple[int, ...]:
-    """Map one Tk key event to canonical C48 console bytes.
-
-    Control keys are selected by keysym before event.char because Tk commonly
-    reports Return as ``\r``.  ZX-UX text input uses LF (0x0A), not CR.
-    Numeric-keypad digits are selected by keysym so they work even when Tk
-    supplies an empty event.char.  Non-ASCII host text is ignored rather than
-    leaking Unicode into C48.
-    """
+    """Map one Tk key event to canonical C48 console bytes."""
     if keysym in {"Return", "KP_Enter"}:
         return (10,)
     if keysym == "BackSpace":
@@ -69,14 +66,24 @@ def key_event_bytes(keysym: str, text: str) -> tuple[int, ...]:
         return ()
 
 
-def render_snapshot_rgb(mem: bytes, flash_phase: bool = False) -> bytes:
-    """Render one immutable 6912-byte Spectrum framebuffer snapshot.
+def fit_footer_font_size(
+    text: str,
+    max_width: int,
+    measure,
+    *,
+    max_size: int = 9,
+) -> int:
+    """Return the largest measured integer font size that fits."""
+    if max_width <= 0:
+        raise ValueError("footer width must be positive")
+    for size in range(max_size, 0, -1):
+        if measure(size, text) <= max_width:
+            return size
+    return 1
 
-    The VM owns and mutates ``ZXScreen.mem`` on its worker thread. Tk must not
-    walk that live bytearray because a glyph or graphics primitive can be only
-    partly written while the GUI is reading it. This renderer consumes only a
-    frozen bytes snapshot published after a VM screen operation completes.
-    """
+
+def render_snapshot_rgb(mem: bytes, flash_phase: bool = False) -> bytes:
+    """Render one immutable 6912-byte Spectrum framebuffer snapshot."""
     if len(mem) != SCREEN_SIZE:
         raise ValueError("invalid Spectrum framebuffer snapshot size")
     out = bytearray(WIDTH * HEIGHT * 3)
@@ -101,18 +108,18 @@ def render_snapshot_rgb(mem: bytes, flash_phase: bool = False) -> bytes:
 
 @dataclass
 class TkDisplay:
-    """Small dependency-free Tk display for the 256x192 Spectrum framebuffer.
+    """Small dependency-free Tk display for the Spectrum framebuffer."""
 
-    Tk calls remain on the main thread. The VM executes on a worker thread and
-    publishes immutable framebuffer snapshots. Keyboard bytes are delivered
-    through a thread-safe queue.
-    """
     screen: ZXScreen
     scale: int = 3
     title: str = "ZX-UX C48"
 
     def __post_init__(self) -> None:
-        self.keys: queue.Queue[int] = queue.Queue()
+        # Keyboard input is a rendezvous, not a typeahead FIFO. A normal key
+        # event is accepted only while the VM is blocked in getchar().
+        self._key_cond = threading.Condition()
+        self._key_waiting = False
+        self._key_byte: int | None = None
         self._frame_lock = threading.Lock()
         self._frame_generation = 0
         self._frame_snapshot = self.screen.bytes()
@@ -120,21 +127,39 @@ class TkDisplay:
         self._stop = False
         self._root = None
         self._photo = None
+        self._copy_font = None
 
     def input_char(self) -> int:
-        return self.keys.get()
+        with self._key_cond:
+            self._key_waiting = True
+            self._key_byte = None
+            while self._key_byte is None and not self._stop:
+                self._key_cond.wait()
+            value = -1 if self._key_byte is None else self._key_byte
+            self._key_waiting = False
+            self._key_byte = None
+            return value
+
+    def _offer_key(self, value: int) -> bool:
+        """Offer one key to a currently waiting getchar()."""
+        with self._key_cond:
+            if not self._key_waiting or self._key_byte is not None:
+                return False
+            self._key_byte = int(value) & 0xFF
+            self._key_cond.notify()
+            return True
+
+    def _waiting_for_key(self) -> bool:
+        with self._key_cond:
+            return self._key_waiting and self._key_byte is None
 
     def update(self) -> None:
-        # Called by the VM worker after a complete screen operation. Snapshot
-        # before taking the mailbox lock so Tk never blocks the VM while it
-        # converts a previous snapshot to RGB.
         snapshot = self.screen.bytes()
         with self._frame_lock:
             self._frame_generation += 1
             self._frame_snapshot = snapshot
 
     def _frame_after(self, rendered_generation: int) -> tuple[int, bytes] | None:
-        """Return the newest published frame if it is newer than the caller."""
         with self._frame_lock:
             if self._frame_generation == rendered_generation:
                 return None
@@ -142,35 +167,71 @@ class TkDisplay:
 
     def close(self) -> None:
         self._stop = True
+        with self._key_cond:
+            self._key_cond.notify_all()
 
     def run_vm(self, target) -> int:
         try:
             import tkinter as tk
+            import tkinter.font as tkfont
         except Exception as exc:  # pragma: no cover - host-specific
             raise RuntimeError(f"Tkinter is unavailable: {exc}") from exc
         root = tk.Tk()
         self._root = root
         root.title(self.title)
         root.resizable(False, False)
-        canvas = tk.Canvas(root, width=WIDTH*self.scale, height=HEIGHT*self.scale,
-                           highlightthickness=0)
+        canvas_width = WIDTH * self.scale
+        canvas = tk.Canvas(
+            root,
+            width=canvas_width,
+            height=HEIGHT * self.scale,
+            highlightthickness=0,
+        )
         canvas.pack()
         footer = tk.Label(root, text=footer_text(False), anchor="w")
         footer.pack(fill="x")
-        result = {"status": 1, "error": None, "done": False, "break_running": False}
+
+        base = tkfont.nametofont("TkDefaultFont")
+        family = base.actual("family")
+
+        def measure(size: int, text: str) -> int:
+            font = tkfont.Font(root=root, family=family, size=size)
+            return int(font.measure(text))
+
+        copy_size = fit_footer_font_size(
+            COPYRIGHT_TEXT,
+            max(1, canvas_width - 12),
+            measure,
+        )
+        self._copy_font = tkfont.Font(
+            root=root,
+            family=family,
+            size=copy_size,
+        )
+        copyright_footer = tk.Label(
+            root,
+            text=COPYRIGHT_TEXT,
+            anchor="center",
+            font=self._copy_font,
+            foreground="#707070",
+        )
+        copyright_footer.pack(fill="x")
+
+        result = {
+            "status": 1,
+            "error": None,
+            "done": False,
+            "break_running": False,
+        }
 
         def key(event):
             if is_break_key(event.keysym, int(event.state)):
-                # CAPS SHIFT+SPACE is BREAK on the Spectrum. A host Shift+Space
-                # therefore closes a completed final frame, or aborts a still-running
-                # VM session. The VM worker is a daemon so blocked getchar() calls do
-                # not keep the host process alive after the display exits.
                 result["break_running"] = not bool(result["done"])
-                self._stop = True
+                self.close()
                 root.after_idle(root.destroy)
                 return "break"
             for b in key_event_bytes(event.keysym, event.char):
-                self.keys.put(b)
+                self._offer_key(b)
             return None
 
         root.bind("<Key>", key)
@@ -179,27 +240,25 @@ class TkDisplay:
         def worker():
             try:
                 result["status"] = int(target()) & 0xFF
-            except BaseException as exc:  # handed back to main thread
+            except BaseException as exc:
                 result["error"] = exc
             finally:
                 result["done"] = True
-                # Publish the exact final framebuffer. This also makes a final
-                # update impossible to lose if Tk is rendering an older frame.
                 self.update()
 
         threading.Thread(target=worker, daemon=True).start()
 
         def redraw():
             if self._stop:
-                root.destroy(); return
+                root.destroy()
+                return
             frame = self._frame_after(self._rendered_generation)
             if frame is not None:
                 generation, snapshot = frame
                 rgb = render_snapshot_rgb(
                     snapshot,
-                    flash_phase=bool(int(time.monotonic()*2)&1),
+                    flash_phase=bool(int(time.monotonic() * 2) & 1),
                 )
-                # PPM is accepted natively by Tk PhotoImage and avoids Pillow.
                 ppm = b"P6\n256 192\n255\n" + rgb
                 photo = tk.PhotoImage(data=ppm, format="PPM")
                 if self.scale != 1:
@@ -207,18 +266,15 @@ class TkDisplay:
                 self._photo = photo
                 canvas.delete("all")
                 canvas.create_image(0, 0, image=photo, anchor="nw")
-                # A newer publish that happened during RGB conversion has a
-                # higher generation and therefore remains pending next tick.
                 self._rendered_generation = generation
             if result["done"]:
-                # Keep the final frame visible until the user closes the window.
-                # Completion guidance lives in host chrome, never in the 6912-byte
-                # Spectrum framebuffer, so deterministic program screen output stays exact.
                 root.title(f"{self.title} - exited {result['status']}")
                 footer.configure(text=footer_text(True))
             root.after(40, redraw)
+
         root.after(0, redraw)
         root.mainloop()
+        self.close()
         if result["break_running"]:
             return 130
         if result["error"] is not None:

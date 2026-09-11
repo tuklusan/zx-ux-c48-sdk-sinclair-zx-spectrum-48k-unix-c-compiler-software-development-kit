@@ -12,7 +12,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-"""Verify the 22 deterministic C48 graphics demonstrations."""
+"""Verify the 21 deterministic C48 graphics demonstrations."""
 from __future__ import annotations
 
 import argparse
@@ -41,6 +41,14 @@ from c48.screen import Font4x8, ZXScreen
 from c48.vm import C48VM
 
 FONT = Font4x8.load(ROOT / "assets" / "font4x8-tasword.bin")
+
+def host_arch() -> str:
+    machine = platform.machine().lower()
+    if machine in {"x86_64", "amd64"}:
+        return "x64"
+    if machine in {"aarch64", "arm64"}:
+        return "arm64"
+    return machine
 
 
 class VerifyError(RuntimeError):
@@ -195,6 +203,7 @@ def check_one(
     evidence = {
         "demo": name,
         "runner": exp["runner"],
+        "architecture": host_arch(),
         "python": platform.python_version(),
         "platform": platform.platform(),
         "source_sha256": exp["source_sha256"],
@@ -234,14 +243,14 @@ def main(argv: list[str] | None = None) -> int:
     expect = load_expect()
     if expect.get("schema") != 1:
         fail("graphics demo expectation schema mismatch")
-    if len(expect.get("demos", {})) != 22:
-        fail("graphics demo count is not exactly 22")
+    if len(expect.get("demos", {})) != 21:
+        fail("graphics demo count is not exactly 21")
     check_members(expect)
 
     if ns.static:
         for name, exp in expect["demos"].items():
             check_static_one(name, exp)
-        print("GRAPHICS DEMO STATIC PASS: 22 demos", flush=True)
+        print("GRAPHICS DEMO STATIC PASS: 21 demos", flush=True)
         return 0
 
     if ns.demo:
@@ -252,6 +261,11 @@ def main(argv: list[str] | None = None) -> int:
             fail(
                 f"{ns.demo}: runner mismatch: "
                 f"{ns.runner!r} != {exp['runner']!r}"
+            )
+        if ns.runner and host_arch() != exp["architecture"]:
+            fail(
+                f"{ns.demo}: architecture mismatch: "
+                f"{host_arch()!r} != {exp['architecture']!r}"
             )
         check_one(
             ns.demo,
@@ -268,7 +282,7 @@ def main(argv: list[str] | None = None) -> int:
     for name, exp in expect["demos"].items():
         check_one(name, exp, stress=False, evidence_dir=None)
         print(f"GRAPHICS DEMO: {name} PASS", flush=True)
-    print("GRAPHICS DEMO VERIFY PASS: 22 demos", flush=True)
+    print("GRAPHICS DEMO VERIFY PASS: 21 demos", flush=True)
     return 0
 
 

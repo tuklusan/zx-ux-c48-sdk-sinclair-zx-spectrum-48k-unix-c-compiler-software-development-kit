@@ -65,12 +65,12 @@ void scene(int f)
     paper(0);
     ink(5);
     bright(0);
-    shp(2, ph, f);
+    shp(3, ph, f);
     ink(6);
     bright(1);
-    shp(3, ph, f);
-    ink(7);
     shp(4, ph, f);
+    ink(7);
+    shp(5, ph, f);
     print_at(0, 4, "POLYHEDRON MORPH / CUBE TO STAR");
 }
 

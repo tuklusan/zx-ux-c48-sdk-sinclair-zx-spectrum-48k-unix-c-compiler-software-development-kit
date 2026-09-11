@@ -12,10 +12,16 @@
 #include "appapi.h"
 
 char wr_doc[1900];
+char wr_prev[1140];
+char wr_next[1140];
+unsigned char wr_pinv[1140];
+unsigned char wr_ninv[1140];
 int wr_len;
 int wr_cur;
 int wr_view;
 int wr_insert;
+int wr_drawn;
+int wr_stat;
 
 void wr_append(char *s)
 {
@@ -100,67 +106,100 @@ int wr_word_len(int pos)
     return n;
 }
 
-void wr_cursor_char(int row, int col, int c)
+void wr_blank(void)
 {
-    inverse(1);
-    if (c == ' ' || c == '\n' || c == 0)
-        app_putc(row, col, '_');
-    else
-        app_putc(row, col, c);
-    inverse(0);
+    int i;
+    for (i = 0; i < 1140; i++) {
+        wr_next[i] = ' ';
+        wr_ninv[i] = 0;
+    }
 }
 
-void wr_render(void)
+void wr_build(void)
 {
     int row;
     int col;
     int pos;
     int n;
     int c;
-    cls();
-    paper(0);
-    ink(7);
-    bright(1);
-    print_at(0, 14, "WRITE48 - 1992 RESUME");
-    bright(0);
-    row = 2;
-    col = 2;
+    int cell;
+    wr_blank();
+    row = 0;
+    col = 0;
     pos = wr_view;
-    while (row < 21 && pos <= wr_len) {
+    while (row < 19 && pos <= wr_len) {
         if (pos == wr_len) {
-            if (pos == wr_cur)
-                wr_cursor_char(row, col, 0);
+            if (pos == wr_cur) {
+                cell = row * 60 + col;
+                wr_next[cell] = '_';
+                wr_ninv[cell] = 1;
+            }
             break;
         }
         c = wr_doc[pos];
         if (c == '\n') {
-            if (pos == wr_cur)
-                wr_cursor_char(row, col, c);
+            if (pos == wr_cur) {
+                cell = row * 60 + col;
+                wr_next[cell] = '_';
+                wr_ninv[cell] = 1;
+            }
             row++;
-            col = 2;
+            col = 0;
             pos++;
         } else {
-            if (c != ' ' && col > 2) {
+            if (c != ' ' && col > 0) {
                 n = wr_word_len(pos);
-                if (col + n > 62) {
+                if (col + n > 60) {
                     row++;
-                    col = 2;
-                    if (row >= 21)
+                    col = 0;
+                    if (row >= 19)
                         break;
                 }
             }
-            if (pos == wr_cur)
-                wr_cursor_char(row, col, c);
-            else
-                app_putc(row, col, c);
+            cell = row * 60 + col;
+            if (pos == wr_cur) {
+                if (c == ' ')
+                    wr_next[cell] = '_';
+                else
+                    wr_next[cell] = (char)c;
+                wr_ninv[cell] = 1;
+            } else {
+                wr_next[cell] = (char)c;
+            }
             col++;
             pos++;
-            if (col >= 62) {
+            if (col >= 60) {
                 row++;
-                col = 2;
+                col = 0;
             }
         }
     }
+}
+
+void wr_diff(void)
+{
+    int i;
+    int row;
+    int col;
+    for (i = 0; i < 1140; i++) {
+        if (!wr_drawn || wr_prev[i] != wr_next[i] ||
+            wr_pinv[i] != wr_ninv[i]) {
+            row = 2 + i / 60;
+            col = 2 + i % 60;
+            inverse(wr_ninv[i]);
+            app_putc(row, col, wr_next[i]);
+            inverse(0);
+            wr_prev[i] = wr_next[i];
+            wr_pinv[i] = wr_ninv[i];
+        }
+    }
+    wr_drawn = 1;
+}
+
+void wr_status(void)
+{
+    if (wr_stat == wr_insert)
+        return;
     app_clear_row(21);
     app_clear_row(22);
     app_clear_row(23);
@@ -171,7 +210,32 @@ void wr_render(void)
         print_at(22, 1, "F FIND  G TOP  Q QUIT");
     }
     print_at(23, 1, "1992 DEMO CV - EDITABLE IN MEMORY");
+    wr_stat = wr_insert;
+}
+
+void wr_render(void)
+{
+    wr_build();
+    wr_diff();
+    wr_status();
     yield();
+}
+
+void wr_start(void)
+{
+    int i;
+    cls();
+    paper(0);
+    ink(7);
+    bright(1);
+    print_at(0, 14, "WRITE48 - 1992 RESUME");
+    bright(0);
+    for (i = 0; i < 1140; i++) {
+        wr_prev[i] = 0;
+        wr_pinv[i] = 0;
+    }
+    wr_drawn = 0;
+    wr_stat = -1;
 }
 
 void wr_ensure(void)
@@ -208,8 +272,10 @@ void wr_find(void)
     int p;
     app_clear_row(23);
     print_at(23, 1, "FIND> ");
-    if (!app_readline(23, 7, q, 24))
+    if (!app_readline(23, 7, q, 24)) {
+        wr_stat = -1;
         return;
+    }
     p = wr_cur + 1;
     while (p < wr_len && !wr_match(p, q))
         p++;
@@ -220,6 +286,7 @@ void wr_find(void)
     }
     if (p < wr_len)
         wr_cur = p;
+    wr_stat = -1;
 }
 
 void wr_insert_key(void)
@@ -252,6 +319,7 @@ int main(int argc, char **argv)
     wr_cur = 0;
     wr_view = 0;
     wr_insert = 0;
+    wr_start();
     wr_render();
     if (argc > 1 && strcmp(argv[1], "verify") == 0)
         return 0;

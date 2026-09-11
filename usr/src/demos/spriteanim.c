@@ -10,7 +10,6 @@
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
 #include "demoapi.h"
-int sleep(unsigned int ticks);
 
 unsigned char robot_tiles[216] = {
     0,0,0,0,0,0,0,3,28,8,255,128,

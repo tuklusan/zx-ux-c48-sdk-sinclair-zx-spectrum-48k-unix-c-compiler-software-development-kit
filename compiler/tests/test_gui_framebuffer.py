@@ -15,13 +15,20 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
+import threading
+import time
 import unittest
 
 HERE = Path(__file__).resolve().parent
 COMPILER = HERE.parent
 sys.path.insert(0, str(COMPILER))
 
-from c48.gui import TkDisplay, render_snapshot_rgb
+from c48.gui import (
+    COPYRIGHT_TEXT,
+    TkDisplay,
+    fit_footer_font_size,
+    render_snapshot_rgb,
+)
 from c48.screen import Font4x8, ZXScreen, bitmap_offset
 
 FONT_PATH = COMPILER / "assets" / "font4x8-tasword.bin"
@@ -29,6 +36,15 @@ FONT_PATH = COMPILER / "assets" / "font4x8-tasword.bin"
 
 def new_screen() -> ZXScreen:
     return ZXScreen(Font4x8.load(FONT_PATH))
+
+
+def wait_for(predicate) -> None:
+    deadline = time.monotonic() + 1.0
+    while time.monotonic() < deadline:
+        if predicate():
+            return
+        time.sleep(0.005)
+    raise AssertionError("timed out waiting for test condition")
 
 
 class GuiFramebufferRegressions(unittest.TestCase):
@@ -70,6 +86,50 @@ class GuiFramebufferRegressions(unittest.TestCase):
         screen.mem[bitmap_offset(0, 0)] = 0
         self.assertEqual(render_snapshot_rgb(snapshot), expected)
         self.assertNotEqual(render_snapshot_rgb(screen.bytes()), expected)
+
+    def test_nonwaiting_key_is_discarded(self):
+        display = TkDisplay(new_screen())
+        self.assertFalse(display._offer_key(ord("x")))
+        got = []
+        thread = threading.Thread(
+            target=lambda: got.append(display.input_char())
+        )
+        thread.start()
+        wait_for(display._waiting_for_key)
+        self.assertTrue(display._offer_key(ord("a")))
+        self.assertFalse(display._offer_key(ord("b")))
+        thread.join(1.0)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(got, [ord("a")])
+        self.assertFalse(display._offer_key(ord("c")))
+
+    def test_close_releases_waiting_getchar(self):
+        display = TkDisplay(new_screen())
+        got = []
+        thread = threading.Thread(
+            target=lambda: got.append(display.input_char())
+        )
+        thread.start()
+        wait_for(display._waiting_for_key)
+        display.close()
+        thread.join(1.0)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(got, [-1])
+
+    def test_footer_font_uses_largest_measured_fit(self):
+        def measure(size, text):
+            return len(text) * size
+
+        width = len(COPYRIGHT_TEXT) * 6
+        size = fit_footer_font_size(
+            COPYRIGHT_TEXT,
+            width,
+            measure,
+            max_size=9,
+        )
+        self.assertEqual(size, 6)
+        self.assertLessEqual(measure(size, COPYRIGHT_TEXT), width)
+        self.assertGreater(measure(size + 1, COPYRIGHT_TEXT), width)
 
 
 if __name__ == "__main__":

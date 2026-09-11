@@ -23,6 +23,7 @@ void gpt(int p, int a, int f, int *x, int *y, int *z)
     v = gy[p];
     w = gr[p] * d_sin(a) / 128;
     d_rot3(u, v, w, 10 + f * 2, f * 5, f, x, y, z);
+    *x = *x * 2;
 }
 
 void scene(int f)

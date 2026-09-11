@@ -23,7 +23,7 @@ void ring(int z, int tw, int col, int f)
     int y1;
     int x2;
     int y2;
-    s = 1700 / (z + 24);
+    s = 4000 / (z + 24);
     cx = 128 + d_sin(f * 4 + z) / 8;
     cy = 96 + d_cos(f * 3 + z * 2) / 12;
     ink(col);

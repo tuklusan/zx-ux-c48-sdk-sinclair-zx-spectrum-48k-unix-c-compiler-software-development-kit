@@ -18,7 +18,7 @@ void mpt(int u, int side, int f,
     int a;
     int b;
     int c;
-    rr = 38 + side * 10 * d_cos(u / 2) / 128;
+    rr = 48 + side * 12 * d_cos(u / 2) / 128;
     a = rr * d_cos(u) / 128;
     c = rr * d_sin(u) / 128;
     b = side * 10 * d_sin(u / 2) / 128;

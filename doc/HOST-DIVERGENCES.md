@@ -138,9 +138,13 @@ Spectrum-style BREAK chord: it closes a held final frame without changing the co
 program status, or aborts a still-running GUI session with host status 130.  BREAK is a
 host-frontend control rather than a byte returned by `getchar()`.  The Tk frontend displays
 `Shift+Space = BREAK` below the emulated screen while execution is active and changes that
-host-only footer to `Program ended - Shift+Space to close` after completion.  The footer is
-not written into Spectrum screen memory.  The SDK does not emulate the raw Spectrum keyboard
-matrix.
+host-only footer to `Program ended - Shift+Space to close` after completion. A second,
+visually subdued host-only footer carries the ZX-UX copyright attribution and is measured
+with the active Tk font so the largest fitting integer font size is used. Neither footer is
+written into Spectrum screen memory. Normal GUI key events use rendezvous input: a byte is
+accepted only while the VM is actually waiting in `getchar()`, so stale typeahead is not
+buffered while a program is computing or repainting. BREAK remains asynchronous. The SDK
+does not emulate the raw Spectrum keyboard matrix.
 
 ## 9. Time/scheduling
 
