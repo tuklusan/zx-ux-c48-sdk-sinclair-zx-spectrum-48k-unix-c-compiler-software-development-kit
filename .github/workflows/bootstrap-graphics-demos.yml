@@ -11,151 +11,25 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Generate graphics demo candidate
+name: Aggregate graphics demo candidate
 
 "on":
   push:
     branches: [graphics-demos-21]
 
 permissions:
+  actions: read
   contents: write
 
 jobs:
-  generate:
-    name: generate ${{ matrix.demo }} / ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      max-parallel: 21
-      matrix:
-        include:
-          - {demo: goblet, os: ubuntu-latest, stress: 4, title: "Crystal Goblet"}
-          - {demo: tunnel, os: windows-latest, stress: 8, title: "Infinity Tunnel"}
-          - {demo: city, os: ubuntu-latest, stress: 4, title: "Vector Metropolis"}
-          - {demo: terrain, os: windows-latest, stress: 4, title: "Mountain Flight"}
-          - {demo: ocean, os: macos-latest, stress: 4, title: "Ocean Grid"}
-          - {demo: torus, os: ubuntu-latest, stress: 4, title: "Torus Reactor"}
-          - {demo: mobius, os: windows-latest, stress: 4, title: "Mobius Flight"}
-          - {demo: morph3d, os: macos-latest, stress: 4, title: "Polyhedron Morph"}
-          - {demo: warp, os: ubuntu-latest, stress: 8, title: "Warp Drive"}
-          - {demo: galaxy, os: windows-latest, stress: 6, title: "Spiral Galaxy"}
-          - {demo: orrery, os: macos-latest, stress: 4, title: "Clockwork Orrery"}
-          - {demo: firework, os: ubuntu-latest, stress: 8, title: "Firework Night"}
-          - {demo: sprites, os: windows-latest, stress: 6, title: "Sprite Storm"}
-          - {demo: plasma, os: macos-latest, stress: 4, title: "Spectrum Plasma"}
-          - {demo: kaleido, os: ubuntu-latest, stress: 4, title: "Kaleidoscope"}
-          - {demo: moire, os: windows-latest, stress: 4, title: "Moire Engine"}
-          - {demo: mandel, os: ubuntu-latest, stress: 3, title: "Mandelbrot Dive"}
-          - {demo: julia, os: windows-latest, stress: 3, title: "Julia Ballet"}
-          - {demo: forest, os: macos-latest, stress: 4, title: "Fractal Forest"}
-          - {demo: raymaze, os: macos-latest, stress: 4, title: "Raycast Labyrinth"}
-          - {demo: showcase, os: macos-latest, stress: 8, title: "C48 Grand Finale"}
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 90
-    env:
-      DEMO_NAME: ${{ matrix.demo }}
-      RUNNER_LABEL: ${{ matrix.os }}
-      STRESS_FRAMES: ${{ matrix.stress }}
-      DEMO_TITLE: ${{ matrix.title }}
-    steps:
-      - name: Check out candidate
-        uses: actions/checkout@v4
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.10"
-
-      - name: Compile and render assigned demo
-        shell: bash
-        run: |
-          python -B - <<'PY'
-          from __future__ import annotations
-          import hashlib
-          import json
-          import os
-          from pathlib import Path
-          import sys
-          import time
-
-          sys.dont_write_bytecode = True
-          sdk = Path.cwd().resolve()
-          root = sdk / "compiler"
-          sys.path.insert(0, str(root))
-          import verify_graphics_demos as vd
-
-          name = os.environ["DEMO_NAME"]
-          runner = os.environ["RUNNER_LABEL"]
-          stress = int(os.environ["STRESS_FRAMES"])
-          title = os.environ["DEMO_TITLE"]
-          frames = 2
-          out = sdk / "generated"
-          out.mkdir(parents=True, exist_ok=True)
-          bindir = sdk / "dev" / "bin" / "demos"
-          bindir.mkdir(parents=True, exist_ok=True)
-          source = vd.SRC / f"{name}.c"
-          binary = bindir / f"{name}.c48b"
-          binary.write_bytes(vd.compile_bytes(name))
-
-          started = time.monotonic()
-          first = vd.run_demo(name, 1)
-          screen = vd.run_demo(name, frames)
-          elapsed = time.monotonic() - started
-          first_data = first.bytes()
-          screen_data = screen.bytes()
-          if first_data == screen_data:
-              raise SystemExit(f"{name}: animation did not change the screen")
-          lit, attrs = vd.screen_metrics(screen)
-          if lit < 80 or attrs < 1:
-              raise SystemExit(
-                  f"{name}: visual floor failed: lit={lit} attrs={attrs}"
-              )
-          png = vd.png_bytes(screen.render_rgb())
-          sha = lambda data: hashlib.sha256(data).hexdigest()
-          fragment = {
-              "title": title,
-              "runner": runner,
-              "frames": frames,
-              "stress_frames": stress,
-              "source_sha256": sha(source.read_bytes()),
-              "binary_sha256": sha(binary.read_bytes()),
-              "first_screen_sha256": sha(first_data),
-              "screen_sha256": sha(screen_data),
-              "png_sha256": sha(png),
-              "lit_pixels": lit,
-              "attribute_values": attrs,
-              "generation_seconds": round(elapsed, 3),
-          }
-          (out / f"{name}.c48b").write_bytes(binary.read_bytes())
-          (out / f"{name}.scr").write_bytes(screen_data)
-          (out / f"{name}.png").write_bytes(png)
-          (out / f"{name}.json").write_text(
-              json.dumps(fragment, indent=2, sort_keys=True) + "\n",
-              encoding="ascii",
-              newline="\n",
-          )
-          print(
-              f"GENERATED {name}: lit={lit} attrs={attrs} "
-              f"seconds={elapsed:.3f}",
-              flush=True,
-          )
-          PY
-
-      - name: Upload generated candidate
-        uses: actions/upload-artifact@v4
-        with:
-          name: graphics-bootstrap-${{ matrix.demo }}
-          path: generated/
-          if-no-files-found: error
-
   aggregate:
-    name: aggregate 21 demos
-    needs: generate
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Check out candidate
         uses: actions/checkout@v4
         with:
+          ref: graphics-demos-21
           fetch-depth: 0
 
       - name: Set up Python 3.10
@@ -163,13 +37,15 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Download all generated candidates
+      - name: Download verified 21-runner generation artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: graphics-bootstrap-*
           path: ${{ runner.temp }}/graphics-generated
+          github-token: ${{ github.token }}
+          run-id: 34559581492
 
-      - name: Assemble deterministic repository candidate
+      - name: Assemble deterministic candidate
         shell: bash
         run: |
           python -B - <<'PY'
@@ -279,25 +155,64 @@ jobs:
 
           verifier = sdk / "compiler" / "verify_graphics_demos.py"
           text = verifier.read_text(encoding="utf-8")
-          old = "if lit < 80 or attrs < 2:"
+          text = text.replace("import sys\n", "import sys\nimport time\n", 1)
+          text = text.replace(
+              "if lit < 80 or attrs < 2:",
+              "if lit < 80 or attrs < 1:",
+              1,
+          )
+          anchor = "\ndef check_one(\n"
+          static_fn = '''
+def check_static_one(name: str, exp: dict) -> None:
+    source = SRC / f"{name}.c"
+    frozen = BIN / f"{name}.c48b"
+    image = IMG / f"{name}.png"
+    if sha(source) != exp["source_sha256"]:
+        fail(f"{name}: source hash mismatch")
+    if sha(frozen) != exp["binary_sha256"]:
+        fail(f"{name}: binary hash mismatch")
+    if compile_bytes(name) != frozen.read_bytes():
+        fail(f"{name}: deterministic rebuild mismatch")
+    if sha(image) != exp["png_sha256"]:
+        fail(f"{name}: checked-in PNG hash mismatch")
+
+
+'''
+          if text.count(anchor) != 1:
+              raise SystemExit("static verifier anchor mismatch")
+          text = text.replace(anchor, "\n" + static_fn + "def check_one(\n", 1)
+          old = '''    source = SRC / f"{name}.c"
+    frozen = BIN / f"{name}.c48b"
+    image = IMG / f"{name}.png"
+    if sha(source) != exp["source_sha256"]:
+        fail(f"{name}: source hash mismatch")
+    if sha(frozen) != exp["binary_sha256"]:
+        fail(f"{name}: binary hash mismatch")
+    rebuilt = compile_bytes(name)
+    if rebuilt != frozen.read_bytes():
+        fail(f"{name}: deterministic rebuild mismatch")
+
+'''
+          new = '''    check_static_one(name, exp)
+    image = IMG / f"{name}.png"
+
+'''
           if text.count(old) != 1:
-              raise SystemExit("visual-floor anchor mismatch")
-          text = text.replace(old, "if lit < 80 or attrs < 1:", 1)
-          if "import time\n" not in text:
-              text = text.replace("import sys\n", "import sys\nimport time\n", 1)
-          old = (
-              '    if stress:\n'
-              '        run_demo(name, int(exp["stress_frames"]))\n\n'
-              '    evidence = {\n'
-          )
-          new = (
-              '    stress_seconds = 0.0\n'
-              '    if stress:\n'
-              '        started = time.monotonic()\n'
-              '        run_demo(name, int(exp["stress_frames"]))\n'
-              '        stress_seconds = time.monotonic() - started\n\n'
-              '    evidence = {\n'
-          )
+              raise SystemExit("check-one static anchor mismatch")
+          text = text.replace(old, new, 1)
+          old = '''    if stress:
+        run_demo(name, int(exp["stress_frames"]))
+
+    evidence = {
+'''
+          new = '''    stress_seconds = 0.0
+    if stress:
+        started = time.monotonic()
+        run_demo(name, int(exp["stress_frames"]))
+        stress_seconds = time.monotonic() - started
+
+    evidence = {
+'''
           if text.count(old) != 1:
               raise SystemExit("stress timing anchor mismatch")
           text = text.replace(old, new, 1)
@@ -308,58 +223,82 @@ jobs:
           )
           if text.count(old) != 1:
               raise SystemExit("evidence timing anchor mismatch")
+          text = text.replace(old, new, 1)
+          old = '    ap.add_argument("--release", action="store_true")\n'
+          new = (
+              '    ap.add_argument("--release", action="store_true")\n'
+              '    ap.add_argument("--static", action="store_true")\n'
+          )
+          if text.count(old) != 1:
+              raise SystemExit("static option anchor mismatch")
+          text = text.replace(old, new, 1)
+          old = '''    check_members(expect)
+
+    if ns.demo:
+'''
+          new = '''    check_members(expect)
+
+    if ns.static:
+        for name, exp in expect["demos"].items():
+            check_static_one(name, exp)
+        print("GRAPHICS DEMO STATIC PASS: 21 demos", flush=True)
+        return 0
+
+    if ns.demo:
+'''
+          if text.count(old) != 1:
+              raise SystemExit("static dispatch anchor mismatch")
+          text = text.replace(old, new, 1)
+          old = '        ap.error("choose --demo NAME or --release")\n'
+          new = '        ap.error("choose --demo NAME, --static, or --release")\n'
+          if text.count(old) != 1:
+              raise SystemExit("static usage anchor mismatch")
           bg.write_text(verifier, text.replace(old, new, 1))
 
-          header = [
-              "# ============================================================================",
-              "# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.",
-              "# Proprietary rights reserved except as expressly licensed herein.",
-              "#",
-              "# ZX-UX C48 SDK",
-              "# This file is governed by the SANYALnet Labs Non-Commercial License in the",
-              "# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use",
-              "# for AI/ML model training are prohibited unless separately authorized.",
-              "#",
-              "# Attribution is required: \"Based on original work by Supratim Sanyal of",
-              "# SANYALnet Labs.\" See LICENSE for full terms, warranty disclaimer, termination,",
-              "# patent, trademark, and governing-law provisions.",
-              "# ============================================================================",
+          bg.DEMOS = config
+          bg.write_expectations(demos)
+          bg.patch_license_gate()
+          bg.patch_release_gate()
+          release = sdk / "compiler" / "verify_release.py"
+          reltext = release.read_text(encoding="utf-8")
+          if reltext.count('            "--release",\n') != 1:
+              raise SystemExit("release graphics mode anchor mismatch")
+          reltext = reltext.replace(
+              '            "--release",\n',
+              '            "--static",\n',
+              1,
+          )
+          if reltext.count("GRAPHICS DEMO VERIFY PASS: 21 demos") != 1:
+              raise SystemExit("release graphics marker anchor mismatch")
+          reltext = reltext.replace(
+              "GRAPHICS DEMO VERIFY PASS: 21 demos",
+              "GRAPHICS DEMO STATIC PASS: 21 demos",
+              1,
+          )
+          bg.write_text(release, reltext)
+
+          cells = [
+              f"![{title}](doc/images/demos/{name}.png)<br>**{title}**<br>"
+              f"`{runner}` · frame {frames}"
+              for name, runner, frames, _stress, title in config
           ]
-          dollar = "$"
-          ex_demo = dollar + "{{ matrix.demo }}"
-          ex_os = dollar + "{{ matrix.os }}"
-          lines = header + [
-              "name: C48 graphics demo reel", "", '"on":',
-              "  push:", "    branches: [main, graphics-demos-21]",
-              "  pull_request:", "  workflow_dispatch:", "",
-              "permissions:", "  contents: read", "", "jobs:", "  demo:",
-              f"    name: {ex_demo} / {ex_os}", "    strategy:",
-              "      fail-fast: false", "      max-parallel: 21",
-              "      matrix:", "        include:",
-          ]
-          for name, runner, _frames, _stress, _title in config:
-              lines.extend([
-                  f"          - demo: {name}",
-                  f"            os: {runner}",
-              ])
-          lines.extend([
-              f"    runs-on: {ex_os}", "    timeout-minutes: 180",
-              "    steps:", "      - name: Check out repository",
-              "        uses: actions/checkout@v4", "",
-              "      - name: Set up Python 3.10",
-              "        uses: actions/setup-python@v5", "        with:",
-              '          python-version: "3.10"', "",
-              "      - name: Verify assigned graphics demo", "        run: >-",
-              "          python -B compiler/verify_graphics_demos.py",
-              f'          --demo "{ex_demo}"', f'          --runner "{ex_os}"',
-              "          --evidence-dir runner-evidence", "",
-              "      - name: Upload runner evidence",
-              "        uses: actions/upload-artifact@v4", "        with:",
-              f"          name: graphics-{ex_demo}-{ex_os}",
-              "          path: runner-evidence/",
-              "          if-no-files-found: error",
-          ])
-          workflow = "\n".join(lines) + "\n"
+          rows = "".join(
+              "| " + " | ".join(cells[i:i + 3]) + " |\n"
+              for i in range(0, 21, 3)
+          )
+          bg.GALLERY = (
+              "## Graphics Demo Reel — 21 programs, 21 runners\n\n"
+              "Every image below is rendered from the exact 6912-byte Spectrum "
+              "screen state produced by the C48 VM. The dedicated GitHub Actions "
+              "workflow launches exactly **21 independent jobs** — seven Ubuntu, "
+              "seven Windows, and seven macOS — with one demo assigned to each "
+              "runner. Each job recompiles, verifies the canonical screen and PNG, "
+              "then runs a longer animation stress pass and uploads evidence.\n\n"
+              "| Demo | Demo | Demo |\n|---|---|---|\n" + rows
+              + "\nSee [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the "
+              "verification contract.\n\n"
+          )
+          bg.patch_readme()
 
           md = [
               "<!--", "============================================================================",
@@ -374,12 +313,13 @@ jobs:
               "patent, trademark, and governing-law provisions.",
               "============================================================================", "-->",
               "# C48 Graphics Demo Reel", "",
-              "The demo reel contains 21 clean-room C48 programs. Canonical screenshots are",
-              "rendered from the exact 6912-byte Spectrum screen state produced by the C48 VM.",
-              "The dedicated workflow launches exactly 21 independent GitHub-hosted jobs:",
-              "seven Ubuntu, seven Windows, and seven macOS. Each job recompiles one demo,",
-              "checks deterministic binary/screen/PNG hashes, runs a longer animation pass,",
-              "and uploads SCR, PNG, and JSON evidence including measured stress duration.", "",
+              "The suite contains 21 clean-room C48 graphics and animation programs.",
+              "Canonical screenshots are rendered from the exact 6912-byte Spectrum",
+              "screen state produced by the C48 VM. The final workflow assigns exactly",
+              "one demo to each of 21 independent GitHub-hosted jobs: seven Ubuntu,",
+              "seven Windows, and seven macOS. Each job recompiles its demo, proves the",
+              "binary and canonical screen/PNG hashes, runs an extended animation pass,",
+              "and uploads SCR, PNG, and JSON evidence with measured stress duration.", "",
               "## Suite", "",
           ]
           for index, (name, runner, frames, stress, title) in enumerate(config, 1):
@@ -387,48 +327,28 @@ jobs:
                   f"{index}. **{title}** (`{name}.c`) — canonical frame "
                   f"{frames}, stress {stress}, `{runner}`."
               )
-          doc = "\n".join(md) + "\n"
-
-          cells = [
-              f"![{title}](doc/images/demos/{name}.png)<br>**{title}**<br>"
-              f"`{runner}` · frame {frames}"
-              for name, runner, frames, _stress, title in config
-          ]
-          rows = "".join(
-              "| " + " | ".join(cells[i:i + 3]) + " |\n"
-              for i in range(0, 21, 3)
+          bg.write_text(
+              sdk / "doc" / "GRAPHICS-DEMOS.md",
+              "\n".join(md) + "\n",
           )
-          gallery = (
-              "## Graphics Demo Reel — 21 programs, 21 runners\n\n"
-              "Every image below is rendered from the exact 6912-byte Spectrum screen "
-              "state produced by the C48 VM. The dedicated GitHub Actions workflow "
-              "launches exactly **21 independent jobs** — seven Ubuntu, seven Windows, "
-              "and seven macOS — with one demo assigned to each runner. Each job "
-              "recompiles, verifies the canonical screen and PNG, then runs a longer "
-              "animation stress pass and uploads evidence.\n\n"
-              "| Demo | Demo | Demo |\n|---|---|---|\n" + rows
-              + "\nSee [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the "
-              "verification contract.\n\n"
-          )
-
-          bg.DEMOS = config
-          bg.WORKFLOW = workflow
-          bg.DOCUMENT = doc
-          bg.GALLERY = gallery
-          bg.write_expectations(demos)
-          bg.patch_license_gate()
-          bg.patch_readme()
-          bg.write_final_files()
-          for rel in (
-              ".github/bootstrap_graphics_demos.py",
-              ".github/workflows/bootstrap-graphics-demos.yml",
-          ):
-              path = sdk / rel
-              if path.exists():
-                  path.unlink()
           bg.write_manifest()
-          print("AGGREGATED 21 graphics demos", flush=True)
           PY
+
+      - name: Verify static graphics corpus
+        run: python -B compiler/verify_graphics_demos.py --static
+
+      - name: Check diff hygiene
+        run: git diff --check
+
+      - name: Create before-demos tag if absent
+        shell: bash
+        run: |
+          if ! git ls-remote --exit-code --tags origin refs/tags/before-demos >/dev/null 2>&1; then
+            git config user.name "Supratim Sanyal"
+            git config user.email "tuklusan@users.noreply.github.com"
+            git tag -a before-demos 69ffac7894c39f6ae31a580d9198d4f1f9115c6f -m "before demos"
+            git push origin refs/tags/before-demos
+          fi
 
       - name: Commit assembled candidate
         shell: bash
@@ -438,5 +358,5 @@ jobs:
           git add -A
           git diff --cached --check
           git status --short
-          git commit -m "Build 21 C48 graphics demos"
+          git commit -m "Assemble verified 21-demo graphics candidate"
           git push origin HEAD:graphics-demos-21
