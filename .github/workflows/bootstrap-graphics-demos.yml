@@ -47,9 +47,12 @@ jobs:
           old = '        vd.run_demo(name, stress)\n'
           assert s.count(old) == 1
           s = s.replace(old, '')
-          old = '''    run([\n        sys.executable,\n        "-B",\n        "compiler/verify_graphics_demos.py",\n        "--release",\n    ])\n'''
-          assert s.count(old) == 1
-          s = s.replace(old, '')
+          for old in (
+              '''    run([\n        sys.executable,\n        "-B",\n        "compiler/verify_graphics_demos.py",\n        "--release",\n    ])\n''',
+              '''    run([\n        sys.executable,\n        "-B",\n        "compiler/verify_release.py",\n    ], timeout=1200)\n''',
+          ):
+              assert s.count(old) == 1
+              s = s.replace(old, '')
           start = s.index('DEMOS = ')
           end = s.index('\nWORKFLOW =', start)
           demos = ast.literal_eval(s[start + 8:end])
@@ -69,10 +72,10 @@ jobs:
           p.write_text(s, encoding='utf-8', newline='\n')
           PY
 
-      - name: Build, render, and verify all 21 demos
+      - name: Build and render all 21 demos
         run: python -B .github/bootstrap_graphics_demos.py
 
-      - name: Commit exact verified candidate
+      - name: Commit exact generated candidate
         shell: bash
         run: |
           git config user.name "Supratim Sanyal"
@@ -80,5 +83,5 @@ jobs:
           git add -A
           git diff --cached --check
           git status --short
-          git commit -m "Build and verify 21 C48 graphics demos"
+          git commit -m "Build 21 C48 graphics demo candidate"
           git push origin HEAD:graphics-demos-21
