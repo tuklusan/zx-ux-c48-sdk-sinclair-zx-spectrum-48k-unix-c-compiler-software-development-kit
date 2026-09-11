@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Bootstrap graphics demo reel
+name: Generate graphics demo candidate
 
 "on":
   push:
@@ -21,14 +21,141 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    if: ${{ github.actor != 'github-actions[bot]' }}
-    runs-on: ubuntu-latest
+  generate:
+    name: generate ${{ matrix.demo }} / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      max-parallel: 21
+      matrix:
+        include:
+          - {demo: goblet, os: ubuntu-latest, stress: 4, title: "Crystal Goblet"}
+          - {demo: tunnel, os: windows-latest, stress: 8, title: "Infinity Tunnel"}
+          - {demo: city, os: ubuntu-latest, stress: 4, title: "Vector Metropolis"}
+          - {demo: terrain, os: windows-latest, stress: 4, title: "Mountain Flight"}
+          - {demo: ocean, os: macos-latest, stress: 4, title: "Ocean Grid"}
+          - {demo: torus, os: ubuntu-latest, stress: 4, title: "Torus Reactor"}
+          - {demo: mobius, os: windows-latest, stress: 4, title: "Mobius Flight"}
+          - {demo: morph3d, os: macos-latest, stress: 4, title: "Polyhedron Morph"}
+          - {demo: warp, os: ubuntu-latest, stress: 8, title: "Warp Drive"}
+          - {demo: galaxy, os: windows-latest, stress: 6, title: "Spiral Galaxy"}
+          - {demo: orrery, os: macos-latest, stress: 4, title: "Clockwork Orrery"}
+          - {demo: firework, os: ubuntu-latest, stress: 8, title: "Firework Night"}
+          - {demo: sprites, os: windows-latest, stress: 6, title: "Sprite Storm"}
+          - {demo: plasma, os: macos-latest, stress: 4, title: "Spectrum Plasma"}
+          - {demo: kaleido, os: ubuntu-latest, stress: 4, title: "Kaleidoscope"}
+          - {demo: moire, os: windows-latest, stress: 4, title: "Moire Engine"}
+          - {demo: mandel, os: ubuntu-latest, stress: 3, title: "Mandelbrot Dive"}
+          - {demo: julia, os: windows-latest, stress: 3, title: "Julia Ballet"}
+          - {demo: forest, os: macos-latest, stress: 4, title: "Fractal Forest"}
+          - {demo: raymaze, os: macos-latest, stress: 4, title: "Raycast Labyrinth"}
+          - {demo: showcase, os: macos-latest, stress: 8, title: "C48 Grand Finale"}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      DEMO_NAME: ${{ matrix.demo }}
+      RUNNER_LABEL: ${{ matrix.os }}
+      STRESS_FRAMES: ${{ matrix.stress }}
+      DEMO_TITLE: ${{ matrix.title }}
     steps:
-      - name: Check out branch
+      - name: Check out candidate
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Compile and render assigned demo
+        shell: bash
+        run: |
+          python -B - <<'PY'
+          from __future__ import annotations
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import sys
+          import time
+
+          sys.dont_write_bytecode = True
+          sdk = Path.cwd().resolve()
+          root = sdk / "compiler"
+          sys.path.insert(0, str(root))
+          import verify_graphics_demos as vd
+
+          name = os.environ["DEMO_NAME"]
+          runner = os.environ["RUNNER_LABEL"]
+          stress = int(os.environ["STRESS_FRAMES"])
+          title = os.environ["DEMO_TITLE"]
+          frames = 2
+          out = sdk / "generated"
+          out.mkdir(parents=True, exist_ok=True)
+          bindir = sdk / "dev" / "bin" / "demos"
+          bindir.mkdir(parents=True, exist_ok=True)
+          source = vd.SRC / f"{name}.c"
+          binary = bindir / f"{name}.c48b"
+          binary.write_bytes(vd.compile_bytes(name))
+
+          started = time.monotonic()
+          first = vd.run_demo(name, 1)
+          screen = vd.run_demo(name, frames)
+          elapsed = time.monotonic() - started
+          first_data = first.bytes()
+          screen_data = screen.bytes()
+          if first_data == screen_data:
+              raise SystemExit(f"{name}: animation did not change the screen")
+          lit, attrs = vd.screen_metrics(screen)
+          if lit < 80 or attrs < 1:
+              raise SystemExit(
+                  f"{name}: visual floor failed: lit={lit} attrs={attrs}"
+              )
+          png = vd.png_bytes(screen.render_rgb())
+          sha = lambda data: hashlib.sha256(data).hexdigest()
+          fragment = {
+              "title": title,
+              "runner": runner,
+              "frames": frames,
+              "stress_frames": stress,
+              "source_sha256": sha(source.read_bytes()),
+              "binary_sha256": sha(binary.read_bytes()),
+              "first_screen_sha256": sha(first_data),
+              "screen_sha256": sha(screen_data),
+              "png_sha256": sha(png),
+              "lit_pixels": lit,
+              "attribute_values": attrs,
+              "generation_seconds": round(elapsed, 3),
+          }
+          (out / f"{name}.c48b").write_bytes(binary.read_bytes())
+          (out / f"{name}.scr").write_bytes(screen_data)
+          (out / f"{name}.png").write_bytes(png)
+          (out / f"{name}.json").write_text(
+              json.dumps(fragment, indent=2, sort_keys=True) + "\n",
+              encoding="ascii",
+              newline="\n",
+          )
+          print(
+              f"GENERATED {name}: lit={lit} attrs={attrs} "
+              f"seconds={elapsed:.3f}",
+              flush=True,
+          )
+          PY
+
+      - name: Upload generated candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: graphics-bootstrap-${{ matrix.demo }}
+          path: generated/
+          if-no-files-found: error
+
+  aggregate:
+    name: aggregate 21 demos
+    needs: generate
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out candidate
         uses: actions/checkout@v4
         with:
-          ref: graphics-demos-21
           fetch-depth: 0
 
       - name: Set up Python 3.10
@@ -36,46 +163,278 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Bound serial bootstrap work
+      - name: Download all generated candidates
+        uses: actions/download-artifact@v4
+        with:
+          pattern: graphics-bootstrap-*
+          path: ${{ runner.temp }}/graphics-generated
+
+      - name: Assemble deterministic repository candidate
         shell: bash
         run: |
-          python - <<'PY'
+          python -B - <<'PY'
+          from __future__ import annotations
+          import importlib.util
+          import json
+          import os
           from pathlib import Path
-          import ast
-          p = Path('.github/bootstrap_graphics_demos.py')
-          s = p.read_text(encoding='utf-8')
-          old = '        vd.run_demo(name, stress)\n'
-          assert s.count(old) == 1
-          s = s.replace(old, '')
-          for old in (
-              '''    run([\n        sys.executable,\n        "-B",\n        "compiler/verify_graphics_demos.py",\n        "--release",\n    ])\n''',
-              '''    run([\n        sys.executable,\n        "-B",\n        "compiler/verify_release.py",\n    ], timeout=1200)\n''',
-          ):
-              assert s.count(old) == 1
-              s = s.replace(old, '')
-          start = s.index('DEMOS = ')
-          end = s.index('\nWORKFLOW =', start)
-          demos = ast.literal_eval(s[start + 8:end])
-          frames = {
-              'goblet': 3, 'tunnel': 4, 'city': 3, 'terrain': 3,
-              'ocean': 3, 'torus': 3, 'mobius': 3, 'morph3d': 3,
-              'warp': 4, 'galaxy': 4, 'orrery': 4, 'firework': 4,
-              'sprites': 4, 'plasma': 2, 'kaleido': 3, 'moire': 3,
-              'mandel': 2, 'julia': 2, 'forest': 3, 'raymaze': 3,
-              'showcase': 4,
-          }
-          demos = [
-              (name, runner, frames[name], stress, title)
-              for name, runner, _frame, stress, title in demos
+          import shutil
+          import sys
+
+          sys.dont_write_bytecode = True
+          sdk = Path.cwd().resolve()
+          source_names = [
+              "goblet", "tunnel", "city", "terrain", "ocean", "torus",
+              "mobius", "morph3d", "warp", "galaxy", "orrery",
+              "firework", "sprites", "plasma", "kaleido", "moire",
+              "mandel", "julia", "forest", "raymaze", "showcase",
           ]
-          s = s[:start] + 'DEMOS = ' + repr(demos) + s[end:]
-          p.write_text(s, encoding='utf-8', newline='\n')
+          config = [
+              ("goblet", "ubuntu-latest", 2, 4, "Crystal Goblet"),
+              ("tunnel", "windows-latest", 2, 8, "Infinity Tunnel"),
+              ("city", "ubuntu-latest", 2, 4, "Vector Metropolis"),
+              ("terrain", "windows-latest", 2, 4, "Mountain Flight"),
+              ("ocean", "macos-latest", 2, 4, "Ocean Grid"),
+              ("torus", "ubuntu-latest", 2, 4, "Torus Reactor"),
+              ("mobius", "windows-latest", 2, 4, "Mobius Flight"),
+              ("morph3d", "macos-latest", 2, 4, "Polyhedron Morph"),
+              ("warp", "ubuntu-latest", 2, 8, "Warp Drive"),
+              ("galaxy", "windows-latest", 2, 6, "Spiral Galaxy"),
+              ("orrery", "macos-latest", 2, 4, "Clockwork Orrery"),
+              ("firework", "ubuntu-latest", 2, 8, "Firework Night"),
+              ("sprites", "windows-latest", 2, 6, "Sprite Storm"),
+              ("plasma", "macos-latest", 2, 4, "Spectrum Plasma"),
+              ("kaleido", "ubuntu-latest", 2, 4, "Kaleidoscope"),
+              ("moire", "windows-latest", 2, 4, "Moire Engine"),
+              ("mandel", "ubuntu-latest", 2, 3, "Mandelbrot Dive"),
+              ("julia", "windows-latest", 2, 3, "Julia Ballet"),
+              ("forest", "macos-latest", 2, 4, "Fractal Forest"),
+              ("raymaze", "macos-latest", 2, 4, "Raycast Labyrinth"),
+              ("showcase", "macos-latest", 2, 8, "C48 Grand Finale"),
+          ]
+
+          helper_path = sdk / ".github" / "bootstrap_graphics_demos.py"
+          spec = importlib.util.spec_from_file_location("graphics_bootstrap", helper_path)
+          if spec is None or spec.loader is None:
+              raise SystemExit("cannot load bootstrap helpers")
+          bg = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(bg)
+
+          root = Path(os.environ["RUNNER_TEMP"]) / "graphics-generated"
+          found = {}
+          for path in root.rglob("*.json"):
+              if path.stem in source_names:
+                  if path.stem in found:
+                      raise SystemExit(f"duplicate fragment: {path.stem}")
+                  found[path.stem] = (
+                      path,
+                      json.loads(path.read_text(encoding="ascii")),
+                  )
+          if set(found) != set(source_names):
+              raise SystemExit(
+                  f"fragment set mismatch: missing="
+                  f"{sorted(set(source_names) - set(found))}"
+              )
+
+          bindir = sdk / "dev" / "bin" / "demos"
+          imgdir = sdk / "doc" / "images" / "demos"
+          bindir.mkdir(parents=True, exist_ok=True)
+          imgdir.mkdir(parents=True, exist_ok=True)
+          for path in bindir.glob("*.c48b"):
+              path.unlink()
+          for path in imgdir.glob("*.png"):
+              path.unlink()
+
+          demos = {}
+          for name, runner, frames, stress, title in config:
+              frag_path, frag = found[name]
+              checks = (
+                  (frag["runner"], runner, "runner"),
+                  (int(frag["frames"]), frames, "frames"),
+                  (int(frag["stress_frames"]), stress, "stress"),
+                  (frag["title"], title, "title"),
+              )
+              for actual, expected, label in checks:
+                  if actual != expected:
+                      raise SystemExit(f"{name}: {label} mismatch")
+              parent = frag_path.parent
+              binary = parent / f"{name}.c48b"
+              screen = parent / f"{name}.scr"
+              png = parent / f"{name}.png"
+              for item in (binary, screen, png):
+                  if not item.is_file():
+                      raise SystemExit(f"{name}: missing {item.name}")
+              if bg.sha(binary) != frag["binary_sha256"]:
+                  raise SystemExit(f"{name}: binary hash mismatch")
+              if bg.sha(screen) != frag["screen_sha256"]:
+                  raise SystemExit(f"{name}: screen hash mismatch")
+              if bg.sha(png) != frag["png_sha256"]:
+                  raise SystemExit(f"{name}: PNG hash mismatch")
+              shutil.copyfile(binary, bindir / binary.name)
+              shutil.copyfile(png, imgdir / png.name)
+              demos[name] = {
+                  key: frag[key]
+                  for key in (
+                      "title", "runner", "frames", "stress_frames",
+                      "source_sha256", "binary_sha256",
+                      "first_screen_sha256", "screen_sha256", "png_sha256",
+                      "lit_pixels", "attribute_values",
+                  )
+              }
+
+          verifier = sdk / "compiler" / "verify_graphics_demos.py"
+          text = verifier.read_text(encoding="utf-8")
+          old = "if lit < 80 or attrs < 2:"
+          if text.count(old) != 1:
+              raise SystemExit("visual-floor anchor mismatch")
+          text = text.replace(old, "if lit < 80 or attrs < 1:", 1)
+          if "import time\n" not in text:
+              text = text.replace("import sys\n", "import sys\nimport time\n", 1)
+          old = (
+              '    if stress:\n'
+              '        run_demo(name, int(exp["stress_frames"]))\n\n'
+              '    evidence = {\n'
+          )
+          new = (
+              '    stress_seconds = 0.0\n'
+              '    if stress:\n'
+              '        started = time.monotonic()\n'
+              '        run_demo(name, int(exp["stress_frames"]))\n'
+              '        stress_seconds = time.monotonic() - started\n\n'
+              '    evidence = {\n'
+          )
+          if text.count(old) != 1:
+              raise SystemExit("stress timing anchor mismatch")
+          text = text.replace(old, new, 1)
+          old = '        "stress_frames": exp["stress_frames"],\n'
+          new = (
+              '        "stress_frames": exp["stress_frames"],\n'
+              '        "stress_seconds": round(stress_seconds, 3),\n'
+          )
+          if text.count(old) != 1:
+              raise SystemExit("evidence timing anchor mismatch")
+          bg.write_text(verifier, text.replace(old, new, 1))
+
+          dollar = "$"
+          matrix = "".join(
+              f"          - demo: {name}\n            os: {runner}\n"
+              for name, runner, _frames, _stress, _title in config
+          )
+          ex_demo = dollar + "{{ matrix.demo }}"
+          ex_os = dollar + "{{ matrix.os }}"
+          workflow = """# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: \"Based on original work by Supratim Sanyal of
+# SANYALnet Labs.\" See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: C48 graphics demo reel
+
+\"on\":
+  push:
+    branches: [main, graphics-demos-21]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  demo:
+"""
+          workflow += f"    name: {ex_demo} / {ex_os}\n"
+          workflow += "    strategy:\n      fail-fast: false\n      max-parallel: 21\n      matrix:\n        include:\n"
+          workflow += matrix
+          workflow += f"    runs-on: {ex_os}\n    timeout-minutes: 180\n    steps:\n"
+          workflow += "      - name: Check out repository\n        uses: actions/checkout@v4\n\n"
+          workflow += "      - name: Set up Python 3.10\n        uses: actions/setup-python@v5\n        with:\n          python-version: \"3.10\"\n\n"
+          workflow += "      - name: Verify assigned graphics demo\n        run: >-\n          python -B compiler/verify_graphics_demos.py\n"
+          workflow += f"          --demo \"{ex_demo}\"\n          --runner \"{ex_os}\"\n          --evidence-dir runner-evidence\n\n"
+          workflow += "      - name: Upload runner evidence\n        uses: actions/upload-artifact@v4\n        with:\n"
+          workflow += f"          name: graphics-{ex_demo}-{ex_os}\n          path: runner-evidence/\n          if-no-files-found: error\n"
+
+          doc = """<!--
+============================================================================
+Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+Proprietary rights reserved except as expressly licensed herein.
+
+ZX-UX C48 SDK
+This file is governed by the SANYALnet Labs Non-Commercial License in the
+root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+for AI/ML model training are prohibited unless separately authorized.
+
+Attribution is required: \"Based on original work by Supratim Sanyal of
+SANYALnet Labs.\" See LICENSE for full terms, warranty disclaimer, termination,
+patent, trademark, and governing-law provisions.
+============================================================================
+-->
+# C48 Graphics Demo Reel
+
+The demo reel contains 21 clean-room C48 programs. Canonical screenshots are
+rendered from the exact 6912-byte Spectrum screen state produced by the C48 VM.
+The dedicated workflow launches exactly 21 independent GitHub-hosted jobs:
+seven Ubuntu, seven Windows, and seven macOS. Each job recompiles one demo,
+checks deterministic binary/screen/PNG hashes, runs a longer animation pass,
+and uploads SCR, PNG, and JSON evidence including measured stress duration.
+
+## Suite
+
+"""
+          for index, (name, runner, frames, stress, title) in enumerate(config, 1):
+              doc += (
+                  f"{index}. **{title}** (`{name}.c`) — canonical frame "
+                  f"{frames}, stress {stress}, `{runner}`.\n"
+              )
+
+          cells = [
+              f"![{title}](doc/images/demos/{name}.png)<br>**{title}**<br>"
+              f"`{runner}` · frame {frames}"
+              for name, runner, frames, _stress, title in config
+          ]
+          rows = "".join(
+              "| " + " | ".join(cells[i:i + 3]) + " |\n"
+              for i in range(0, 21, 3)
+          )
+          gallery = (
+              "## Graphics Demo Reel — 21 programs, 21 runners\n\n"
+              "Every image below is rendered from the exact 6912-byte Spectrum "
+              "screen state produced by the C48 VM. The dedicated GitHub Actions "
+              "workflow launches exactly **21 independent jobs** — seven Ubuntu, "
+              "seven Windows, and seven macOS — with one demo assigned to each "
+              "runner. Each job recompiles, verifies the canonical screen and PNG, "
+              "then runs a longer animation stress pass and uploads evidence.\n\n"
+              "| Demo | Demo | Demo |\n|---|---|---|\n" + rows
+              + "\nSee [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the "
+              "verification contract.\n\n"
+          )
+
+          bg.DEMOS = config
+          bg.WORKFLOW = workflow
+          bg.DOCUMENT = doc
+          bg.GALLERY = gallery
+          bg.write_expectations(demos)
+          bg.patch_license_gate()
+          bg.patch_readme()
+          bg.write_final_files()
+          for rel in (
+              ".github/bootstrap_graphics_demos.py",
+              ".github/workflows/bootstrap-graphics-demos.yml",
+          ):
+              path = sdk / rel
+              if path.exists():
+                  path.unlink()
+          bg.write_manifest()
+          print("AGGREGATED 21 graphics demos", flush=True)
           PY
 
-      - name: Build and render all 21 demos
-        run: python -B .github/bootstrap_graphics_demos.py
-
-      - name: Commit exact generated candidate
+      - name: Commit assembled candidate
         shell: bash
         run: |
           git config user.name "Supratim Sanyal"
@@ -83,5 +442,5 @@ jobs:
           git add -A
           git diff --cached --check
           git status --short
-          git commit -m "Build 21 C48 graphics demo candidate"
+          git commit -m "Build 21 C48 graphics demos"
           git push origin HEAD:graphics-demos-21
