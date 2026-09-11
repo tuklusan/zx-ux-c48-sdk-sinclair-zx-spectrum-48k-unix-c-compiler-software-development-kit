@@ -267,12 +267,12 @@ int main(int argc, char **argv)
             if ((key == '5' || key == 'h') && wr_cur > 0)
                 wr_cur--;
             if (key == '6') {
-                wr_cur += 60;
+                wr_cur = wr_cur + 60;
                 if (wr_cur > wr_len)
                     wr_cur = wr_len;
             }
             if (key == '7') {
-                wr_cur -= 60;
+                wr_cur = wr_cur - 60;
                 if (wr_cur < 0)
                     wr_cur = 0;
             }
