@@ -98,6 +98,22 @@ supported Python 3.10 and a current Python 3.13 runtime. GitHub Actions runs the
 This keeps the public pre-1.0 development branch continuously checked against the frozen
 C48 conformance corpus, deterministic demos, manifest, font assets, and license-header policy.
 
+## Graphics Demo Reel - 21 programs, 21 runners
+
+Every image below is rendered from the exact 6912-byte Spectrum screen state produced by the C48 VM. The dedicated GitHub Actions workflow launches exactly **21 independent jobs** - seven Ubuntu, seven Windows, and seven macOS - with one demo assigned to each runner. Each job recompiles, verifies the canonical screen and PNG, then runs a longer animation stress pass and uploads evidence.
+
+| Demo | Demo | Demo |
+|---|---|---|
+| ![Crystal Goblet](doc/images/demos/goblet.png)<br>**Crystal Goblet**<br>`ubuntu-latest` - frame 2 | ![Infinity Tunnel](doc/images/demos/tunnel.png)<br>**Infinity Tunnel**<br>`windows-latest` - frame 2 | ![Vector Metropolis](doc/images/demos/city.png)<br>**Vector Metropolis**<br>`ubuntu-latest` - frame 2 |
+| ![Mountain Flight](doc/images/demos/terrain.png)<br>**Mountain Flight**<br>`windows-latest` - frame 2 | ![Ocean Grid](doc/images/demos/ocean.png)<br>**Ocean Grid**<br>`macos-latest` - frame 2 | ![Torus Reactor](doc/images/demos/torus.png)<br>**Torus Reactor**<br>`ubuntu-latest` - frame 2 |
+| ![Mobius Flight](doc/images/demos/mobius.png)<br>**Mobius Flight**<br>`windows-latest` - frame 2 | ![Polyhedron Morph](doc/images/demos/morph3d.png)<br>**Polyhedron Morph**<br>`macos-latest` - frame 2 | ![Warp Drive](doc/images/demos/warp.png)<br>**Warp Drive**<br>`ubuntu-latest` - frame 2 |
+| ![Spiral Galaxy](doc/images/demos/galaxy.png)<br>**Spiral Galaxy**<br>`windows-latest` - frame 2 | ![Clockwork Orrery](doc/images/demos/orrery.png)<br>**Clockwork Orrery**<br>`macos-latest` - frame 2 | ![Firework Night](doc/images/demos/firework.png)<br>**Firework Night**<br>`ubuntu-latest` - frame 2 |
+| ![Sprite Storm](doc/images/demos/sprites.png)<br>**Sprite Storm**<br>`windows-latest` - frame 2 | ![Spectrum Plasma](doc/images/demos/plasma.png)<br>**Spectrum Plasma**<br>`macos-latest` - frame 2 | ![Kaleidoscope](doc/images/demos/kaleido.png)<br>**Kaleidoscope**<br>`ubuntu-latest` - frame 2 |
+| ![Moire Engine](doc/images/demos/moire.png)<br>**Moire Engine**<br>`windows-latest` - frame 2 | ![Mandelbrot Dive](doc/images/demos/mandel.png)<br>**Mandelbrot Dive**<br>`ubuntu-latest` - frame 2 | ![Julia Ballet](doc/images/demos/julia.png)<br>**Julia Ballet**<br>`windows-latest` - frame 2 |
+| ![Fractal Forest](doc/images/demos/forest.png)<br>**Fractal Forest**<br>`macos-latest` - frame 2 | ![Raycast Labyrinth](doc/images/demos/raymaze.png)<br>**Raycast Labyrinth**<br>`macos-latest` - frame 2 | ![C48 Grand Finale](doc/images/demos/showcase.png)<br>**C48 Grand Finale**<br>`macos-latest` - frame 2 |
+
+See [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the verification contract.
+
 ## Clone and quick start
 
 ```text

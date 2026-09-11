@@ -87,17 +87,22 @@ def check_required_files() -> None:
     required = [
         "VERSION", "README.md", "LICENSE", ".gitignore", ".gitattributes",
         ".github/workflows/verify.yml",
+        ".github/workflows/graphics-demos.yml",
         "c48", "c48run", "c48.bat", "c48run.bat",
         "compiler/check_license_headers.py", "compiler/c48/limits.py",
         "compiler/tests/test_security.py",
         "compiler/tests/test_game_regressions.py", "compiler/verify_games.py",
+        "compiler/verify_graphics_demos.py",
+        "compiler/graphics_demo_expectations.json",
         "compiler/assets/font4x8-tasword.bin", "compiler/assets/font4x8-zxux.bin",
         "doc/C48 Language Specification Rev 0.11.docx",
         "doc/ZX-UX C48 Compiler User Manual Rev 0.11.docx",
         "doc/FLOAT5-ORACLE.md", "doc/HOST-DIVERGENCES.md", "doc/CONFORMANCE.md",
         "doc/RELEASE-NOTES.md", "doc/LICENSE-HEADER-POLICY.md", "doc/GAMES.md",
+        "doc/GRAPHICS-DEMOS.md",
         "doc/ZX-UX C48 SDK Adversarial Security Review.docx",
         "dev/src/c48host.h", "dev/src/games/gameapi.h",
+        "dev/src/demos/demoapi.h",
         "dev/src/secguard.c", "dev/src/secoob.c",
         "dev/src/secuaf.c", "dev/src/secfree.c",
         "dev/src/secdbl.c", "dev/src/secloop.c",
@@ -235,6 +240,23 @@ def check_games() -> None:
         fail("game verifier did not report the expected completion marker")
 
 
+def check_graphics_demos() -> None:
+    cp = run(
+        [
+            sys.executable,
+            "-B",
+            str(ROOT / "verify_graphics_demos.py"),
+            "--static",
+        ],
+        timeout=600,
+    )
+    if cp.returncode != 0:
+        sys.stderr.write(cp.stdout + cp.stderr)
+        fail("graphics demo verification failed")
+    if "GRAPHICS DEMO STATIC PASS: 21 demos" not in cp.stdout:
+        fail("graphics demo completion marker missing")
+
+
 def check_security_programs() -> None:
     with tempfile.TemporaryDirectory(prefix="c48-security-verify-") as td:
         root = Path(td)
@@ -351,6 +373,7 @@ def main() -> int:
         ("manifest", check_manifest),
         ("automated tests", check_tests),
         ("game corpus", check_games),
+        ("graphics demo corpus", check_graphics_demos),
         ("security fixture binaries", check_security_programs),
         ("deterministic demos", check_demos),
         ("clean-tree postflight", check_clean_tree),

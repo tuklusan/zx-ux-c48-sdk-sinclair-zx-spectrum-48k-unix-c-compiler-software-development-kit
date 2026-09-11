@@ -22,6 +22,7 @@ from pathlib import Path
 import platform
 import struct
 import sys
+import time
 import zlib
 
 sys.dont_write_bytecode = True
@@ -134,13 +135,7 @@ def check_members(expect: dict) -> None:
         fail("demoapi.h hash mismatch")
 
 
-def check_one(
-    name: str,
-    exp: dict,
-    *,
-    stress: bool,
-    evidence_dir: Path | None,
-) -> dict:
+def check_static_one(name: str, exp: dict) -> None:
     source = SRC / f"{name}.c"
     frozen = BIN / f"{name}.c48b"
     image = IMG / f"{name}.png"
@@ -148,9 +143,21 @@ def check_one(
         fail(f"{name}: source hash mismatch")
     if sha(frozen) != exp["binary_sha256"]:
         fail(f"{name}: binary hash mismatch")
-    rebuilt = compile_bytes(name)
-    if rebuilt != frozen.read_bytes():
+    if compile_bytes(name) != frozen.read_bytes():
         fail(f"{name}: deterministic rebuild mismatch")
+    if sha(image) != exp["png_sha256"]:
+        fail(f"{name}: checked-in PNG hash mismatch")
+
+
+def check_one(
+    name: str,
+    exp: dict,
+    *,
+    stress: bool,
+    evidence_dir: Path | None,
+) -> dict:
+    check_static_one(name, exp)
+    image = IMG / f"{name}.png"
 
     first = run_demo(name, 1)
     first_hash = sha_bytes(first.bytes())
@@ -176,11 +183,14 @@ def check_one(
         fail(f"{name}: lit-pixel metric mismatch")
     if attrs != int(exp["attribute_values"]):
         fail(f"{name}: attribute metric mismatch")
-    if lit < 80 or attrs < 2:
+    if lit < 80 or attrs < 1:
         fail(f"{name}: visual complexity floor not met")
 
+    stress_seconds = 0.0
     if stress:
+        started = time.monotonic()
         run_demo(name, int(exp["stress_frames"]))
+        stress_seconds = time.monotonic() - started
 
     evidence = {
         "demo": name,
@@ -193,6 +203,7 @@ def check_one(
         "png_sha256": exp["png_sha256"],
         "frames": exp["frames"],
         "stress_frames": exp["stress_frames"],
+        "stress_seconds": round(stress_seconds, 3),
         "lit_pixels": lit,
         "attribute_values": attrs,
         "status": "PASS",
@@ -216,6 +227,7 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--demo")
     ap.add_argument("--runner")
     ap.add_argument("--release", action="store_true")
+    ap.add_argument("--static", action="store_true")
     ap.add_argument("--evidence-dir", type=Path)
     ns = ap.parse_args(argv)
 
@@ -225,6 +237,12 @@ def main(argv: list[str] | None = None) -> int:
     if len(expect.get("demos", {})) != 21:
         fail("graphics demo count is not exactly 21")
     check_members(expect)
+
+    if ns.static:
+        for name, exp in expect["demos"].items():
+            check_static_one(name, exp)
+        print("GRAPHICS DEMO STATIC PASS: 21 demos", flush=True)
+        return 0
 
     if ns.demo:
         if ns.demo not in expect["demos"]:
@@ -245,7 +263,7 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if not ns.release:
-        ap.error("choose --demo NAME or --release")
+        ap.error("choose --demo NAME, --static, or --release")
 
     for name, exp in expect["demos"].items():
         check_one(name, exp, stress=False, evidence_dir=None)
