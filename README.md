@@ -17,6 +17,12 @@ patent, trademark, and governing-law provisions.
 
 [![C48 SDK verification](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml)
 
+## C48 Graphics Highlights
+
+| Demo | Demo | Demo |
+|---|---|---|
+| ![C48 Grand Finale](doc/images/demos/showcase.png)<br>**C48 Grand Finale**<br>`macos-latest` - frame 2 | ![Torus Reactor](doc/images/demos/torus.png)<br>**Torus Reactor**<br>`ubuntu-latest` - frame 2 | ![Raycast Labyrinth](doc/images/demos/raymaze.png)<br>**Raycast Labyrinth**<br>`macos-latest` - frame 2 |
+
 **ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is currently a **pre-1.0 development snapshot**; the final 1.0 release has not yet been declared. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows/Linux launchers.
 
 The SDK exists to make C48 programs practical to write, compile, test, and run on a modern **Windows or Linux command line** while the native Z80 implementation of the wider **ZX-UX Unix-like operating environment for the 48K ZX Spectrum** continues to evolve.
@@ -100,17 +106,16 @@ C48 conformance corpus, deterministic demos, manifest, font assets, and license-
 
 ## Graphics Demo Reel - 21 programs, 21 runners
 
-Every image below is rendered from the exact 6912-byte Spectrum screen state produced by the C48 VM. The dedicated GitHub Actions workflow launches exactly **21 independent jobs** - seven Ubuntu, seven Windows, and seven macOS - with one demo assigned to each runner. Each job recompiles, verifies the canonical screen and PNG, then runs a longer animation stress pass and uploads evidence.
+The three highlights above and every image below are rendered from the exact 6912-byte Spectrum screen state produced by the C48 VM. The dedicated GitHub Actions workflow launches exactly **21 independent jobs** - seven Ubuntu, seven Windows, and seven macOS - with one demo assigned to each runner. Each job recompiles, verifies the canonical screen and PNG, then runs a longer animation stress pass and uploads evidence.
 
 | Demo | Demo | Demo |
 |---|---|---|
 | ![Crystal Goblet](doc/images/demos/goblet.png)<br>**Crystal Goblet**<br>`ubuntu-latest` - frame 2 | ![Infinity Tunnel](doc/images/demos/tunnel.png)<br>**Infinity Tunnel**<br>`windows-latest` - frame 2 | ![Vector Metropolis](doc/images/demos/city.png)<br>**Vector Metropolis**<br>`ubuntu-latest` - frame 2 |
-| ![Mountain Flight](doc/images/demos/terrain.png)<br>**Mountain Flight**<br>`windows-latest` - frame 2 | ![Ocean Grid](doc/images/demos/ocean.png)<br>**Ocean Grid**<br>`macos-latest` - frame 2 | ![Torus Reactor](doc/images/demos/torus.png)<br>**Torus Reactor**<br>`ubuntu-latest` - frame 2 |
-| ![Mobius Flight](doc/images/demos/mobius.png)<br>**Mobius Flight**<br>`windows-latest` - frame 2 | ![Polyhedron Morph](doc/images/demos/morph3d.png)<br>**Polyhedron Morph**<br>`macos-latest` - frame 2 | ![Warp Drive](doc/images/demos/warp.png)<br>**Warp Drive**<br>`ubuntu-latest` - frame 2 |
-| ![Spiral Galaxy](doc/images/demos/galaxy.png)<br>**Spiral Galaxy**<br>`windows-latest` - frame 2 | ![Clockwork Orrery](doc/images/demos/orrery.png)<br>**Clockwork Orrery**<br>`macos-latest` - frame 2 | ![Firework Night](doc/images/demos/firework.png)<br>**Firework Night**<br>`ubuntu-latest` - frame 2 |
-| ![Sprite Storm](doc/images/demos/sprites.png)<br>**Sprite Storm**<br>`windows-latest` - frame 2 | ![Spectrum Plasma](doc/images/demos/plasma.png)<br>**Spectrum Plasma**<br>`macos-latest` - frame 2 | ![Kaleidoscope](doc/images/demos/kaleido.png)<br>**Kaleidoscope**<br>`ubuntu-latest` - frame 2 |
-| ![Moire Engine](doc/images/demos/moire.png)<br>**Moire Engine**<br>`windows-latest` - frame 2 | ![Mandelbrot Dive](doc/images/demos/mandel.png)<br>**Mandelbrot Dive**<br>`ubuntu-latest` - frame 2 | ![Julia Ballet](doc/images/demos/julia.png)<br>**Julia Ballet**<br>`windows-latest` - frame 2 |
-| ![Fractal Forest](doc/images/demos/forest.png)<br>**Fractal Forest**<br>`macos-latest` - frame 2 | ![Raycast Labyrinth](doc/images/demos/raymaze.png)<br>**Raycast Labyrinth**<br>`macos-latest` - frame 2 | ![C48 Grand Finale](doc/images/demos/showcase.png)<br>**C48 Grand Finale**<br>`macos-latest` - frame 2 |
+| ![Mountain Flight](doc/images/demos/terrain.png)<br>**Mountain Flight**<br>`windows-latest` - frame 2 | ![Ocean Grid](doc/images/demos/ocean.png)<br>**Ocean Grid**<br>`macos-latest` - frame 2 | ![Mobius Flight](doc/images/demos/mobius.png)<br>**Mobius Flight**<br>`windows-latest` - frame 2 |
+| ![Polyhedron Morph](doc/images/demos/morph3d.png)<br>**Polyhedron Morph**<br>`macos-latest` - frame 2 | ![Warp Drive](doc/images/demos/warp.png)<br>**Warp Drive**<br>`ubuntu-latest` - frame 2 | ![Spiral Galaxy](doc/images/demos/galaxy.png)<br>**Spiral Galaxy**<br>`windows-latest` - frame 2 |
+| ![Clockwork Orrery](doc/images/demos/orrery.png)<br>**Clockwork Orrery**<br>`macos-latest` - frame 2 | ![Firework Night](doc/images/demos/firework.png)<br>**Firework Night**<br>`ubuntu-latest` - frame 2 | ![Sprite Storm](doc/images/demos/sprites.png)<br>**Sprite Storm**<br>`windows-latest` - frame 2 |
+| ![Spectrum Plasma](doc/images/demos/plasma.png)<br>**Spectrum Plasma**<br>`macos-latest` - frame 2 | ![Kaleidoscope](doc/images/demos/kaleido.png)<br>**Kaleidoscope**<br>`ubuntu-latest` - frame 2 | ![Moire Engine](doc/images/demos/moire.png)<br>**Moire Engine**<br>`windows-latest` - frame 2 |
+| ![Mandelbrot Dive](doc/images/demos/mandel.png)<br>**Mandelbrot Dive**<br>`ubuntu-latest` - frame 2 | ![Julia Ballet](doc/images/demos/julia.png)<br>**Julia Ballet**<br>`windows-latest` - frame 2 | ![Fractal Forest](doc/images/demos/forest.png)<br>**Fractal Forest**<br>`macos-latest` - frame 2 |
 
 See [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the verification contract.
 
