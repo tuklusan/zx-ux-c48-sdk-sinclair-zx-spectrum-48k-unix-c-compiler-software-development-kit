@@ -60,7 +60,7 @@ Coverage includes:
 - deterministic VM call-depth/step limits, one-past/UAF/free misuse, stale-pointer ABA
   reuse, and raw pointer-byte forgery defenses;
 - on-screen C48 security fixtures and the <=64-character source-line contract for every
-  shipped `dev/src` C48 C/header artifact.
+  shipped `usr/src` C48 C/header artifact.
 
 ## Static/source review
 

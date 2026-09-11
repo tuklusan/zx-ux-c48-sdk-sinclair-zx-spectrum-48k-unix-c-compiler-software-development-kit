@@ -131,9 +131,9 @@ cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-k
 ```bat
 c48 --version
 c48 --about
-c48 dev\src\hello.c
-c48run --headless dev\bin\hello.c48b --dump-screen dev\bin\hello.scr
-c48run dev\bin\hello.c48b
+c48 usr\src\hello.c
+c48run --headless usr\bin\hello.c48b --dump-screen usr\bin\hello.scr
+c48run usr\bin\hello.c48b
 ```
 
 ### Linux
@@ -141,12 +141,12 @@ c48run dev\bin\hello.c48b
 ```sh
 ./c48 --version
 ./c48 --about
-./c48 dev/src/hello.c
-./c48run --headless dev/bin/hello.c48b --dump-screen dev/bin/hello.scr
-./c48run dev/bin/hello.c48b
+./c48 usr/src/hello.c
+./c48run --headless usr/bin/hello.c48b --dump-screen usr/bin/hello.scr
+./c48run usr/bin/hello.c48b
 ```
 
-Sources under `dev/src/` compile by default to the corresponding relative path under `dev/bin/`. Sources elsewhere compile beside the source with the `.c48b` suffix unless `-o` is supplied.
+Sources under `usr/src/` compile by default to the corresponding relative path under `usr/bin/`. Sources elsewhere compile beside the source with the `.c48b` suffix unless `-o` is supplied.
 
 ## ZX Spectrum 4x8 fonts and `--font`
 
@@ -162,11 +162,11 @@ compiler/assets/font4x8-zxux.bin      # alternate slot
 Select another valid `F4X8` font at runtime with `--font PATH`:
 
 ```bat
-c48run --font compiler\assets\font4x8-zxux.bin dev\bin\hello.c48b
+c48run --font compiler\assets\font4x8-zxux.bin usr\bin\hello.c48b
 ```
 
 ```sh
-./c48run --font compiler/assets/font4x8-zxux.bin dev/bin/hello.c48b
+./c48run --font compiler/assets/font4x8-zxux.bin usr/bin/hello.c48b
 ```
 
 Any replacement font must satisfy the SDK's frozen `F4X8` format: 392 bytes total, `F4X8` magic, version 1, first character `0x20`, 96 glyphs, and four packed bytes per 4x8 glyph.
@@ -223,7 +223,7 @@ The graphical API models Spectrum coordinates and attribute constraints. The 4x8
 Headless mode can dump the exact 6912-byte screen for deterministic tests:
 
 ```sh
-./c48run --headless --dump-screen output.scr dev/bin/graphics.c48b
+./c48run --headless --dump-screen output.scr usr/bin/graphics.c48b
 ```
 
 The Tk frontend is only a visualizer over that underlying ZX-compatible screen state; it is not the source of truth.
@@ -232,7 +232,7 @@ For Spectrum-style interactive control, **Shift+Space acts as BREAK**. While the
 
 ## Host game API
 
-`dev/src/c48host.h` is the **Host Game API profile** used for practical development before the final native `<c48.h>` prototype surface is frozen by ZX-UX Phase 11.
+`usr/src/c48host.h` is the **Host Game API profile** used for practical development before the final native `<c48.h>` prototype surface is frozen by ZX-UX Phase 11.
 
 It exposes useful host-side calls for text, graphics, UDGs, memory/string operations, and related experiments. The file is intentionally labeled as a host profile and must not be mistaken for the final native ZX-UX ABI.
 
@@ -248,7 +248,7 @@ The runtime defaults to the normal native-C48 `crt0` heap ceiling of **1024 byte
 For host development:
 
 ```sh
-./c48run --heap 2048 dev/bin/hello.c48b
+./c48run --heap 2048 usr/bin/hello.c48b
 ```
 
 `--heap` accepts even values from `0` through `8192`. The host allocator enforces the selected byte ceiling but does not claim byte-identical native allocator metadata or native process-stack placement.
@@ -256,7 +256,7 @@ For host development:
 For hostile-input testing and CI, `c48run` also provides a deterministic VM execution budget:
 
 ```sh
-./c48run --max-steps 10000 dev/bin/program.c48b
+./c48run --max-steps 10000 usr/bin/program.c48b
 ```
 
 `--max-steps 0` (the default) leaves normal interactive execution unlimited. A positive value terminates execution with a controlled runtime error when the VM reaches the requested evaluation/statement-step budget. The host VM separately caps C48 function-call depth so recursive programs cannot fall through to Python's recursion limit.
@@ -268,14 +268,14 @@ The SDK implements five-byte storage, parsing, integer conversion, comparison, a
 Full byte-for-byte differential certification of every ROM transcendental operation is **not** claimed. Strict execution therefore keeps ROM-dependent transcendental behavior bounded. An explicitly non-certified host approximation can be enabled for experiments with:
 
 ```sh
-./c48run --allow-approx-rom-math dev/bin/program.c48b
+./c48run --allow-approx-rom-math usr/bin/program.c48b
 ```
 
 See `doc/FLOAT5-ORACLE.md` for the exact certification boundary.
 
 ## Included C48 examples
 
-The `dev/src/` directory contains small deterministic programs intended both as examples and as regression fixtures:
+The `usr/src/` directory contains small deterministic programs intended both as examples and as regression fixtures:
 
 - `hello.c` - 64-column C48 text output;
 - `colors.c` - Spectrum color/attribute behavior;
@@ -284,13 +284,13 @@ The `dev/src/` directory contains small deterministic programs intended both as 
 - `maze.c` - compact retro maze-style graphics workload;
 - `argv.c` - C48 `argc` / `argv` behavior.
 
-The matching frozen `C48B1` files are under `dev/bin/`.
+The matching frozen `C48B1` files are under `usr/bin/`.
 
-All shipped C48 `.c` and `.h` files under `dev/src/` obey a **64-character physical-line ceiling**, matching the ZX-UX tty64 presentation model rather than modern 80-column source formatting. The release verifier enforces this mechanically.
+All shipped C48 `.c` and `.h` files under `usr/src/` obey a **64-character physical-line ceiling**, matching the ZX-UX tty64 presentation model rather than modern 80-column source formatting. The release verifier enforces this mechanically.
 
 ## Adversarial security fixtures
 
-The pre-1.0 tree includes C48 programs written specifically to attack the host compiler/runtime safety envelope. Their source is under `dev/src/`, and runnable C48B1 forms are under `dev/bin/` where compilation is expected to succeed.
+The pre-1.0 tree includes C48 programs written specifically to attack the host compiler/runtime safety envelope. Their source is under `usr/src/`, and runnable C48B1 forms are under `usr/bin/` where compilation is expected to succeed.
 
 - `secguard.c` - successful dashboard for recoverable heap, screen-coordinate, UDG, and compiler-forgery protections;
 - `secoob.c` - one-past pointer write;
@@ -307,10 +307,10 @@ The runnable fixtures place explicit `ATTEMPT:` and `MITIGATION:` text on the em
 For example:
 
 ```bat
-c48 dev\src\secguard.c
-c48run dev\bin\secguard.c48b
+c48 usr\src\secguard.c
+c48run usr\bin\secguard.c48b
 
-c48run --max-steps 300 dev\bin\secloop.c48b
+c48run --max-steps 300 usr\bin\secloop.c48b
 ```
 
 The hostile-input regression suite additionally attacks recursive parser structures, macro-expansion bombs, oversized source/C48B1 inputs, malformed-but-correctly-checksummed C48B1 schemas, stale-pointer address reuse, and raw pointer representation forgery. See `doc/ZX-UX C48 SDK Adversarial Security Review.docx` for the threat model and findings.

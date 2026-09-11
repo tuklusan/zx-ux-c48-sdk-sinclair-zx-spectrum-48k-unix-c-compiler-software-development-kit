@@ -92,7 +92,7 @@ class GameReleaseRegressions(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as td:
                 sdk = Path(td)
-                games = sdk / "dev" / "src" / "games"
+                games = sdk / "usr" / "src" / "games"
                 games.mkdir(parents=True)
                 nested = games / "nested.c"
                 nested.write_text("x" * 64 + "\n", encoding="ascii")
@@ -106,7 +106,7 @@ class GameReleaseRegressions(unittest.TestCase):
             verify_release.SDK = original_sdk
 
     def test_arithmetic_echo_and_backspace(self):
-        program = compile_file(SDK / "dev" / "src" / "games" / "arith.c")
+        program = compile_file(SDK / "usr" / "src" / "games" / "arith.c")
         screen = ZXScreen(FONT)
         one = FONT.glyph(ord("1"))
         three = FONT.glyph(ord("3"))
@@ -161,7 +161,7 @@ class GameReleaseRegressions(unittest.TestCase):
 
     def test_adventure_feedback_has_no_hidden_key_read(self):
         program = compile_file(
-            SDK / "dev" / "src" / "games" / "advent.c"
+            SDK / "usr" / "src" / "games" / "advent.c"
         )
         screen = ZXScreen(FONT)
 
@@ -204,7 +204,7 @@ class GameReleaseRegressions(unittest.TestCase):
 
     def test_chess_move_echo_backspace_and_enter(self):
         program = compile_file(
-            SDK / "dev" / "src" / "games" / "chess.c"
+            SDK / "usr" / "src" / "games" / "chess.c"
         )
         screen = ZXScreen(FONT)
         keys = (ord("e"), ord("2"), ord("e"), ord("3"),

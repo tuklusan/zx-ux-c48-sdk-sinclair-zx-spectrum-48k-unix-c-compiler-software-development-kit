@@ -29,8 +29,8 @@ sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parent
 SDK = ROOT.parent
-SRC = SDK / "dev" / "src" / "demos"
-BIN = SDK / "dev" / "bin" / "demos"
+SRC = SDK / "usr" / "src" / "demos"
+BIN = SDK / "usr" / "bin" / "demos"
 IMG = SDK / "doc" / "images" / "demos"
 EXPECT_PATH = ROOT / "graphics_demo_expectations.json"
 

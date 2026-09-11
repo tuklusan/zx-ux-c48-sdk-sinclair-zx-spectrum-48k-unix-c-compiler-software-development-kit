@@ -45,7 +45,7 @@ from c48.typesys import CHAR, INT
 from c48.vm import C48VM
 
 FONT = Font4x8.load(COMPILER / "assets" / "font4x8-tasword.bin")
-HOST_HEADER = (SDK / "dev" / "src" / "c48host.h").read_bytes()
+HOST_HEADER = (SDK / "usr" / "src" / "c48host.h").read_bytes()
 
 
 def _compile_host(source: str):

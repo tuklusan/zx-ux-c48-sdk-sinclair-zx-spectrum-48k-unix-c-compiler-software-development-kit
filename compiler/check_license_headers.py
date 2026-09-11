@@ -60,7 +60,7 @@ def check_tree(root: Path) -> list[str]:
             continue
         # Header must be near the top; shebang/@echo-off may precede it.
         top = text[:3000]
-        if rel.startswith("dev/src/") and path.suffix.lower() in {".c", ".h"}:
+        if rel.startswith("usr/src/") and path.suffix.lower() in {".c", ".h"}:
             # C48 artifacts use a deliberately compact <=64-column header.
             required_markers = (
                 COPYRIGHT, PROJECT, "Non-Commercial License",

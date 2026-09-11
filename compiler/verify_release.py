@@ -103,13 +103,13 @@ def check_required_files() -> None:
         "doc/GRAPHICS-DEMOS.md",
         "doc/ZX-UX C48 SDK Adversarial Security Review.docx",
         "doc/SECURITY-TEST-RESULTS.md",
-        "dev/src/c48host.h", "dev/src/games/gameapi.h",
-        "dev/src/demos/demoapi.h",
-        "dev/src/secguard.c", "dev/src/secoob.c",
-        "dev/src/secuaf.c", "dev/src/secfree.c",
-        "dev/src/secdbl.c", "dev/src/secloop.c",
-        "dev/src/secrecur.c", "dev/src/seckern.c",
-        "dev/src/secforge.c",
+        "usr/src/c48host.h", "usr/src/games/gameapi.h",
+        "usr/src/demos/demoapi.h",
+        "usr/src/secguard.c", "usr/src/secoob.c",
+        "usr/src/secuaf.c", "usr/src/secfree.c",
+        "usr/src/secdbl.c", "usr/src/secloop.c",
+        "usr/src/secrecur.c", "usr/src/seckern.c",
+        "usr/src/secforge.c",
     ]
     for rel in required:
         if not (SDK / rel).is_file():
@@ -169,7 +169,7 @@ def check_font() -> None:
 
 def check_c48_source_columns() -> None:
     failures = []
-    source_root = SDK / "dev" / "src"
+    source_root = SDK / "usr" / "src"
     for path in sorted(source_root.rglob("*")):
         if not path.is_file() or path.suffix.lower() not in {".c", ".h"}:
             continue
@@ -198,14 +198,14 @@ def check_tests() -> None:
 
 
 def check_demos() -> None:
-    if sha(SDK / "dev/src/c48host.h") != EXPECT["host_header_sha256"]:
+    if sha(SDK / "usr/src/c48host.h") != EXPECT["host_header_sha256"]:
         fail("c48host.h hash mismatch")
     with tempfile.TemporaryDirectory(prefix="c48-release-verify-") as td:
         d = Path(td)
         for name, exp in EXPECT["demos"].items():
             print(f"VERIFY: demo {name} ...", flush=True)
-            src = SDK / f"dev/src/{name}.c"
-            frozen = SDK / f"dev/bin/{name}.c48b"
+            src = SDK / f"usr/src/{name}.c"
+            frozen = SDK / f"usr/bin/{name}.c48b"
             if sha(src) != exp["source_sha256"]:
                 fail(f"{name}: source hash mismatch")
             if not frozen.is_file() or sha(frozen) != exp["binary_sha256"]:
@@ -263,8 +263,8 @@ def check_security_programs() -> None:
     with tempfile.TemporaryDirectory(prefix="c48-security-verify-") as td:
         root = Path(td)
         for name, expected_hash in EXPECT["security_programs"].items():
-            source = SDK / "dev" / "src" / f"{name}.c"
-            frozen = SDK / "dev" / "bin" / f"{name}.c48b"
+            source = SDK / "usr" / "src" / f"{name}.c"
+            frozen = SDK / "usr" / "bin" / f"{name}.c48b"
             if not source.is_file() or not frozen.is_file():
                 fail(f"security fixture missing: {name}")
             if sha(frozen) != expected_hash:

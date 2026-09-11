@@ -15,8 +15,8 @@ patent, trademark, and governing-law provisions.
 -->
 # C48 games
 
-The SDK ships a clean-room C48 game corpus under `dev/src/games/`. Matching
-canonical C48B1 host executables are under `dev/bin/games/`.
+The SDK ships a clean-room C48 game corpus under `usr/src/games/`. Matching
+canonical C48B1 host executables are under `usr/bin/games/`.
 
 The corpus is deliberately useful as both software and compiler/runtime test
 material. It exercises interactive input, screen text, arrays, pointers,

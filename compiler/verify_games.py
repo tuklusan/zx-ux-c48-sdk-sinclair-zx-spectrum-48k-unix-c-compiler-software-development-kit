@@ -27,8 +27,8 @@ sys.dont_write_bytecode = True
 
 ROOT = Path(__file__).resolve().parent
 SDK = ROOT.parent
-SRC = SDK / "dev" / "src" / "games"
-BIN = SDK / "dev" / "bin" / "games"
+SRC = SDK / "usr" / "src" / "games"
+BIN = SDK / "usr" / "bin" / "games"
 EXPECT = json.loads(
     (ROOT / "release_expectations.json").read_text(encoding="ascii")
 )

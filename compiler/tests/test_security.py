@@ -39,7 +39,7 @@ from c48.screen import Font4x8, ZXScreen, bitmap_offset
 from c48.vm import C48VM
 
 FONT = Font4x8.load(COMPILER / "assets" / "font4x8-tasword.bin")
-SEC_SRC = SDK / "dev" / "src"
+SEC_SRC = SDK / "usr" / "src"
 
 
 def compile_security(name: str):

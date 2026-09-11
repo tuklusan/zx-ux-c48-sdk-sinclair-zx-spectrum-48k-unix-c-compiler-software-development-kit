@@ -30,7 +30,7 @@ from c48.screen import Font4x8, ZXScreen
 from c48.vm import C48VM
 
 FONT_PATH = COMPILER / "assets" / "font4x8-tasword.bin"
-HOST_HEADER = SDK / "dev" / "src" / "c48host.h"
+HOST_HEADER = SDK / "usr" / "src" / "c48host.h"
 
 
 def run_text(src: str, *, argv=None) -> int:
@@ -197,7 +197,7 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
         import subprocess
         with tempfile.TemporaryDirectory() as td:
             d=Path(td)
-            program=SDK/'dev/bin/hello.c48b'
+            program=SDK/'usr/bin/hello.c48b'
             default_scr=d/'default.scr'
             alt_scr=d/'alt.scr'
             custom=d/'custom.bin'
@@ -217,7 +217,7 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
         import subprocess
         with tempfile.TemporaryDirectory() as td:
             missing=Path(td)/'missing-font.bin'
-            r=subprocess.run([sys.executable,str(COMPILER/'c48run.py'),'--headless','--font',str(missing),str(SDK/'dev/bin/hello.c48b')],capture_output=True,text=True)
+            r=subprocess.run([sys.executable,str(COMPILER/'c48run.py'),'--headless','--font',str(missing),str(SDK/'usr/bin/hello.c48b')],capture_output=True,text=True)
             self.assertEqual(r.returncode,1)
             self.assertIn('c48run:',r.stderr)
             self.assertNotIn('Traceback',r.stderr)

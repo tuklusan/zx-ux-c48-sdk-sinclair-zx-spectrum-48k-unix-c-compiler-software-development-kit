@@ -31,7 +31,7 @@ P11.01 freezes the required runtime *name inventory*, while P11.41 owns the exac
 built-in `<c48.h>` declarations, constants and prototypes.  P11.41 is not yet frozen in
 the project repository.  The pre-1.0 SDK therefore does not invent those declarations.
 
-`dev/src/c48host.h` is a provisional Host Game API profile used only by this SDK.  It
+`usr/src/c48host.h` is a provisional Host Game API profile used only by this SDK.  It
 provides useful console, memory, graphics, UDG, heap and selected math declarations so
 program development can proceed.  Its declarations must be reconciled/replaced when
 P11.41 becomes authoritative.
