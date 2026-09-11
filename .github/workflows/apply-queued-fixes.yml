@@ -50,5 +50,50 @@ jobs:
             | gzip --decompress \
             > /tmp/apply-queued-fixes.py
 
+      - name: Apply final viewport corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          builder = Path("/tmp/apply-queued-fixes.py")
+          text = builder.read_text(encoding="utf-8")
+          old = '"s = 3000 / (z + 24);"'
+          new = '"s = 4000 / (z + 24);"'
+          if text.count(old) != 1:
+              raise SystemExit("tunnel builder anchor mismatch")
+          builder.write_text(text.replace(old, new), encoding="utf-8")
+
+          mobius = Path("usr/src/demos/mobius.c")
+          text = mobius.read_text(encoding="ascii")
+          old = "    rr = 38 + side * 10 * d_cos(u / 2) / 128;\n"
+          new = "    rr = 48 + side * 12 * d_cos(u / 2) / 128;\n"
+          if text.count(old) != 1:
+              raise SystemExit("mobius radius anchor mismatch")
+          mobius.write_text(text.replace(old, new), encoding="ascii")
+
+          morph = Path("usr/src/demos/morph3d.c")
+          text = morph.read_text(encoding="ascii")
+          old = (
+              "    shp(2, ph, f);\n"
+              "    ink(6);\n"
+              "    bright(1);\n"
+              "    shp(3, ph, f);\n"
+              "    ink(7);\n"
+              "    shp(4, ph, f);\n"
+          )
+          new = (
+              "    shp(3, ph, f);\n"
+              "    ink(6);\n"
+              "    bright(1);\n"
+              "    shp(4, ph, f);\n"
+              "    ink(7);\n"
+              "    shp(5, ph, f);\n"
+          )
+          if text.count(old) != 1:
+              raise SystemExit("morph scale anchor mismatch")
+          morph.write_text(text.replace(old, new), encoding="ascii")
+          PY
+
       - name: Apply, build, verify, commit and push
         run: python -B /tmp/apply-queued-fixes.py
