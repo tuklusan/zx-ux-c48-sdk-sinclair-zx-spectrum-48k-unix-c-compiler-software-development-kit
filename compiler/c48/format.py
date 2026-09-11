@@ -28,8 +28,11 @@ from .limits import (
     C48B1_JSON_DEPTH,
     C48B1_STRING_BYTES,
     C48B1_TYPE_DEPTH,
+    C48B1_SEQUENCE_ITEMS,
+    C48B1_SYMBOLS,
     POINTER_DEPTH,
 )
+from .typesys import CHAR, FLOAT, INT, UINT, CType, ptr
 
 MAGIC = b"C48B1\n"
 
@@ -121,6 +124,16 @@ def _optional_str_choice(value: Any, allowed: set[str]) -> bool:
     return value is None or _str_choice(value, allowed)
 
 
+def _check_sequence(value: Any, where: str) -> list[Any]:
+    if not isinstance(value, list):
+        _invalid(f"{where} is not a list")
+    if len(value) > C48B1_SEQUENCE_ITEMS:
+        _resource(
+            f"{where} width exceeds {C48B1_SEQUENCE_ITEMS}"
+        )
+    return value
+
+
 def _validate_ctype(d: Any, where: str = "type", depth: int = 0) -> None:
     if depth > C48B1_TYPE_DEPTH:
         _resource(f"type nesting exceeds {C48B1_TYPE_DEPTH}")
@@ -144,9 +157,10 @@ def _validate_ctype(d: Any, where: str = "type", depth: int = 0) -> None:
         _validate_ctype(d["base"], f"{where}.base", depth + 1)
         return
     if k == "function":
-        if set(d) != {"kind", "params", "ret"} or not isinstance(d["params"], list):
+        if set(d) != {"kind", "params", "ret"}:
             _invalid(f"{where} function type is invalid")
-        for i, p in enumerate(d["params"]):
+        params = _check_sequence(d.get("params"), f"{where}.params")
+        for i, p in enumerate(params):
             _validate_ctype(p, f"{where}.params[{i}]", depth + 1)
         _validate_ctype(d["ret"], f"{where}.ret", depth + 1)
         return
@@ -213,9 +227,8 @@ def _validate_declarator(n: Any, where: str) -> None:
             _invalid(f"{where}.suffix.length is invalid")
         return
     if s.get("kind") == "function":
-        if not isinstance(s.get("params"), list):
-            _invalid(f"{where}.function params are invalid")
-        for i, p in enumerate(s["params"]):
+        params = _check_sequence(s.get("params"), f"{where}.function params")
+        for i, p in enumerate(params):
             _validate_node(p, f"{where}.suffix.params[{i}]")
         return
     _invalid(f"{where}.suffix has unknown kind")
@@ -229,9 +242,12 @@ def _validate_node(n: Any, where: str = "program") -> None:
         _invalid(f"{where} has unknown AST kind {k!r}")
 
     if k == "translation_unit":
-        if not isinstance(n.get("items"), list) or not isinstance(n.get("symbols"), dict):
-            _invalid("translation_unit requires items list and symbols object")
-        for i, x in enumerate(n["items"]): _validate_node(x, f"items[{i}]")
+        items = _check_sequence(n.get("items"), "translation_unit.items")
+        if not isinstance(n.get("symbols"), dict):
+            _invalid("translation_unit requires symbols object")
+        if len(n["symbols"]) > C48B1_SYMBOLS:
+            _resource(f"symbol count exceeds {C48B1_SYMBOLS}")
+        for i, x in enumerate(items): _validate_node(x, f"items[{i}]")
         for name, s in n["symbols"].items():
             if not isinstance(name, str) or not isinstance(s, dict): _invalid("symbol table entry invalid")
             if set(s) != {"type", "entity", "linkage", "defined", "storage"}: _invalid(f"symbol {name!r} fields invalid")
@@ -262,10 +278,12 @@ def _validate_node(n: Any, where: str = "program") -> None:
         if (
             not _str_choice(scope, {"file", "block"})
             or not _optional_str_choice(n.get("storage"), {"static", "extern"})
-            or not isinstance(n.get("declarators"), list)
         ):
             _invalid(f"{where} declaration metadata invalid")
-        for i, x in enumerate(n["declarators"]):
+        declarators = _check_sequence(
+            n.get("declarators"), f"{where}.declarators"
+        )
+        for i, x in enumerate(declarators):
             _validate_node(x, f"{where}.declarators[{i}]")
             # File-scope semantic records carry linkage/definition metadata used by
             # the host loader.  Block-scope records deliberately do not: their
@@ -307,9 +325,14 @@ def _validate_node(n: Any, where: str = "program") -> None:
             _invalid(f"{where}.storage invalid")
         _validate_node(n.get("body"), f"{where}.body"); return
     if k == "compound":
-        if not isinstance(n.get("declarations"), list) or not isinstance(n.get("statements"), list): _invalid(f"{where} compound invalid")
-        for i,x in enumerate(n["declarations"]): _validate_node(x,f"{where}.declarations[{i}]")
-        for i,x in enumerate(n["statements"]): _validate_node(x,f"{where}.statements[{i}]")
+        declarations = _check_sequence(
+            n.get("declarations"), f"{where}.declarations"
+        )
+        statements = _check_sequence(
+            n.get("statements"), f"{where}.statements"
+        )
+        for i,x in enumerate(declarations): _validate_node(x,f"{where}.declarations[{i}]")
+        for i,x in enumerate(statements): _validate_node(x,f"{where}.statements[{i}]")
         return
     if k in {"break", "continue"}: return
     if k == "expr_stmt":
@@ -333,9 +356,12 @@ def _validate_node(n: Any, where: str = "program") -> None:
     if k in {"scalar_initializer", "string_initializer"}:
         _validate_node(n.get("value"), f"{where}.value"); _validate_const(n.get("const"), f"{where}.const"); return
     if k == "init_list":
-        if not isinstance(n.get("values"), list) or not isinstance(n.get("const_items"), list): _invalid(f"{where} init_list invalid")
-        for i,x in enumerate(n["values"]): _validate_node(x,f"{where}.values[{i}]")
-        for i,x in enumerate(n["const_items"]): _validate_const(x,f"{where}.const_items[{i}]")
+        values = _check_sequence(n.get("values"), f"{where}.values")
+        const_items = _check_sequence(
+            n.get("const_items"), f"{where}.const_items"
+        )
+        for i,x in enumerate(values): _validate_node(x,f"{where}.values[{i}]")
+        for i,x in enumerate(const_items): _validate_const(x,f"{where}.const_items[{i}]")
         return
 
     # All remaining kinds are expressions and require a semantic result type.
@@ -349,16 +375,35 @@ def _validate_node(n: Any, where: str = "program") -> None:
             _invalid(f"{where} identifier invalid")
         return
     if k == "integer_literal":
-        if not _is_int(n.get("value")) or not isinstance(n.get("unsigned_suffix"), bool) or not isinstance(n.get("spelling"), str): _invalid(f"{where} integer literal invalid")
+        if (
+            not _is_int(n.get("value"))
+            or not 0 <= n["value"] <= 65535
+            or not isinstance(n.get("unsigned_suffix"), bool)
+            or not isinstance(n.get("spelling"), str)
+        ):
+            _invalid(f"{where} integer literal invalid")
         return
     if k == "character_literal":
-        if not _is_int(n.get("value")) or not isinstance(n.get("spelling"), str): _invalid(f"{where} character literal invalid")
+        if (
+            not _is_int(n.get("value"))
+            or not 0 <= n["value"] <= 255
+            or not isinstance(n.get("spelling"), str)
+        ):
+            _invalid(f"{where} character literal invalid")
         return
     if k == "floating_literal":
-        if not isinstance(n.get("value"), str) or not isinstance(n.get("spelling"), str) or not isinstance(n.get("float5"), str) or len(n["float5"]) != 10: _invalid(f"{where} floating literal invalid")
+        h = n.get("float5")
+        if (
+            not isinstance(n.get("value"), str)
+            or not isinstance(n.get("spelling"), str)
+            or not isinstance(h, str)
+            or len(h) != 10
+            or any(ch not in "0123456789abcdef" for ch in h)
+        ):
+            _invalid(f"{where} floating literal invalid")
         return
     if k == "string_literal":
-        if not isinstance(n.get("bytes"), list) or any(not _is_int(x) or not 0 <= x <= 255 for x in n["bytes"]) or not _is_int(n.get("sid")) or not isinstance(n.get("spelling"), str):
+        if not isinstance(n.get("bytes"), list) or any(not _is_int(x) or not 0 <= x <= 255 for x in n["bytes"]) or not _is_int(n.get("sid")) or not 0 <= n["sid"] <= 65535 or not isinstance(n.get("spelling"), str):
             _invalid(f"{where} string literal invalid")
         if len(n["bytes"]) > C48B1_STRING_BYTES:
             _resource(f"string literal exceeds {C48B1_STRING_BYTES} bytes")
@@ -385,8 +430,8 @@ def _validate_node(n: Any, where: str = "program") -> None:
     if k == "call":
         _validate_node(n.get("function"), f"{where}.function")
         if n["function"].get("kind") != "identifier": _invalid(f"{where}.function must be a direct identifier")
-        if not isinstance(n.get("args"), list): _invalid(f"{where}.args invalid")
-        for i,x in enumerate(n["args"]): _validate_node(x,f"{where}.args[{i}]")
+        args = _check_sequence(n.get("args"), f"{where}.args")
+        for i,x in enumerate(args): _validate_node(x,f"{where}.args[{i}]")
         return
     if k == "binary":
         if not _str_choice(
@@ -404,6 +449,235 @@ def _validate_node(n: Any, where: str = "program") -> None:
     _invalid(f"{where} contains unsupported or unknown C48B1 node kind {k!r}")
 
 
+_TYPE_NAME_MAP = {
+    ("void",): {"kind": "void"},
+    ("char",): {"kind": "char"},
+    ("unsigned", "char"): {"kind": "uchar"},
+    ("short",): {"kind": "short"},
+    ("unsigned", "short"): {"kind": "ushort"},
+    ("int",): {"kind": "int"},
+    ("unsigned", "int"): {"kind": "uint"},
+    ("float",): {"kind": "float"},
+}
+
+
+def _ctype_from_type_name(node: dict[str, Any], where: str) -> CType:
+    spelling = tuple(node.get("spelling", []))
+    base = _TYPE_NAME_MAP.get(spelling)
+    if base is None:
+        _invalid(f"{where} has invalid type spelling")
+    ctype = CType.from_dict(base)
+    for _ in range(node.get("pointers", 0)):
+        ctype = ptr(ctype)
+    return ctype
+
+
+def _expected_literal_type(node: dict[str, Any]) -> CType | None:
+    kind = node.get("kind")
+    if kind == "integer_literal":
+        return UINT if node["unsigned_suffix"] or node["value"] > 32767 else INT
+    if kind == "character_literal":
+        return INT
+    if kind == "floating_literal":
+        return FLOAT
+    if kind == "string_literal":
+        return ptr(CHAR)
+    if kind in {"sizeof_type", "sizeof_expr"}:
+        return UINT
+    return None
+
+
+def _check_identifier_metadata(
+    node: dict[str, Any], declared_dict: dict[str, Any], entity: str
+) -> None:
+    actual = CType.from_dict(node["ctype"])
+    declared = CType.from_dict(declared_dict)
+    allowed = {declared}
+    if declared.is_array and declared.base is not None:
+        allowed.add(ptr(declared.base))
+    if actual not in allowed or node["entity"] != entity:
+        _invalid(
+            f"identifier {node['name']!r} metadata disagrees with declaration"
+        )
+
+
+def _validate_identifier_scopes(program: dict[str, Any]) -> None:
+    """Cross-check identifier metadata against its nearest lexical declaration."""
+    global_scope: dict[str, tuple[dict[str, Any], str]] = {
+        name: (record["type"], record["entity"])
+        for name, record in program["symbols"].items()
+    }
+
+    def lookup(
+        name: str, scopes: list[dict[str, tuple[dict[str, Any], str]]]
+    ) -> tuple[dict[str, Any], str] | None:
+        for scope in reversed(scopes):
+            if name in scope:
+                return scope[name]
+        return None
+
+    def walk(
+        node: Any, scopes: list[dict[str, tuple[dict[str, Any], str]]]
+    ) -> None:
+        if isinstance(node, list):
+            for child in node:
+                walk(child, scopes)
+            return
+        if not isinstance(node, dict):
+            return
+        kind = node.get("kind")
+        if kind == "identifier":
+            declaration = lookup(node["name"], scopes)
+            if declaration is None:
+                _invalid(f"identifier {node['name']!r} has no declaration")
+            _check_identifier_metadata(node, declaration[0], declaration[1])
+            return
+        if kind == "compound":
+            local: dict[str, tuple[dict[str, Any], str]] = {}
+            nested = scopes + [local]
+            for declaration in node["declarations"]:
+                if declaration.get("kind") != "declaration":
+                    walk(declaration, nested)
+                    continue
+                for idecl in declaration["declarators"]:
+                    ctype = idecl["ctype"]
+                    entity = (
+                        "function" if ctype.get("kind") == "function" else "object"
+                    )
+                    local[idecl["declarator"]["name"]] = (ctype, entity)
+                    initializer = idecl.get("initializer")
+                    if initializer is not None:
+                        walk(initializer, nested)
+            for statement in node["statements"]:
+                walk(statement, nested)
+            return
+        for child in node.values():
+            if isinstance(child, (dict, list)):
+                walk(child, scopes)
+
+    for item in program["items"]:
+        if item["kind"] == "declaration":
+            for idecl in item["declarators"]:
+                initializer = idecl.get("initializer")
+                if initializer is not None:
+                    walk(initializer, [global_scope])
+        elif item["kind"] == "function_definition":
+            parameters: dict[str, tuple[dict[str, Any], str]] = {}
+            suffix = item["declarator"].get("suffix") or {}
+            for param in suffix.get("params", []):
+                name = param.get("name")
+                if name:
+                    parameters[name] = (param["ctype"], "object")
+            walk(item["body"], [global_scope, parameters])
+
+
+def _validate_semantic_consistency(program: dict[str, Any]) -> None:
+    """Reject semantically forged C48B1 annotations before VM indexing.
+
+    This deliberately checks invariants that are already frozen by the compiler
+    and consumed as trusted metadata by the VM.  It is not a second compiler;
+    it cross-checks redundant executable annotations against each other.
+    """
+    symbols = program["symbols"]
+    declarations: dict[str, tuple[dict[str, Any], str]] = {}
+
+    for i, item in enumerate(program["items"]):
+        kind = item["kind"]
+        records: list[tuple[str, dict[str, Any], str]] = []
+        if kind == "declaration":
+            for j, idecl in enumerate(item["declarators"]):
+                records.append((
+                    idecl["declarator"]["name"], idecl["ctype"],
+                    f"items[{i}].declarators[{j}]",
+                ))
+        elif kind == "function_definition":
+            records.append((
+                item["declarator"]["name"], item["ctype"],
+                f"items[{i}]",
+            ))
+        for name, ctype, where in records:
+            previous = declarations.get(name)
+            if previous is not None and previous[0] != ctype:
+                _invalid(f"{where} conflicts with prior declaration of {name!r}")
+            declarations[name] = (ctype, where)
+            sym = symbols.get(name)
+            if sym is None:
+                _invalid(f"{where} has no matching symbol-table entry for {name!r}")
+            if sym["type"] != ctype:
+                _invalid(f"{where} type disagrees with symbol {name!r}")
+            entity = "function" if ctype.get("kind") == "function" else "object"
+            if sym["entity"] != entity:
+                _invalid(f"{where} entity disagrees with symbol {name!r}")
+
+    _validate_identifier_scopes(program)
+
+    sid_bytes: dict[int, tuple[int, ...]] = {}
+    stack: list[Any] = [program]
+    while stack:
+        current = stack.pop()
+        if isinstance(current, list):
+            stack.extend(reversed(current))
+            continue
+        if not isinstance(current, dict):
+            continue
+        kind = current.get("kind")
+        if kind in _AST_KINDS:
+            expected = _expected_literal_type(current)
+            if kind == "string_literal":
+                actual_string = CType.from_dict(current["ctype"])
+                string_array = CType(
+                    "array", base=CHAR, length=len(current["bytes"]) + 1
+                )
+                if actual_string not in {ptr(CHAR), string_array}:
+                    _invalid("string_literal result type is inconsistent")
+            elif expected is not None and CType.from_dict(current["ctype"]) != expected:
+                _invalid(f"{kind} result type is inconsistent")
+            if kind == "call":
+                fn_type = CType.from_dict(current["function"]["ctype"])
+                actual = CType.from_dict(current["ctype"])
+                if not fn_type.is_function or fn_type.ret is None or actual != fn_type.ret:
+                    _invalid("call result type disagrees with function declaration")
+            elif kind == "binary" and current.get("op") in {"+", "-"}:
+                left = CType.from_dict(current["left"]["ctype"])
+                right = CType.from_dict(current["right"]["ctype"])
+                actual = CType.from_dict(current["ctype"])
+                expected_binary: CType | None = None
+                if left.is_pointer and right.is_integer:
+                    expected_binary = left if current["op"] in {"+", "-"} else None
+                elif current["op"] == "+" and left.is_integer and right.is_pointer:
+                    expected_binary = right
+                elif current["op"] == "-" and left.is_pointer and right.is_pointer:
+                    expected_binary = INT
+                if expected_binary is not None and actual != expected_binary:
+                    _invalid("pointer arithmetic result type is inconsistent")
+            elif kind == "sizeof_type":
+                target = _ctype_from_type_name(current["type_name"], "sizeof type")
+                try:
+                    expected_size = target.size
+                except (AssertionError, ValueError):
+                    _invalid("sizeof type is not a complete object type")
+                if current["sizeof_value"] != expected_size:
+                    _invalid("sizeof_value disagrees with type")
+            elif kind == "sizeof_expr":
+                target = CType.from_dict(current["operand"]["ctype"])
+                try:
+                    expected_size = target.size
+                except (AssertionError, ValueError):
+                    _invalid("sizeof operand is not a complete object type")
+                if current["sizeof_value"] != expected_size:
+                    _invalid("sizeof_value disagrees with operand type")
+            elif kind == "string_literal":
+                sid = current["sid"]
+                value = tuple(current["bytes"])
+                prior = sid_bytes.get(sid)
+                if prior is not None and prior != value:
+                    _invalid(f"string SID {sid} aliases different literal bytes")
+                sid_bytes[sid] = value
+        for child in current.values():
+            if isinstance(child, (dict, list)):
+                stack.append(child)
+
+
 def validate_program(program: Any) -> dict[str, Any]:
     _check_loaded_structure(program)
     try:
@@ -412,6 +686,7 @@ def validate_program(program: Any) -> dict[str, Any]:
         _resource("schema nesting exceeded host recursion safety")
     if not isinstance(program, dict):
         _invalid("program root is not an object")
+    _validate_semantic_consistency(program)
     return program
 
 

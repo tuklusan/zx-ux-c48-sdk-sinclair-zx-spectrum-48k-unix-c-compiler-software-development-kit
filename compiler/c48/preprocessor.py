@@ -15,7 +15,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
+import os
 import re
+import stat
 
 from .errors import (C48Error, IOC48Error, LexicalError, PreprocessorError,
                      ResourceLimitError, SourcePos, UnsupportedFeatureError)
@@ -310,6 +312,24 @@ class Preprocessor:
         if len(matches) != 1:
             raise IOC48Error(f"local include object not found with exact case: {name}",pos)
         path=matches[0]
+        # A quoted include represents a sibling ZX-UX object, not a host
+        # filesystem redirection primitive.  Reject symlinks/reparse-style
+        # file links so an attacker cannot escape the sibling-object rule.
+        try:
+            lst = path.lstat()
+        except OSError as exc:
+            raise IOC48Error(
+                f"cannot inspect local include object {name}: {exc}", pos
+            ) from None
+        reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+        attributes = getattr(lst, "st_file_attributes", 0)
+        if path.is_symlink() or (
+            os.name == "nt" and reparse_flag and attributes & reparse_flag
+        ):
+            raise IOC48Error(
+                f"local include object must not be a symlink/reparse point: {name}",
+                pos,
+            )
         try:
             size = path.stat().st_size
         except OSError as exc:

@@ -37,11 +37,11 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - specification-driven conformance/regression suite and deterministic demos;
 - adversarial hostile-input/resource ceilings and C48B1 hardening;
 - provenance-preserving stale-pointer/forgery defenses;
-- visible C48 security fixtures and mechanically enforced 64-column C48 source.
+- visible C48 security fixtures, an 84-case adversarial review corpus, and mechanically enforced 64-column C48 source.
 
 ## Frozen verification surface
 
-- automated conformance/regression/security tests: 200;
+- automated conformance/regression/security tests: 291, including the 84 ordered attacks from the adversarial security review;
 - deterministic demos: 6 (`hello`, `colors`, `graphics`, `udg`, `maze`, `argv`);
 - default Tasword F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339`;
 - alternate ZX-UX F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339` (currently byte-identical to the supplied Tasword asset);
