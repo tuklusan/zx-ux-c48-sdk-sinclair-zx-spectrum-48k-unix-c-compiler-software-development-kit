@@ -1,0 +1,51 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: Bootstrap graphics demo reel
+
+"on":
+  push:
+    branches: [graphics-demos-21]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v4
+        with:
+          ref: graphics-demos-21
+          fetch-depth: 0
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Build, render, and verify all 21 demos
+        run: python -B .github/bootstrap_graphics_demos.py
+
+      - name: Commit exact verified candidate
+        shell: bash
+        run: |
+          git config user.name "Supratim Sanyal"
+          git config user.email "tuklusan@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git status --short
+          git commit -m "Build and verify 21 C48 graphics demos"
+          git push origin HEAD:graphics-demos-21
