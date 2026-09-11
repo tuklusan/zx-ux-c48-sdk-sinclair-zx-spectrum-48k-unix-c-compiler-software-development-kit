@@ -11,21 +11,20 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Stage graphics demo artifacts
+name: Finalize 21 graphics demos
 
 "on":
   push:
     branches: [graphics-demos-21]
 
 permissions:
-  actions: read
   contents: write
 
 jobs:
-  stage:
-    if: github.event.head_commit.message == 'Stage 21 graphics artifacts'
+  finalize:
+    if: github.event.head_commit.message == 'Finalize 21 graphics demos bootstrap'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Check out candidate
         uses: actions/checkout@v4
@@ -38,34 +37,52 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Download verified 21-runner artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: graphics-bootstrap-*
-          path: ${{ runner.temp }}/graphics-generated
-          github-token: ${{ github.token }}
-          run-id: 34559581492
+      - name: Remove one-shot staging workflow
+        shell: bash
+        run: rm .github/workflows/stage-graphics-demos.yml
 
-      - name: Assemble verified candidate
-        run: python -B .github/stage_graphics_demos.py
+      - name: Regenerate canonical manifest
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
 
-      - name: Verify static graphics corpus
-        run: python -B compiler/verify_graphics_demos.py --static
+          root = Path('.').resolve()
+          rows = []
+          for path in sorted(root.rglob('*')):
+              if not path.is_file():
+                  continue
+              rel = path.relative_to(root)
+              if '.git' in rel.parts or rel.as_posix() == 'MANIFEST.sha256':
+                  continue
+              data = path.read_bytes()
+              if path.suffix.lower() == '.bat':
+                  data = data.replace(b'\r\n', b'\n')
+              digest = hashlib.sha256(data).hexdigest()
+              rows.append(f"{digest}  {rel.as_posix()}")
+          (root / 'MANIFEST.sha256').write_text(
+              '\n'.join(rows) + '\n', encoding='ascii'
+          )
+          PY
+
+      - name: Prove obsolete staging residue is gone
+        shell: bash
+        run: |
+          if grep -RInE \
+            'graphics-bootstrap-|34559581492|stage_graphics_demos\.py|stage-graphics-demos\.yml' \
+            . --exclude-dir=.git; then
+            echo 'Obsolete graphics staging residue remains.' >&2
+            exit 1
+          fi
+
+      - name: Run full release verifier
+        run: python -B compiler/verify_release.py
 
       - name: Check diff hygiene
         run: git diff --check
 
-      - name: Create before-demos tag if absent
-        shell: bash
-        run: |
-          if ! git ls-remote --exit-code --tags origin refs/tags/before-demos >/dev/null 2>&1; then
-            git config user.name "Supratim Sanyal"
-            git config user.email "tuklusan@users.noreply.github.com"
-            git tag -a before-demos 69ffac7894c39f6ae31a580d9198d4f1f9115c6f -m "before demos"
-            git push origin refs/tags/before-demos
-          fi
-
-      - name: Commit assembled candidate
+      - name: Commit clean 21-demo milestone
         shell: bash
         run: |
           git config user.name "Supratim Sanyal"
@@ -73,5 +90,5 @@ jobs:
           git add -A
           git diff --cached --check
           git status --short
-          git commit -m "Assemble verified 21-demo graphics candidate"
+          git commit -m "Finalize 21 graphics demos"
           git push origin HEAD:graphics-demos-21
