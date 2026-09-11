@@ -29,6 +29,10 @@ from c48.screen import Font4x8, ZXScreen, bitmap_offset
 from c48.vm import C48VM
 
 FONT = Font4x8.load(COMPILER / "assets" / "font4x8-tasword.bin")
+GLYPHS = {
+    FONT.glyph(code): chr(code)
+    for code in range(0x20, 0x80)
+}
 
 
 def roundtrip_run(source: bytes) -> int:
@@ -50,6 +54,16 @@ def cell_glyph(screen: ZXScreen, row: int, col: int) -> tuple[int, ...]:
         else:
             rows.append(byte & 15)
     return tuple(rows)
+
+
+def screen_text(screen: ZXScreen) -> str:
+    output = []
+    for row in range(24):
+        line = []
+        for col in range(64):
+            line.append(GLYPHS.get(cell_glyph(screen, row, col), "?"))
+        output.append("".join(line))
+    return "\n".join(output)
 
 
 class GameReleaseRegressions(unittest.TestCase):
@@ -143,6 +157,96 @@ class GameReleaseRegressions(unittest.TestCase):
         self.assertEqual(
             vm.mem.load_integer(right.pointer.address, right.ctype), 1
         )
+
+
+    def test_adventure_feedback_has_no_hidden_key_read(self):
+        program = compile_file(
+            SDK / "dev" / "src" / "games" / "advent.c"
+        )
+        screen = ZXScreen(FONT)
+
+        class Input:
+            def __init__(self):
+                self.calls = 0
+
+            def __call__(self):
+                text = screen_text(screen)
+                call = self.calls
+                self.calls += 1
+                if call == 0:
+                    self_outer.assertIn("Command:", text)
+                    return ord("e")
+                if call == 1:
+                    self_outer.assertIn("Last: e", text)
+                    self_outer.assertIn("accepted", text)
+                    return ord("e")
+                if call == 2:
+                    self_outer.assertIn("fast river", text)
+                    return ord("n")
+                if call == 3:
+                    self_outer.assertIn("Last: n", text)
+                    self_outer.assertIn("blocked", text)
+                    self_outer.assertIn("tower gate is locked", text)
+                    return ord("q")
+                raise AssertionError("unexpected Adventure input request")
+
+        self_outer = self
+        provider = Input()
+        vm = C48VM(
+            program,
+            screen,
+            argv=["advent"],
+            input_provider=provider,
+            max_steps=500000,
+        )
+        self.assertEqual(vm.run(), 0)
+        self.assertEqual(provider.calls, 4)
+
+    def test_chess_move_echo_backspace_and_enter(self):
+        program = compile_file(
+            SDK / "dev" / "src" / "games" / "chess.c"
+        )
+        screen = ZXScreen(FONT)
+        keys = (ord("e"), ord("2"), ord("e"), ord("3"),
+                8, ord("4"), 10, ord("q"))
+        markers = (
+            "White to move:",
+            "White to move: e",
+            "White to move: e2",
+            "White to move: e2e",
+            "White to move: e2e3",
+            "White to move: e2e ",
+            "White to move: e2e4",
+            "Last move: e2e4",
+        )
+
+        class Input:
+            def __init__(self):
+                self.calls = 0
+
+            def __call__(self):
+                call = self.calls
+                if call >= len(keys):
+                    raise AssertionError("unexpected Chess input request")
+                text = screen_text(screen)
+                self_outer.assertIn(markers[call], text)
+                if call == 7:
+                    self_outer.assertIn("accepted", text)
+                    self_outer.assertIn("Black to move:", text)
+                self.calls += 1
+                return keys[call]
+
+        self_outer = self
+        provider = Input()
+        vm = C48VM(
+            program,
+            screen,
+            argv=["chess"],
+            input_provider=provider,
+            max_steps=2000000,
+        )
+        self.assertEqual(vm.run(), 0)
+        self.assertEqual(provider.calls, len(keys))
 
 
 if __name__ == "__main__":

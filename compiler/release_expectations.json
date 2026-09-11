@@ -1,13 +1,13 @@
 {
   "version": "0.9.0-dev",
-  "test_count": 205,
+  "test_count": 207,
   "font": {
     "tasword_sha256": "90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339",
     "zxux_sha256": "90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339",
     "raw_sha256": "0ccd55f30450231b4219f15c945af53a3eb418082a28b5062589723d8fa1834d"
   },
   "host_header_sha256": "b14d2c7d2558e3016e712107c53692680b62f50b99fc6054660e22c0af02766f",
-  "game_header_sha256": "d052b9b6d58d13effa3c9ef87322b2dfdd8f4bb1a9a5c02b48e37c34d5686d1f",
+  "game_header_sha256": "262a691478e139a528d3e39641829d8823f6439d0881cd36c2d457b40d7bad16",
   "demos": {
     "hello": {
       "args": [],
@@ -62,60 +62,60 @@
   },
   "games": {
     "advent": {
-      "source_sha256": "27ceffcdaa7d54ce0d8a36e48e2605dea2d740691fc2d7f52e39549d5b115ac1",
-      "binary_sha256": "a3a5f07001863a493a8c805fe19f0c97651b153e8281a96fe3527546fb9f9cb2"
+      "source_sha256": "f73780f5139ed629229c5d24559ba63f436ab971d1a2e91e6d4c1660e5268383",
+      "binary_sha256": "0d60464d06ce8296ff6ad915e7ab8e62ca027b61e8340bf9257123b94c6230f7"
     },
     "arith": {
       "source_sha256": "4e69c9b1154464fdd120cd7476a72b88229bc83b897e304df277229974670875",
-      "binary_sha256": "2d42b6c252b712da8e425f8aba7ed6507e5da3bb8684ce5ff43248e093ab6868"
+      "binary_sha256": "a630268554e4296d6bbbc6d9cae168645a5c47efd56c3fa6bdb51ea3b248f368"
     },
     "bgammon": {
-      "source_sha256": "c8ec95d89c55cd10e6810813de4c21c20fb8d93fd66c30a36d45a0d57d03f090",
-      "binary_sha256": "944ed85163dede59dcd75b1ea3a48e410fb5d42a56068b02c416c1a543c73fa8"
+      "source_sha256": "0795ce8289798ac47a6976c71f80aeaa6d8e6b493af9478cc1a82ce35612b642",
+      "binary_sha256": "b39be79d7c4308ad5f630eb1bb6436742e313415f3e337d61341087e2dea69fa"
     },
     "chess": {
-      "source_sha256": "8b05f112dea3f1607864be5bc6dba7f17c767e72dfa23089427e7d2d16e2316c",
-      "binary_sha256": "ab56bf6a85f1d84e8e6d14267759f0a778627d9eda51d166ce8654a4f990514b"
+      "source_sha256": "3cc7aca720077b3bcfdce9d110e521ea443919503ee6bf40f4ef3a119ef8b5a5",
+      "binary_sha256": "0067ecae5d236196980a809ded02ed2c00ba5defd16ce4f4aac8e35950aeb56f"
     },
     "cribbage": {
-      "source_sha256": "469f0eddec655d926781f0a37506ff1be8aec476dfd7f689cd8c447ba598f08f",
-      "binary_sha256": "b5473f4e60f9ba2f5f2987281b1af99ae0e3a49aa63b5ad5e6e9cafb463ea15c"
+      "source_sha256": "21cbb21597bd5b884578f89cf9258326d813f24af0ff92a7c132b8faffb1d989",
+      "binary_sha256": "0626dbab3f24a00a6317940e3990157b265982c5b44b9c90bb6f778b7f285054"
     },
     "fish": {
-      "source_sha256": "ee245ed760807ca9b303f54343eadf36f59bd3e3e88c4c0a3b228564c33e163e",
-      "binary_sha256": "c89da109b46c4e2af6fba9d2248050d8636794ffd5b34225e4ab3a8d80b8b25a"
+      "source_sha256": "c8de191413235569d4c3d24ba70ec72e2d97a9b6a4196537318b39776f3779b7",
+      "binary_sha256": "272af00afbc54ae6f24ec096899d93565a607dfa8a4418ed22cb90a127c84430"
     },
     "fortune": {
       "source_sha256": "b68261029261d071ee1db629416bcfff9a44ffb53012beda3cab36b7b31d0153",
-      "binary_sha256": "ee4d8139ac15dfd7914927b0dcad39a9cff7ddd209c30c004e20590b3c719955"
+      "binary_sha256": "21714c47c13d7dd13d67e72f697e62ab15050800acf3ae5fe66fefd4e66785b1"
     },
     "hangman": {
-      "source_sha256": "5b118bdf44964b0a029fc26a87f0e871616a993ee3de101a1610ca70d78c2cd8",
-      "binary_sha256": "2971c189149dd34c1015ff6ed858c54f03b0878c2dcc75bce0e36e96edb66486"
+      "source_sha256": "a7fb9953b81ece9c9f567143d397f7b247c8418027f0849738ad75f13ed3b74f",
+      "binary_sha256": "b8c3bd78720bf0505a3c8f17390e3dae52653d6f9caf846745e16aeff333010c"
     },
     "maze": {
-      "source_sha256": "6af13217edef3133b67e5d162b2cddbd2a64b8b4525a1d9625ee74bb4005e026",
-      "binary_sha256": "ae0ebf5b2897c61b285c42fdc5fad026fbed347e12f4cad1a3b30cfa84348e89"
+      "source_sha256": "daf6e5b01f0ece3d3f9798ae2d819324e76c0a3b3414c41ac2153aab6af03ecf",
+      "binary_sha256": "6335a54c6232bb961baaa89c4a12bec335365928f756233f09f542293949a4c7"
     },
     "quiz": {
-      "source_sha256": "00245e34505761f297a011ffeb5d0e86ab54c07d7d8e8a65db1446cd61bb10f3",
-      "binary_sha256": "5c01a0d08fa1fc6ab56f678e05502a74df04dfea6c01731b62371b9c99c03044"
+      "source_sha256": "66c9018962558d1912cb6c6e3c5b0251fca7a38855f756a9f78f1442ae864437",
+      "binary_sha256": "59a20af3faf50afec2e26252b9096e56a30c9bd2934a4b0bda779ec716480041"
     },
     "rogue": {
-      "source_sha256": "fe3b9860e52f02824e7c833df7523bcddb33bd872359048f35a68e1900495e74",
-      "binary_sha256": "5ec4ebdc258bb6972b894a4a9ff26da42f8e1dfdcd62d700a03b4111a2cbffa8"
+      "source_sha256": "8c807927d20dda435f517e23c869ef8772bde7b6c52c4fc15a0303ac078eb52e",
+      "binary_sha256": "7bdaa17006e5ec9b28165e172af79086da66267374c297de5851a9ea6deadd83"
     },
     "snake": {
-      "source_sha256": "02181e9f1b1ab799c19c6801cce9934d95d000132d54fc21869d0d11a92bb015",
-      "binary_sha256": "792427ab9c92742ea01f9ce2d19b26aca467b68b70cf12950e8b389e0926cbf7"
+      "source_sha256": "1d56ba56a60664f311ff48f33f20f2146ce5be50dab5219c6f2519b6d05f1066",
+      "binary_sha256": "2ee65926e753cf96a040ae742ee6780280190c144503c4f3e6c877607669dc5a"
     },
     "trek": {
-      "source_sha256": "c382110cc34ad5f53cfd4ff02a2a7672f378a6570a4458863be986a3348db31f",
-      "binary_sha256": "72c84efe4bb634b4531bc2126266795ec1e5334ca04a05588c0c6f612c34e816"
+      "source_sha256": "1e09940b220a90211ece577a66f9aa079244047bbbfb5f2cf26ea097f4cec20e",
+      "binary_sha256": "beb758b9695e0fe55c611ac2adc440624bc8a24cb64ce16bd9da1860e73778f4"
     },
     "wump": {
-      "source_sha256": "36c1a459587bf2b2e07b39d14db84ad58335f5c3b81169ea4a271dd9de25aeff",
-      "binary_sha256": "f3793743e497ba407ad837412a5790153e987b9c6d37b46ac2ec71442bee29ec"
+      "source_sha256": "099b9090f3cc085dd04d614a0b709d3eddc9c3e4f9b55a0ea72e371bb155dc34",
+      "binary_sha256": "5ba660d7493d279c54c4e5e49f40c60bbfbeecdc367320d9684c296141934b50"
     }
   }
 }

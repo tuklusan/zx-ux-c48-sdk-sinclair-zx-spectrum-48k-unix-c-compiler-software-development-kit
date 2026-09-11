@@ -20,6 +20,7 @@ int bg_side;
 int bg_d1;
 int bg_d2;
 int bg_turns;
+int bg_skip_die;
 
 void bg_init(void)
 {
@@ -40,6 +41,7 @@ void bg_init(void)
     bg_off_b = 0;
     bg_side = 0;
     bg_turns = 0;
+    bg_skip_die = 0;
 }
 
 void bg_cell(int row, int col, int point)
@@ -86,6 +88,11 @@ void bg_show(void)
     print_at(17, 0, "Dice:");
     game_num(17, 6, (unsigned int)bg_d1);
     game_num(17, 10, (unsigned int)bg_d2);
+    if (bg_skip_die > 0) {
+        print_at(18, 0, "No legal move for die:");
+        game_num(18, 23, (unsigned int)bg_skip_die);
+    }
+    game_show_last(19);
 }
 
 int bg_home(int side)
@@ -235,25 +242,34 @@ int bg_play(int die)
 {
     int key;
     int src;
-    if (!bg_any(die, bg_side))
+    if (!bg_any(die, bg_side)) {
+        bg_skip_die = die;
         return 0;
+    }
+    bg_skip_die = 0;
     while (1) {
         bg_show();
         print_at(20, 0, "Move die:");
         game_num(20, 10, (unsigned int)die);
         print_at(21, 0, "Source:");
-        key = game_key();
+        key = game_key_echo(21, 8);
         bg_turns++;
         if (key == '0')
             return -1;
         if (key == 'z')
             src = 24;
-        else
+        else if (key >= 'a' && key <= 'x')
             src = key - 'a';
+        else {
+            game_record(key, 3);
+            continue;
+        }
         if (bg_can(src, die, bg_side)) {
+            game_record2(key, '0' + die, 1);
             bg_move(src, die, bg_side);
             return 0;
         }
+        game_record2(key, '0' + die, 2);
     }
 }
 

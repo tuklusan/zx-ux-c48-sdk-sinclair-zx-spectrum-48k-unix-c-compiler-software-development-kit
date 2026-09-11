@@ -17,6 +17,8 @@ int f_comp[13];
 int f_hbooks;
 int f_cbooks;
 int f_turns;
+int f_comp_rank;
+int f_comp_hit;
 
 int f_left(void)
 {
@@ -73,6 +75,22 @@ int f_rank(int key)
     return -1;
 }
 
+
+int f_rankkey(int rank)
+{
+    if (rank >= 0 && rank < 9)
+        return '1' + rank;
+    if (rank == 9)
+        return 't';
+    if (rank == 10)
+        return 'j';
+    if (rank == 11)
+        return 'q';
+    if (rank == 12)
+        return 'k';
+    return '?';
+}
+
 int f_cpick(void)
 {
     int start;
@@ -113,6 +131,15 @@ void f_show(void)
     game_num(11, 16, (unsigned int)f_cbooks);
     print_at(12, 0, "Deck:");
     game_num(12, 6, (unsigned int)f_left());
+    game_show_last(14);
+    if (f_comp_rank >= 0) {
+        print_at(15, 0, "Computer asked:");
+        game_putc(15, 16, f_rankkey(f_comp_rank));
+        if (f_comp_hit)
+            print_at(15, 19, "hit");
+        else
+            print_at(15, 19, "go fish");
+    }
 }
 
 int main(void)
@@ -130,6 +157,8 @@ int main(void)
     f_hbooks = 0;
     f_cbooks = 0;
     f_turns = 0;
+    f_comp_rank = -1;
+    f_comp_hit = 0;
     for (i = 0; i < 7; i++) {
         f_drawone(f_human);
         f_drawone(f_comp);
@@ -140,22 +169,34 @@ int main(void)
     while (f_hbooks + f_cbooks < 13) {
         f_show();
         if (turn == 0) {
-            print_at(15, 0, "Your ask:");
-            key = game_key();
+            print_at(17, 0, "Your ask:");
+            key = game_key_echo(17, 10);
             f_turns++;
             if (key == 'x')
                 return 0;
             rank = f_rank(key);
-            if (rank < 0 || f_human[rank] == 0)
+            if (rank < 0) {
+                game_record(key, 3);
                 continue;
+            }
+            if (f_human[rank] == 0) {
+                game_record(key, 2);
+                continue;
+            }
+            f_comp_rank = -1;
             if (f_comp[rank] > 0) {
                 f_human[rank] = f_human[rank] + f_comp[rank];
                 f_comp[rank] = 0;
+                game_record(key, 4);
             }
             else {
                 draw = f_drawone(f_human);
-                if (draw != rank)
+                if (draw == rank)
+                    game_record(key, 4);
+                else {
+                    game_record(key, 5);
                     turn = 1;
+                }
             }
             f_books(f_human, &f_hbooks);
         }
@@ -166,11 +207,14 @@ int main(void)
                 turn = 0;
                 continue;
             }
+            f_comp_rank = rank;
             if (f_human[rank] > 0) {
                 f_comp[rank] = f_comp[rank] + f_human[rank];
                 f_human[rank] = 0;
+                f_comp_hit = 1;
             }
             else {
+                f_comp_hit = 0;
                 draw = f_drawone(f_comp);
                 if (draw != rank)
                     turn = 0;

@@ -15,6 +15,7 @@ int room;
 int have_key;
 int have_crown;
 int adv_turns;
+int adv_notice;
 
 void adv_draw(void)
 {
@@ -48,7 +49,14 @@ void adv_draw(void)
         print_at(11, 12, "key");
     if (have_crown)
         print_at(12, 12, "crown");
-    print_at(15, 0, "Command:");
+    game_show_last(14);
+    print_at(16, 0, "Command:");
+    if (adv_notice == 1)
+        print_at(18, 0, "The tower gate is locked.");
+    if (adv_notice == 2)
+        print_at(18, 0, "There is no path that way.");
+    if (adv_notice == 3)
+        print_at(18, 0, "There is nothing to take.");
 }
 
 int adv_move(int key)
@@ -95,6 +103,7 @@ int main(void)
     have_key = 0;
     have_crown = 0;
     adv_turns = 0;
+    adv_notice = 0;
     while (1) {
         adv_draw();
         if (room == 0 && have_crown) {
@@ -104,23 +113,41 @@ int main(void)
                 adv_turns++;
             return 0;
         }
-        key = game_key();
+        key = game_key_echo(16, 9);
         adv_turns++;
+        adv_notice = 0;
         if (key == 'q')
             return 0;
         if (key == 't' && room == 2 && !have_key) {
             have_key = 1;
+            game_record(key, 1);
             continue;
         }
         if (key == 't' && room == 4 && !have_crown) {
             have_crown = 1;
+            game_record(key, 1);
             continue;
         }
-        if (!adv_move(key)) {
-            if (room == 3 && key == 'n' && !have_key) {
-                print_at(18, 0, "The tower gate is locked.");
-                game_key();
-            }
+        if (key == 't') {
+            adv_notice = 3;
+            game_record(key, 2);
+            continue;
         }
+        if (adv_move(key)) {
+            game_record(key, 1);
+            continue;
+        }
+        if (room == 3 && key == 'n' && !have_key) {
+            adv_notice = 1;
+            game_record(key, 2);
+            continue;
+        }
+        if (key == 'n' || key == 's' ||
+            key == 'e' || key == 'w') {
+            adv_notice = 2;
+            game_record(key, 2);
+            continue;
+        }
+        game_record(key, 3);
     }
 }

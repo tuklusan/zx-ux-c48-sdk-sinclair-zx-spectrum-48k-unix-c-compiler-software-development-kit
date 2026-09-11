@@ -60,6 +60,8 @@ void s_draw(void)
     game_putc(s_y[0] + 3, s_x[0] + 4, '@');
     print_at(17, 0, "Score:");
     game_num(17, 7, (unsigned int)s_score);
+    game_show_last(19);
+    print_at(20, 0, "Move:");
 }
 
 int main(void)
@@ -86,26 +88,47 @@ int main(void)
     s_food();
     while (1) {
         s_draw();
-        key = game_key();
+        key = game_key_echo(20, 6);
         s_turns++;
         if (key == 'q')
             return 0;
-        if (key == 'w' && s_dy != 1) {
+        if (key == 'w') {
+            if (s_dy == 1) {
+                game_record(key, 2);
+                continue;
+            }
             s_dx = 0;
             s_dy = -1;
         }
-        if (key == 's' && s_dy != -1) {
+        else if (key == 's') {
+            if (s_dy == -1) {
+                game_record(key, 2);
+                continue;
+            }
             s_dx = 0;
             s_dy = 1;
         }
-        if (key == 'a' && s_dx != 1) {
+        else if (key == 'a') {
+            if (s_dx == 1) {
+                game_record(key, 2);
+                continue;
+            }
             s_dx = -1;
             s_dy = 0;
         }
-        if (key == 'd' && s_dx != -1) {
+        else if (key == 'd') {
+            if (s_dx == -1) {
+                game_record(key, 2);
+                continue;
+            }
             s_dx = 1;
             s_dy = 0;
         }
+        else {
+            game_record(key, 3);
+            continue;
+        }
+        game_record(key, 1);
         nx = s_x[0] + s_dx;
         ny = s_y[0] + s_dy;
         eat = nx == s_fx && ny == s_fy;

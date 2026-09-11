@@ -27,6 +27,8 @@ int ch_wq;
 int ch_bk;
 int ch_bq;
 int ch_turns;
+char ch_last[5];
+int ch_last_state;
 
 int ch_white(int p)
 {
@@ -535,8 +537,8 @@ void ch_draw(void)
     int row;
     int col;
     cls();
-    print_at(0, 0, "C48 CHESS - move like e2e4");
-    print_at(1, 0, "q quits");
+    print_at(0, 0, "C48 CHESS - type e2e4 then Enter");
+    print_at(1, 0, "Backspace edits; q quits at empty prompt.");
     for (row = 0; row < 8; row++) {
         for (col = 0; col < 8; col++)
             text[col] = ch_board[row * 8 + col];
@@ -551,6 +553,58 @@ void ch_draw(void)
         print_at(15, 0, "Black to move:");
     if (ch_check(ch_side))
         print_at(17, 0, "CHECK");
+    if (ch_last[0] != 0) {
+        print_at(18, 0, "Last move:");
+        print_at(18, 11, ch_last);
+        if (ch_last_state == 1)
+            print_at(18, 17, "accepted");
+        else
+            print_at(18, 17, "illegal ");
+    }
+}
+
+int ch_readmove(char *move)
+{
+    int key;
+    int len;
+    len = 0;
+    move[0] = 0;
+    while (1) {
+        key = game_key();
+        if (key == 'q' && len == 0)
+            return -1;
+        if (key == 8) {
+            if (len > 0) {
+                len--;
+                move[len] = 0;
+                game_putc(15, 15 + len, ' ');
+            }
+            continue;
+        }
+        if (key == 10 || key == 13) {
+            if (len == 4)
+                return 1;
+            print_at(20, 0, "Enter a move like e2e4.");
+            continue;
+        }
+        if (key >= 32 && key <= 126 && len < 4) {
+            move[len] = (char)key;
+            game_putc(15, 15 + len, key);
+            len++;
+            move[len] = 0;
+            continue;
+        }
+        print_at(20, 0, "Use e2e4; Backspace edits.");
+    }
+}
+
+void ch_save_last(char *move, int state)
+{
+    int i;
+    for (i = 0; i < 4; i++)
+        ch_last[i] = move[i];
+    ch_last[4] = 0;
+    ch_last_state = state;
 }
 
 int main(void)
@@ -563,6 +617,8 @@ int main(void)
     int to;
     int prom;
     int piece;
+    int rc;
+    char move[5];
     ch_side = 0;
     ch_ep = -1;
     ch_wk = 1;
@@ -570,6 +626,8 @@ int main(void)
     ch_bk = 1;
     ch_bq = 1;
     ch_turns = 0;
+    ch_last[0] = 0;
+    ch_last_state = 0;
     while (1) {
         ch_draw();
         if (!ch_any(ch_side)) {
@@ -581,28 +639,39 @@ int main(void)
                 ch_turns++;
             return 0;
         }
-        a = game_key();
-        if (a == 'q')
+        rc = ch_readmove(move);
+        if (rc < 0)
             return 0;
-        b = game_key();
-        c = game_key();
-        d = game_key();
         ch_turns++;
+        a = move[0];
+        b = move[1];
+        c = move[2];
+        d = move[3];
         from = ch_coord(a, b);
         to = ch_coord(c, d);
-        if (from < 0 || to < 0)
+        if (from < 0 || to < 0) {
+            ch_save_last(move, 0);
             continue;
+        }
         prom = 'q';
         piece = ch_board[from];
         if ((piece == 'P' && to / 8 == 0) ||
             (piece == 'p' && to / 8 == 7)) {
-            print_at(19, 0, "Promote q r b n:");
-            prom = game_key();
+            print_at(20, 0, "Promote q r b n:");
+            while (1) {
+                prom = game_key();
+                if (prom == 'q' || prom == 'r' ||
+                    prom == 'b' || prom == 'n')
+                    break;
+                print_at(21, 0, "Choose q, r, b, or n.");
+            }
+            game_putc(20, 19, prom);
         }
-        if (ch_legal(from, to, prom, 1))
+        if (ch_legal(from, to, prom, 1)) {
+            ch_save_last(move, 1);
             ch_side = 1 - ch_side;
-        else {
-            print_at(19, 0, "Illegal move.");
         }
+        else
+            ch_save_last(move, 0);
     }
 }

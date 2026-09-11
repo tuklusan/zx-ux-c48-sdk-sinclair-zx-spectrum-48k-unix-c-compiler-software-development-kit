@@ -56,7 +56,8 @@ void w_draw(void)
         print_at(12, 0, "You feel a cold draft.");
     if (near_room(player_room, b_room))
         print_at(13, 0, "You hear giant bats.");
-    print_at(16, 0, "Command:");
+    game_show_last(15);
+    print_at(17, 0, "Command:");
 }
 
 int w_pick(int key)
@@ -82,14 +83,18 @@ int main(void)
     w_turns = 0;
     while (1) {
         w_draw();
-        key = game_key();
+        key = game_key_echo(17, 9);
         w_turns++;
         if (key == 'q')
             return 0;
         if (key == 's') {
-            print_at(18, 0, "Shoot down tunnel a, b, or c?");
-            key = game_key();
+            print_at(19, 0, "Shoot down tunnel a, b, or c?");
+            key = game_key_echo(19, 30);
             dest = w_pick(key);
+            if (dest < 0) {
+                game_record2('s', key, 3);
+                continue;
+            }
             if (dest == w_room) {
                 cls();
                 print_at(8, 10, "You slew the Wumpus!");
@@ -98,8 +103,8 @@ int main(void)
                     w_turns++;
                 return 0;
             }
-            if (dest >= 0)
-                arrows--;
+            arrows--;
+            game_record2('s', key, 5);
             if (arrows == 0) {
                 cls();
                 print_at(8, 10, "No arrows. The Wumpus wins.");
@@ -111,9 +116,12 @@ int main(void)
             continue;
         }
         dest = w_pick(key);
-        if (dest < 0)
+        if (dest < 0) {
+            game_record(key, 3);
             continue;
+        }
         player_room = dest;
+        game_record(key, 1);
         if (player_room == p_room) {
             cls();
             print_at(8, 10, "You fell into a bottomless pit.");

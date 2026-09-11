@@ -106,6 +106,29 @@ class ScriptKeys:
         return value
 
 
+class HumanKeys:
+    def __init__(self, screen: ZXScreen, steps):
+        self.screen = screen
+        self.steps = steps
+        self.index = 0
+
+    def __call__(self) -> int:
+        if self.index >= len(self.steps):
+            fail("human-input script exhausted")
+        markers, key = self.steps[self.index]
+        current = screen_text(self.screen)
+        for marker in markers:
+            if marker not in current:
+                fail(
+                    f"human step {self.index}: "
+                    f"missing screen marker {marker!r}"
+                )
+        self.index += 1
+        if isinstance(key, str):
+            return ord(key)
+        return key
+
+
 class Player:
     def __init__(self, screen: ZXScreen):
         self.screen = screen
@@ -255,6 +278,33 @@ def run_script(
     return vm, screen_text(screen), provider.index
 
 
+def run_human(
+    name: str,
+    steps,
+    *,
+    max_steps: int,
+) -> tuple[C48VM, str, int]:
+    program = read(BIN / f"{name}.c48b")
+    screen = ZXScreen(FONT)
+    provider = HumanKeys(screen, steps)
+    vm = C48VM(
+        program,
+        screen,
+        argv=[name],
+        input_provider=provider,
+        max_steps=max_steps,
+    )
+    status = vm.run()
+    if status != 0:
+        fail(f"{name}: runtime status {status}")
+    if provider.index != len(steps):
+        fail(
+            f"{name}: consumed {provider.index} of "
+            f"{len(steps)} human-input steps"
+        )
+    return vm, screen_text(screen), provider.index
+
+
 def run_player(
     name: str,
     player_type,
@@ -289,7 +339,7 @@ def check_quick_play() -> None:
         ("advent", "entsentswwq", "You return the crown. Victory!", 500000),
         ("wump", "acscq", "You slew the Wumpus!", 500000),
         ("hangman", "kernlq", "You solved it. Press q.", 1000000),
-        ("quiz", "aaaaaaaaaaq", "Quiz complete. Score:", 500000),
+        ("quiz", "abcabcbacbq", "Quiz complete. Score:", 500000),
         (
             "maze",
             "ddssaassssddddddwwddddddddssddwwwwddsssssssq",
@@ -321,7 +371,7 @@ def check_quick_play() -> None:
         )
 
     vm, text, count = run_script(
-        "chess", "e2e4q", max_steps=2000000
+        "chess", "e2e4\nq", max_steps=2000000
     )
     require(text, "Black to move:", "chess")
     if "Illegal move." in text:
@@ -376,21 +426,175 @@ def check_quick_play() -> None:
     )
 
 
+def check_human_io() -> None:
+    cases = (
+        (
+            "advent",
+            (
+                (("Command:",), "e"),
+                (("Last: e", "accepted"), "e"),
+                (("fast river", "Last: e"), "n"),
+                (("Last: n", "blocked", "gate is locked"), "q"),
+            ),
+            500000,
+        ),
+        (
+            "maze",
+            (
+                (("Move:",), "d"),
+                (("Last: d", "accepted"), "w"),
+                (("Last: w", "blocked"), "q"),
+            ),
+            500000,
+        ),
+        (
+            "rogue",
+            (
+                (("Command:",), "w"),
+                (("Last: w", "blocked"), "d"),
+                (("Last: d", "accepted"), "q"),
+            ),
+            1000000,
+        ),
+        (
+            "snake",
+            (
+                (("Move:",), "a"),
+                (("Last: a", "blocked"), "d"),
+                (("Last: d", "accepted"), "q"),
+            ),
+            1000000,
+        ),
+        (
+            "hangman",
+            (
+                (("Guess:",), "e"),
+                (("Last: e", "hit"), "e"),
+                (("Last: e", "repeated"), "1"),
+                (("Last: 1", "ignored"), "q"),
+            ),
+            1000000,
+        ),
+        (
+            "quiz",
+            (
+                (("Answer a, b, c or q:",), "z"),
+                (("Last: z", "ignored"), "a"),
+                (("Last: a", "correct"), "q"),
+            ),
+            500000,
+        ),
+        (
+            "fish",
+            (
+                (("Your ask:",), "z"),
+                (("Last: z", "ignored"), "3"),
+                (("Last: 3", "hit"), "x"),
+            ),
+            1000000,
+        ),
+        (
+            "cribbage",
+            (
+                (("First discard 1-6:",), "1"),
+                (("First discard 1-6: 1",), "1"),
+                (("Last: 1", "repeated"), "2"),
+                (("Last: 1 2", "accepted"), "q"),
+            ),
+            3000000,
+        ),
+        (
+            "bgammon",
+            (
+                (("Source:",), "?"),
+                (("Last: ?", "ignored"), "f"),
+                (("Last: f", "accepted"), "0"),
+            ),
+            1000000,
+        ),
+        (
+            "wump",
+            (
+                (("Command:",), "s"),
+                (("Command: s", "Shoot down tunnel"), "x"),
+                (("Last: s x", "ignored"), "a"),
+                (("Last: a", "accepted"), "q"),
+            ),
+            500000,
+        ),
+        (
+            "trek",
+            (
+                (("Command:",), "w"),
+                (("Command: w", "Direction w a s d:"), "a"),
+                (("Last: w a", "blocked", "3000"), "w"),
+                (("Direction w a s d:",), "d"),
+                (("Last: w d", "accepted", "2950"), "q"),
+            ),
+            1000000,
+        ),
+        (
+            "chess",
+            (
+                (("White to move:",), "e"),
+                (("White to move: e",), "2"),
+                (("White to move: e2",), "e"),
+                (("White to move: e2e",), "3"),
+                (("White to move: e2e3",), 8),
+                (("White to move: e2e ",), "4"),
+                (("White to move: e2e4",), 10),
+                (("Last move: e2e4", "accepted"), "q"),
+            ),
+            2000000,
+        ),
+        (
+            "arith",
+            (
+                (("=",), "1"),
+                (("= 1",), 8),
+                (("=  ",), "1"),
+                (("= 1",), "3"),
+                (("= 13",), 10),
+                (("Score: 1", "Press any key."), "q"),
+            ),
+            500000,
+        ),
+        (
+            "fortune",
+            (
+                (("Any key for another; q quits.",), "a"),
+                (("Any key for another; q quits.",), "q"),
+            ),
+            500000,
+        ),
+    )
+    for name, steps, limit in cases:
+        vm, _text, count = run_human(
+            name, steps, max_steps=limit
+        )
+        print(
+            f"GAME VERIFY: {name} human-IO PASS "
+            f"keys={count} steps={vm.steps}",
+            flush=True,
+        )
+
+
 def check_extended_play() -> None:
     chess_cases = (
         (
             "mate",
-            "f2f3e7e5g2g4d8h4q",
+            "f2f3\ne7e5\ng2g4\nd8h4\nq",
             "CHECKMATE. Press q.",
         ),
         (
             "castle",
-            "e2e4e7e5g1f3b8c6f1c4g8f6e1g1q",
+            "e2e4\ne7e5\ng1f3\nb8c6\n"
+            "f1c4\ng8f6\ne1g1\nq",
             "Black to move:",
         ),
         (
             "en-passant",
-            "e2e4a7a6e4e5d7d5e5d6q",
+            "e2e4\na7a6\ne4e5\nd7d5\ne5d6\nq",
             "Black to move:",
         ),
     )
@@ -455,6 +659,7 @@ def main(argv: list[str] | None = None) -> int:
     try:
         check_corpus()
         check_quick_play()
+        check_human_io()
         if ns.extended:
             check_extended_play()
     except VerifyError as exc:

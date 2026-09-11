@@ -63,6 +63,7 @@ void t_draw(void)
         print_at(12, 0, "KLINGON CONTACT!");
     if (t_left() == 0 && t_quad == 0)
         print_at(14, 0, "Mission complete. Press q.");
+    game_show_last(15);
     print_at(17, 0, "Command:");
 }
 
@@ -81,31 +82,46 @@ void t_attack(void)
     }
 }
 
-void t_warp(void)
+int t_warp(void)
 {
     int key;
     int x;
     int y;
+    int nx;
+    int ny;
     print_at(19, 0, "Direction w a s d:");
-    key = game_key();
+    key = game_key_echo(19, 19);
     x = t_quad % 4;
     y = t_quad / 4;
-    if (key == 'w' && y > 0)
-        y--;
-    if (key == 's' && y < 3)
-        y++;
-    if (key == 'a' && x > 0)
-        x--;
-    if (key == 'd' && x < 3)
-        x++;
-    t_quad = y * 4 + x;
+    nx = x;
+    ny = y;
+    if (key == 'w')
+        ny--;
+    else if (key == 's')
+        ny++;
+    else if (key == 'a')
+        nx--;
+    else if (key == 'd')
+        nx++;
+    else {
+        game_record2('w', key, 3);
+        return 0;
+    }
+    if (nx < 0 || nx > 3 || ny < 0 || ny > 3) {
+        game_record2('w', key, 2);
+        return 0;
+    }
+    t_quad = ny * 4 + nx;
     t_energy = t_energy - 50;
+    game_record2('w', key, 1);
+    return 1;
 }
 
 int main(void)
 {
     int key;
     int enemy;
+    int acted;
     t_quad = 0;
     t_energy = 3000;
     t_shield = 500;
@@ -119,7 +135,7 @@ int main(void)
                 t_turns++;
             return 0;
         }
-        key = game_key();
+        key = game_key_echo(17, 9);
         t_turns++;
         if (key == 'q')
             return 0;
@@ -129,20 +145,39 @@ int main(void)
             continue;
         }
         enemy = t_here();
+        acted = 0;
         if (key == 'w')
-            t_warp();
-        if (key == 'p' && enemy >= 0) {
-            t_energy = t_energy - 250;
-            if (game_rand(100) < 80)
-                t_alive[enemy] = 0;
+            acted = t_warp();
+        else if (key == 'p') {
+            if (enemy < 0)
+                game_record(key, 2);
+            else {
+                t_energy = t_energy - 250;
+                if (game_rand(100) < 80)
+                    t_alive[enemy] = 0;
+                game_record(key, 1);
+                acted = 1;
+            }
         }
-        if (key == 't' && enemy >= 0 && t_torps > 0) {
-            t_torps--;
-            if (game_rand(100) < 90)
-                t_alive[enemy] = 0;
+        else if (key == 't') {
+            if (enemy < 0 || t_torps <= 0)
+                game_record(key, 2);
+            else {
+                t_torps--;
+                if (game_rand(100) < 90)
+                    t_alive[enemy] = 0;
+                game_record(key, 1);
+                acted = 1;
+            }
         }
-        if (key == 's')
+        else if (key == 's') {
             t_energy = t_energy - 10;
-        t_attack();
+            game_record(key, 1);
+            acted = 1;
+        }
+        else
+            game_record(key, 3);
+        if (acted)
+            t_attack();
     }
 }

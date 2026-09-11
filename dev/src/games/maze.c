@@ -37,6 +37,8 @@ void maze_draw(void)
     for (y = 0; y < 12; y++)
         print_at(y + 3, 4, m_map[y]);
     game_putc(maze_y + 3, maze_x + 4, '@');
+    print_at(16, 0, "Move:");
+    game_show_last(17);
 }
 
 int main(void)
@@ -55,7 +57,7 @@ int main(void)
                 maze_turns++;
             return 0;
         }
-        key = game_key();
+        key = game_key_echo(16, 6);
         maze_turns++;
         if (key == 'q')
             return 0;
@@ -63,15 +65,22 @@ int main(void)
         ny = maze_y;
         if (key == 'w')
             ny--;
-        if (key == 's')
+        else if (key == 's')
             ny++;
-        if (key == 'a')
+        else if (key == 'a')
             nx--;
-        if (key == 'd')
+        else if (key == 'd')
             nx++;
-        if (m_map[ny][nx] != '#') {
-            maze_x = nx;
-            maze_y = ny;
+        else {
+            game_record(key, 3);
+            continue;
         }
+        if (m_map[ny][nx] == '#') {
+            game_record(key, 2);
+            continue;
+        }
+        maze_x = nx;
+        maze_y = ny;
+        game_record(key, 1);
     }
 }

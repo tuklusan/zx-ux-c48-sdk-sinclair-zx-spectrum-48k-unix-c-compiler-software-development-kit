@@ -79,20 +79,26 @@ int main(void)
         h_mask(word, used);
         print_at(10, 0, "Misses:");
         game_num(10, 8, (unsigned int)misses);
+        game_show_last(12);
         if (h_done(word, used)) {
             print_at(14, 0, "You solved it. Press q.");
             while (game_key() != 'q')
                 h_turns++;
             return 0;
         }
-        key = game_key();
+        print_at(14, 0, "Guess:");
+        key = game_key_echo(14, 7);
         h_turns++;
         if (key == 'q')
             return 0;
-        if (key < 'a' || key > 'z')
+        if (key < 'a' || key > 'z') {
+            game_record(key, 3);
             continue;
-        if (used[key - 'a'])
+        }
+        if (used[key - 'a']) {
+            game_record(key, 8);
             continue;
+        }
         used[key - 'a'] = 1;
         hit = 0;
         i = 0;
@@ -101,8 +107,12 @@ int main(void)
                 hit = 1;
             i++;
         }
-        if (!hit)
+        if (!hit) {
             misses++;
+            game_record(key, 5);
+        }
+        else
+            game_record(key, 4);
     }
     cls();
     print_at(8, 0, "Hanged. The word was:");

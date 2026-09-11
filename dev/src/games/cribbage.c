@@ -220,23 +220,38 @@ int c_discard(void)
         print_at(3, 0, "q quits.");
         c_showhand(c_hand);
         print_at(11, 0, "First discard 1-6:");
-        key = game_key();
+        game_show_last(15);
+        key = game_key_echo(11, 19);
         c_turns++;
         if (key == 'q')
             return -1;
-        if (key >= '1' && key <= '6')
+        if (key >= '1' && key <= '6') {
             first = key - '1';
+            game_record(key, 1);
+        }
+        else
+            game_record(key, 3);
     }
     while (second < 0) {
         print_at(13, 0, "Second discard 1-6:");
-        key = game_key();
+        key = game_key_echo(13, 20);
         c_turns++;
         if (key == 'q')
             return -1;
         if (key >= '1' && key <= '6') {
             second = key - '1';
-            if (second == first)
+            if (second == first) {
                 second = -1;
+                game_record(key, 8);
+                game_show_last(15);
+            }
+            else {
+                game_record2('1' + first, key, 1);
+            }
+        }
+        else {
+            game_record(key, 3);
+            game_show_last(15);
         }
     }
     c_crib[0] = c_hand[first];
@@ -296,6 +311,7 @@ void c_round(void)
     game_num(8, 20, (unsigned int)c_hscore);
     game_num(8, 25, (unsigned int)c_cscore);
     print_at(11, 0, "Any key continues; q quits.");
+    game_show_last(13);
     if (game_key() == 'q')
         c_hscore = 1000;
     c_turns++;

@@ -72,6 +72,8 @@ void r_status(void)
     print_at(17, 0, "HP:     Gold:     ");
     game_num(17, 4, (unsigned int)r_hp);
     game_num(17, 18, (unsigned int)r_gold);
+    game_show_last(18);
+    print_at(20, 0, "Command:");
 }
 
 void r_mmove(void)
@@ -140,7 +142,7 @@ int main(void)
                 r_turns++;
             return 0;
         }
-        key = game_key();
+        key = game_key_echo(20, 9);
         r_turns++;
         if (key == 'q')
             return 0;
@@ -148,19 +150,29 @@ int main(void)
         ny = r_y;
         if (key == 'w')
             ny--;
-        if (key == 's')
+        else if (key == 's')
             ny++;
-        if (key == 'a')
+        else if (key == 'a')
             nx--;
-        if (key == 'd')
+        else if (key == 'd')
             nx++;
-        if (r_map[r_at(nx, ny)] == '#')
+        else {
+            game_record(key, 3);
             continue;
+        }
+        if (r_map[r_at(nx, ny)] == '#') {
+            game_record(key, 2);
+            continue;
+        }
         game_putc(r_y + 3, r_x + 4,
             r_map[r_at(r_x, r_y)]);
         mon = r_mon(nx, ny);
-        if (mon >= 0)
+        if (mon >= 0) {
             r_alive[mon] = 0;
+            game_record(key, 4);
+        }
+        else
+            game_record(key, 1);
         r_x = nx;
         r_y = ny;
         cell = r_at(r_x, r_y);

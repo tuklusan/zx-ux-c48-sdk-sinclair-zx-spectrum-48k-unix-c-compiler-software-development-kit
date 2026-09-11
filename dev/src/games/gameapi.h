@@ -43,6 +43,64 @@ static void game_putc(int row, int col, int c)
     print_at(row, col, text);
 }
 
+static int game_key_echo(int row, int col)
+{
+    int key;
+    key = game_key();
+    if (key >= 32 && key <= 126)
+        game_putc(row, col, key);
+    return key;
+}
+
+static int game_last_key;
+static int game_last_arg;
+static int game_last_state;
+
+static void game_record(int key, int state)
+{
+    game_last_key = key;
+    game_last_arg = 0;
+    game_last_state = state;
+}
+
+static void game_record2(int key, int arg, int state)
+{
+    game_last_key = key;
+    game_last_arg = arg;
+    game_last_state = state;
+}
+
+static void game_show_last(int row)
+{
+    if (game_last_state == 0)
+        return;
+    print_at(row, 0, "Last:");
+    if (game_last_key >= 32 && game_last_key <= 126)
+        game_putc(row, 6, game_last_key);
+    else
+        game_putc(row, 6, '?');
+    if (game_last_arg >= 32 && game_last_arg <= 126)
+        game_putc(row, 8, game_last_arg);
+    else
+        game_putc(row, 8, ' ');
+    if (game_last_state == 1)
+        print_at(row, 11, "accepted");
+    if (game_last_state == 2)
+        print_at(row, 11, "blocked ");
+    if (game_last_state == 3)
+        print_at(row, 11, "ignored ");
+    if (game_last_state == 4)
+        print_at(row, 11, "hit     ");
+    if (game_last_state == 5)
+        print_at(row, 11, "miss    ");
+    if (game_last_state == 6)
+        print_at(row, 11, "correct ");
+    if (game_last_state == 7)
+        print_at(row, 11, "wrong   ");
+    if (game_last_state == 8)
+        print_at(row, 11, "repeated");
+}
+
 static void game_num(int row, int col, unsigned int value)
 {
     char text[6];
