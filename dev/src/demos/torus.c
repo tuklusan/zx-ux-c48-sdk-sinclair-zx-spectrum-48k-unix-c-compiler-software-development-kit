@@ -1,0 +1,75 @@
+// ============================================================
+// Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+// Proprietary rights reserved except as licensed in LICENSE.
+//
+// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.
+// Non-commercial use permitted; Commercial Use and AI/ML
+// model training prohibited unless separately authorized.
+//
+// Attribution required: Based on original work by Supratim
+// Sanyal of SANYALnet Labs. See root LICENSE for full terms.
+// ============================================================
+#include "demoapi.h"
+
+void tpt(int u, int v, int f, int *x, int *y, int *z)
+{
+    int rr;
+    int a;
+    int b;
+    int c;
+    rr = 36 + 13 * d_cos(v) / 128;
+    a = rr * d_cos(u) / 128;
+    b = 13 * d_sin(v) / 128;
+    c = rr * d_sin(u) / 128;
+    d_rot3(a, b, c, 18 + f * 3, f * 5, f * 2,
+           x, y, z);
+}
+
+void scene(int f)
+{
+    int u;
+    int v;
+    int u2;
+    int v2;
+    int x1;
+    int y1;
+    int z1;
+    int x2;
+    int y2;
+    int z2;
+    cls();
+    paper(0);
+    for (v = 0; v < 8; v++) {
+        ink(1 + v % 7);
+        bright(v & 1);
+        for (u = 0; u < 16; u++) {
+            u2 = (u + 1) & 15;
+            tpt(u * 16, v * 32, f, &x1, &y1, &z1);
+            tpt(u2 * 16, v * 32, f, &x2, &y2, &z2);
+            d_line3(x1, y1, z1, x2, y2, z2);
+        }
+    }
+    ink(7);
+    bright(1);
+    for (u = 0; u < 16; u = u + 2) {
+        for (v = 0; v < 8; v++) {
+            v2 = (v + 1) & 7;
+            tpt(u * 16, v * 32, f, &x1, &y1, &z1);
+            tpt(u * 16, v2 * 32, f, &x2, &y2, &z2);
+            d_line3(x1, y1, z1, x2, y2, z2);
+        }
+    }
+    print_at(0, 5, "TORUS REACTOR / PARAMETRIC 3D");
+}
+
+int main(int argc, char **argv)
+{
+    int f;
+    int n;
+    n = d_frames(argc, argv, 10);
+    for (f = 0; f < n; f++) {
+        scene(f);
+        yield();
+    }
+    return 0;
+}
