@@ -260,29 +260,29 @@ void w_edit(int key)
     if (key == 'p' && w_sel > 0)
         w_sel--;
     if (key == 'a' && w_w[w_sel] > 3)
-        w_w[w_sel] -= 2;
+        w_w[w_sel] = w_w[w_sel] - 2;
     if (key == 'd' && w_w[w_sel] < 60)
-        w_w[w_sel] += 2;
+        w_w[w_sel] = w_w[w_sel] + 2;
     if (key == 's' && w_h[w_sel] > 3)
-        w_h[w_sel] -= 2;
+        w_h[w_sel] = w_h[w_sel] - 2;
     if (key == 'w' && w_h[w_sel] < 30)
-        w_h[w_sel] += 2;
+        w_h[w_sel] = w_h[w_sel] + 2;
     if (key == 'z' && w_z[w_sel] > -100)
-        w_z[w_sel] -= 3;
+        w_z[w_sel] = w_z[w_sel] - 3;
     if (key == 'x' && w_z[w_sel] < 100)
-        w_z[w_sel] += 3;
+        w_z[w_sel] = w_z[w_sel] + 3;
     if (key == '5')
-        w_yaw -= 6;
+        w_yaw = w_yaw - 6;
     if (key == '8')
-        w_yaw += 6;
+        w_yaw = w_yaw + 6;
     if (key == '7')
-        w_pitch -= 5;
+        w_pitch = w_pitch - 5;
     if (key == '6')
-        w_pitch += 5;
+        w_pitch = w_pitch + 5;
     if (key == '+' && w_zoom < 180)
-        w_zoom += 8;
+        w_zoom = w_zoom + 8;
     if (key == '-' && w_zoom > 72)
-        w_zoom -= 8;
+        w_zoom = w_zoom - 8;
     if (key == 'r')
         w_reset();
 }
