@@ -161,6 +161,76 @@ class DeferredWrapRegressions(unittest.TestCase):
         self.assertEqual(s.mem[bitmap_offset(0, 0)], 0x34)
         self.assertEqual(s.mem[bitmap_offset(0, 8)], 0x56)
 
+    def test_exact_line_and_screenful_stream_boundaries(self):
+        line = new_screen()
+        for _ in range(64):
+            line.putchar(ord("A"))
+        self.assertEqual((line.row, line.col, line.wrap_pending), (0, 63, True))
+        line.putchar(ord("B"))
+        self.assertEqual((line.row, line.col, line.wrap_pending), (1, 1, False))
+
+        screen = new_screen()
+        for _ in range(64):
+            screen.putchar(ord("A"))
+        top_band = bytes(
+            screen.mem[bitmap_offset(x * 8, y)]
+            for y in range(8)
+            for x in range(32)
+        )
+        for _ in range(64 * 23):
+            screen.putchar(ord("B"))
+        self.assertEqual((screen.row, screen.col, screen.wrap_pending), (23, 63, True))
+        self.assertEqual(
+            bytes(
+                screen.mem[bitmap_offset(x * 8, y)]
+                for y in range(8)
+                for x in range(32)
+            ),
+            top_band,
+        )
+        screen.putchar(ord("C"))
+        self.assertEqual((screen.row, screen.col, screen.wrap_pending), (23, 1, False))
+        self.assertNotEqual(
+            bytes(
+                screen.mem[bitmap_offset(x * 8, y)]
+                for y in range(8)
+                for x in range(32)
+            ),
+            top_band,
+        )
+
+    def test_puts_matches_chunked_putchar_then_lf_at_right_margin(self):
+        direct = new_screen()
+        chunked = new_screen()
+        data = b"A" * 64
+        direct.puts(data)
+        for b in data:
+            chunked.putchar(b)
+        chunked.putchar(10)
+        self.assertEqual(direct.bytes(), chunked.bytes())
+        self.assertEqual(
+            (direct.row, direct.col, direct.wrap_pending),
+            (chunked.row, chunked.col, chunked.wrap_pending),
+        )
+
+    def test_print_at_cross_boundary_matches_temporary_console_state(self):
+        reference = new_screen()
+        reference.row = 2
+        reference.col = 63
+        reference.putchar(ord("A"))
+        reference.putchar(ord("B"))
+
+        positioned = new_screen()
+        positioned.row = 7
+        positioned.col = 11
+        positioned.wrap_pending = False
+        self.assertEqual(positioned.print_at(2, 63, b"AB"), 0)
+        self.assertEqual(positioned.bytes(), reference.bytes())
+        self.assertEqual(
+            (positioned.row, positioned.col, positioned.wrap_pending),
+            (7, 11, False),
+        )
+
     def test_print_at_preserves_sequential_cursor_and_pending_state(self):
         s = new_screen()
         s.row = 5
