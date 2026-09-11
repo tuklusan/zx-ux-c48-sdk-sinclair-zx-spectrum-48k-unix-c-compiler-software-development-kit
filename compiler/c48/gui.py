@@ -7,8 +7,8 @@
 # root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
 # for AI/ML model training are prohibited unless separately authorized.
 #
-# Attribution is required: "Based on original work by Supratim
-# Sanyal of SANYALnet Labs." See LICENSE for full terms, warranty disclaimer,
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
 from __future__ import annotations

@@ -95,6 +95,9 @@ def check_required_files() -> None:
         "compiler/tests/test_security_review.py",
         "compiler/tests/test_game_regressions.py", "compiler/verify_games.py",
         "compiler/verify_graphics_demos.py",
+        "compiler/verify_apps.py",
+        "compiler/app_expectations.json",
+        "compiler/tests/test_gui_framebuffer.py",
         "compiler/graphics_demo_expectations.json",
         "compiler/assets/font4x8-tasword.bin", "compiler/assets/font4x8-zxux.bin",
         "doc/C48 Language Specification Rev 0.11.docx",
@@ -102,11 +105,15 @@ def check_required_files() -> None:
         "doc/ZX-UX C48 SDK User Manual.docx",
         "doc/FLOAT5-ORACLE.md", "doc/HOST-DIVERGENCES.md", "doc/CONFORMANCE.md",
         "doc/RELEASE-NOTES.md", "doc/LICENSE-HEADER-POLICY.md", "doc/GAMES.md",
-        "doc/GRAPHICS-DEMOS.md",
+        "doc/GRAPHICS-DEMOS.md", "doc/APPS.md",
         "doc/ZX-UX C48 SDK Adversarial Security Review.docx",
         "doc/SECURITY-TEST-RESULTS.md",
         "usr/src/c48host.h", "usr/src/games/gameapi.h",
         "usr/src/demos/demoapi.h",
+        "usr/src/apps/appapi.h",
+        "usr/src/apps/sheet48.c",
+        "usr/src/apps/write48.c",
+        "usr/src/apps/wire3d.c",
         "usr/src/secguard.c", "usr/src/secoob.c",
         "usr/src/secuaf.c", "usr/src/secfree.c",
         "usr/src/secdbl.c", "usr/src/secloop.c",
@@ -257,8 +264,21 @@ def check_graphics_demos() -> None:
     if cp.returncode != 0:
         sys.stderr.write(cp.stdout + cp.stderr)
         fail("graphics demo verification failed")
-    if "GRAPHICS DEMO STATIC PASS: 21 demos" not in cp.stdout:
+    if "GRAPHICS DEMO STATIC PASS: 22 demos" not in cp.stdout:
         fail("graphics demo completion marker missing")
+
+
+
+def check_apps() -> None:
+    cp = run(
+        [sys.executable, "-B", str(ROOT / "verify_apps.py")],
+        timeout=120,
+    )
+    if cp.returncode != 0:
+        sys.stderr.write(cp.stdout + cp.stderr)
+        fail("application corpus verification failed")
+    if "APP VERIFY PASS: 3 apps" not in cp.stdout:
+        fail("application verifier completion marker missing")
 
 
 def check_security_programs() -> None:
@@ -386,6 +406,7 @@ def main() -> int:
         ("automated tests", check_tests),
         ("game corpus", check_games),
         ("graphics demo corpus", check_graphics_demos),
+        ("application corpus", check_apps),
         ("security fixture binaries", check_security_programs),
         ("deterministic demos", check_demos),
         ("clean-tree postflight", check_clean_tree),

@@ -15,10 +15,10 @@ patent, trademark, and governing-law provisions.
 -->
 # C48 Graphics Demo Reel
 
-The suite contains 21 clean-room C48 graphics and animation programs.
+The suite contains 22 clean-room C48 graphics and animation programs.
 Canonical screenshots are rendered from the exact 6912-byte Spectrum
 screen state produced by the C48 VM. The final workflow assigns exactly
-one demo to each of 21 independent GitHub-hosted jobs: seven Ubuntu,
+one demo to each of 22 independent GitHub-hosted jobs: eight Ubuntu,
 seven Windows, and seven macOS. Each job recompiles its demo, proves the
 binary and canonical screen/PNG hashes, runs an extended animation pass,
 and uploads SCR, PNG, and JSON evidence with measured stress duration.
@@ -46,3 +46,5 @@ and uploads SCR, PNG, and JSON evidence with measured stress duration.
 19. **Fractal Forest** (`forest.c`) - canonical frame 2, stress 4, `macos-latest`.
 20. **Raycast Labyrinth** (`raymaze.c`) - canonical frame 2, stress 4, `macos-latest`.
 21. **C48 Grand Finale** (`showcase.c`) - canonical frame 2, stress 8, `macos-latest`.
+
+22. **UDG Walker** (`spriteanim.c`) - canonical frame 12, stress 36, `ubuntu-latest`.

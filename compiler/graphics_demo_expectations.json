@@ -274,6 +274,19 @@
       "png_sha256": "2f2cf32f649e6b3481e0ccc3e0ef827934a27ac6569c47ef927d948c7e83e684",
       "lit_pixels": 2791,
       "attribute_values": 11
+    },
+    "spriteanim": {
+      "title": "UDG Walker",
+      "runner": "ubuntu-latest",
+      "frames": 12,
+      "stress_frames": 36,
+      "source_sha256": "be2d3836aa7864cf935380ebfe38334fe7b332e9cd1ff009954e35d6178c68c5",
+      "binary_sha256": "f77dacca79b272553023d0fe507478af7db0d22f9cca3a7b46fa717cb07b54c2",
+      "first_screen_sha256": "1419f8327436a5267198f324230597061a1a1b7f45aefd01d9608775fe65c03e",
+      "screen_sha256": "b0251b0204c0d94bc62d809cac83679ae421f10c31ce3aaac9ca0395dc5d7cd6",
+      "png_sha256": "2b93687de59b4a3582cb42df3227e4ac9e0cb4fc48a573273999bfa2ea6afd86",
+      "lit_pixels": 641,
+      "attribute_values": 4
     }
   }
 }

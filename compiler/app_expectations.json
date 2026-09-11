@@ -1,0 +1,21 @@
+{
+  "schema": 1,
+  "helper_sha256": "536c6618b59cc0d9b87d029c97e04969735d42f161676b22c22aa078ff64f221",
+  "apps": {
+    "sheet48": {
+      "source_sha256": "38d43b2d65f6eacc60d07aa0a5a566850f55a50a41f824e6d856266ecbe074e6",
+      "binary_sha256": "5a41b625e0436e0e8ea7be817a4e001235eeadce9f9e57a9f07c0ba585563345",
+      "screen_sha256": "68f96705adf756099467e5ba1382f7fa8a47947be38c685e57067816b1940b63"
+    },
+    "write48": {
+      "source_sha256": "4cf8be5bea7034f550998d135b70489dac8a5e679278e5dea9784592017756ef",
+      "binary_sha256": "d18711053388b813f6adaa0ad383cc10f9695ba1357a9aea4f5d2deaa71522a8",
+      "screen_sha256": "5264760ca71a18e50237244f30ceb40c50d6ca55e4cd6716d502af360d65ebd2"
+    },
+    "wire3d": {
+      "source_sha256": "9cd344fef4624f2b9222c8eb25d52d7a99e7e611f2e952f26c7e17ac44371e11",
+      "binary_sha256": "f29066dce4a4049bd9c8ba9190c97fff58046f034c67b49c87a5fd712dc12257",
+      "screen_sha256": "9032f5bde7e1278ae7079b4588d513dd1dc717a692ca6e003afcb56a75d15962"
+    }
+  }
+}
