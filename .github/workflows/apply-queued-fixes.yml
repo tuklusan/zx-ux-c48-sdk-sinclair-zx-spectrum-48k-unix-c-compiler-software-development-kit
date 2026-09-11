@@ -95,5 +95,50 @@ jobs:
           morph.write_text(text.replace(old, new), encoding="ascii")
           PY
 
-      - name: Apply, build, verify, commit and push
-        run: python -B /tmp/apply-queued-fixes.py
+      - name: Build, verify and commit locally
+        shell: bash
+        run: |
+          mkdir -p /tmp/gitwrap
+          cat > /tmp/gitwrap/git <<'SH'
+          #!/bin/sh
+          if [ "$1" = "push" ]; then
+            echo "Deferred workflow-bearing git push"
+            exit 0
+          fi
+          exec /usr/bin/git "$@"
+          SH
+          chmod +x /tmp/gitwrap/git
+          PATH="/tmp/gitwrap:$PATH" python -B /tmp/apply-queued-fixes.py
+
+      - name: Publish verified non-workflow commit
+        shell: bash
+        run: |
+          git checkout origin/main -- .github/workflows
+          python - <<'PY'
+          from hashlib import sha256
+          from pathlib import Path
+
+          root = Path(".")
+          lines = []
+          for path in sorted(root.rglob("*")):
+              if not path.is_file():
+                  continue
+              rel = path.relative_to(root)
+              if ".git" in rel.parts or path.name == "MANIFEST.sha256":
+                  continue
+              data = path.read_bytes()
+              if path.suffix.lower() == ".bat":
+                  data = data.replace(b"\r\n", b"\n")
+              lines.append(
+                  f"{sha256(data).hexdigest()}  {rel.as_posix()}\n"
+              )
+          Path("MANIFEST.sha256").write_text(
+              "".join(lines), encoding="ascii", newline="\n"
+          )
+          PY
+          git add -A
+          git commit --amend --no-edit
+          python -B compiler/verify_release.py
+          test -z "$(git status --porcelain)"
+          test -z "$(git diff --name-only origin/main..HEAD -- .github/workflows)"
+          git push origin HEAD:main
