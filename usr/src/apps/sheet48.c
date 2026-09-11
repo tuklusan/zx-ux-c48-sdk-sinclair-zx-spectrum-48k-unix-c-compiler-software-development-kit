@@ -101,7 +101,7 @@ unsigned int sh_formula(char *s, int depth)
             return 0u;
         total = 0u;
         for (i = r1; i <= r2; i++)
-            total += sh_value(i - 1, c, depth + 1);
+            total = total + sh_value(i - 1, c, depth + 1);
         return total;
     }
     a = sh_ref(s + 1, &used, depth);
