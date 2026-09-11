@@ -7,8 +7,8 @@
 # root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
 # for AI/ML model training are prohibited unless separately authorized.
 #
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# Attribution is required: "Based on original work by Supratim
+# Sanyal of SANYALnet Labs." See LICENSE for full terms, warranty disclaimer,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
 from __future__ import annotations
@@ -18,7 +18,16 @@ import threading
 import time
 from dataclasses import dataclass
 
-from .screen import HEIGHT, WIDTH, ZXScreen
+from .screen import (
+    HEIGHT,
+    PALETTE_BRIGHT,
+    PALETTE_NORMAL,
+    SCREEN_SIZE,
+    WIDTH,
+    ZXScreen,
+    attr_offset,
+    bitmap_offset,
+)
 
 
 def is_break_key(keysym: str, state: int) -> bool:
@@ -60,13 +69,43 @@ def key_event_bytes(keysym: str, text: str) -> tuple[int, ...]:
         return ()
 
 
+def render_snapshot_rgb(mem: bytes, flash_phase: bool = False) -> bytes:
+    """Render one immutable 6912-byte Spectrum framebuffer snapshot.
+
+    The VM owns and mutates ``ZXScreen.mem`` on its worker thread. Tk must not
+    walk that live bytearray because a glyph or graphics primitive can be only
+    partly written while the GUI is reading it. This renderer consumes only a
+    frozen bytes snapshot published after a VM screen operation completes.
+    """
+    if len(mem) != SCREEN_SIZE:
+        raise ValueError("invalid Spectrum framebuffer snapshot size")
+    out = bytearray(WIDTH * HEIGHT * 3)
+    p = 0
+    for y in range(HEIGHT):
+        for x in range(WIDTH):
+            a = mem[attr_offset(x, y)]
+            ink = a & 7
+            paper = (a >> 3) & 7
+            br = (a >> 6) & 1
+            fl = (a >> 7) & 1
+            if fl and flash_phase:
+                ink, paper = paper, ink
+            bit = bool(mem[bitmap_offset(x, y)] & (0x80 >> (x & 7)))
+            c = (PALETTE_BRIGHT if br else PALETTE_NORMAL)[
+                ink if bit else paper
+            ]
+            out[p:p + 3] = bytes(c)
+            p += 3
+    return bytes(out)
+
+
 @dataclass
 class TkDisplay:
     """Small dependency-free Tk display for the 256x192 Spectrum framebuffer.
 
     Tk calls remain on the main thread. The VM executes on a worker thread and
-    requests redraws through a flag. Keyboard bytes are delivered through a
-    thread-safe queue.
+    publishes immutable framebuffer snapshots. Keyboard bytes are delivered
+    through a thread-safe queue.
     """
     screen: ZXScreen
     scale: int = 3
@@ -74,7 +113,10 @@ class TkDisplay:
 
     def __post_init__(self) -> None:
         self.keys: queue.Queue[int] = queue.Queue()
-        self._dirty = True
+        self._frame_lock = threading.Lock()
+        self._frame_generation = 0
+        self._frame_snapshot = self.screen.bytes()
+        self._rendered_generation = -1
         self._stop = False
         self._root = None
         self._photo = None
@@ -83,7 +125,20 @@ class TkDisplay:
         return self.keys.get()
 
     def update(self) -> None:
-        self._dirty = True
+        # Called by the VM worker after a complete screen operation. Snapshot
+        # before taking the mailbox lock so Tk never blocks the VM while it
+        # converts a previous snapshot to RGB.
+        snapshot = self.screen.bytes()
+        with self._frame_lock:
+            self._frame_generation += 1
+            self._frame_snapshot = snapshot
+
+    def _frame_after(self, rendered_generation: int) -> tuple[int, bytes] | None:
+        """Return the newest published frame if it is newer than the caller."""
+        with self._frame_lock:
+            if self._frame_generation == rendered_generation:
+                return None
+            return self._frame_generation, self._frame_snapshot
 
     def close(self) -> None:
         self._stop = True
@@ -106,9 +161,9 @@ class TkDisplay:
 
         def key(event):
             if is_break_key(event.keysym, int(event.state)):
-                # CAPS SHIFT+SPACE is BREAK on the Spectrum.  A host Shift+Space
+                # CAPS SHIFT+SPACE is BREAK on the Spectrum. A host Shift+Space
                 # therefore closes a completed final frame, or aborts a still-running
-                # VM session.  The VM worker is a daemon so blocked getchar() calls do
+                # VM session. The VM worker is a daemon so blocked getchar() calls do
                 # not keep the host process alive after the display exits.
                 result["break_running"] = not bool(result["done"])
                 self._stop = True
@@ -128,15 +183,22 @@ class TkDisplay:
                 result["error"] = exc
             finally:
                 result["done"] = True
-                self._dirty = True
+                # Publish the exact final framebuffer. This also makes a final
+                # update impossible to lose if Tk is rendering an older frame.
+                self.update()
 
         threading.Thread(target=worker, daemon=True).start()
 
         def redraw():
             if self._stop:
                 root.destroy(); return
-            if self._dirty:
-                rgb = self.screen.render_rgb(flash_phase=bool(int(time.monotonic()*2)&1))
+            frame = self._frame_after(self._rendered_generation)
+            if frame is not None:
+                generation, snapshot = frame
+                rgb = render_snapshot_rgb(
+                    snapshot,
+                    flash_phase=bool(int(time.monotonic()*2)&1),
+                )
                 # PPM is accepted natively by Tk PhotoImage and avoids Pillow.
                 ppm = b"P6\n256 192\n255\n" + rgb
                 photo = tk.PhotoImage(data=ppm, format="PPM")
@@ -145,7 +207,9 @@ class TkDisplay:
                 self._photo = photo
                 canvas.delete("all")
                 canvas.create_image(0, 0, image=photo, anchor="nw")
-                self._dirty = False
+                # A newer publish that happened during RGB conversion has a
+                # higher generation and therefore remains pending next tick.
+                self._rendered_generation = generation
             if result["done"]:
                 # Keep the final frame visible until the user closes the window.
                 # Completion guidance lives in host chrome, never in the 6912-byte
