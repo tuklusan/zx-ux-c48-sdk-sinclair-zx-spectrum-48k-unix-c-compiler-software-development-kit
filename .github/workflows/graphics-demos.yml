@@ -15,7 +15,7 @@ name: C48 graphics demo reel
 
 "on":
   push:
-    branches: [main, graphics-demos-21]
+    branches: [main]
   pull_request:
   workflow_dispatch:
 
@@ -27,7 +27,7 @@ jobs:
     name: ${{ matrix.demo }} / ${{ matrix.os }}
     strategy:
       fail-fast: false
-      max-parallel: 21
+      max-parallel: 22
       matrix:
         include:
           - {demo: goblet, os: ubuntu-latest}
@@ -43,6 +43,7 @@ jobs:
           - {demo: orrery, os: macos-latest}
           - {demo: firework, os: ubuntu-latest}
           - {demo: sprites, os: windows-latest}
+          - {demo: spriteanim, os: ubuntu-latest}
           - {demo: plasma, os: macos-latest}
           - {demo: kaleido, os: ubuntu-latest}
           - {demo: moire, os: windows-latest}
