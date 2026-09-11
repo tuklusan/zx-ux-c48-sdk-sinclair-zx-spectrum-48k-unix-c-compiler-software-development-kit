@@ -18,7 +18,6 @@ name: Apply queued C48 UI fixes
     branches: [main]
     paths:
       - ".github/workflows/apply-queued-fixes.yml"
-      - ".github/workflows/apply-queued-fixes.payload.*"
 
 permissions:
   contents: write
@@ -45,7 +44,7 @@ jobs:
       - name: Materialize queued-fix builder
         shell: bash
         run: |
-          cat .github/workflows/apply-queued-fixes.payload.* \
+          cat .ci/apply-queued-fixes.payload.* \
             | base64 --decode \
             | gzip --decompress \
             > /tmp/apply-queued-fixes.py
@@ -113,7 +112,12 @@ jobs:
       - name: Publish verified non-workflow commit
         shell: bash
         run: |
-          git checkout origin/main -- .github/workflows
+          git checkout origin/main -- \
+            .github/workflows/verify.yml \
+            .github/workflows/graphics-demos.yml \
+            .github/workflows/apply-queued-fixes.yml
+          rm -f .ci/apply-queued-fixes.payload.*
+          rmdir .ci 2>/dev/null || true
           python - <<'PY'
           from hashlib import sha256
           from pathlib import Path
@@ -140,5 +144,8 @@ jobs:
           git commit --amend --no-edit
           python -B compiler/verify_release.py
           test -z "$(git status --porcelain)"
-          test -z "$(git diff --name-only origin/main..HEAD -- .github/workflows)"
+          test -z "$(git diff --name-only origin/main..HEAD -- \
+            .github/workflows/verify.yml \
+            .github/workflows/graphics-demos.yml \
+            .github/workflows/apply-queued-fixes.yml)"
           git push origin HEAD:main
