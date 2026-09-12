@@ -145,11 +145,9 @@ jobs:
               "per_demo_files": ["c48b", "scr", "png", "json"],
           }
           (root / "RELEASE-EVIDENCE.json").write_text(
-              json.dumps(metadata, indent=2, sort_keys=True) + "
-",
+              json.dumps(metadata, indent=2, sort_keys=True) + "\n",
               encoding="ascii",
-              newline="
-",
+              newline="\n",
           )
           members = sorted(
               p for p in root.iterdir()
@@ -157,13 +155,11 @@ jobs:
           )
           (root / "SHA256SUMS").write_text(
               "".join(
-                  f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}
-"
+                  f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}\n"
                   for p in members
               ),
               encoding="ascii",
-              newline="
-",
+              newline="\n",
           )
           PY
 
