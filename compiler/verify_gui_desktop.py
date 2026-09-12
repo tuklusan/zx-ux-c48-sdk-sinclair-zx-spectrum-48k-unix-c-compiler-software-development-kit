@@ -33,6 +33,7 @@ if str(COMPILER) not in sys.path:
     sys.path.insert(0, str(COMPILER))
 
 from c48.gui import FRAME_HEIGHT, FRAME_WIDTH, footer_text
+from c48.screen import PALETTE_BRIGHT, PALETTE_NORMAL
 
 TIMEOUT = 90.0
 
@@ -270,6 +271,65 @@ def _send_key(process: subprocess.Popen, title: str, key: str, *, shift=False):
         raise AssertionError(f"unsupported GUI host: {sys.platform}")
 
 
+SPECTRUM_PALETTE = tuple(
+    sorted(set(PALETTE_NORMAL) | set(PALETTE_BRIGHT))
+)
+
+
+def _rgb_linf(left, right) -> int:
+    return max(abs(int(left[i]) - int(right[i])) for i in range(3))
+
+
+_MIN_PALETTE_SEPARATION = min(
+    _rgb_linf(left, right)
+    for index, left in enumerate(SPECTRUM_PALETTE)
+    for right in SPECTRUM_PALETTE[index + 1:]
+)
+AQUA_MAX_CHANNEL_DRIFT = (_MIN_PALETTE_SEPARATION - 1) // 2
+
+
+def _aqua_palette_spatial_match(expected_pixels, actual_pixels):
+    """Prove Aqua dithering preserved every Spectrum palette class in place.
+
+    Some Aqua compositors color-manage solid Tk pixels with one-channel
+    dithering, so one source RGB may legitimately appear as several adjacent
+    RGB triplets. Accept that only when each captured pixel remains uniquely
+    nearest to the exact Spectrum palette color expected at that same position
+    and stays strictly inside half the minimum palette separation. Therefore a
+    normal/bright swap, spatial shift, clipping, or cross-palette corruption
+    cannot be hidden by this allowance.
+    """
+    expected_pixels = tuple(tuple(pixel) for pixel in expected_pixels)
+    actual_pixels = tuple(tuple(pixel) for pixel in actual_pixels)
+    if len(expected_pixels) != len(actual_pixels):
+        return None
+    palette = set(SPECTRUM_PALETTE)
+    max_drift = 0
+    for source, shown in zip(expected_pixels, actual_pixels):
+        if source not in palette:
+            return None
+        distances = [
+            (_rgb_linf(shown, color), color)
+            for color in SPECTRUM_PALETTE
+        ]
+        best = min(distance for distance, _ in distances)
+        nearest = [
+            color for distance, color in distances if distance == best
+        ]
+        if (
+            best > AQUA_MAX_CHANNEL_DRIFT
+            or len(nearest) != 1
+            or nearest[0] != source
+        ):
+            return None
+        max_drift = max(max_drift, best)
+    return {
+        "max_channel_delta": max_drift,
+        "limit": AQUA_MAX_CHANNEL_DRIFT,
+        "minimum_palette_separation": _MIN_PALETTE_SEPARATION,
+    }
+
+
 def _palette_bijection(expected, actual) -> dict[str, list[int]] | None:
     """Return an exact spatial color bijection, or None if geometry/content differs.
 
@@ -344,6 +404,7 @@ def _screenshot(
     crop_path = evidence / f"{name}-canvas.png"
     exact = False
     palette_map = None
+    palette_spatial = None
     shot = crop = base = None
     rendered_hash = ""
     deadline = time.monotonic() + 3.0
@@ -369,20 +430,31 @@ def _screenshot(
             palette_map = _palette_bijection(expected, base)
             if palette_map is not None:
                 break
+            palette_spatial = _aqua_palette_spatial_match(
+                expected.getdata(),
+                base.getdata(),
+            )
+            if palette_spatial is not None:
+                break
         if time.monotonic() >= deadline:
             break
 
     assert shot is not None and crop is not None and base is not None
     shot.save(full_path)
     crop.save(crop_path)
-    if not exact and palette_map is None:
+    if not exact and palette_map is None and palette_spatial is None:
         raise AssertionError(
             f"desktop canvas pixels differ from Tk-rendered frame for {name}: "
             f"desktop={rendered_hash} expected={expected_hash}; "
             f"shot={shot.size} tk_screen=({screen_w},{screen_h}) "
             f"crop={crop.size} windowing={window.get('windowing_system')}"
         )
-    comparison = "exact-rgb" if exact else "aqua-color-bijection"
+    if exact:
+        comparison = "exact-rgb"
+    elif palette_map is not None:
+        comparison = "aqua-color-bijection"
+    else:
+        comparison = "aqua-palette-spatial"
     return {
         "desktop_png": full_path.name,
         "desktop_sha256": hashlib.sha256(full_path.read_bytes()).hexdigest(),
@@ -393,6 +465,7 @@ def _screenshot(
         "frame_sha256": expected_hash,
         "comparison": comparison,
         "aqua_color_bijection": palette_map,
+        "aqua_palette_spatial": palette_spatial,
         "capture_size": list(shot.size),
         "canvas_capture_size": list(crop.size),
     }

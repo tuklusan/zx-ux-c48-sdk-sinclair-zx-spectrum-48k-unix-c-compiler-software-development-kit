@@ -31,10 +31,15 @@ from c48.gui import (
     FRAME_WIDTH,
     TkDisplay,
     fit_footer_font_size,
+    largest_fully_mapped_scale,
     render_snapshot_frame_rgb,
     render_snapshot_rgb,
 )
 from c48.screen import Font4x8, ZXScreen, bitmap_offset
+from verify_gui_desktop import (
+    AQUA_MAX_CHANNEL_DRIFT,
+    _aqua_palette_spatial_match,
+)
 
 FONT_PATH = COMPILER / "assets" / "font4x8-tasword.bin"
 
@@ -187,6 +192,48 @@ class GuiFramebufferRegressions(unittest.TestCase):
         self.assertEqual(size, 6)
         self.assertLessEqual(measure(size, COPYRIGHT_TEXT), width)
         self.assertGreater(measure(size + 1, COPYRIGHT_TEXT), width)
+
+    def test_display_scale_keeps_largest_fully_mapped_canvas(self):
+        attempts = []
+
+        def map_scale(scale):
+            attempts.append(scale)
+            if scale == 3:
+                return 960, 642
+            return FRAME_WIDTH * scale, FRAME_HEIGHT * scale
+
+        self.assertEqual(largest_fully_mapped_scale(3, map_scale), 2)
+        self.assertEqual(attempts, [3, 2])
+
+    def test_display_scale_keeps_requested_scale_when_fully_mapped(self):
+        attempts = []
+
+        def map_scale(scale):
+            attempts.append(scale)
+            return FRAME_WIDTH * scale, FRAME_HEIGHT * scale
+
+        self.assertEqual(largest_fully_mapped_scale(3, map_scale), 3)
+        self.assertEqual(attempts, [3])
+
+    def test_display_scale_fails_if_even_1x_is_clipped(self):
+        with self.assertRaisesRegex(RuntimeError, "cannot fully map"):
+            largest_fully_mapped_scale(1, lambda scale: (319, 239))
+        with self.assertRaisesRegex(ValueError, "scale must be positive"):
+            largest_fully_mapped_scale(0, lambda scale: (320, 240))
+
+        match = _aqua_palette_spatial_match(
+            [(0, 0, 0), (0, 255, 255), (205, 0, 0), (255, 0, 255)],
+            [(1, 0, 0), (16, 255, 254), (204, 2, 0), (254, 3, 254)],
+        )
+        self.assertIsNotNone(match)
+        self.assertEqual(match["max_channel_delta"], 16)
+        self.assertEqual(AQUA_MAX_CHANNEL_DRIFT, 24)
+        self.assertIsNone(
+            _aqua_palette_spatial_match([(0, 255, 255)], [(0, 255, 0)])
+        )
+        self.assertIsNone(
+            _aqua_palette_spatial_match([(0, 205, 0)], [(25, 205, 0)])
+        )
 
 
 if __name__ == "__main__":

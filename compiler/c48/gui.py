@@ -130,6 +130,25 @@ def fit_footer_font_size(
     return 1
 
 
+def largest_fully_mapped_scale(requested_scale: int, map_scale) -> int:
+    """Map the largest integer display scale the host can show completely.
+
+    Desktop window managers are allowed to constrain oversized toplevels.
+    Aqua does this on small hosted desktops, which can silently shrink the Tk
+    canvas even after an explicit geometry request.  Probe each integer scale
+    from the caller's preference downward and accept only an exact full-canvas
+    mapping.
+    """
+    if requested_scale < 1:
+        raise ValueError("display scale must be positive")
+    for scale in range(requested_scale, 0, -1):
+        mapped_width, mapped_height = map_scale(scale)
+        required = (FRAME_WIDTH * scale, FRAME_HEIGHT * scale)
+        if (int(mapped_width), int(mapped_height)) == required:
+            return scale
+    raise RuntimeError("host desktop cannot fully map even a 1x C48 canvas")
+
+
 def render_snapshot_rgb(mem: bytes, flash_phase: bool = False) -> bytes:
     """Render one immutable 6912-byte Spectrum framebuffer snapshot."""
     if len(mem) != SCREEN_SIZE:
@@ -337,22 +356,41 @@ class TkDisplay:
         )
         copyright_footer.pack(fill="x")
 
-        # Let the packed canvas and footers establish the client-area request
-        # before locking the toplevel size.  Calling resizable(False, False)
-        # before this point leaves Aqua pinned to Tk's pre-map 200x200 default.
-        root.update_idletasks()
-        requested_width = max(canvas_width, int(root.winfo_reqwidth()))
-        requested_height = max(1, int(root.winfo_reqheight()))
-        root.geometry(f"{requested_width}x{requested_height}")
-        root.update_idletasks()
+        # Let the host map the requested client area before locking the window.
+        # Aqua can constrain an oversized toplevel to the usable desktop area;
+        # when that happens Tk silently shrinks the packed canvas.  Detect that
+        # real mapped geometry and step down to the largest integer scale whose
+        # complete Spectrum frame is actually visible.
+        def map_scale(scale: int) -> tuple[int, int]:
+            nonlocal canvas_width
+            self.scale = scale
+            canvas_width = FRAME_WIDTH * scale
+            canvas.configure(
+                width=canvas_width,
+                height=FRAME_HEIGHT * scale,
+            )
+            copy_size = fit_footer_font_size(
+                COPYRIGHT_TEXT,
+                max(1, canvas_width - 12),
+                measure,
+            )
+            self._copy_font.configure(size=copy_size)
+            root.update_idletasks()
+            requested_width = max(canvas_width, int(root.winfo_reqwidth()))
+            requested_height = max(1, int(root.winfo_reqheight()))
+            root.geometry(f"{requested_width}x{requested_height}")
+            # A full event-loop turn is required here: update_idletasks() alone
+            # can report the requested geometry rather than the host-constrained
+            # mapped geometry on Aqua.
+            root.update()
+            return int(canvas.winfo_width()), int(canvas.winfo_height())
+
+        self.scale = largest_fully_mapped_scale(self.scale, map_scale)
         root.resizable(False, False)
         if self._probe_path:
             root.lift()
             root.focus_force()
             canvas.focus_force()
-            # On Aqua, update_idletasks() can leave winfo geometry at Tk's
-            # pre-map defaults (for example 200x200).  One full event-loop turn
-            # maps the real host window before acceptance evidence is recorded.
             root.update()
             self._probe(
                 "window_ready",

@@ -26,8 +26,10 @@ system, accept keys delivered through the host input system, distinguish
 completed close from an active BREAK, and return the required process status.
 In addition, compositor screenshots are checked against the exact RGB frame Tk
 reported as rendered. Linux and Windows require byte-exact RGB equality. Aqua
-permits only a one-to-one color bijection across the entire framebuffer, preserving
-every pixel position while accounting for host compositor color management.
+accepts a one-to-one color bijection, or tightly bounded spatial dithering only
+when every captured pixel remains uniquely classified as the exact Spectrum
+palette color expected at that same position. Both paths preserve every pixel
+position while accounting for host compositor color management.
 
 Linux executes the native Tk/X11 path under a fresh Xvfb server because GitHub's
 Linux runners are headless. Windows and macOS execute their native Tk windowing
@@ -54,7 +56,9 @@ blocker once all eight automated rows and the aggregate evidence job pass.
    candidate commit.
 2. Run the platform `c48run --version` launcher and require `c48run 1.0.0`.
 3. Launch `usr/bin/demos/forest.c48b` without `--headless`; require the Tk window,
-   a fully mapped 960x720 Spectrum canvas (never Tk's 200x200 pre-map default),
+   a fully mapped Spectrum canvas at the largest host-safe integer scale
+   (normally 3x/960x720; constrained desktops may use 2x/640x480), never
+   Tk's clipped pre-map/default geometry,
    successful program completion, the exact footer text
    `Program ended - Shift+Space to close`, a compositor screenshot whose canvas
    pixels equal the Tk-rendered framebuffer, and Shift+Space close preserving
@@ -86,7 +90,8 @@ after 90 days. See `screenshots/gui-desktop/README.md`.
 
 ## Release rule
 
-The immutable `1.0.0` tag/release may be created only after all eight jobs and
+An immutable release tag (including a release-candidate tag) may be created only
+after all eight jobs and
 the aggregate GUI-evidence job pass on the intended release commit, with the
 ordinary release verifier also green. Any runtime or GUI change after that gate
 requires the matrix to run again. Evidence-only artifact retention does not

@@ -40,14 +40,17 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - live-allocation indexing that retains dead allocation IDs for ABA defense without quadratic allocator scans;
 - visible C48 security fixtures, an 84-case adversarial review corpus, and mechanically enforced 64-column C48 source;
 - 50-Hz Tk polling, accelerated byte-run framebuffer conversion, and explicit `yield()`/animation-sleep presentation barriers so intentional logical frames are painted rather than silently coalesced;
-- Tk top-level sizing now waits for the packed canvas/footer requested geometry before locking resize, preventing Aqua from freezing the release window at its 200x200 pre-map default;
+- Tk top-level sizing now maps the packed canvas/footer before locking resize and
+  automatically steps down to the largest fully visible integer scale when a host
+  desktop constrains the requested surface, preventing Aqua from freezing or clipping
+  the release window;
 - Windows standard-library `winsound` playback with no pip dependency, plus one-time visible/terminal diagnostics and nonfatal silent completion for the shipped tune when a POSIX audio adapter is absent;
 - categorized `examples`, `sound`, and `security` source/binary trees with no uncategorized programs at `usr/src` or `usr/bin` root;
 - mathematical 64-column overlays on the math-oriented graphics tranche, a 75%-scale Mobius projection, and corrected Hangman gallows alignment.
 
 ## Frozen verification surface
 
-- automated conformance/regression/security tests: 335, including the 84 ordered attacks from the adversarial security review, tty64 deferred-wrap regressions, and ROM-derived BEEP/PCM/blocking tests;
+- automated conformance/regression/security tests: 338, including the 84 ordered attacks from the adversarial security review, tty64 deferred-wrap regressions, and ROM-derived BEEP/PCM/blocking tests;
 - deterministic demos: 6 (`hello`, `colors`, `graphics`, `udg`, `maze`, `argv`);
 - default Tasword F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339`;
 - alternate ZX-UX F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339` (currently byte-identical to the supplied Tasword asset);

@@ -33,8 +33,10 @@ Git; the workflow and reports carry the candidate commit SHA.
 The full-desktop PNGs are actual host screenshot captures. Their canvas regions
 are cropped using Tk-reported screen geometry and compared, after nearest-neighbor
 normalization, with the RGB framebuffer that Tk reported as painted. Linux and
-Windows require byte-for-byte RGB identity. Aqua additionally permits only a
-strict one-to-one color bijection that preserves every pixel position, accounting
-for compositor color management without masking clipping or spatial differences.
-This makes the screenshots executable release evidence rather than decorative
-images.
+Windows require byte-for-byte RGB identity. Aqua first accepts the same strict
+one-to-one color bijection. If the host compositor spatially dithers color-managed
+pixels, every captured pixel must instead remain uniquely classified as the exact
+Spectrum palette color expected at that same position and stay inside half the
+minimum palette separation. This preserves spatial identity while rejecting
+clipping, shifts, normal/bright swaps, or cross-palette corruption. This makes the
+screenshots executable release evidence rather than decorative images.
