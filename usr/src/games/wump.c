@@ -60,6 +60,13 @@ void w_draw(void)
     print_at(17, 0, "Command:");
 }
 
+void w_status(void)
+{
+    game_show_last(15);
+    game_putc(17, 9, ' ');
+    print_at(19, 0, "                                ");
+}
+
 int w_pick(int key)
 {
     if (key == 'a')
@@ -83,67 +90,75 @@ int main(void)
     w_turns = 0;
     while (1) {
         w_draw();
-        key = game_key_echo(17, 9);
-        w_turns++;
-        if (key == 'q')
-            return 0;
-        if (key == 's') {
-            print_at(19, 0, "Shoot down tunnel a, b, or c?");
-            key = game_key_echo(19, 30);
+        while (1) {
+            key = game_key_echo(17, 9);
+            w_turns++;
+            if (key == 'q')
+                return 0;
+            if (key == 's') {
+                print_at(19, 0,
+                    "Shoot down tunnel a, b, or c?");
+                key = game_key_echo(19, 30);
+                dest = w_pick(key);
+                if (dest < 0) {
+                    game_record2('s', key, 3);
+                    w_status();
+                    continue;
+                }
+                if (dest == w_room) {
+                    cls();
+                    print_at(8, 10, "You slew the Wumpus!");
+                    print_at(10, 10, "Press q to leave.");
+                    while (game_key() != 'q')
+                        w_turns++;
+                    return 0;
+                }
+                arrows--;
+                game_record2('s', key, 5);
+                if (arrows == 0) {
+                    cls();
+                    print_at(8, 10,
+                        "No arrows. The Wumpus wins.");
+                    print_at(10, 10, "Press q to leave.");
+                    while (game_key() != 'q')
+                        w_turns++;
+                    return 0;
+                }
+                break;
+            }
             dest = w_pick(key);
             if (dest < 0) {
-                game_record2('s', key, 3);
+                game_record(key, 3);
+                w_status();
                 continue;
             }
-            if (dest == w_room) {
+            player_room = dest;
+            game_record(key, 1);
+            if (player_room == p_room) {
                 cls();
-                print_at(8, 10, "You slew the Wumpus!");
+                print_at(8, 10,
+                    "You fell into a bottomless pit.");
                 print_at(10, 10, "Press q to leave.");
                 while (game_key() != 'q')
                     w_turns++;
                 return 0;
             }
-            arrows--;
-            game_record2('s', key, 5);
-            if (arrows == 0) {
+            if (player_room == w_room) {
                 cls();
-                print_at(8, 10, "No arrows. The Wumpus wins.");
+                print_at(8, 10, "The Wumpus got you.");
                 print_at(10, 10, "Press q to leave.");
                 while (game_key() != 'q')
                     w_turns++;
                 return 0;
             }
-            continue;
-        }
-        dest = w_pick(key);
-        if (dest < 0) {
-            game_record(key, 3);
-            continue;
-        }
-        player_room = dest;
-        game_record(key, 1);
-        if (player_room == p_room) {
-            cls();
-            print_at(8, 10, "You fell into a bottomless pit.");
-            print_at(10, 10, "Press q to leave.");
-            while (game_key() != 'q')
-                w_turns++;
-            return 0;
-        }
-        if (player_room == w_room) {
-            cls();
-            print_at(8, 10, "The Wumpus got you.");
-            print_at(10, 10, "Press q to leave.");
-            while (game_key() != 'q')
-                w_turns++;
-            return 0;
-        }
-        if (player_room == b_room) {
-            player_room = game_rand(12);
-            if (player_room == p_room)
-                player_room = 0;
-            if (player_room == w_room)
-                player_room = 0;
+            if (player_room == b_room) {
+                player_room = game_rand(12);
+                if (player_room == p_room)
+                    player_room = 0;
+                if (player_room == w_room)
+                    player_room = 0;
+            }
+            break;
         }
     }
 }

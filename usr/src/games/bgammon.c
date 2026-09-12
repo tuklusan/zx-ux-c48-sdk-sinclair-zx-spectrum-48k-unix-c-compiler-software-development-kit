@@ -238,6 +238,19 @@ void bg_move(int src, int die, int side)
     bg_pt[dest]--;
 }
 
+void bg_prompt(int die)
+{
+    print_at(20, 0, "Move die:");
+    game_num(20, 10, (unsigned int)die);
+    print_at(21, 0, "Source:");
+}
+
+void bg_status(void)
+{
+    game_show_last(19);
+    game_putc(21, 8, ' ');
+}
+
 int bg_play(int die)
 {
     int key;
@@ -247,11 +260,9 @@ int bg_play(int die)
         return 0;
     }
     bg_skip_die = 0;
+    bg_show();
+    bg_prompt(die);
     while (1) {
-        bg_show();
-        print_at(20, 0, "Move die:");
-        game_num(20, 10, (unsigned int)die);
-        print_at(21, 0, "Source:");
         key = game_key_echo(21, 8);
         bg_turns++;
         if (key == '0')
@@ -262,6 +273,7 @@ int bg_play(int die)
             src = key - 'a';
         else {
             game_record(key, 3);
+            bg_status();
             continue;
         }
         if (bg_can(src, die, bg_side)) {
@@ -270,6 +282,7 @@ int bg_play(int die)
             return 0;
         }
         game_record2(key, '0' + die, 2);
+        bg_status();
     }
 }
 

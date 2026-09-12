@@ -17,47 +17,59 @@ patent, trademark, and governing-law provisions.
 
 ## Normative requirement
 
-C48 uses the Sinclair ZX Spectrum five-byte numeric representation.  The language
-specification's Section 94 requires a golden corpus to be compared against the
-canonical Spectrum ROM conversion path, the native compiler/runtime, and the Windows
-host implementation.  A host implementation may not certify itself solely against
-IEEE floating point.
+C48 uses the Sinclair ZX Spectrum five-byte numeric representation. The
+language specification's Section 94 requires a golden corpus to be compared
+against the canonical Spectrum ROM conversion path, the native
+compiler/runtime, and the Windows host implementation. A host implementation
+may not certify itself solely against IEEE floating point.
 
 ## What the pre-1.0 SDK implements and tests
 
-`compiler/c48/float5.py` stores every C48 float as exactly five bytes.  Parsing from
-decimal text uses `Decimal`/`Fraction` only as exact host-side construction tools;
-stored C48 state is always quantized to the five-byte representation.
+`compiler/c48/float5.py` stores every C48 float as exactly five bytes. Parsing
+from decimal text uses `Decimal`/`Fraction` only as exact host-side construction
+tools; stored C48 state is always quantized to the five-byte representation.
+Core `+`, `-`, `*`, and `/` use exact rational intermediates and quantize after
+each C48 operation.
 
-The SDK tests exact five-byte goldens for the required basic literal set and exercises
-representative fractional and exponent forms, range failures, integer conversions,
-comparisons, and operation-boundary quantization.  Core `+`, `-`, `*`, and `/` use
-exact rational intermediates and quantize after each C48 operation.
+`compiler/c48/rommath.py` imports the native 48K ROM calculator algorithms at
+source level from the checked-in `Spectrum48.asm` disassembly. It implements
+`sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sqrt`, `exp`, `log`, and `pow`
+using the ROM's compressed constants, argument reduction, calculator operation
+order, zero-power rules, and Chebyshev series. Every arithmetic operation in
+that path is quantized through `Float5`.
 
-## What is NOT certified in the pre-1.0 SDK
+The normal `c48run` host runtime now selects that ROM-derived path for the
+transcendental runtime family. `c48run --allow-approx-rom-math` remains available only as an
+explicit development fallback; it selects Python host math followed by Float5
+requantization and is not an oracle path.
 
-The pre-1.0 SDK does **not** claim complete byte-for-byte differential certification against
-an executing canonical 48K ROM for every Float5 conversion/arithmetic path.  In
-particular, ROM calculator rounding/canonicalization details at difficult boundaries
-have not been proven exhaustively by an independent ROM execution harness.
+The SDK tests exact five-byte reference points for the ROM-derived functions,
+including zero/one cases, pi-derived inverse-trig values, square root,
+zero-power behavior, and domain/range failures. `fabs` remains exact
+sign/magnitude handling and does not require transcendental math.
 
-The transcendental/runtime family (`sin`, `cos`, `tan`, `asin`, `acos`, `atan`,
-`sqrt`, `exp`, `log`, `pow`) is therefore disabled in normal host execution.  A call
-fails with a controlled runtime error unless `c48run --allow-approx-rom-math` is used.
-That option uses Python host math and re-quantizes the result to Float5; it is provided
-only for exploratory game development and is explicitly non-oracle/non-certified.
+## Certification boundary that remains open
 
-`fabs` is exact sign/magnitude handling and does not require host transcendental math.
+This change removes the old host-runtime blocker that disabled transcendental
+functions by default. It does **not** claim that all Float5 arithmetic and
+conversion boundaries have now been exhaustively compared byte-for-byte
+against an independently executing 48K ROM.
 
-## ROM asset policy
+It also does not close the language specification's full Section-94 three-way
+ROM/native/host certification, because the future native compiler/runtime side
+is still outside this pre-1.0 SDK's certified envelope. See `CONFORMANCE.md`.
 
-The SDK does not redistribute the ZX Spectrum ROM.  A standard 16K 48K ROM exists in
-the user's separate emulator repository and can be used in a future differential-test
-harness.  Until such an independent harness closes Section 94, this document is the
-formal certification boundary.
+## ROM reference source
+
+The source-level import is tied to
+`doc/reference/rom-disassemblies/spectrum-48k/Spectrum48.asm`. In particular,
+the implementation follows the ROM calculator's `series-xx`, `exp`, `ln`,
+`get-argt`, `sin`, `cos`, `tan`, `atn`, `asn`, `acs`, `sqr`, and `to-power`
+routines rather than substituting host libm formulas.
 
 ## Release claim
 
-Therefore the pre-1.0 SDK may be described as passing its documented host conformance envelope,
-but not as completing the native C48 Section-94 three-way ROM/native/host float
-certification.  This is a bounded open conformance item, not a hidden PASS.
+The pre-1.0 SDK may therefore claim a default ROM-derived host implementation
+for the C48 transcendental runtime family. It may not claim complete
+Section-94 three-way ROM/native/host differential certification until that
+separate native and independent-oracle work is complete.

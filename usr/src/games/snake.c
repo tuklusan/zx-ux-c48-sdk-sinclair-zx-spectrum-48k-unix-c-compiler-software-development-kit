@@ -39,7 +39,7 @@ void s_food(void)
     } while (s_hit(s_fx, s_fy, s_len));
 }
 
-void s_draw(void)
+void s_draw_board(void)
 {
     int x;
     int y;
@@ -71,6 +71,10 @@ int main(void)
     int ny;
     int eat;
     int body;
+    int tail_x;
+    int tail_y;
+    int old_head_x;
+    int old_head_y;
     int i;
     s_len = 4;
     s_x[0] = 8;
@@ -86,8 +90,8 @@ int main(void)
     s_score = 0;
     s_turns = 0;
     s_food();
+    s_draw_board();
     while (1) {
-        s_draw();
         key = game_key_echo(20, 6);
         s_turns++;
         if (key == 'q')
@@ -95,6 +99,8 @@ int main(void)
         if (key == 'w') {
             if (s_dy == 1) {
                 game_record(key, 2);
+                game_show_last(19);
+                game_putc(20, 6, ' ');
                 continue;
             }
             s_dx = 0;
@@ -103,6 +109,8 @@ int main(void)
         else if (key == 's') {
             if (s_dy == -1) {
                 game_record(key, 2);
+                game_show_last(19);
+                game_putc(20, 6, ' ');
                 continue;
             }
             s_dx = 0;
@@ -111,6 +119,8 @@ int main(void)
         else if (key == 'a') {
             if (s_dx == 1) {
                 game_record(key, 2);
+                game_show_last(19);
+                game_putc(20, 6, ' ');
                 continue;
             }
             s_dx = -1;
@@ -119,6 +129,8 @@ int main(void)
         else if (key == 'd') {
             if (s_dx == -1) {
                 game_record(key, 2);
+                game_show_last(19);
+                game_putc(20, 6, ' ');
                 continue;
             }
             s_dx = 1;
@@ -126,6 +138,8 @@ int main(void)
         }
         else {
             game_record(key, 3);
+            game_show_last(19);
+            game_putc(20, 6, ' ');
             continue;
         }
         game_record(key, 1);
@@ -139,6 +153,10 @@ int main(void)
             break;
         if (s_hit(nx, ny, body))
             break;
+        tail_x = s_x[s_len - 1];
+        tail_y = s_y[s_len - 1];
+        old_head_x = s_x[0];
+        old_head_y = s_y[0];
         if (eat) {
             for (i = s_len; i > 0; i--) {
                 s_x[i] = s_x[i - 1];
@@ -155,8 +173,17 @@ int main(void)
         }
         s_x[0] = nx;
         s_y[0] = ny;
-        if (eat)
+        if (!eat)
+            game_putc(tail_y + 3, tail_x + 4, ' ');
+        game_putc(old_head_y + 3, old_head_x + 4, 'o');
+        game_putc(s_y[0] + 3, s_x[0] + 4, '@');
+        if (eat) {
             s_food();
+            game_putc(s_fy + 3, s_fx + 4, '*');
+            game_num(17, 7, (unsigned int)s_score);
+        }
+        game_show_last(19);
+        game_putc(20, 6, ' ');
         if (s_score == 20) {
             cls();
             print_at(8, 8, "Snake master. Press q.");

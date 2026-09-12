@@ -47,8 +47,9 @@ class Float5:
     +,-,*,/ operations use exact rational intermediates, so host IEEE precision
     cannot leak across C48 operation boundaries.
 
-    ROM transcendental functions are intentionally *not* claimed byte-for-byte
-    certified here; see doc/FLOAT5-ORACLE.md in the SDK release.
+    ROM-derived transcendental functions live in ``c48.rommath``. Full
+    ROM/native/host certification remains a separate release boundary; see
+    doc/FLOAT5-ORACLE.md in the SDK release.
     """
 
     raw: bytes

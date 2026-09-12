@@ -67,6 +67,13 @@ void t_draw(void)
     print_at(17, 0, "Command:");
 }
 
+void t_status(void)
+{
+    game_show_last(15);
+    game_putc(17, 9, ' ');
+    print_at(19, 0, "                                ");
+}
+
 void t_attack(void)
 {
     int hit;
@@ -135,49 +142,61 @@ int main(void)
                 t_turns++;
             return 0;
         }
-        key = game_key_echo(17, 9);
-        t_turns++;
-        if (key == 'q')
-            return 0;
-        if (t_left() == 0 && t_quad == 0) {
+        while (1) {
+            key = game_key_echo(17, 9);
+            t_turns++;
             if (key == 'q')
                 return 0;
-            continue;
-        }
-        enemy = t_here();
-        acted = 0;
-        if (key == 'w')
-            acted = t_warp();
-        else if (key == 'p') {
-            if (enemy < 0)
-                game_record(key, 2);
-            else {
+            if (t_left() == 0 && t_quad == 0) {
+                t_status();
+                continue;
+            }
+            enemy = t_here();
+            acted = 0;
+            if (key == 'w') {
+                acted = t_warp();
+                if (!acted) {
+                    t_status();
+                    continue;
+                }
+            }
+            else if (key == 'p') {
+                if (enemy < 0) {
+                    game_record(key, 2);
+                    t_status();
+                    continue;
+                }
                 t_energy = t_energy - 250;
                 if (game_rand(100) < 80)
                     t_alive[enemy] = 0;
                 game_record(key, 1);
                 acted = 1;
             }
-        }
-        else if (key == 't') {
-            if (enemy < 0 || t_torps <= 0)
-                game_record(key, 2);
-            else {
+            else if (key == 't') {
+                if (enemy < 0 || t_torps <= 0) {
+                    game_record(key, 2);
+                    t_status();
+                    continue;
+                }
                 t_torps--;
                 if (game_rand(100) < 90)
                     t_alive[enemy] = 0;
                 game_record(key, 1);
                 acted = 1;
             }
+            else if (key == 's') {
+                t_energy = t_energy - 10;
+                game_record(key, 1);
+                acted = 1;
+            }
+            else {
+                game_record(key, 3);
+                t_status();
+                continue;
+            }
+            if (acted)
+                t_attack();
+            break;
         }
-        else if (key == 's') {
-            t_energy = t_energy - 10;
-            game_record(key, 1);
-            acted = 1;
-        }
-        else
-            game_record(key, 3);
-        if (acted)
-            t_attack();
     }
 }

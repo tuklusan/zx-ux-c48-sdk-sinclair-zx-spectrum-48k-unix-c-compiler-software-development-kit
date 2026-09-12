@@ -51,12 +51,19 @@ void adv_draw(void)
         print_at(12, 12, "crown");
     game_show_last(14);
     print_at(16, 0, "Command:");
+}
+
+void adv_status(void)
+{
+    print_at(18, 0, "                                ");
     if (adv_notice == 1)
         print_at(18, 0, "The tower gate is locked.");
     if (adv_notice == 2)
         print_at(18, 0, "There is no path that way.");
     if (adv_notice == 3)
         print_at(18, 0, "There is nothing to take.");
+    game_show_last(14);
+    game_putc(16, 9, ' ');
 }
 
 int adv_move(int key)
@@ -104,8 +111,8 @@ int main(void)
     have_crown = 0;
     adv_turns = 0;
     adv_notice = 0;
+    adv_draw();
     while (1) {
-        adv_draw();
         if (room == 0 && have_crown) {
             print_at(18, 0, "You return the crown. Victory!");
             print_at(20, 0, "Press q to leave.");
@@ -121,33 +128,40 @@ int main(void)
         if (key == 't' && room == 2 && !have_key) {
             have_key = 1;
             game_record(key, 1);
+            adv_draw();
             continue;
         }
         if (key == 't' && room == 4 && !have_crown) {
             have_crown = 1;
             game_record(key, 1);
+            adv_draw();
             continue;
         }
         if (key == 't') {
             adv_notice = 3;
             game_record(key, 2);
+            adv_status();
             continue;
         }
         if (adv_move(key)) {
             game_record(key, 1);
+            adv_draw();
             continue;
         }
         if (room == 3 && key == 'n' && !have_key) {
             adv_notice = 1;
             game_record(key, 2);
+            adv_status();
             continue;
         }
         if (key == 'n' || key == 's' ||
             key == 'e' || key == 'w') {
             adv_notice = 2;
             game_record(key, 2);
+            adv_status();
             continue;
         }
         game_record(key, 3);
+        adv_status();
     }
 }

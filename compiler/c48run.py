@@ -30,7 +30,7 @@ from c48.errors import C48Error, RuntimeC48Error
 from c48.format import read
 from c48.gui import TkDisplay
 from c48.screen import Font4x8, ZXScreen
-from c48.vm import C48VM
+from c48.romvm import RomMathVM
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -65,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
     )
     ap.add_argument("--allow-approx-rom-math", action="store_true",
-                    help="enable explicitly non-certified host approximations for transcendental ROM math")
+                    help="use explicitly non-certified host approximations instead of ROM-derived transcendental math")
     ap.add_argument("--heap", type=int, default=1024, metavar="BYTES",
                     help="host C48 heap reserve: even 0..8192 bytes (default: 1024)")
     ap.add_argument(
@@ -89,7 +89,7 @@ def main(argv: list[str] | None = None) -> int:
         # Preserve argv[0] as the exact host command token supplied for the program.
         pargv = [ns.program, *ns.args]
         if ns.headless:
-            vm = C48VM(
+            vm = RomMathVM(
                 program, screen, argv=pargv,
                 approximate_rom_math=ns.allow_approx_rom_math,
                 heap_size=ns.heap, max_steps=max_steps,
@@ -97,7 +97,7 @@ def main(argv: list[str] | None = None) -> int:
             status = vm.run()
         else:
             display = TkDisplay(screen, scale=ns.scale, title=f"ZX-UX C48 - {program_path.name}")
-            vm = C48VM(
+            vm = RomMathVM(
                 program, screen, argv=pargv,
                 approximate_rom_math=ns.allow_approx_rom_math,
                 heap_size=ns.heap, max_steps=max_steps,

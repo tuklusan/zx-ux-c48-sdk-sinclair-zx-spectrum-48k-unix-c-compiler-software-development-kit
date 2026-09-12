@@ -49,6 +49,11 @@ jobs:
         python: ["3.10", "3.13"]
 
     steps:
+      - name: Enable Windows long paths
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: git config --global core.longpaths true
+
       - name: Check out repository
         uses: actions/checkout@v4
 

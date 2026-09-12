@@ -75,7 +75,6 @@ int f_rank(int key)
     return -1;
 }
 
-
 int f_rankkey(int rank)
 {
     if (rank >= 0 && rank < 9)
@@ -142,6 +141,12 @@ void f_show(void)
     }
 }
 
+void f_status(void)
+{
+    game_show_last(14);
+    game_putc(17, 10, ' ');
+}
+
 int main(void)
 {
     int i;
@@ -170,18 +175,23 @@ int main(void)
         f_show();
         if (turn == 0) {
             print_at(17, 0, "Your ask:");
-            key = game_key_echo(17, 10);
-            f_turns++;
-            if (key == 'x')
-                return 0;
-            rank = f_rank(key);
-            if (rank < 0) {
-                game_record(key, 3);
-                continue;
-            }
-            if (f_human[rank] == 0) {
-                game_record(key, 2);
-                continue;
+            while (1) {
+                key = game_key_echo(17, 10);
+                f_turns++;
+                if (key == 'x')
+                    return 0;
+                rank = f_rank(key);
+                if (rank < 0) {
+                    game_record(key, 3);
+                    f_status();
+                    continue;
+                }
+                if (f_human[rank] == 0) {
+                    game_record(key, 2);
+                    f_status();
+                    continue;
+                }
+                break;
             }
             f_comp_rank = -1;
             if (f_comp[rank] > 0) {

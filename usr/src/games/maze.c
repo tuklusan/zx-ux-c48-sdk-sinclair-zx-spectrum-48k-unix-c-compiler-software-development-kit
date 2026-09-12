@@ -41,16 +41,24 @@ void maze_draw(void)
     game_show_last(17);
 }
 
+void maze_status(void)
+{
+    game_show_last(17);
+    game_putc(16, 6, ' ');
+}
+
 int main(void)
 {
     int key;
     int nx;
     int ny;
+    int oldx;
+    int oldy;
     maze_x = 1;
     maze_y = 1;
     maze_turns = 0;
+    maze_draw();
     while (1) {
-        maze_draw();
         if (m_map[maze_y][maze_x] == 'E') {
             print_at(18, 4, "You escaped. Press q.");
             while (game_key() != 'q')
@@ -73,14 +81,21 @@ int main(void)
             nx++;
         else {
             game_record(key, 3);
+            maze_status();
             continue;
         }
         if (m_map[ny][nx] == '#') {
             game_record(key, 2);
+            maze_status();
             continue;
         }
+        oldx = maze_x;
+        oldy = maze_y;
         maze_x = nx;
         maze_y = ny;
         game_record(key, 1);
+        game_putc(oldy + 3, oldx + 4, m_map[oldy][oldx]);
+        game_putc(maze_y + 3, maze_x + 4, '@');
+        maze_status();
     }
 }

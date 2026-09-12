@@ -213,14 +213,14 @@ int c_discard(void)
     int n;
     first = -1;
     second = -1;
+    cls();
+    print_at(0, 0, "C48 CRIBBAGE SHOW - first to 61");
+    print_at(2, 0, "Choose two cards for the crib.");
+    print_at(3, 0, "q quits.");
+    c_showhand(c_hand);
+    print_at(11, 0, "First discard 1-6:");
+    game_show_last(15);
     while (first < 0) {
-        cls();
-        print_at(0, 0, "C48 CRIBBAGE SHOW - first to 61");
-        print_at(2, 0, "Choose two cards for the crib.");
-        print_at(3, 0, "q quits.");
-        c_showhand(c_hand);
-        print_at(11, 0, "First discard 1-6:");
-        game_show_last(15);
         key = game_key_echo(11, 19);
         c_turns++;
         if (key == 'q')
@@ -229,8 +229,11 @@ int c_discard(void)
             first = key - '1';
             game_record(key, 1);
         }
-        else
+        else {
             game_record(key, 3);
+            game_show_last(15);
+            game_putc(11, 19, ' ');
+        }
     }
     while (second < 0) {
         print_at(13, 0, "Second discard 1-6:");
@@ -244,6 +247,7 @@ int c_discard(void)
                 second = -1;
                 game_record(key, 8);
                 game_show_last(15);
+                game_putc(13, 20, ' ');
             }
             else {
                 game_record2('1' + first, key, 1);
@@ -252,6 +256,7 @@ int c_discard(void)
         else {
             game_record(key, 3);
             game_show_last(15);
+            game_putc(13, 20, ' ');
         }
     }
     c_crib[0] = c_hand[first];

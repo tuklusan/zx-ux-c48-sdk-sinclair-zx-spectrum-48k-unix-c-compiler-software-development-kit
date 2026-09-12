@@ -46,6 +46,17 @@ def footer_text(done: bool) -> str:
     return "Shift+Space = BREAK"
 
 
+def footer_config(done: bool) -> dict[str, str]:
+    """Return Tk label options for the normal or completed-program footer."""
+    if done:
+        return {
+            "text": footer_text(True),
+            "background": "yellow",
+            "foreground": "red",
+        }
+    return {"text": footer_text(False)}
+
+
 def key_event_bytes(keysym: str, text: str) -> tuple[int, ...]:
     """Map one Tk key event to canonical C48 console bytes."""
     if keysym in {"Return", "KP_Enter"}:
@@ -188,7 +199,7 @@ class TkDisplay:
             highlightthickness=0,
         )
         canvas.pack()
-        footer = tk.Label(root, text=footer_text(False), anchor="w")
+        footer = tk.Label(root, anchor="w", **footer_config(False))
         footer.pack(fill="x")
 
         base = tkfont.nametofont("TkDefaultFont")
@@ -269,7 +280,7 @@ class TkDisplay:
                 self._rendered_generation = generation
             if result["done"]:
                 root.title(f"{self.title} - exited {result['status']}")
-                footer.configure(text=footer_text(True))
+                footer.configure(**footer_config(True))
             root.after(40, redraw)
 
         root.after(0, redraw)

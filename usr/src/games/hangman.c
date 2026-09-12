@@ -36,6 +36,41 @@ int h_done(char *word, char *used)
     return 1;
 }
 
+
+void h_draw_stage(int misses)
+{
+    if (misses >= 1)
+        game_putc(6, 5, 'O');
+    if (misses >= 7)
+        game_putc(6, 5, 'X');
+    if (misses >= 2)
+        game_putc(7, 5, '|');
+    if (misses >= 3)
+        game_putc(7, 4, '/');
+    if (misses >= 4)
+        game_putc(7, 6, '\\');
+    if (misses >= 5)
+        game_putc(8, 4, '/');
+    if (misses >= 6)
+        game_putc(8, 6, '\\');
+}
+
+void h_draw_board(void)
+{
+    cls();
+    print_at(0, 0, "C48 HANGMAN");
+    print_at(2, 0, "Guess letters. q quits.");
+    print_at(4, 0, " +---+");
+    print_at(5, 0, " |   |");
+    print_at(6, 0, " |");
+    print_at(7, 0, " |");
+    print_at(8, 0, " |");
+    print_at(9, 0, " |");
+    print_at(10, 0, "=======");
+    print_at(10, 16, "Misses:");
+    print_at(14, 0, "Guess:");
+}
+
 void h_mask(char *word, char *used)
 {
     char text[16];
@@ -72,31 +107,30 @@ int main(void)
         used[i] = 0;
     misses = 0;
     h_turns = 0;
+    h_draw_board();
+    h_mask(word, used);
+    game_num(10, 24, (unsigned int)misses);
     while (misses < 7) {
-        cls();
-        print_at(0, 0, "C48 HANGMAN");
-        print_at(2, 0, "Guess letters. q quits.");
-        h_mask(word, used);
-        print_at(10, 0, "Misses:");
-        game_num(10, 8, (unsigned int)misses);
-        game_show_last(12);
         if (h_done(word, used)) {
-            print_at(14, 0, "You solved it. Press q.");
+            print_at(16, 0, "You solved it. Press q.");
             while (game_key() != 'q')
                 h_turns++;
             return 0;
         }
-        print_at(14, 0, "Guess:");
         key = game_key_echo(14, 7);
         h_turns++;
         if (key == 'q')
             return 0;
         if (key < 'a' || key > 'z') {
             game_record(key, 3);
+            game_show_last(12);
+            game_putc(14, 7, ' ');
             continue;
         }
         if (used[key - 'a']) {
             game_record(key, 8);
+            game_show_last(12);
+            game_putc(14, 7, ' ');
             continue;
         }
         used[key - 'a'] = 1;
@@ -110,14 +144,20 @@ int main(void)
         if (!hit) {
             misses++;
             game_record(key, 5);
+            h_draw_stage(misses);
+            game_num(10, 24, (unsigned int)misses);
         }
-        else
+        else {
             game_record(key, 4);
+            h_mask(word, used);
+        }
+        game_show_last(12);
+        game_putc(14, 7, ' ');
     }
-    cls();
-    print_at(8, 0, "Hanged. The word was:");
-    print_at(10, 0, word);
-    print_at(12, 0, "Press q to leave.");
+    h_draw_stage(7);
+    print_at(16, 0, "Hanged. The word was:");
+    print_at(17, 0, word);
+    print_at(18, 0, "Press q to leave.");
     while (game_key() != 'q')
         h_turns++;
     return 0;
