@@ -77,9 +77,10 @@ After documentation is frozen, regenerate `MANIFEST.sha256`, rerun all candidate
 evidence workflows, create the release archive, verify the archive extraction,
 then create the formal tag/release only from the exact certified commit.
 
-Interactive Tk desktop behavior is not proved by headless GitHub runners. Freeze the
-exact 1.0.0 candidate bytes first, then perform the explicit manual matrix in
-`GUI-SMOKE-TESTS.md` on real release-host desktops. Preserve the completed matrix as
-external durable release evidence keyed to the exact candidate SHA and release-ZIP
-SHA-256; do not edit the tracked template after testing, because that would change
-the bytes that were certified.
+Before final tagging, require all eight rows of `.github/workflows/gui-desktop.yml`
+and its aggregate evidence job to pass on the intended release commit. The gate opens
+Tk windows, checks compositor pixels, host key delivery, completed close behavior, and
+active BREAK status. Linux uses a fresh Xvfb X11 server because GitHub Linux runners
+are headless; Windows and macOS run their native Tk windowing paths directly. Preserve
+the combined screenshot/probe artifact and manifest as release evidence keyed to the
+exact candidate commit. Any runtime/GUI change after that gate requires the matrix again.

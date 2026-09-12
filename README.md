@@ -106,8 +106,10 @@ The complete release verifier is exercised on **Ubuntu x64, Windows x64, macOS a
 and macOS Intel** with both the minimum supported Python 3.10 and a current Python 3.13
 runtime. GitHub Actions runs the same `compiler/verify_release.py` gate used locally, plus
 platform-native launcher smoke tests. The BEEP numerical proof uses the same four host
-families. This is headless/compiler/runtime verification; interactive Tk desktop behavior
-remains a separate manual smoke-test concern before a formal release.
+families. A separate host-native Tk acceptance matrix opens real Tk windows, verifies
+compositor pixels against the rendered framebuffer, delivers keys through the host window
+system, and proves completed-close versus active-BREAK exit semantics on all eight
+OS/Python rows.
 
 ## Graphics Demo Reel - 21 programs, 21 runners
 
@@ -136,9 +138,10 @@ runner artifacts, writes `SHA256SUMS` plus release metadata, and retains the com
 pre-release evidence artifact for 90 days.
 
 See [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the verification contract,
-[`doc/GUI-SMOKE-TESTS.md`](doc/GUI-SMOKE-TESTS.md) for the required real-desktop Tk
-smoke-test record, and [`doc/PRE-RELEASE-NEXT-STEPS.md`](doc/PRE-RELEASE-NEXT-STEPS.md)
-for the remaining release-candidate work.
+[`doc/GUI-SMOKE-TESTS.md`](doc/GUI-SMOKE-TESTS.md) for the required host-native Tk
+release gate and bounded screenshot/probe evidence, and
+[`doc/PRE-RELEASE-NEXT-STEPS.md`](doc/PRE-RELEASE-NEXT-STEPS.md) for the remaining
+release-candidate work.
 
 ## Clone and quick start
 

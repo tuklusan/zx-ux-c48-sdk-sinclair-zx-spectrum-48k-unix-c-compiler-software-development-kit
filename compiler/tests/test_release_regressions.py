@@ -137,10 +137,10 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
         self.assertEqual(footer_text(False), "Shift+Space = BREAK")
         self.assertEqual(footer_text(True), "Program ended - Shift+Space to close")
 
-    def test_yield_and_sleep_publish_then_present_frames(self):
+    def test_yield_sleep_and_getchar_publish_then_present_frames(self):
         src = (
             '#include "c48host.h"\n'
-            'int main(void){yield();sleep(0);return 0;}\n'
+            'int main(void){yield();sleep(0);getchar();return 0;}\n'
         )
         with tempfile.TemporaryDirectory() as td:
             d = Path(td)
@@ -152,13 +152,18 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
         vm = C48VM(
             program,
             ZXScreen(Font4x8.load(FONT_PATH)),
+            input_provider=lambda: (events.append("input"), ord("q"))[1],
             display_update=lambda: events.append("update"),
             display_present=lambda: events.append("present"),
         )
         self.assertEqual(vm.run(), 0)
         self.assertEqual(
             events,
-            ["update", "present", "update", "present"],
+            [
+                "update", "present",
+                "update", "present",
+                "update", "present", "input",
+            ],
         )
 
     def test_gui_numeric_keypad_sequence(self):

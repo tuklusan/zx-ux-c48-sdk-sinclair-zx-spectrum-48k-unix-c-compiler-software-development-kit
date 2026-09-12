@@ -1,0 +1,226 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: C48 host-native Tk desktop acceptance
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "VERSION"
+      - "compiler/c48/gui.py"
+      - "compiler/c48/vm.py"
+      - "compiler/c48run.py"
+      - "compiler/verify_gui_desktop.py"
+      - "usr/bin/demos/forest.c48b"
+      - "usr/bin/games/fortune.c48b"
+      - "usr/bin/games/snake.c48b"
+      - "c48run"
+      - "c48run.bat"
+      - ".github/workflows/gui-desktop.yml"
+  pull_request:
+    paths:
+      - "VERSION"
+      - "compiler/c48/gui.py"
+      - "compiler/c48/vm.py"
+      - "compiler/c48run.py"
+      - "compiler/verify_gui_desktop.py"
+      - "usr/bin/demos/forest.c48b"
+      - "usr/bin/games/fortune.c48b"
+      - "usr/bin/games/snake.c48b"
+      - "c48run"
+      - "c48run.bat"
+      - ".github/workflows/gui-desktop.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    name: ${{ matrix.os }} / Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest, macos-15-intel]
+        python: ["3.10", "3.13"]
+
+    steps:
+      - name: Enable Windows long paths
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: git config --global core.longpaths true
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install GUI evidence dependencies
+        shell: bash
+        run: python -m pip install Pillow==12.3.0
+
+      - name: Install Linux X11 input adapter
+        if: runner.os == 'Linux'
+        shell: bash
+        run: python -m pip install python-xlib==0.33
+
+      - name: Re-verify exact candidate bytes
+        run: python -B compiler/verify_release.py
+
+      - name: Verify Tk desktop on Linux/X11
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          C48_GUI_COMMIT: ${{ github.sha }}
+          C48_GUI_RUNNER: ${{ matrix.os }}
+        run: >-
+          xvfb-run -a -s "-screen 0 1600x1200x24"
+          python -B compiler/verify_gui_desktop.py
+          --evidence-dir "screenshots/gui-desktop/${{ matrix.os }}/python-${{ matrix.python }}"
+
+      - name: Verify Tk desktop on Windows/macOS
+        if: runner.os != 'Linux'
+        shell: bash
+        env:
+          TK_SILENCE_DEPRECATION: "1"
+          C48_GUI_COMMIT: ${{ github.sha }}
+          C48_GUI_RUNNER: ${{ matrix.os }}
+        run: >-
+          python -B compiler/verify_gui_desktop.py
+          --evidence-dir "screenshots/gui-desktop/${{ matrix.os }}/python-${{ matrix.python }}"
+
+      - name: Upload host-native GUI evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gui-desktop-${{ matrix.os }}-py${{ matrix.python }}-${{ github.sha }}
+          path: screenshots/gui-desktop/${{ matrix.os }}/python-${{ matrix.python }}/
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 9
+
+  release-evidence:
+    name: Aggregate host-native GUI release evidence
+    needs: desktop
+    if: ${{ needs.desktop.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all GUI evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: gui-desktop-*-${{ github.sha }}
+          path: gui-release-evidence
+
+      - name: Build GUI evidence manifest
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+          import os
+
+          root = Path("gui-release-evidence")
+          reports = sorted(root.rglob("GUI-EVIDENCE.json"))
+          if len(reports) != 8:
+              raise SystemExit(
+                  f"GUI release evidence: expected 8 reports, found {len(reports)}"
+              )
+          expected = {
+              (runner, python)
+              for runner in (
+                  "ubuntu-latest", "windows-latest",
+                  "macos-latest", "macos-15-intel",
+              )
+              for python in ("3.10", "3.13")
+          }
+          rows = []
+          seen = set()
+          expected_windowing = {
+              "ubuntu-latest": "x11",
+              "windows-latest": "win32",
+              "macos-latest": "aqua",
+              "macos-15-intel": "aqua",
+          }
+          for report in reports:
+              data = json.loads(report.read_text(encoding="ascii"))
+              if data.get("commit") != os.environ["GITHUB_SHA"]:
+                  raise SystemExit(
+                      f"GUI evidence commit mismatch: {report}: {data.get('commit')}"
+                  )
+              python = ".".join(str(data["python"]).split(".")[:2])
+              key = (str(data["runner"]), python)
+              if key not in expected or key in seen:
+                  raise SystemExit(f"unexpected/duplicate GUI evidence row: {key}")
+              if data["tk_windowing_system"] != expected_windowing[key[0]]:
+                  raise SystemExit(
+                      f"wrong Tk windowing system for {key}: "
+                      f"{data['tk_windowing_system']}"
+                  )
+              seen.add(key)
+              rows.append({
+                  "artifact": report.parent.name,
+                  "runner": data["runner"],
+                  "system": data["system"],
+                  "machine": data["machine"],
+                  "python": data["python"],
+                  "tk_patchlevel": data["tk_patchlevel"],
+                  "tk_windowing_system": data["tk_windowing_system"],
+              })
+          if seen != expected:
+              raise SystemExit(
+                  f"GUI release evidence matrix mismatch: missing={sorted(expected-seen)}"
+              )
+          metadata = {
+              "schema": 1,
+              "commit": os.environ["GITHUB_SHA"],
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "workflow": os.environ["GITHUB_WORKFLOW"],
+              "rows": rows,
+          }
+          (root / "RELEASE-GUI-EVIDENCE.json").write_text(
+              json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+              encoding="ascii",
+              newline="\n",
+          )
+          members = sorted(p for p in root.rglob("*") if p.is_file())
+          (root / "SHA256SUMS").write_text(
+              "".join(
+                  f"{hashlib.sha256(p.read_bytes()).hexdigest()}  "
+                  f"{p.relative_to(root).as_posix()}\n"
+                  for p in members
+                  if p.name != "SHA256SUMS"
+              ),
+              encoding="ascii",
+              newline="\n",
+          )
+          PY
+
+      - name: Upload combined GUI release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: gui-release-evidence-${{ github.sha }}
+          path: gui-release-evidence/
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 9

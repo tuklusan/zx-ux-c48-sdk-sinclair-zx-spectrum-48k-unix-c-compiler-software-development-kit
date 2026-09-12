@@ -13,6 +13,10 @@
 # ============================================================================
 from __future__ import annotations
 
+import hashlib
+import json
+import os
+from pathlib import Path
 import threading
 import time
 from dataclasses import dataclass
@@ -194,16 +198,39 @@ class TkDisplay:
         self._root = None
         self._photo = None
         self._copy_font = None
+        self._probe_path = os.environ.get("C48_GUI_PROBE")
+        self._probe_lock = threading.Lock()
+        self._probe_seq = 0
+
+    def _probe(self, event: str, **fields) -> None:
+        """Append one fail-closed GUI acceptance record when probing is enabled."""
+        if not self._probe_path:
+            return
+        with self._probe_lock:
+            self._probe_seq += 1
+            record = {
+                "event": event,
+                "monotonic_ns": time.monotonic_ns(),
+                "pid": os.getpid(),
+                "seq": self._probe_seq,
+            }
+            record.update(fields)
+            path = Path(self._probe_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("a", encoding="utf-8", newline="\n") as handle:
+                handle.write(json.dumps(record, sort_keys=True) + "\n")
 
     def input_char(self) -> int:
         with self._key_cond:
             self._key_waiting = True
             self._key_byte = None
+            self._probe("input_waiting")
             while self._key_byte is None and not self._stop:
                 self._key_cond.wait()
             value = -1 if self._key_byte is None else self._key_byte
             self._key_waiting = False
             self._key_byte = None
+            self._probe("input_return", value=value)
             return value
 
     def _offer_key(self, value: int) -> bool:
@@ -212,6 +239,7 @@ class TkDisplay:
             if not self._key_waiting or self._key_byte is not None:
                 return False
             self._key_byte = int(value) & 0xFF
+            self._probe("key_accepted", value=self._key_byte)
             self._key_cond.notify()
             return True
 
@@ -255,6 +283,8 @@ class TkDisplay:
             self._frame_cond.notify_all()
 
     def close(self) -> None:
+        if not self._stop:
+            self._probe("display_close")
         self._stop = True
         with self._key_cond:
             self._key_cond.notify_all()
@@ -307,17 +337,46 @@ class TkDisplay:
             foreground="#707070",
         )
         copyright_footer.pack(fill="x")
+        root.update_idletasks()
+        if self._probe_path:
+            root.lift()
+            root.focus_force()
+            canvas.focus_force()
+            root.update_idletasks()
+            self._probe(
+                "window_ready",
+                title=self.title,
+                windowing_system=str(root.tk.call("tk", "windowingsystem")),
+                tk_patchlevel=str(root.tk.call("info", "patchlevel")),
+                screen_width=int(root.winfo_screenwidth()),
+                screen_height=int(root.winfo_screenheight()),
+                root_x=int(root.winfo_rootx()),
+                root_y=int(root.winfo_rooty()),
+                root_width=int(root.winfo_width()),
+                root_height=int(root.winfo_height()),
+                canvas_x=int(canvas.winfo_rootx()),
+                canvas_y=int(canvas.winfo_rooty()),
+                canvas_width=int(canvas.winfo_width()),
+                canvas_height=int(canvas.winfo_height()),
+                scale=int(self.scale),
+            )
 
         result = {
             "status": 1,
             "error": None,
             "done": False,
             "break_running": False,
+            "footer_reported": False,
         }
 
         def key(event):
             if is_break_key(event.keysym, int(event.state)):
                 result["break_running"] = not bool(result["done"])
+                self._probe(
+                    "break_key",
+                    done=bool(result["done"]),
+                    break_running=bool(result["break_running"]),
+                )
                 self.close()
                 root.after_idle(root.destroy)
                 return "break"
@@ -335,6 +394,15 @@ class TkDisplay:
                 result["error"] = exc
             finally:
                 result["done"] = True
+                self._probe(
+                    "program_done",
+                    status=int(result["status"]),
+                    error_type=(
+                        None
+                        if result["error"] is None
+                        else type(result["error"]).__name__
+                    ),
+                )
                 self.update()
 
         threading.Thread(target=worker, daemon=True).start()
@@ -359,14 +427,46 @@ class TkDisplay:
                 self._photo = photo
                 canvas.delete("all")
                 canvas.create_image(0, 0, image=photo, anchor="nw")
+                if self._probe_path:
+                    root.update_idletasks()
+                    self._probe(
+                        "frame_rendered",
+                        generation=int(generation),
+                        border_color=int(border_color),
+                        frame_sha256=hashlib.sha256(rgb).hexdigest(),
+                        canvas_x=int(canvas.winfo_rootx()),
+                        canvas_y=int(canvas.winfo_rooty()),
+                        canvas_width=int(canvas.winfo_width()),
+                        canvas_height=int(canvas.winfo_height()),
+                    )
                 self._mark_rendered(generation)
             if result["done"]:
                 root.title(f"{self.title} - exited {result['status']}")
                 footer.configure(**footer_config(True))
+                if self._probe_path and not result["footer_reported"]:
+                    root.update_idletasks()
+                    self._probe(
+                        "footer_done",
+                        text=str(footer.cget("text")),
+                        background=str(footer.cget("background")),
+                        foreground=str(footer.cget("foreground")),
+                        title=str(root.title()),
+                    )
+                    result["footer_reported"] = True
             root.after(20, redraw)
 
         root.after(0, redraw)
         root.mainloop()
+        self._probe(
+            "mainloop_exit",
+            status=int(result["status"]),
+            break_running=bool(result["break_running"]),
+            error_type=(
+                None
+                if result["error"] is None
+                else type(result["error"]).__name__
+            ),
+        )
         self.close()
         if result["break_running"]:
             return 130

@@ -75,6 +75,9 @@ runtime uses the checked-in ROM-derived transcendental implementation; the expli
 Python host-math approximation remains opt-in and non-certified. See `CONFORMANCE.md`,
 `HOST-DIVERGENCES.md`, and `FLOAT5-ORACLE.md`.
 
-The Tk display implementation is source-reviewed and its renderer/key mapping are
-headlessly tested. Interactive Tk smoke tests on Windows, Linux and macOS remain a
-separate manual release gate: headless CI does not certify real desktop-window behavior.
+The Tk display implementation is source-reviewed, unit-tested, and covered by a
+host-native GUI acceptance matrix on Windows, Linux/X11, macOS arm64, and macOS Intel.
+The gate opens real Tk windows, verifies compositor-captured canvas pixels against the
+rendered framebuffer, injects ordinary and Shift+Space keys through the host window
+system, and proves normal close versus active BREAK exit semantics. Evidence is retained
+under stable per-runner screenshot paths and as bounded GitHub Actions artifacts.

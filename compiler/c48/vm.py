@@ -562,7 +562,12 @@ class C48VM:
         except (AudioPlaybackError,OSError,ValueError):
             return Value(INT,E_IO)
         self.display_update();return Value(INT,0)
-    def _b_getchar(self,a):return Value(INT,self.input_provider())
+    def _b_getchar(self,a):
+        # A blocking read is also a presentation boundary.  Interactive
+        # programs commonly draw a prompt and then call getchar() without an
+        # explicit yield(); publish and paint that framebuffer before waiting.
+        self.display_update();self.display_present()
+        return Value(INT,self.input_provider())
     def _b_putchar(self,a):
         c=self._to_unsigned(a[0])&0xFF;self.screen.putchar(c);self.display_update();return Value(INT,c)
     def _b_puts(self,a):self.screen.puts(self._read_cstr(self._as_pointer(a[0])));self.display_update();return Value(INT,0)
