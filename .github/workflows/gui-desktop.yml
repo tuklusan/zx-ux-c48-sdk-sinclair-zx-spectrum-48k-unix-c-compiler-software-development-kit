@@ -71,9 +71,19 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
+        if: runner.os != 'macOS' || matrix.python != '3.10'
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
+
+      - name: Set up matched Homebrew Python/Tk 3.10 on macOS
+        if: runner.os == 'macOS' && matrix.python == '3.10'
+        shell: bash
+        run: |
+          set -euo pipefail
+          brew install python@3.10 python-tk@3.10
+          "$(brew --prefix python@3.10)/bin/python3.10" -m venv "$RUNNER_TEMP/c48-py310"
+          echo "$RUNNER_TEMP/c48-py310/bin" >> "$GITHUB_PATH"
 
       - name: Install GUI evidence dependencies
         shell: bash
@@ -110,6 +120,7 @@ jobs:
           --evidence-dir "screenshots/gui-desktop/${{ matrix.os }}/python-${{ matrix.python }}"
 
       - name: Upload host-native GUI evidence
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gui-desktop-${{ matrix.os }}-py${{ matrix.python }}-${{ github.sha }}

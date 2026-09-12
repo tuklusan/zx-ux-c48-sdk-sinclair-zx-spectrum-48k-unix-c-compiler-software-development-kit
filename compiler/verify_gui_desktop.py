@@ -270,6 +270,32 @@ def _send_key(process: subprocess.Popen, title: str, key: str, *, shift=False):
         raise AssertionError(f"unsupported GUI host: {sys.platform}")
 
 
+def _palette_bijection(expected, actual) -> dict[str, list[int]] | None:
+    """Return an exact spatial color bijection, or None if geometry/content differs.
+
+    Aqua's compositor may color-manage the displayed Tk surface before ImageGrab
+    returns RGB bytes.  A bijection permits that host color transform only when
+    every source RGB triplet maps to exactly one captured RGB triplet and no two
+    source colors collapse to the same captured color.  Pixel positions must
+    still agree across the entire framebuffer.
+    """
+    mapping: dict[tuple[int, int, int], tuple[int, int, int]] = {}
+    reverse: dict[tuple[int, int, int], tuple[int, int, int]] = {}
+    for source, shown in zip(expected.getdata(), actual.getdata()):
+        source = tuple(source)
+        shown = tuple(shown)
+        prior = mapping.setdefault(source, shown)
+        if prior != shown:
+            return None
+        reverse_prior = reverse.setdefault(shown, source)
+        if reverse_prior != source:
+            return None
+    return {
+        "%02x%02x%02x" % source: list(shown)
+        for source, shown in sorted(mapping.items())
+    }
+
+
 def _screenshot(
     evidence: Path,
     name: str,
@@ -281,39 +307,92 @@ def _screenshot(
     except ImportError as exc:
         raise AssertionError(f"Pillow ImageGrab is required: {exc}") from exc
 
-    time.sleep(0.20)
-    shot = ImageGrab.grab()
+    probe_frame_path = evidence / str(frame.get("frame_ppm", ""))
+    if not probe_frame_path.is_file():
+        raise AssertionError(
+            f"missing Tk-rendered frame evidence for {name}: {probe_frame_path}"
+        )
+    frame_path = evidence / f"{name}-frame.ppm"
+    frame_path.write_bytes(probe_frame_path.read_bytes())
+    expected = Image.open(frame_path).convert("RGB")
+    if expected.size != (FRAME_WIDTH, FRAME_HEIGHT):
+        raise AssertionError(
+            f"unexpected Tk-rendered frame size for {name}: {expected.size}"
+        )
+    expected_hash = hashlib.sha256(expected.tobytes()).hexdigest()
+    if expected_hash != str(frame["frame_sha256"]):
+        raise AssertionError(
+            f"Tk frame evidence hash mismatch for {name}: "
+            f"ppm={expected_hash} probe={frame['frame_sha256']}"
+        )
+
     screen_w = int(window["screen_width"])
     screen_h = int(window["screen_height"])
     if screen_w <= 0 or screen_h <= 0:
         raise AssertionError("Tk reported invalid screen geometry")
-    rx = shot.width / screen_w
-    ry = shot.height / screen_h
-    left = round(int(frame["canvas_x"]) * rx)
-    top = round(int(frame["canvas_y"]) * ry)
-    right = round((int(frame["canvas_x"]) + int(frame["canvas_width"])) * rx)
-    bottom = round((int(frame["canvas_y"]) + int(frame["canvas_height"])) * ry)
-    crop = shot.crop((left, top, right, bottom)).convert("RGB")
-    base = crop.resize((FRAME_WIDTH, FRAME_HEIGHT), Image.Resampling.NEAREST)
-    rendered_hash = hashlib.sha256(base.tobytes()).hexdigest()
-    expected_hash = str(frame["frame_sha256"])
+    canvas_w = int(frame["canvas_width"])
+    canvas_h = int(frame["canvas_height"])
+    required_w = FRAME_WIDTH * int(window["scale"])
+    required_h = FRAME_HEIGHT * int(window["scale"])
+    if (canvas_w, canvas_h) != (required_w, required_h):
+        raise AssertionError(
+            f"Tk canvas geometry is not fully mapped for {name}: "
+            f"got={(canvas_w, canvas_h)} expected={(required_w, required_h)}"
+        )
+
     full_path = evidence / f"{name}-desktop.png"
     crop_path = evidence / f"{name}-canvas.png"
+    exact = False
+    palette_map = None
+    shot = crop = base = None
+    rendered_hash = ""
+    deadline = time.monotonic() + 3.0
+    while True:
+        # Give the host compositor a chance to present the Tk surface.  This is
+        # especially important on Aqua, where window-server presentation trails
+        # Tk's idle rendering by more than one application event-loop turn.
+        time.sleep(0.15)
+        shot = ImageGrab.grab()
+        rx = shot.width / screen_w
+        ry = shot.height / screen_h
+        left = round(int(frame["canvas_x"]) * rx)
+        top = round(int(frame["canvas_y"]) * ry)
+        right = round((int(frame["canvas_x"]) + canvas_w) * rx)
+        bottom = round((int(frame["canvas_y"]) + canvas_h) * ry)
+        crop = shot.crop((left, top, right, bottom)).convert("RGB")
+        base = crop.resize((FRAME_WIDTH, FRAME_HEIGHT), Image.Resampling.NEAREST)
+        rendered_hash = hashlib.sha256(base.tobytes()).hexdigest()
+        if rendered_hash == expected_hash:
+            exact = True
+            break
+        if str(window.get("windowing_system")) == "aqua":
+            palette_map = _palette_bijection(expected, base)
+            if palette_map is not None:
+                break
+        if time.monotonic() >= deadline:
+            break
+
+    assert shot is not None and crop is not None and base is not None
     shot.save(full_path)
     crop.save(crop_path)
-    if rendered_hash != expected_hash:
+    if not exact and palette_map is None:
         raise AssertionError(
             f"desktop canvas pixels differ from Tk-rendered frame for {name}: "
             f"desktop={rendered_hash} expected={expected_hash}; "
             f"shot={shot.size} tk_screen=({screen_w},{screen_h}) "
-            f"crop={crop.size}"
+            f"crop={crop.size} windowing={window.get('windowing_system')}"
         )
+    comparison = "exact-rgb" if exact else "aqua-color-bijection"
     return {
         "desktop_png": full_path.name,
         "desktop_sha256": hashlib.sha256(full_path.read_bytes()).hexdigest(),
         "canvas_png": crop_path.name,
         "canvas_sha256": hashlib.sha256(crop_path.read_bytes()).hexdigest(),
+        "frame_ppm": frame_path.name,
+        "frame_ppm_sha256": hashlib.sha256(frame_path.read_bytes()).hexdigest(),
         "frame_sha256": expected_hash,
+        "comparison": comparison,
+        "aqua_color_bijection": palette_map,
         "capture_size": list(shot.size),
         "canvas_capture_size": list(crop.size),
     }
@@ -479,6 +558,11 @@ def main(argv: list[str] | None = None) -> int:
         encoding="ascii",
         newline="\n",
     )
+    # The display process overwrites its probe-frame scratch file as newer
+    # generations are painted.  Each screenshot already copied the exact frame
+    # it proved to the stable <program>-frame.ppm evidence name.
+    for scratch in evidence.glob("probe-*-frame.ppm"):
+        scratch.unlink()
     members = sorted(p for p in evidence.iterdir() if p.is_file())
     (evidence / "SHA256SUMS").write_text(
         "".join(

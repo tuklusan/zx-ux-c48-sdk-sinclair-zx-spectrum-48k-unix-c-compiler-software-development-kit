@@ -23,7 +23,8 @@ screenshots/gui-desktop/<runner>/python-<version>/
 ```
 
 Each row contains a fixed set of `forest`, `fortune`, and `snake` desktop/canvas
-PNGs plus probe logs, `GUI-EVIDENCE.json`, and `SHA256SUMS`. The verifier clears
+PNGs, the exact Tk-rendered frame PPMs, probe logs, `GUI-EVIDENCE.json`, and
+`SHA256SUMS`. The verifier clears
 the target row before writing, so reruns replace that row instead of accumulating
 files. GitHub Actions uploads each row and a combined release-evidence artifact
 with 90-day retention. Generated row directories are intentionally ignored by

@@ -25,7 +25,9 @@ row must still open a real Tk top-level window, paint through the host windowing
 system, accept keys delivered through the host input system, distinguish
 completed close from an active BREAK, and return the required process status.
 In addition, compositor screenshots are checked against the exact RGB frame Tk
-reported as rendered.
+reported as rendered. Linux and Windows require byte-exact RGB equality. Aqua
+permits only a one-to-one color bijection across the entire framebuffer, preserving
+every pixel position while accounting for host compositor color management.
 
 Linux executes the native Tk/X11 path under a fresh Xvfb server because GitHub's
 Linux runners are headless. Windows and macOS execute their native Tk windowing
@@ -63,8 +65,9 @@ blocker once all eight automated rows and the aggregate evidence job pass.
 5. Launch `usr/bin/games/snake.c48b`; wait until the VM is accepting input, inject
    Shift+Space through the host window system, require the GUI to classify it as
    an active BREAK and return host status 130 with no traceback.
-6. Require `GUI-EVIDENCE.json`, the three probe logs, six PNG captures, and
-   `SHA256SUMS` for that row. The aggregate job must find exactly eight reports
+6. Require `GUI-EVIDENCE.json`, the three probe logs, three exact Tk-rendered
+   frame PPMs, six compositor PNG captures, and `SHA256SUMS` for that row. The
+   aggregate job must find exactly eight reports
    and publish one combined evidence manifest keyed to the candidate commit.
 
 ## Screenshot and evidence layout

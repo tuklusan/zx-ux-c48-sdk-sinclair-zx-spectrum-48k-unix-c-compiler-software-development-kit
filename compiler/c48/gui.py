@@ -342,7 +342,10 @@ class TkDisplay:
             root.lift()
             root.focus_force()
             canvas.focus_force()
-            root.update_idletasks()
+            # On Aqua, update_idletasks() can leave winfo geometry at Tk's
+            # pre-map defaults (for example 200x200).  One full event-loop turn
+            # maps the real host window before acceptance evidence is recorded.
+            root.update()
             self._probe(
                 "window_ready",
                 title=self.title,
@@ -429,11 +432,19 @@ class TkDisplay:
                 canvas.create_image(0, 0, image=photo, anchor="nw")
                 if self._probe_path:
                     root.update_idletasks()
+                    probe_path = Path(self._probe_path)
+                    frame_path = probe_path.with_name(
+                        f"{probe_path.stem}-frame.ppm"
+                    )
+                    frame_tmp = frame_path.with_suffix(frame_path.suffix + ".tmp")
+                    frame_tmp.write_bytes(ppm)
+                    os.replace(frame_tmp, frame_path)
                     self._probe(
                         "frame_rendered",
                         generation=int(generation),
                         border_color=int(border_color),
                         frame_sha256=hashlib.sha256(rgb).hexdigest(),
+                        frame_ppm=frame_path.name,
                         canvas_x=int(canvas.winfo_rootx()),
                         canvas_y=int(canvas.winfo_rooty()),
                         canvas_width=int(canvas.winfo_width()),
