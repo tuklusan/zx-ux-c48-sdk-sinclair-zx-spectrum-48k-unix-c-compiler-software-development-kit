@@ -49,13 +49,14 @@ class C48Memory:
         self.init=bytearray(65536)
         self.screen=screen
         self.allocations:dict[int,Allocation]={}
+        self._live_allocations:dict[int,Allocation]={}
         self.next_aid=1
         self.ptr_shadow:dict[int,PointerRecord]={}
         if screen is not None:
             self.init[SCREEN_LO:SCREEN_HI]=b'\x01'*(SCREEN_HI-SCREEN_LO)
 
     def _segments(self)->list[Allocation]:
-        return sorted((a for a in self.allocations.values() if a.live),key=lambda a:a.start)
+        return sorted(self._live_allocations.values(),key=lambda a:a.start)
 
     def allocate(self,size:int,align:int,ctype:CType|None,kind:str,*,zero:bool=False,readonly:bool=False)->Allocation:
         if size<0:raise RuntimeC48Error("negative allocation size")
@@ -69,6 +70,7 @@ class C48Memory:
         if p+size>USER_HI:raise RuntimeC48Error("not enough C48 logical memory")
         aid=self.next_aid;self.next_aid+=1
         a=Allocation(aid,p,size,ctype,kind,readonly,True);self.allocations[aid]=a
+        self._live_allocations[aid]=a
         # Poison uninitialized bytes to make accidental dependence visible in dumps.
         self.ram[p:p+size]=b'\xA5'*size
         self.init[p:p+size]=b'\x00'*size
@@ -80,6 +82,7 @@ class C48Memory:
         a=self.allocations.get(aid)
         if not a or not a.live:raise RuntimeC48Error("free/use of non-live allocation")
         a.live=False
+        self._live_allocations.pop(aid,None)
         self.init[a.start:a.end]=b'\x00'*a.size
         # Pointer objects stored *inside* the freed allocation disappear with
         # that storage.  Pointer objects elsewhere deliberately keep their old
@@ -91,8 +94,7 @@ class C48Memory:
 
     def allocation(self,aid:int|None)->Allocation|None:
         if aid is None:return None
-        a=self.allocations.get(aid)
-        return a if a and a.live else None
+        return self._live_allocations.get(aid)
 
     def pointer_for(self,a:Allocation,offset:int=0)->PointerRecord:
         if offset<0 or offset>a.size:raise RuntimeC48Error("pointer outside allocation/provenance")

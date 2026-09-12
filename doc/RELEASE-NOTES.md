@@ -37,6 +37,7 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - specification-driven conformance/regression suite and deterministic demos;
 - adversarial hostile-input/resource ceilings and C48B1 hardening;
 - provenance-preserving stale-pointer/forgery defenses;
+- live-allocation indexing that retains dead allocation IDs for ABA defense without quadratic allocator scans;
 - visible C48 security fixtures, an 84-case adversarial review corpus, and mechanically enforced 64-column C48 source.
 
 ## Frozen verification surface
