@@ -152,9 +152,9 @@ cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-k
 ```bat
 c48 --version
 c48 --about
-c48 usr\src\hello.c
-c48run --headless usr\bin\hello.c48b --dump-screen usr\bin\hello.scr
-c48run usr\bin\hello.c48b
+c48 usr\src\examples\hello.c
+c48run --headless usr\bin\examples\hello.c48b --dump-screen usr\bin\examples\hello.scr
+c48run usr\bin\examples\hello.c48b
 ```
 
 ### Linux / macOS (POSIX)
@@ -162,9 +162,9 @@ c48run usr\bin\hello.c48b
 ```sh
 ./c48 --version
 ./c48 --about
-./c48 usr/src/hello.c
-./c48run --headless usr/bin/hello.c48b --dump-screen usr/bin/hello.scr
-./c48run usr/bin/hello.c48b
+./c48 usr/src/examples/hello.c
+./c48run --headless usr/bin/examples/hello.c48b --dump-screen usr/bin/examples/hello.scr
+./c48run usr/bin/examples/hello.c48b
 ```
 
 Sources under `usr/src/` compile by default to the corresponding relative path under `usr/bin/`. Sources elsewhere compile beside the source with the `.c48b` suffix unless `-o` is supplied.
@@ -183,11 +183,11 @@ compiler/assets/font4x8-zxux.bin      # alternate slot
 Select another valid `F4X8` font at runtime with `--font PATH`:
 
 ```bat
-c48run --font compiler\assets\font4x8-zxux.bin usr\bin\hello.c48b
+c48run --font compiler\assets\font4x8-zxux.bin usr\bin\examples\hello.c48b
 ```
 
 ```sh
-./c48run --font compiler/assets/font4x8-zxux.bin usr/bin/hello.c48b
+./c48run --font compiler/assets/font4x8-zxux.bin usr/bin/examples/hello.c48b
 ```
 
 Any replacement font must satisfy the SDK's frozen `F4X8` format: 392 bytes total, `F4X8` magic, version 1, first character `0x20`, 96 glyphs, and four packed bytes per 4x8 glyph.
@@ -244,7 +244,7 @@ The graphical API models Spectrum coordinates and attribute constraints. The 4x8
 Headless mode can dump the exact 6912-byte screen for deterministic tests:
 
 ```sh
-./c48run --headless --dump-screen output.scr usr/bin/graphics.c48b
+./c48run --headless --dump-screen output.scr usr/bin/examples/graphics.c48b
 ```
 
 The Tk frontend is only a visualizer over that underlying ZX-compatible screen state; it is not the source of truth.
@@ -276,7 +276,9 @@ WAV, and blocks C48 execution until playback returns. Literal tones are generate
 when the C48B1 AST is loaded; dynamically computed tones are generated on first use
 and cached.
 
-For audible host playback install the optional adapter:
+On Windows, audible playback uses Python's standard-library `winsound` module
+and needs no extra package. On Linux and macOS, install the optional playback
+adapter for audible host playback:
 
 ```sh
 python -m pip install playsound3==3.3.2
@@ -285,13 +287,16 @@ python -m pip install playsound3==3.3.2
 Then build and run the shipped fractional-pitch demonstration:
 
 ```sh
-./c48 usr/src/tune.c
-./c48run usr/bin/tune.c48b
+./c48 usr/src/sound/tune.c
+./c48run usr/bin/sound/tune.c48b
 ```
 
-Windows uses the corresponding `c48.bat` / `c48run.bat` launchers. The compiler and
-non-audio programs do not require `playsound3`. If audible playback is unavailable,
-`beep()` returns a positive ZX-UX error code rather than reporting fake success.
+Windows uses the corresponding `c48.bat` / `c48run.bat` launchers and needs no
+third-party audio package. The compiler and non-audio programs do not require
+`playsound3` on any host. If audible playback is unavailable, the runtime emits one
+clear warning and `beep()` returns `ZX_E_NOTSUP` (14) rather than reporting fake
+success. The shipped `tune` demo reports that condition on-screen, continues in
+silent mode, and exits successfully.
 
 The cross-platform BEEP matrix proves the generated waveform numerically: the logs
 show the requested pitch, ROM frequency, `HL`, cycle count, physical BEEPER
@@ -305,7 +310,7 @@ The runtime defaults to the normal native-C48 `crt0` heap ceiling of **1024 byte
 For host development:
 
 ```sh
-./c48run --heap 2048 usr/bin/hello.c48b
+./c48run --heap 2048 usr/bin/examples/hello.c48b
 ```
 
 `--heap` accepts even values from `0` through `8192`. The host allocator enforces the selected byte ceiling but does not claim byte-identical native allocator metadata or native process-stack placement.
@@ -332,23 +337,25 @@ See `doc/FLOAT5-ORACLE.md` for the exact certification boundary.
 
 ## Included C48 examples
 
-The `usr/src/` directory contains small deterministic programs intended both as examples and as regression fixtures:
+Shipped C48 programs are categorized beneath `usr/src/`, with matching frozen
+`C48B1` files beneath the same relative category in `usr/bin/`:
 
-- `hello.c` - 64-column C48 text output;
-- `colors.c` - Spectrum color/attribute behavior;
-- `graphics.c` - line, point, and circle graphics;
-- `udg.c` - user-defined graphics;
-- `maze.c` - compact retro maze-style graphics workload;
-- `argv.c` - C48 `argc` / `argv` behavior;
-- `tune.c` - synchronous ROM-derived `beep()` including fractional pitch.
+- `usr/src/examples/` - `hello`, `colors`, `graphics`, `udg`, `maze`, and `argv`;
+- `usr/src/sound/` - `tune`, the synchronous ROM-derived `beep()` demonstration;
+- `usr/src/demos/` - the 21 animated graphics demonstrations;
+- `usr/src/games/` - the shipped game corpus;
+- `usr/src/apps/` - the larger application corpus;
+- `usr/src/security/` - adversarial compiler/runtime fixtures.
 
-The matching frozen `C48B1` files are under `usr/bin/`.
+Only the shared development header `usr/src/c48host.h` remains directly at the
+source root; `usr/bin/` contains no uncategorized binaries. The release verifier
+enforces that layout mechanically.
 
 All shipped C48 `.c` and `.h` files under `usr/src/` obey a **64-character physical-line ceiling**, matching the ZX-UX tty64 presentation model rather than modern 80-column source formatting. The release verifier enforces this mechanically.
 
 ## Adversarial security fixtures
 
-The 1.0.0 tree includes C48 programs written specifically to attack the host compiler/runtime safety envelope. Their source is under `usr/src/`, and runnable C48B1 forms are under `usr/bin/` where compilation is expected to succeed.
+The 1.0.0 tree includes C48 programs written specifically to attack the host compiler/runtime safety envelope. Their source is under `usr/src/security/`, and runnable C48B1 forms are under `usr/bin/security/` where compilation is expected to succeed.
 
 - `secguard.c` - successful dashboard for recoverable heap, screen-coordinate, UDG, and compiler-forgery protections;
 - `secoob.c` - one-past pointer write;
@@ -365,10 +372,10 @@ The runnable fixtures place explicit `ATTEMPT:` and `MITIGATION:` text on the em
 For example:
 
 ```bat
-c48 usr\src\secguard.c
-c48run usr\bin\secguard.c48b
+c48 usr\src\security\secguard.c
+c48run usr\bin\security\secguard.c48b
 
-c48run --max-steps 300 usr\bin\secloop.c48b
+c48run --max-steps 300 usr\bin\security\secloop.c48b
 ```
 
 The hostile-input regression suite additionally attacks recursive parser structures, macro-expansion bombs, oversized source/C48B1 inputs, malformed-but-correctly-checksummed C48B1 schemas, stale-pointer address reuse, and raw pointer representation forgery. See `doc/ZX-UX C48 SDK Adversarial Security Review.docx` for the threat model and findings.

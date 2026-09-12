@@ -137,6 +137,30 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
         self.assertEqual(footer_text(False), "Shift+Space = BREAK")
         self.assertEqual(footer_text(True), "Program ended - Shift+Space to close")
 
+    def test_yield_and_sleep_publish_then_present_frames(self):
+        src = (
+            '#include "c48host.h"\n'
+            'int main(void){yield();sleep(0);return 0;}\n'
+        )
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            (d / "c48host.h").write_bytes(HOST_HEADER.read_bytes())
+            p = d / "frames.c"
+            p.write_text(src, encoding="ascii")
+            program = compile_file(p)
+        events = []
+        vm = C48VM(
+            program,
+            ZXScreen(Font4x8.load(FONT_PATH)),
+            display_update=lambda: events.append("update"),
+            display_present=lambda: events.append("present"),
+        )
+        self.assertEqual(vm.run(), 0)
+        self.assertEqual(
+            events,
+            ["update", "present", "update", "present"],
+        )
+
     def test_gui_numeric_keypad_sequence(self):
         events = (
             ("KP_1", ""),
@@ -197,7 +221,7 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
         import subprocess
         with tempfile.TemporaryDirectory() as td:
             d=Path(td)
-            program=SDK/'usr/bin/hello.c48b'
+            program=SDK/'usr/bin/examples/hello.c48b'
             default_scr=d/'default.scr'
             alt_scr=d/'alt.scr'
             custom=d/'custom.bin'
@@ -217,7 +241,7 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
         import subprocess
         with tempfile.TemporaryDirectory() as td:
             missing=Path(td)/'missing-font.bin'
-            r=subprocess.run([sys.executable,str(COMPILER/'c48run.py'),'--headless','--font',str(missing),str(SDK/'usr/bin/hello.c48b')],capture_output=True,text=True)
+            r=subprocess.run([sys.executable,str(COMPILER/'c48run.py'),'--headless','--font',str(missing),str(SDK/'usr/bin/examples/hello.c48b')],capture_output=True,text=True)
             self.assertEqual(r.returncode,1)
             self.assertIn('c48run:',r.stderr)
             self.assertNotIn('Traceback',r.stderr)

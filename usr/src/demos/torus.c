@@ -63,6 +63,8 @@ void scene(int f)
         }
     }
     print_at(0, 5, "TORUS REACTOR / PARAMETRIC 3D");
+    print_at(23, 0,
+    "MATH: r=36+13*cos(v); p=(r*cos u,13*sin v,r*sin u)");
 }
 
 int main(int argc, char **argv)

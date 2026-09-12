@@ -1,41 +1,44 @@
 {
   "version": "1.0.0",
-  "test_count": 330,
+  "test_count": 335,
   "font": {
     "tasword_sha256": "90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339",
     "zxux_sha256": "90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339",
     "raw_sha256": "0ccd55f30450231b4219f15c945af53a3eb418082a28b5062589723d8fa1834d"
   },
   "host_header_sha256": "04bf2a02afd7b022e63d92ebadab08527821eb8148e2a82cd43cd616efd20114",
+  "example_header_sha256": "2fa0edc593832d3ab57bc105233f41fd81a02b1f3ea022cefc42da01a6084bb8",
+  "security_header_sha256": "af17410d683bdf197cbd487aa87fa27833767523790bedf5bc50d1b2ee2a9f6b",
+  "sound_header_sha256": "4ba62701a6a454df5dc1c8cac44eced983eadada384fe71732c2ac3fb14f397d",
   "game_header_sha256": "262a691478e139a528d3e39641829d8823f6439d0881cd36c2d457b40d7bad16",
   "demos": {
     "hello": {
       "args": [],
-      "source_sha256": "314c973f97449348fcafe02d27b8df3f91ecdd41665a2cf2d7baffcb4c5ba7e3",
+      "source_sha256": "6f94a735f230dadf5928993f9a071f3f47e98b63d18230eef102f6ae7b63e4b2",
       "binary_sha256": "529d3d85c8558511057f92d07137db800fa69fb0b357434a83cd36b28637fabe",
       "screen_sha256": "20e491b86cb68ca65eef144c760feaef80995242b258dc2421beda30a68a69f9"
     },
     "colors": {
       "args": [],
-      "source_sha256": "de7525ddfda166c060884b949cb022d346ffc3f04fd031b6122523c2a9c12262",
+      "source_sha256": "79a7f14328bb40faef5d6b19569f58445a0e36eadc2ab3cf0d39b2465c529078",
       "binary_sha256": "a1e42b6aca33881a0d2daf3fc2920049081bf3c70d63bfe5ecabfcda48a666d0",
       "screen_sha256": "9852ec86a5fa7a35b1761295933078dcb5b8a3d7f81c1e45a75f1d4aa39f3b25"
     },
     "graphics": {
       "args": [],
-      "source_sha256": "1981324b45387acd98e9be80e6800d97e8ccd9937f6af31715b370da0fc4c3e7",
+      "source_sha256": "e287a917c92494641e2ff1a24129c91ef10603af6d44f8d813a2527c466139c8",
       "binary_sha256": "f28447b9592a260ee06beb6b47ef823e527874ffcbae1521c6608f75ac312fde",
       "screen_sha256": "d2611838b3071ed7e658178d38a7bdd11a0d7fdf2aeffbb15bd65803a878053c"
     },
     "udg": {
       "args": [],
-      "source_sha256": "dd15548be86d79b48ca8c5d9d0d87a1425236ccff7e548ef32952eaa031ffeff",
+      "source_sha256": "2df322a65cea578d494c810b3ab35f7213cffc35eff1606b48b8540f197fc7ee",
       "binary_sha256": "2fe398f3a58ea4ccfe43533beada9b925526901f43c7e706d8a2d0390836558f",
       "screen_sha256": "297ef51aa92911f090027668d02bc5bd92eac82c72678a708cc9a1097b13081c"
     },
     "maze": {
       "args": [],
-      "source_sha256": "982ef55dc51dbaf3566efb5f9af98f98729138c53df8a837b7d435f0b0016ddb",
+      "source_sha256": "87306248074f554b71ac5a388875102ac1a152013eb2367e1af2a33e3660e7ba",
       "binary_sha256": "21a8b006f0ce6a02fd1bbbef2b8a6499507af54188cccd9a5f3cc870da956a90",
       "screen_sha256": "ca337377f9e1073e895d6ad9240072c37577e6dd16d8c3cd43620c0bec1c2335"
     },
@@ -45,7 +48,7 @@
         "beta",
         "gamma"
       ],
-      "source_sha256": "3f5a39220fb2ef64c3957a166bbd3c7e7de8930029433d00c90f64bdd59e3aee",
+      "source_sha256": "36060049da34bb1fdf91dcee325091ee9a54b6eddde3d1cf8ae4260a56af9ffb",
       "binary_sha256": "12323dbcd9f664dfacc1597517ba295d34e61c4d5a1a22d49a64f631e5177cef",
       "screen_sha256": "8e6dc907df2046e99dd165662459f469f0ee6f1d5f100c55f75b3ec627b9776a"
     }
@@ -90,8 +93,8 @@
       "binary_sha256": "21714c47c13d7dd13d67e72f697e62ab15050800acf3ae5fe66fefd4e66785b1"
     },
     "hangman": {
-      "source_sha256": "7be684db4a453f9e89980be32f00e97c63921d5771fe868182267d48a86b6b27",
-      "binary_sha256": "8f9eec118287c5c87e11f98f73c2fabaf41c332aaed030d490f3de75f01d4f96"
+      "source_sha256": "aee7923c4986cfd39bb3132300ab73750d4cf605608530034a4c68dca61621ba",
+      "binary_sha256": "c2024a3da0bc7927de346b9a6bee7127680e56b2666fd61d47fe1ebec2fa8e41"
     },
     "maze": {
       "source_sha256": "42de9830ffc8dcc66bf10131472d4759ac0ba205df74768ef9b36ea69ca50ac2",
@@ -119,7 +122,7 @@
     }
   },
   "sound": {
-    "tune_source_sha256": "fb8d7f320ef1421c6eb895ed77dc935d35b5edbfccf4ea2e562aabcacea03f51",
-    "tune_binary_sha256": "88bb88069d5efa0d357f114ad30ccc67f52c21aefd03f0a81dab74cf54b73211"
+    "tune_source_sha256": "62273f41c03991658f34cdf7bfce7bda92f53a0d563a6d0951e7c501f4cd920c",
+    "tune_binary_sha256": "bc3f178d1ae8210319b55b65ea47bb4007ed029cb3ebc544937a819d9736e333"
   }
 }

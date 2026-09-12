@@ -48,8 +48,9 @@ class ContinueSignal(Exception):pass
 class C48VM:
     def __init__(self,program:dict[str,Any],screen:ZXScreen,*,argv:list[str]|None=None,
                  approximate_rom_math:bool=False,input_provider:Callable[[],int]|None=None,
-                 display_update:Callable[[],None]|None=None, heap_size:int=1024,
-                 max_steps:int|None=None,
+                 display_update:Callable[[],None]|None=None,
+                 display_present:Callable[[],None]|None=None,
+                 heap_size:int=1024, max_steps:int|None=None,
                  sound_player:Callable[[Path],None]|None=None):
         if not isinstance(heap_size,int) or isinstance(heap_size,bool) or heap_size < 0 or heap_size > 8192 or (heap_size & 1):
             raise RuntimeC48Error("host heap size must be an even value from 0..8192")
@@ -64,6 +65,7 @@ class C48VM:
         self.approximate_rom_math=approximate_rom_math
         self.input_provider=input_provider or self._stdin_char
         self.display_update=display_update or (lambda:None)
+        self.display_present=display_present or (lambda:None)
         self.functions:dict[str,dict[str,Any]]={}
         self.global_lvalues:dict[str,LValue]={}
         self.scope_stack:list[dict[str,LValue]]=[]
@@ -75,6 +77,7 @@ class C48VM:
         self.steps=0
         self.call_depth=0
         self.sound=BeepEngine(program,player=sound_player)
+        self._audio_warning_emitted=False
         self.builtins=self._builtin_table()
         self._index_program()
 
@@ -534,16 +537,27 @@ class C48VM:
         if fn is None:raise RuntimeC48Error(f"external function {name!r} has no host runtime implementation")
         return fn(args)
     def _b_exit(self,a):raise RuntimeExit(self._to_unsigned(a[0])&0xFF)
-    def _b_yield(self,a):self.display_update();return Value(INT,0)
+    def _b_yield(self,a):
+        self.display_update();self.display_present();return Value(INT,0)
     def _b_sleep(self,a):
-        # Host profile interprets argument as 50-Hz ticks to mirror SYS_SLEEP semantics.
-        ticks=self._to_unsigned(a[0]);time.sleep(ticks/50.0);self.display_update();return Value(INT,0)
+        # Publish and paint the logical frame before the 50-Hz delay.  This
+        # keeps animation sleeps from hiding a frame behind the next scene.
+        ticks=self._to_unsigned(a[0])
+        self.display_update();self.display_present();time.sleep(ticks/50.0)
+        return Value(INT,0)
     def _b_beep(self,a):
         try:
             self.sound.play(self._farg(a,0),self._farg(a,1))
         except BeepArgumentError:
             return Value(INT,E_INVAL)
-        except AudioBackendUnavailable:
+        except AudioBackendUnavailable as exc:
+            if not self._audio_warning_emitted:
+                print(
+                    "C48 audio unavailable: " + str(exc)
+                    + "; continuing without audible playback",
+                    file=os.sys.stderr,
+                )
+                self._audio_warning_emitted=True
             return Value(INT,E_NOTSUP)
         except (AudioPlaybackError,OSError,ValueError):
             return Value(INT,E_IO)

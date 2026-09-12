@@ -15,7 +15,7 @@ patent, trademark, and governing-law provisions.
 -->
 # 1.0.0 Release Certification Record
 
-Status: FINAL 1.0.0 CANDIDATE - FORMAL RELEASE NOT YET PUBLISHED
+Status: 1.0.0 CANDIDATE - FRESH RECERTIFICATION REQUIRED BEFORE RELEASE
 
 This file records release-candidate work that must survive ephemeral development
 filesystems and runner workspaces. It is intentionally separate from the frozen

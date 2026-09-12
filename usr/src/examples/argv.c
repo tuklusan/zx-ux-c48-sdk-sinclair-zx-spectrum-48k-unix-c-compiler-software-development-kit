@@ -9,7 +9,7 @@
 // Attribution required: Based on original work by Supratim
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
-#include "c48host.h"
+#include "exapi.h"
 
 char *a_sample[17] = {
     "SANYALnet Labs ZX-UX: It is 1982 again but you are ",

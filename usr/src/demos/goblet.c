@@ -62,6 +62,8 @@ void scene(int f)
         }
     }
     print_at(0, 2, "CRYSTAL GOBLET / 3D WIREFRAME");
+    print_at(23, 0,
+    "MATH: p=(r(profile)*cos a,y(profile),r(profile)*sin a)");
 }
 
 int main(int argc, char **argv)

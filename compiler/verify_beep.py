@@ -162,8 +162,8 @@ def verify_case(duration: str, pitch: str) -> None:
 
 
 def verify_shipped_tune() -> None:
-    source = SDK / "usr" / "src" / "tune.c"
-    frozen = SDK / "usr" / "bin" / "tune.c48b"
+    source = SDK / "usr" / "src" / "sound" / "tune.c"
+    frozen = SDK / "usr" / "bin" / "sound" / "tune.c48b"
     if not source.is_file() or not frozen.is_file():
         fail("shipped tune.c/tune.c48b pair is missing")
     program = compile_file(source)

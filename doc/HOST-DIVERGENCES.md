@@ -170,13 +170,16 @@ ROM fractional-pitch constant, `FP_TO_BC` rounding, and the exact `BEEPER` perio
 to an 8-bit mono WAV. Literal `beep()` arguments are pre-synthesized when a C48B1
 AST is loaded; computed arguments are synthesized on first use and cached.
 
-Audible playback is an optional host facility provided by `playsound3`. Install the
-verified adapter with `python -m pip install playsound3==3.3.2`. The compiler and
-programs that do not invoke audible `beep()` remain third-party-package-free. No
-fake success/no-op implementation is supplied: invalid ROM arguments return
+Audible playback uses Python's standard-library `winsound` on Windows, so Windows
+needs no extra audio package. Linux and macOS use the optional `playsound3` adapter;
+install the verified version with `python -m pip install playsound3==3.3.2`. The
+compiler and programs that do not invoke audible `beep()` remain third-party-package
+free. No fake success/no-op implementation is supplied: invalid ROM arguments return
 `ZX_E_INVAL` (1), a missing playback adapter returns `ZX_E_NOTSUP` (14), and a
-playback/backend failure returns `ZX_E_IO` (5). Zero-cycle ROM BEEP requests remain
-valid no-ops and therefore do not require an audio backend.
+playback/backend failure returns `ZX_E_IO` (5). The runtime prints one warning for a
+missing backend per VM run; the shipped `tune` demo treats `ZX_E_NOTSUP` as nonfatal,
+reports silent mode on-screen, and completes normally. Zero-cycle ROM BEEP requests
+remain valid no-ops and therefore do not require an audio backend.
 
 CI cannot prove that a physical runner speaker emitted sound. Instead the sound
 gate independently measures the generated WAV's edge count, frequency and duration

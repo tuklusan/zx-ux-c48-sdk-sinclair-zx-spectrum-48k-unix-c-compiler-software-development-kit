@@ -9,7 +9,7 @@
 // Attribution required: Based on original work by Supratim
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
-#include "c48host.h"
+#include "secapi.h"
 
 int main(void)
 {

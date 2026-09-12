@@ -110,24 +110,44 @@ def check_required_files() -> None:
         "doc/GRAPHICS-DEMOS.md", "doc/APPS.md",
         "doc/ZX-UX C48 SDK Adversarial Security Review.docx",
         "doc/SECURITY-TEST-RESULTS.md",
-        "usr/src/c48host.h", "usr/src/tune.c", "usr/bin/tune.c48b",
+        "usr/src/c48host.h",
+        "usr/src/examples/exapi.h",
+        "usr/src/security/secapi.h",
+        "usr/src/sound/sndapi.h",
+        "usr/src/sound/tune.c", "usr/bin/sound/tune.c48b",
         "usr/src/games/gameapi.h",
         "usr/src/demos/demoapi.h",
         "usr/src/apps/appapi.h",
         "usr/src/apps/sheet48.c",
         "usr/src/apps/write48.c",
         "usr/src/apps/wire3d.c",
-        "usr/src/secguard.c", "usr/src/secoob.c",
-        "usr/src/secuaf.c", "usr/src/secfree.c",
-        "usr/src/secdbl.c", "usr/src/secloop.c",
-        "usr/src/secrecur.c", "usr/src/seckern.c",
-        "usr/src/secforge.c",
+        "usr/src/security/secguard.c", "usr/src/security/secoob.c",
+        "usr/src/security/secuaf.c", "usr/src/security/secfree.c",
+        "usr/src/security/secdbl.c", "usr/src/security/secloop.c",
+        "usr/src/security/secrecur.c", "usr/src/security/seckern.c",
+        "usr/src/security/secforge.c",
     ]
     for rel in required:
         if not (SDK / rel).is_file():
             fail(f"missing required file: {rel}")
     if (SDK / "VERSION").read_text(encoding="ascii").strip() != EXPECT["version"]:
         fail("VERSION does not match release expectations")
+
+
+def check_program_layout() -> None:
+    source_root = SDK / "usr" / "src"
+    binary_root = SDK / "usr" / "bin"
+    stray_sources = sorted(
+        p.name for p in source_root.iterdir()
+        if p.is_file() and p.name != "c48host.h"
+    )
+    stray_binaries = sorted(
+        p.name for p in binary_root.iterdir() if p.is_file()
+    )
+    if stray_sources:
+        fail("uncategorized usr/src files: " + ", ".join(stray_sources))
+    if stray_binaries:
+        fail("uncategorized usr/bin files: " + ", ".join(stray_binaries))
 
 
 def check_python_source() -> None:
@@ -211,10 +231,22 @@ def check_tests() -> None:
 
 def check_beep() -> None:
     sound = EXPECT["sound"]
-    if sha(SDK / "usr/src/tune.c") != sound["tune_source_sha256"]:
+    source = SDK / "usr/src/sound/tune.c"
+    frozen = SDK / "usr/bin/sound/tune.c48b"
+    if sha(SDK / "usr/src/sound/sndapi.h") != EXPECT["sound_header_sha256"]:
+        fail("sndapi.h hash mismatch")
+    if sha(source) != sound["tune_source_sha256"]:
         fail("tune.c source hash mismatch")
-    if sha(SDK / "usr/bin/tune.c48b") != sound["tune_binary_sha256"]:
+    if sha(frozen) != sound["tune_binary_sha256"]:
         fail("tune.c48b hash mismatch")
+    with tempfile.TemporaryDirectory(prefix="c48-sound-verify-") as td:
+        rebuilt = Path(td) / "tune.c48b"
+        bp = run([
+            sys.executable, "-B", str(ROOT / "c48.py"),
+            str(source), "-o", str(rebuilt),
+        ])
+        if bp.returncode != 0 or rebuilt.read_bytes() != frozen.read_bytes():
+            fail("tune deterministic rebuild mismatch")
     cp = run([sys.executable, "-B", str(ROOT / "verify_beep.py")], timeout=30)
     if cp.returncode != 0:
         sys.stderr.write(cp.stdout + cp.stderr)
@@ -226,12 +258,14 @@ def check_beep() -> None:
 def check_demos() -> None:
     if sha(SDK / "usr/src/c48host.h") != EXPECT["host_header_sha256"]:
         fail("c48host.h hash mismatch")
+    if sha(SDK / "usr/src/examples/exapi.h") != EXPECT["example_header_sha256"]:
+        fail("exapi.h hash mismatch")
     with tempfile.TemporaryDirectory(prefix="c48-release-verify-") as td:
         d = Path(td)
         for name, exp in EXPECT["demos"].items():
             print(f"VERIFY: demo {name} ...", flush=True)
-            src = SDK / f"usr/src/{name}.c"
-            frozen = SDK / f"usr/bin/{name}.c48b"
+            src = SDK / f"usr/src/examples/{name}.c"
+            frozen = SDK / f"usr/bin/examples/{name}.c48b"
             if sha(src) != exp["source_sha256"]:
                 fail(f"{name}: source hash mismatch")
             if not frozen.is_file() or sha(frozen) != exp["binary_sha256"]:
@@ -299,11 +333,13 @@ def check_apps() -> None:
 
 
 def check_security_programs() -> None:
+    if sha(SDK / "usr/src/security/secapi.h") != EXPECT["security_header_sha256"]:
+        fail("secapi.h hash mismatch")
     with tempfile.TemporaryDirectory(prefix="c48-security-verify-") as td:
         root = Path(td)
         for name, expected_hash in EXPECT["security_programs"].items():
-            source = SDK / "usr" / "src" / f"{name}.c"
-            frozen = SDK / "usr" / "bin" / f"{name}.c48b"
+            source = SDK / "usr" / "src" / "security" / f"{name}.c"
+            frozen = SDK / "usr" / "bin" / "security" / f"{name}.c48b"
             if not source.is_file() or not frozen.is_file():
                 fail(f"security fixture missing: {name}")
             if sha(frozen) != expected_hash:
@@ -412,6 +448,7 @@ def main() -> int:
     checks = (
         ("clean-tree preflight", check_clean_tree),
         ("required files", check_required_files),
+        ("categorized program layout", check_program_layout),
         ("Python source", check_python_source),
         ("license/header policy", check_license_policy),
         ("legacy SDK path invariant", check_legacy_path_policy),

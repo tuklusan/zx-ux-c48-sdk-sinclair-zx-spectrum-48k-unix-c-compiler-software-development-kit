@@ -68,6 +68,8 @@ void scene(int f)
     bright(1);
     circle(210, 150, 13);
     print_at(0, 3, "MOUNTAIN FLIGHT / PROCEDURAL GRID");
+    print_at(23, 0,
+    "MATH: h=-34+(sin(2x+z+5f)+sin(2z-x+3f))/8");
 }
 
 int main(int argc, char **argv)

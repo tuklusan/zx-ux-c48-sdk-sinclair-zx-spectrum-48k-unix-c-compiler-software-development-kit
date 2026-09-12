@@ -62,6 +62,8 @@ void scene(int f)
     bright(1);
     circle(54, 148, 10);
     print_at(0, 4, "OCEAN GRID / THREE WAVE FIELD");
+    print_at(23, 0,
+    "MATH: y=(sin(3x+7f)+sin(2z-5f)+sin(x+z+3f))/18");
 }
 
 int main(int argc, char **argv)

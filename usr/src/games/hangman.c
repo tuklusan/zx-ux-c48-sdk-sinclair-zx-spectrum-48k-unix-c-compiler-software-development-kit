@@ -62,9 +62,9 @@ void h_draw_board(void)
     cls();
     print_at(0, 0, "C48 HANGMAN");
     print_at(1, 0, "Guess letters. q quits.");
-    print_at(3, 8, "+----------+");
-    print_at(4, 8, "|          |");
-    print_at(5, 8, "|          |");
+    print_at(3, 8, "+---------+");
+    print_at(4, 8, "|         |");
+    print_at(5, 8, "|         |");
     print_at(6, 8, "|");
     print_at(7, 8, "|");
     print_at(8, 8, "|");

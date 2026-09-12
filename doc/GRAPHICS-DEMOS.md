@@ -35,6 +35,11 @@ and macOS Intel (`macos-15-intel`) at Python 3.10 and 3.13. The checked-in
 combined reel is `doc/images/demos/contact-sheet.png`; the release manifest
 covers that contact sheet as well as the 21 individual canonical PNG files.
 
+Math-oriented demonstrations reserve the bottom 64-column text row for a
+compact formula describing the integer/fixed-point relation being rendered.
+The mathematics is therefore visible in the actual Spectrum framebuffer and
+canonical screenshots, not merely in source comments.
+
 ## Suite
 
 1. **Crystal Goblet** (`goblet.c`) - canonical frame 2, stress 4.

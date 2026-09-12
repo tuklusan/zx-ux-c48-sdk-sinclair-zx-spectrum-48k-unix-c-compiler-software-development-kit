@@ -23,8 +23,8 @@ name: C48 BEEP numerical proof
       - "compiler/tests/test_beep.py"
       - "compiler/verify_beep.py"
       - "usr/src/c48host.h"
-      - "usr/src/tune.c"
-      - "usr/bin/tune.c48b"
+      - "usr/src/sound/tune.c"
+      - "usr/bin/sound/tune.c48b"
       - ".github/workflows/beep.yml"
   pull_request:
     paths:
@@ -34,8 +34,8 @@ name: C48 BEEP numerical proof
       - "compiler/tests/test_beep.py"
       - "compiler/verify_beep.py"
       - "usr/src/c48host.h"
-      - "usr/src/tune.c"
-      - "usr/bin/tune.c48b"
+      - "usr/src/sound/tune.c"
+      - "usr/bin/sound/tune.c48b"
       - ".github/workflows/beep.yml"
   workflow_dispatch:
 
@@ -70,7 +70,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Install audible playback adapter
+      - name: Install optional POSIX proof adapter
         run: python -m pip install playsound3==3.3.2
 
       - name: Prove ROM-derived BEEP numerically

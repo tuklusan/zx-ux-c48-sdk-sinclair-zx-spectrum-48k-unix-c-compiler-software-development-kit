@@ -24,8 +24,6 @@ from .screen import (
     SCREEN_SIZE,
     WIDTH,
     ZXScreen,
-    attr_offset,
-    bitmap_offset,
 )
 
 COPYRIGHT_TEXT = (
@@ -37,6 +35,36 @@ BORDER_X = 32
 BORDER_Y = 24
 FRAME_WIDTH = WIDTH + BORDER_X * 2
 FRAME_HEIGHT = HEIGHT + BORDER_Y * 2
+
+# Rendering the Spectrum bitmap pixel-by-pixel costs enough Python time to
+# starve Tk on animation-heavy programs.  Pre-expand the 128 possible
+# BRIGHT/PAPER/INK combinations for every bitmap byte once, then render a
+# frame 8 pixels at a time.  FLASH is handled by swapping ink/paper when the
+# row is emitted, so no second table is required.
+_PIXEL_RUNS = []
+for _bright in range(2):
+    _palette = PALETTE_BRIGHT if _bright else PALETTE_NORMAL
+    for _paper in range(8):
+        for _ink in range(8):
+            _ink_rgb = bytes(_palette[_ink])
+            _paper_rgb = bytes(_palette[_paper])
+            _runs = []
+            for _bits in range(256):
+                _run = bytearray()
+                for _bit in range(8):
+                    _run.extend(
+                        _ink_rgb
+                        if _bits & (0x80 >> _bit)
+                        else _paper_rgb
+                    )
+                _runs.append(bytes(_run))
+            _PIXEL_RUNS.append(tuple(_runs))
+_PIXEL_RUNS = tuple(_PIXEL_RUNS)
+_BITMAP_ROW_BASES = tuple(
+    ((y & 0xC0) << 5) | ((y & 0x07) << 8) | ((y & 0x38) << 2)
+    for y in range(HEIGHT)
+)
+_ATTR_ROW_BASES = tuple(6144 + (y >> 3) * 32 for y in range(HEIGHT))
 
 
 def is_break_key(keysym: str, state: int) -> bool:
@@ -105,20 +133,19 @@ def render_snapshot_rgb(mem: bytes, flash_phase: bool = False) -> bytes:
     out = bytearray(WIDTH * HEIGHT * 3)
     p = 0
     for y in range(HEIGHT):
-        for x in range(WIDTH):
-            a = mem[attr_offset(x, y)]
+        bitmap = _BITMAP_ROW_BASES[y]
+        attrs = _ATTR_ROW_BASES[y]
+        for xbyte in range(32):
+            a = mem[attrs + xbyte]
             ink = a & 7
             paper = (a >> 3) & 7
-            br = (a >> 6) & 1
-            fl = (a >> 7) & 1
-            if fl and flash_phase:
+            if flash_phase and (a & 0x80):
                 ink, paper = paper, ink
-            bit = bool(mem[bitmap_offset(x, y)] & (0x80 >> (x & 7)))
-            c = (PALETTE_BRIGHT if br else PALETTE_NORMAL)[
-                ink if bit else paper
+            run = _PIXEL_RUNS[((a >> 6) & 1) * 64 + paper * 8 + ink][
+                mem[bitmap + xbyte]
             ]
-            out[p:p + 3] = bytes(c)
-            p += 3
+            out[p:p + 24] = run
+            p += 24
     return bytes(out)
 
 
@@ -158,6 +185,7 @@ class TkDisplay:
         self._key_waiting = False
         self._key_byte: int | None = None
         self._frame_lock = threading.Lock()
+        self._frame_cond = threading.Condition(self._frame_lock)
         self._frame_generation = 0
         self._frame_snapshot = self.screen.bytes()
         self._frame_border = int(self.screen.border_color) & 7
@@ -191,13 +219,21 @@ class TkDisplay:
         with self._key_cond:
             return self._key_waiting and self._key_byte is None
 
-    def update(self) -> None:
+    def update(self) -> int:
         snapshot = self.screen.bytes()
         border = int(self.screen.border_color) & 7
-        with self._frame_lock:
+        with self._frame_cond:
             self._frame_generation += 1
             self._frame_snapshot = snapshot
             self._frame_border = border
+            return self._frame_generation
+
+    def present(self) -> None:
+        """Wait until Tk has painted the latest intentionally published frame."""
+        with self._frame_cond:
+            target = self._frame_generation
+            while self._rendered_generation < target and not self._stop:
+                self._frame_cond.wait()
 
     def _frame_after(
         self,
@@ -212,10 +248,18 @@ class TkDisplay:
                 self._frame_border,
             )
 
+    def _mark_rendered(self, generation: int) -> None:
+        with self._frame_cond:
+            if generation > self._rendered_generation:
+                self._rendered_generation = generation
+            self._frame_cond.notify_all()
+
     def close(self) -> None:
         self._stop = True
         with self._key_cond:
             self._key_cond.notify_all()
+        with self._frame_cond:
+            self._frame_cond.notify_all()
 
     def run_vm(self, target) -> int:
         try:
@@ -315,11 +359,11 @@ class TkDisplay:
                 self._photo = photo
                 canvas.delete("all")
                 canvas.create_image(0, 0, image=photo, anchor="nw")
-                self._rendered_generation = generation
+                self._mark_rendered(generation)
             if result["done"]:
                 root.title(f"{self.title} - exited {result['status']}")
                 footer.configure(**footer_config(True))
-            root.after(40, redraw)
+            root.after(20, redraw)
 
         root.after(0, redraw)
         root.mainloop()

@@ -23,13 +23,14 @@ The arithmetic and timing constants below come from the repository's frozen
 * STK_DATA literal decoder: $33C6-$33F6
 
 The host synthesizes the square wave that the ROM timing loop describes and
-uses playsound3 only as the optional cross-platform file playback adapter.
+uses Windows winsound or playsound3 as the optional host playback adapter.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
+import os
 import shutil
 import tempfile
 import wave
@@ -77,7 +78,7 @@ class BeepArgumentError(ValueError):
 
 
 class AudioBackendUnavailable(RuntimeError):
-    """playsound3 is not installed for an audible host run."""
+    """No usable audible host playback backend is available."""
 
 
 class AudioPlaybackError(RuntimeError):
@@ -262,6 +263,20 @@ def write_square_wav(path: Path, plan: BeepPlan, *, sample_rate: int = WAV_SAMPL
         out.writeframes(data)
 
 
+def winsound_player(path: Path) -> None:
+    """Play one WAV synchronously with the Windows standard library."""
+    try:
+        import winsound
+    except (ImportError, ModuleNotFoundError) as exc:
+        raise AudioBackendUnavailable(
+            "Windows winsound is unavailable for audible C48 beep() playback"
+        ) from exc
+    try:
+        winsound.PlaySound(str(path), winsound.SND_FILENAME)
+    except (OSError, RuntimeError) as exc:
+        raise AudioPlaybackError(str(exc)) from exc
+
+
 def playsound3_player(path: Path) -> None:
     """Play one WAV synchronously through the optional playsound3 package."""
     try:
@@ -276,6 +291,14 @@ def playsound3_player(path: Path) -> None:
         raise AudioPlaybackError(str(exc)) from exc
     except OSError as exc:
         raise AudioPlaybackError(str(exc)) from exc
+
+
+def default_audio_player(path: Path) -> None:
+    """Use stdlib winsound on Windows, playsound3 elsewhere."""
+    if os.name == "nt":
+        winsound_player(path)
+    else:
+        playsound3_player(path)
 
 
 def _static_float_arg(node: dict[str, Any]) -> Float5 | None:
@@ -337,7 +360,7 @@ class BeepEngine:
         player: Callable[[Path], None] | None = None,
         sample_rate: int = WAV_SAMPLE_RATE,
     ) -> None:
-        self.player = player or playsound3_player
+        self.player = player or default_audio_player
         self.sample_rate = sample_rate
         self.root: Path | None = None
         self._finalizer: Any = None

@@ -14,6 +14,8 @@
 from __future__ import annotations
 
 from pathlib import Path
+from contextlib import redirect_stderr
+import io
 from types import SimpleNamespace
 from unittest.mock import patch
 import sys
@@ -35,8 +37,10 @@ from c48.sound import (
     AudioBackendUnavailable,
     BeepArgumentError,
     WAV_SAMPLE_RATE,
+    default_audio_player,
     plan_beep,
     playsound3_player,
+    winsound_player,
     write_square_wav,
 )
 from c48.vm import C48VM
@@ -209,8 +213,55 @@ class BeepVmTests(unittest.TestCase):
                 playsound3_player(path)
         self.assertEqual(calls, [(str(path), True)])
 
-    def test_011_shipped_tune_runs_through_sdk_rom_vm(self):
-        program = compile_file(SDK / "usr" / "src" / "tune.c")
+    def test_011_windows_stdlib_adapter_is_synchronous(self):
+        calls = []
+        fake = SimpleNamespace(
+            SND_FILENAME=131072,
+            PlaySound=lambda sound, flags: calls.append((sound, flags)),
+        )
+        with tempfile.TemporaryDirectory(prefix="c48-beep-test-") as td:
+            path = Path(td) / "tone.wav"
+            path.write_bytes(b"RIFF")
+            with patch.dict(
+                sys.modules, {"winsound": fake, "playsound3": None}
+            ):
+                winsound_player(path)
+                with patch("c48.sound.os.name", "nt"):
+                    default_audio_player(path)
+        self.assertEqual(
+            calls,
+            [
+                (str(path), fake.SND_FILENAME),
+                (str(path), fake.SND_FILENAME),
+            ],
+        )
+
+    def test_012_missing_audio_backend_warns_once_and_continues(self):
+        program = compile_host(
+            "int main(void){"
+            "if(beep(0.01,0.0)!=14)return 1;"
+            "if(beep(0.01,1.0)!=14)return 2;"
+            "return 0;}\n"
+        )
+
+        def unavailable(_path: Path) -> None:
+            raise AudioBackendUnavailable("test backend unavailable")
+
+        output = io.StringIO()
+        vm = C48VM(
+            program,
+            ZXScreen(FONT),
+            sound_player=unavailable,
+        )
+        with redirect_stderr(output):
+            self.assertEqual(vm.run(), 0)
+        text = output.getvalue()
+        self.assertEqual(text.count("C48 audio unavailable:"), 1)
+        self.assertIn("test backend unavailable", text)
+        self.assertIn("continuing without audible playback", text)
+
+    def test_013_shipped_tune_runs_through_sdk_rom_vm(self):
+        program = compile_file(SDK / "usr" / "src" / "sound" / "tune.c")
         calls: list[Path] = []
         vm = RomMathVM(
             program,
@@ -222,6 +273,23 @@ class BeepVmTests(unittest.TestCase):
         self.assertEqual(vm.run(), 0)
         self.assertEqual(len(calls), 9)
         self.assertEqual(vm.sound.generated_count, 9)
+
+        unavailable_calls = []
+        def unavailable(path: Path) -> None:
+            unavailable_calls.append(path)
+            raise AudioBackendUnavailable("test backend unavailable")
+
+        output = io.StringIO()
+        silent_vm = RomMathVM(
+            program,
+            ZXScreen(FONT),
+            argv=["tune"],
+            sound_player=unavailable,
+        )
+        with redirect_stderr(output):
+            self.assertEqual(silent_vm.run(), 0)
+        self.assertEqual(len(unavailable_calls), 1)
+        self.assertEqual(output.getvalue().count("C48 audio unavailable:"), 1)
 
 
 if __name__ == "__main__":

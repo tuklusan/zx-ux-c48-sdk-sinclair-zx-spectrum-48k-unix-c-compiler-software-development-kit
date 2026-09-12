@@ -37,6 +37,8 @@ void scene(int f)
     bright(1);
     draw(x1, y1, x2, y2);
     print_at(0, 7, "MOIRE ENGINE / XOR INTERFERENCE");
+    print_at(23, 0,
+    "MATH: XOR circles C1(r),C2(r); centers move by sin/cos");
 }
 
 int main(int argc, char **argv)

@@ -47,6 +47,8 @@ void scene(int f)
     circle(128, 96, 5);
     circle(128, 96, 9);
     print_at(0, 6, "SPIRAL GALAXY / FOUR ARMS");
+    print_at(23, 0,
+    "MATH: a=64*arm+11*(i/4)+3f; r=5+2*(i mod 24)");
 }
 
 int main(int argc, char **argv)

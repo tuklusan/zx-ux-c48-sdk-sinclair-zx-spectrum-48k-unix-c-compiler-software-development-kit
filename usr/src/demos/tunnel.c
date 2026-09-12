@@ -57,6 +57,8 @@ void scene(int f)
     ink(7);
     bright(1);
     print_at(0, 3, "INFINITY TUNNEL / DEPTH + TWIST");
+    print_at(23, 0,
+    "MATH: scale=4000/(z+24); x=cx+cos(a)*scale/128");
 }
 
 int main(int argc, char **argv)

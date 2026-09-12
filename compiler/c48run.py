@@ -114,6 +114,7 @@ def main(argv: list[str] | None = None) -> int:
                 heap_size=ns.heap, max_steps=max_steps,
                 input_provider=display.input_char,
                 display_update=display.update,
+                display_present=display.present,
             )
             status = display.run_vm(vm.run)
         if ns.dump_screen:

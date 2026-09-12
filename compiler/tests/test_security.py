@@ -39,7 +39,8 @@ from c48.screen import Font4x8, ZXScreen, bitmap_offset
 from c48.vm import C48VM
 
 FONT = Font4x8.load(COMPILER / "assets" / "font4x8-tasword.bin")
-SEC_SRC = SDK / "usr" / "src"
+SOURCE_ROOT = SDK / "usr" / "src"
+SEC_SRC = SOURCE_ROOT / "security"
 
 
 def compile_security(name: str):
@@ -307,7 +308,7 @@ class RuntimeBoundaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "c48host.h").write_bytes(
-                (SEC_SRC / "c48host.h").read_bytes()
+                (SOURCE_ROOT / "c48host.h").read_bytes()
             )
             source_path = root / "aba.c"
             source_path.write_text(source, encoding="ascii")
@@ -325,7 +326,7 @@ class RuntimeBoundaryTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
             (root / "c48host.h").write_bytes(
-                (SEC_SRC / "c48host.h").read_bytes()
+                (SOURCE_ROOT / "c48host.h").read_bytes()
             )
             source_path = root / "stale.c"
             source_path.write_text(source, encoding="ascii")
@@ -359,7 +360,7 @@ class RuntimeBoundaryTests(unittest.TestCase):
 class PresentationContractTests(unittest.TestCase):
     def test_all_shipped_c48_source_lines_fit_64_columns(self):
         failures = []
-        for path in sorted(SEC_SRC.glob("*")):
+        for path in sorted(SOURCE_ROOT.rglob("*")):
             if path.suffix not in {".c", ".h"}:
                 continue
             for line_no, line in enumerate(

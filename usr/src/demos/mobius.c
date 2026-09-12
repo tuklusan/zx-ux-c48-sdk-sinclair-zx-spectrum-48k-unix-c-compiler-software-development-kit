@@ -24,8 +24,8 @@ void mpt(int u, int side, int f,
     b = side * 10 * d_sin(u / 2) / 128;
     d_rot3(a, b, c, 20 + f * 2, f * 4, f,
            x, y, z);
-    *x = *x * 2;
-    *y = *y * 2;
+    *x = *x * 3 / 2;
+    *y = *y * 3 / 2;
 }
 
 void edge(int u1, int u2, int side, int f)
@@ -70,6 +70,8 @@ void scene(int f)
     ink(7);
     bright(1);
     print_at(0, 3, "MOBIUS R=48 W=24 / ONE SIDED RIBBON");
+    print_at(23, 0,
+    "MATH: Mobius r=48+12s*cos(u/2); half-twist + rotate3");
 }
 
 int main(int argc, char **argv)

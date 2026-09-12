@@ -57,6 +57,8 @@ void scene(int f)
     ink(7);
     bright(1);
     print_at(0, 7, "SPECTRUM PLASMA / ATTRIBUTES");
+    print_at(23, 0,
+    "MATH: v=sin(13x+9f)+sin(17y-6f)+sin(9(x+y)+4f)");
 }
 
 int main(int argc, char **argv)

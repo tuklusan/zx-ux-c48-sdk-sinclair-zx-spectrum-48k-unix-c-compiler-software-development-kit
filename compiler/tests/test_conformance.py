@@ -659,7 +659,7 @@ class ScreenAndFormat(unittest.TestCase):
 
 class HostSDKIntegration(unittest.TestCase):
     def test_host_header_and_hello(self):
-        p=compile_file(SDK/'usr/src/hello.c');s=ZXScreen(Font4x8.load(FONT_PATH));self.assertEqual(C48VM(p,s).run(),0)
+        p=compile_file(SDK/'usr/src/examples/hello.c');s=ZXScreen(Font4x8.load(FONT_PATH));self.assertEqual(C48VM(p,s).run(),0)
         self.assertNotEqual(s.bytes()[:BITMAP_SIZE],bytes(BITMAP_SIZE))
 
     def test_cli_compile_run_and_deterministic_recompile(self):

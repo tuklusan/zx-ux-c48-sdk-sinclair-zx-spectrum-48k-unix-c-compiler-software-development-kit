@@ -55,6 +55,8 @@ void scene(int f)
     bright(1);
     circle(128, 96, 14 + (f & 7));
     print_at(0, 7, "KALEIDOSCOPE / EIGHTFOLD LINES");
+    print_at(23, 0,
+    "MATH: reflect line across x,y and x=y -> eight copies");
 }
 
 int main(int argc, char **argv)

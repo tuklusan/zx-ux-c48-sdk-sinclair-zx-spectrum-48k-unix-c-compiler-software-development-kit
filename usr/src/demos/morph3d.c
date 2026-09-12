@@ -72,6 +72,8 @@ void scene(int f)
     ink(7);
     shp(5, ph, f);
     print_at(0, 4, "POLYHEDRON MORPH / CUBE TO STAR");
+    print_at(23, 0,
+    "MATH: p=((64-ph)*cube+ph*star)/64; then rotate3");
 }
 
 int main(int argc, char **argv)

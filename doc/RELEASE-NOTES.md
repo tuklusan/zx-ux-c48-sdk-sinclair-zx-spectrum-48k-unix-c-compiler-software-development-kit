@@ -15,7 +15,7 @@ patent, trademark, and governing-law provisions.
 -->
 # ZX-UX C48 SDK 1.0.0 Release Notes
 
-Status: FINAL 1.0.0 CANDIDATE - FORMAL RELEASE PENDING REAL-DESKTOP TK CERTIFICATION
+Status: 1.0.0 CANDIDATE - FORMAL RELEASE PENDING FRESH RECERTIFICATION
 
 ## Release purpose
 
@@ -38,11 +38,15 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - adversarial hostile-input/resource ceilings and C48B1 hardening;
 - provenance-preserving stale-pointer/forgery defenses;
 - live-allocation indexing that retains dead allocation IDs for ABA defense without quadratic allocator scans;
-- visible C48 security fixtures, an 84-case adversarial review corpus, and mechanically enforced 64-column C48 source.
+- visible C48 security fixtures, an 84-case adversarial review corpus, and mechanically enforced 64-column C48 source;
+- 50-Hz Tk polling, accelerated byte-run framebuffer conversion, and explicit `yield()`/animation-sleep presentation barriers so intentional logical frames are painted rather than silently coalesced;
+- Windows standard-library `winsound` playback with no pip dependency, plus one-time visible/terminal diagnostics and nonfatal silent completion for the shipped tune when a POSIX audio adapter is absent;
+- categorized `examples`, `sound`, and `security` source/binary trees with no uncategorized programs at `usr/src` or `usr/bin` root;
+- mathematical 64-column overlays on the math-oriented graphics tranche, a 75%-scale Mobius projection, and corrected Hangman gallows alignment.
 
 ## Frozen verification surface
 
-- automated conformance/regression/security tests: 330, including the 84 ordered attacks from the adversarial security review, tty64 deferred-wrap regressions, and ROM-derived BEEP/PCM/blocking tests;
+- automated conformance/regression/security tests: 335, including the 84 ordered attacks from the adversarial security review, tty64 deferred-wrap regressions, and ROM-derived BEEP/PCM/blocking tests;
 - deterministic demos: 6 (`hello`, `colors`, `graphics`, `udg`, `maze`, `argv`);
 - default Tasword F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339`;
 - alternate ZX-UX F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339` (currently byte-identical to the supplied Tasword asset);

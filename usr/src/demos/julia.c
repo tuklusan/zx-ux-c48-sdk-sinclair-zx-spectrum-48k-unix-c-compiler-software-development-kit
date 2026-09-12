@@ -47,6 +47,8 @@ void scene(int f)
     ink(7);
     bright(1);
     print_at(0, 7, "JULIA BALLET / MOVING CONSTANT");
+    print_at(23, 0,
+    "MATH: z=(z*z)+c; c=(-22+sin(9f)/12,cos(7f)/9)");
 }
 
 int main(int argc, char **argv)

@@ -9,19 +9,18 @@
 // Attribution required: Based on original work by Supratim
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
-#include "c48host.h"
+#include "secapi.h"
 
 int main(void)
 {
-    char *p;
+    int *p;
     cls();
-    print_at(0, 0, "SECURITY TEST: DOUBLE FREE");
-    print_at(2, 0, "ATTEMPT: free same allocation twice");
-    print_at(3, 0, "MITIGATION: stale allocation must trap");
-    p = malloc(8);
+    print_at(0, 0, "SECURITY TEST: USE AFTER FREE");
+    print_at(2, 0, "ATTEMPT: dereference freed pointer");
+    print_at(3, 0, "MITIGATION: liveness guard must trap read");
+    p = malloc(2);
     if (p == 0) return 2;
+    *p = 42;
     free(p);
-    free(p);
-    print_at(5, 0, "FAILED: double free escaped guard");
-    return 99;
+    return *p;
 }

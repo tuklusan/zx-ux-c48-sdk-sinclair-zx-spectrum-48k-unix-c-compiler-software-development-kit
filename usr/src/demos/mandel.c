@@ -49,6 +49,8 @@ void scene(int f)
     ink(7);
     bright(1);
     print_at(0, 7, "MANDELBROT DIVE / FIXED POINT");
+    print_at(23, 0,
+    "MATH: z=(z*z)+c; escape when zx*zx+zy*zy > 4096");
 }
 
 int main(int argc, char **argv)

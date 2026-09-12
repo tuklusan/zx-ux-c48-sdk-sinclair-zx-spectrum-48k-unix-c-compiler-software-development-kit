@@ -100,6 +100,50 @@ class GuiFramebufferRegressions(unittest.TestCase):
         paper = (BORDER_Y * FRAME_WIDTH + BORDER_X) * 3
         self.assertEqual(framed[paper:paper + 3], expected[:3])
 
+    def test_fast_renderer_matches_reference_for_flash_phases(self):
+        screen = new_screen()
+        for index in range(len(screen.mem)):
+            screen.mem[index] = (index * 73 + 19) & 0xFF
+        snapshot = screen.bytes()
+        self.assertEqual(
+            render_snapshot_rgb(snapshot, flash_phase=False),
+            screen.render_rgb(flash_phase=False),
+        )
+        self.assertEqual(
+            render_snapshot_rgb(snapshot, flash_phase=True),
+            screen.render_rgb(flash_phase=True),
+        )
+
+    def test_present_waits_for_the_published_generation(self):
+        display = TkDisplay(new_screen())
+        generation = display.update()
+        finished = []
+        thread = threading.Thread(
+            target=lambda: (display.present(), finished.append(True))
+        )
+        thread.start()
+        time.sleep(0.02)
+        self.assertTrue(thread.is_alive())
+        self.assertEqual(finished, [])
+        display._mark_rendered(generation)
+        thread.join(1.0)
+        self.assertFalse(thread.is_alive())
+        self.assertEqual(finished, [True])
+
+        closing = TkDisplay(new_screen())
+        closing.update()
+        released = []
+        waiter = threading.Thread(
+            target=lambda: (closing.present(), released.append(True))
+        )
+        waiter.start()
+        time.sleep(0.02)
+        self.assertTrue(waiter.is_alive())
+        closing.close()
+        waiter.join(1.0)
+        self.assertFalse(waiter.is_alive())
+        self.assertEqual(released, [True])
+
     def test_nonwaiting_key_is_discarded(self):
         display = TkDisplay(new_screen())
         self.assertFalse(display._offer_key(ord("x")))

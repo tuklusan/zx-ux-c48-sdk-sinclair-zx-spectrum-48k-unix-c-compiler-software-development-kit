@@ -69,6 +69,8 @@ void scene(int f)
     ink(7);
     bright(1);
     print_at(0, 6, "CLOCKWORK ORRERY / 3D ORBITS");
+    print_at(23, 0,
+    "MATH: orbit=(r*cos a,0,r*sin a); tilt + perspective");
 }
 
 int main(int argc, char **argv)

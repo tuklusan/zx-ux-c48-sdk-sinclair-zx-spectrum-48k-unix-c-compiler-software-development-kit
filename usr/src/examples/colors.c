@@ -9,7 +9,7 @@
 // Attribution required: Based on original work by Supratim
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
-#include "c48host.h"
+#include "exapi.h"
 
 char *c_names[8] = {
     "BLACK", "BLUE", "RED", "MAGENTA",

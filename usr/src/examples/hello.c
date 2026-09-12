@@ -9,22 +9,12 @@
 // Attribution required: Based on original work by Supratim
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
-#include "c48host.h"
+#include "exapi.h"
 
 int main(void)
 {
-    unsigned int s;
-    int x;
-    int y;
-    s = 44257u;
     cls();
-    for (y = 8; y < 184; y = y + 8) {
-        for (x = 8; x < 248; x = x + 8) {
-            s = (s >> 1) ^ ((0 - (s & 1)) & 46080u);
-            if (s & 1) draw(x - 3, y - 3, x + 3, y + 3);
-            else draw(x - 3, y + 3, x + 3, y - 3);
-        }
-    }
-    print_at(0, 2, "1982 called. it wants its maze back.");
+    print_at(10, 22, "hello from c48");
+    print_at(12, 14, "zx-ux portable host sdk");
     return 0;
 }

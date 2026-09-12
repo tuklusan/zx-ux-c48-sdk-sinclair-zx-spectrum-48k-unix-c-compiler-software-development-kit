@@ -9,12 +9,18 @@
 // Attribution required: Based on original work by Supratim
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
-#include "c48host.h"
+#include "secapi.h"
 
 int main(void)
 {
+    char *p;
     cls();
-    print_at(10, 22, "hello from c48");
-    print_at(12, 14, "zx-ux portable host sdk");
-    return 0;
+    print_at(0, 0, "SECURITY TEST: INTERIOR FREE");
+    print_at(2, 0, "ATTEMPT: free malloc pointer + 1");
+    print_at(3, 0, "MITIGATION: exact-base guard must trap");
+    p = malloc(8);
+    if (p == 0) return 2;
+    free(p + 1);
+    print_at(5, 0, "FAILED: interior free escaped guard");
+    return 99;
 }

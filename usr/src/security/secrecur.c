@@ -9,18 +9,18 @@
 // Attribution required: Based on original work by Supratim
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
-#include "c48host.h"
+#include "secapi.h"
+
+int dive(int n)
+{
+    return dive(n + 1);
+}
 
 int main(void)
 {
-    char *p;
     cls();
-    print_at(0, 0, "SECURITY TEST: INTERIOR FREE");
-    print_at(2, 0, "ATTEMPT: free malloc pointer + 1");
-    print_at(3, 0, "MITIGATION: exact-base guard must trap");
-    p = malloc(8);
-    if (p == 0) return 2;
-    free(p + 1);
-    print_at(5, 0, "FAILED: interior free escaped guard");
-    return 99;
+    print_at(0, 0, "SECURITY TEST: CALL RECURSION");
+    print_at(2, 0, "ATTEMPT: recurse without base case");
+    print_at(3, 0, "MITIGATION: VM call-depth guard must trap");
+    return dive(0);
 }
