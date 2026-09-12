@@ -23,9 +23,9 @@ patent, trademark, and governing-law provisions.
 |---|---|---|
 | ![UDG Walker](doc/images/demos/spriteanim.png)<br>**UDG Walker**<br>Ubuntu / x64 · `ubuntu-latest` · frame 12 | ![Torus Reactor](doc/images/demos/torus.png)<br>**Torus Reactor**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Raycast Labyrinth](doc/images/demos/raymaze.png)<br>**Raycast Labyrinth**<br>macOS / arm64 · `macos-latest` · frame 2 |
 
-**ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is currently a **pre-1.0 development snapshot**; the final 1.0 release has not yet been declared. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows/Linux launchers.
+**ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is currently a **pre-1.0 development snapshot**; the final 1.0 release has not yet been declared. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows plus POSIX (Linux/macOS) launchers.
 
-The SDK exists to make C48 programs practical to write, compile, test, and run on a modern **Windows or Linux command line** while the native Z80 implementation of the wider **ZX-UX Unix-like operating environment for the 48K ZX Spectrum** continues to evolve.
+The SDK exists to make C48 programs practical to write, compile, test, and run on a modern **Windows, Linux, or macOS command line** while the native Z80 implementation of the wider **ZX-UX Unix-like operating environment for the 48K ZX Spectrum** continues to evolve.
 
 > **Overarching ZX-UX project:** https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project
 > **Supratim Sanyal / SANYALnet Labs blog:** https://supratim-sanyal.blogspot.com/
@@ -50,7 +50,7 @@ The SDK includes:
 - 64x24 text using a 4x8 packed `F4X8` font resource;
 - UDG support for classic ZX Spectrum game and application graphics;
 - headless execution for deterministic tests and CI-style verification;
-- a Tk-based graphical display for interactive Windows/Linux execution;
+- a Tk-based graphical display for interactive Windows, Linux, and macOS execution;
 - a conformance/regression suite and deterministic demonstration programs.
 
 This is **not** a claim that the native ZX-UX C compiler is already complete. The future target-native ZX-UX `cc` will execute as Z80 machine code and emit ZX-UX object modules. This SDK deliberately keeps its portable host executable format separate so the language and runtime semantics can be exercised now without pretending Python host execution is native Z80 execution.
@@ -91,7 +91,7 @@ That makes the Python VM a useful portability and correctness laboratory for cod
 
 - **Python 3.10 or newer**;
 - Windows: Command Prompt or PowerShell with `python` on `PATH`;
-- Linux: `python3` on `PATH`;
+- Linux/macOS: a POSIX shell with `python3` on `PATH`;
 - Tkinter only when using the graphical display window.
 
 No third-party Python packages are required by the compiler or non-audio headless
@@ -99,11 +99,12 @@ runtime. Audible `beep()` playback uses the optional `playsound3==3.3.2` adapter
 
 ## Continuous verification
 
-Every push and pull request is verified on both **Windows and Linux** with the minimum
-supported Python 3.10 and a current Python 3.13 runtime. GitHub Actions runs the same
-`compiler/verify_release.py` gate used locally, plus platform-native launcher smoke tests.
-This keeps the public pre-1.0 development branch continuously checked against the frozen
-C48 conformance corpus, deterministic demos, manifest, font assets, and license-header policy.
+The complete release verifier is exercised on **Ubuntu x64, Windows x64, macOS arm64,
+and macOS Intel** with both the minimum supported Python 3.10 and a current Python 3.13
+runtime. GitHub Actions runs the same `compiler/verify_release.py` gate used locally, plus
+platform-native launcher smoke tests. The BEEP numerical proof uses the same four host
+families. This is headless/compiler/runtime verification; interactive Tk desktop behavior
+remains a separate manual smoke-test concern before a formal release.
 
 ## Graphics Demo Reel - 21 programs, 21 runners
 
@@ -124,7 +125,14 @@ CPU architecture as well as the workflow label and canonical frame.
 
 The top three plus this gallery show all 21 current graphics demos exactly once.
 
-See [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the verification contract.
+Each graphics runner preserves its freshly rebuilt `.c48b`, canonical `.scr`, rendered
+`.png`, and machine-readable `.json` evidence. A final aggregation job collects all 21
+runner artifacts, writes `SHA256SUMS` plus release metadata, and retains the combined
+pre-release evidence artifact for 90 days.
+
+See [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the verification contract and
+[`doc/PRE-RELEASE-NEXT-STEPS.md`](doc/PRE-RELEASE-NEXT-STEPS.md) for the remaining
+documentation and release-candidate work.
 
 ## Clone and quick start
 
@@ -143,7 +151,7 @@ c48run --headless usr\bin\hello.c48b --dump-screen usr\bin\hello.scr
 c48run usr\bin\hello.c48b
 ```
 
-### Linux
+### Linux / macOS (POSIX)
 
 ```sh
 ./c48 --version

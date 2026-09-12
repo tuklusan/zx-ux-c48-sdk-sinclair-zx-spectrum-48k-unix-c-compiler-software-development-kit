@@ -143,7 +143,7 @@ def check_members(expect: dict) -> None:
         fail("demoapi.h hash mismatch")
 
 
-def check_static_one(name: str, exp: dict) -> None:
+def check_static_one(name: str, exp: dict) -> bytes:
     source = SRC / f"{name}.c"
     frozen = BIN / f"{name}.c48b"
     image = IMG / f"{name}.png"
@@ -151,10 +151,12 @@ def check_static_one(name: str, exp: dict) -> None:
         fail(f"{name}: source hash mismatch")
     if sha(frozen) != exp["binary_sha256"]:
         fail(f"{name}: binary hash mismatch")
-    if compile_bytes(name) != frozen.read_bytes():
+    rebuilt = compile_bytes(name)
+    if rebuilt != frozen.read_bytes():
         fail(f"{name}: deterministic rebuild mismatch")
     if sha(image) != exp["png_sha256"]:
         fail(f"{name}: checked-in PNG hash mismatch")
+    return rebuilt
 
 
 def check_one(
@@ -164,7 +166,7 @@ def check_one(
     stress: bool,
     evidence_dir: Path | None,
 ) -> dict:
-    check_static_one(name, exp)
+    rebuilt = check_static_one(name, exp)
     image = IMG / f"{name}.png"
 
     first = run_demo(name, 1)
@@ -208,6 +210,7 @@ def check_one(
         "platform": platform.platform(),
         "source_sha256": exp["source_sha256"],
         "binary_sha256": exp["binary_sha256"],
+        "build_sha256": sha_bytes(rebuilt),
         "screen_sha256": screen_hash,
         "png_sha256": exp["png_sha256"],
         "frames": exp["frames"],
@@ -219,6 +222,7 @@ def check_one(
     }
     if evidence_dir is not None:
         evidence_dir.mkdir(parents=True, exist_ok=True)
+        (evidence_dir / f"{name}.c48b").write_bytes(rebuilt)
         (evidence_dir / f"{name}.scr").write_bytes(screen_data)
         (evidence_dir / f"{name}.png").write_bytes(png)
         (evidence_dir / f"{name}.json").write_text(

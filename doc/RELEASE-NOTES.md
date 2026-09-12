@@ -19,7 +19,7 @@ Status: PRE-1.0 DEVELOPMENT SNAPSHOT
 
 ## Release purpose
 
-Provide a portable Windows/Linux command-line C48 development environment for writing,
+Provide a portable Windows/Linux/macOS command-line C48 development environment for writing,
 compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler exists.
 
 ## Core components
@@ -32,7 +32,7 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - selectable F4X8 4x8 font resources with Tasword as the default and `c48run --font PATH` override;
 - 64x24 tty rendering with deferred right-margin wrap, Spectrum graphics/attributes and UDGs;
 - portable Tk GUI plus headless screen-dump mode;
-- Windows `.bat` and Linux shell command launchers;
+- Windows `.bat` and POSIX shell command launchers for Linux/macOS;
 - provisional host-game API header with synchronous ROM-derived `beep()`;
 - specification-driven conformance/regression suite and deterministic demos;
 - adversarial hostile-input/resource ceilings and C48B1 hardening;
@@ -49,7 +49,9 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - repository text and DOCX OOXML are fail-closed against the retired SDK tree path;
 - all release files except the manifest itself are covered by `MANIFEST.sha256`;
 - demo source/C48B1/screen hashes are in `DEMO-HASHES.md`;
-- BEEP numerical proof runs on Windows/Linux/macOS and compares ROM-derived frequency and duration against measured WAV edges and blocking wall time;
+- BEEP numerical proof runs on Ubuntu x64, Windows x64, macOS arm64 and macOS Intel at Python 3.10/3.13 and compares ROM-derived frequency and duration against measured WAV edges and blocking wall time;
+- the complete release verifier runs on the same four host families and both Python versions;
+- the 21-job graphics matrix preserves each runner's rebuilt C48B1, SCR, PNG and JSON evidence and publishes a combined SHA-256-manifested artifact;
 - eight runnable security C48B1 fixtures are deterministically rebuilt by the verifier,
   while `seckern.c` remains intentionally compile-negative.
 
@@ -68,5 +70,5 @@ transcendentals remain disabled unless explicitly enabled as non-certified host
 approximations.  See `CONFORMANCE.md`, `HOST-DIVERGENCES.md`, and `FLOAT5-ORACLE.md`.
 
 The Tk display implementation is source-reviewed and its renderer/key mapping are
-headlessly tested in this build environment; an actual Windows/Linux graphical desktop
+headlessly tested in this build environment; an actual Windows/Linux/macOS graphical desktop
 was not available for an interactive Tk smoke test during package certification.

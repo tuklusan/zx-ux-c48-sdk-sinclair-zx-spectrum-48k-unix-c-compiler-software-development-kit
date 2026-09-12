@@ -96,9 +96,82 @@ jobs:
           --runner "${{ matrix.os }}"
           --evidence-dir runner-evidence
 
-      - name: Upload runner evidence
+      - name: Upload runner build and visual evidence
         uses: actions/upload-artifact@v4
         with:
-          name: graphics-${{ matrix.demo }}-${{ matrix.os }}
+          name: graphics-${{ matrix.demo }}-${{ matrix.os }}-${{ github.sha }}
           path: runner-evidence/
           if-no-files-found: error
+          retention-days: 90
+          compression-level: 9
+
+  release-evidence:
+    name: Aggregate graphics release evidence
+    needs: demo
+    if: ${{ needs.demo.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all runner evidence
+        uses: actions/download-artifact@v4
+        with:
+          pattern: graphics-*-${{ github.sha }}
+          path: graphics-release-evidence
+          merge-multiple: true
+
+      - name: Build evidence manifest
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+          import os
+
+          root = Path("graphics-release-evidence")
+          expected = {".c48b": 21, ".scr": 21, ".png": 21, ".json": 21}
+          for suffix, count in expected.items():
+              actual = len(list(root.glob(f"*{suffix}")))
+              if actual != count:
+                  raise SystemExit(
+                      f"release evidence {suffix}: expected {count}, found {actual}"
+                  )
+          metadata = {
+              "schema": 1,
+              "commit": os.environ["GITHUB_SHA"],
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "workflow": os.environ["GITHUB_WORKFLOW"],
+              "demo_count": 21,
+              "per_demo_files": ["c48b", "scr", "png", "json"],
+          }
+          (root / "RELEASE-EVIDENCE.json").write_text(
+              json.dumps(metadata, indent=2, sort_keys=True) + "
+",
+              encoding="ascii",
+              newline="
+",
+          )
+          members = sorted(
+              p for p in root.iterdir()
+              if p.is_file() and p.name != "SHA256SUMS"
+          )
+          (root / "SHA256SUMS").write_text(
+              "".join(
+                  f"{hashlib.sha256(p.read_bytes()).hexdigest()}  {p.name}
+"
+                  for p in members
+              ),
+              encoding="ascii",
+              newline="
+",
+          )
+          PY
+
+      - name: Upload combined release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: graphics-release-evidence-${{ github.sha }}
+          path: graphics-release-evidence/
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 9

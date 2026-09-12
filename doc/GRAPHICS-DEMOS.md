@@ -26,7 +26,12 @@ state produced by the C48 VM. The final workflow assigns one demo to each of
 21 independent GitHub-hosted jobs. Ubuntu and Windows jobs are x64; the
 `macos-latest` jobs are arm64. Each job recompiles its demo, proves the binary
 and canonical screen/PNG hashes, checks the actual runner architecture, runs
-an extended animation pass, and uploads SCR, PNG and JSON evidence.
+an extended animation pass, and uploads the freshly rebuilt C48B1 plus SCR,
+PNG and JSON evidence. After all 21 jobs pass, an aggregation job downloads
+every runner artifact and publishes one commit-addressed release-evidence
+bundle with `SHA256SUMS` and workflow/run metadata, retained for 90 days.
+The general SDK verifier separately covers both macOS arm64 (`macos-latest`)
+and macOS Intel (`macos-15-intel`) at Python 3.10 and 3.13.
 
 ## Suite
 
