@@ -1,0 +1,14 @@
+{"canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "window_ready", "monotonic_ns": 1389065397861, "pid": 2564, "root_height": 760, "root_width": 962, "root_x": 0, "root_y": 0, "scale": 3, "screen_height": 1200, "screen_width": 1600, "seq": 1, "title": "ZX-UX C48 - snake.c48b", "tk_patchlevel": "8.6.14", "windowing_system": "x11"}
+{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-snake-frame.ppm", "frame_sha256": "c125b9b2952aa667edbcad224a3851f9a38a09f32b355628c271e1a1e64fd08b", "generation": 30, "monotonic_ns": 1389129401874, "pid": 2564, "seq": 2}
+{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-snake-frame.ppm", "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08", "generation": 201, "monotonic_ns": 1389172677268, "pid": 2564, "seq": 3}
+{"event": "input_waiting", "monotonic_ns": 1389172824717, "pid": 2564, "seq": 4}
+{"break_running": true, "done": false, "event": "break_key", "monotonic_ns": 1389399248858, "pid": 2564, "seq": 5}
+{"event": "display_close", "monotonic_ns": 1389399399080, "pid": 2564, "seq": 6}
+{"event": "input_return", "monotonic_ns": 1389399530829, "pid": 2564, "seq": 7, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 1389401335959, "pid": 2564, "seq": 8}
+{"event": "input_return", "monotonic_ns": 1389401510136, "pid": 2564, "seq": 9, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 1389403116482, "pid": 2564, "seq": 10}
+{"event": "input_return", "monotonic_ns": 1389403276071, "pid": 2564, "seq": 11, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 1389404815902, "pid": 2564, "seq": 12}
+{"break_running": true, "error_type": null, "event": "mainloop_exit", "monotonic_ns": 1389404924454, "pid": 2564, "seq": 13, "status": 1}
+{"event": "input_return", "monotonic_ns": 1389405077544, "pid": 2564, "seq": 14, "value": -1}

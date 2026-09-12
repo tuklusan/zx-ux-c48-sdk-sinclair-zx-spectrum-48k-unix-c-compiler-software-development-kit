@@ -1,0 +1,91 @@
+{
+  "commit": "e84a24c254e0e0ee3254c4953a80a0066e49e1ea",
+  "machine": "x86_64",
+  "platform": "macOS-15.7.9-x86_64-i386-64bit",
+  "python": "3.10.21",
+  "python_implementation": "CPython",
+  "runner": "macos-15-intel",
+  "schema": 1,
+  "system": "Darwin",
+  "tests": {
+    "forest": {
+      "capture": {
+        "aqua_color_bijection": null,
+        "aqua_palette_spatial": {
+          "limit": 24,
+          "max_channel_delta": 16,
+          "minimum_palette_separation": 50
+        },
+        "canvas_capture_size": [
+          960,
+          720
+        ],
+        "canvas_png": "forest-canvas.png",
+        "canvas_sha256": "7199d1c01850d4593534c96b4cb33af19df0446ef473d99663d14c6008d71e49",
+        "capture_size": [
+          1920,
+          1080
+        ],
+        "comparison": "aqua-palette-spatial",
+        "desktop_png": "forest-desktop.png",
+        "desktop_sha256": "0bdd907682bcaf9e716a365034eeea0beaa1cfa1af791e9bc8e4ba9a0290ed1b",
+        "frame_ppm": "forest-frame.ppm",
+        "frame_ppm_sha256": "d21fdc7d37bbb8ae929e78aaa2158ca2efcfb1ae0914720a19087e827cd6c238",
+        "frame_sha256": "9c6658dae8aae98d0ad5871a0aada6b0d718fd1af9756f3595e95c3d461f3955"
+      },
+      "stderr": "",
+      "stdout": ""
+    },
+    "fortune": {
+      "capture": {
+        "aqua_color_bijection": null,
+        "aqua_palette_spatial": null,
+        "canvas_capture_size": [
+          960,
+          720
+        ],
+        "canvas_png": "fortune-canvas.png",
+        "canvas_sha256": "43ac38b84bfea661c1b1cb7c0044893e33265b2940e52c304c0f7f8780ca72f9",
+        "capture_size": [
+          1920,
+          1080
+        ],
+        "comparison": "exact-rgb",
+        "desktop_png": "fortune-desktop.png",
+        "desktop_sha256": "56a56c8c3be88e65af1570420274440cc28fb2518beefd8c613b8f83c4b79dfa",
+        "frame_ppm": "fortune-frame.ppm",
+        "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
+        "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
+      },
+      "stderr": "",
+      "stdout": ""
+    },
+    "snake": {
+      "capture": {
+        "aqua_color_bijection": null,
+        "aqua_palette_spatial": null,
+        "canvas_capture_size": [
+          960,
+          720
+        ],
+        "canvas_png": "snake-canvas.png",
+        "canvas_sha256": "661a7e766e76b74488e0b9ebc4cb6d1bff52129d590d5e92b1e442a61609226f",
+        "capture_size": [
+          1920,
+          1080
+        ],
+        "comparison": "exact-rgb",
+        "desktop_png": "snake-desktop.png",
+        "desktop_sha256": "c36a3a78e3de1df876df9fc558d175493afebf4c1e5b449a373b3f3ec95c8771",
+        "frame_ppm": "snake-frame.ppm",
+        "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
+        "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"
+      },
+      "stderr": "",
+      "stdout": ""
+    }
+  },
+  "tk_patchlevel": "8.6.18",
+  "tk_windowing_system": "aqua",
+  "version": "1.0.0"
+}

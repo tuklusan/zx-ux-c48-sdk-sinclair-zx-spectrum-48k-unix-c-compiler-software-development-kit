@@ -24,11 +24,18 @@ screenshots/gui-desktop/<runner>/python-<version>/
 
 Each row contains a fixed set of `forest`, `fortune`, and `snake` desktop/canvas
 PNGs, the exact Tk-rendered frame PPMs, probe logs, `GUI-EVIDENCE.json`, and
-`SHA256SUMS`. The verifier clears
-the target row before writing, so reruns replace that row instead of accumulating
-files. GitHub Actions uploads each row and a combined release-evidence artifact
-with 90-day retention. Generated row directories are intentionally ignored by
-Git; the workflow and reports carry the candidate commit SHA.
+`SHA256SUMS`. The verifier clears the target row before writing, so reruns replace that row
+instead of accumulating files. GitHub Actions uploads each row and a combined
+release-evidence artifact with 90-day retention. After all eight rows pass on a
+`main` push, the GUI workflow also replaces the eight stable in-tree rows and
+commits that bounded evidence snapshot. Binary PNG/PPM payloads are stored through
+Git LFS; JSON, probe logs, checksums, and this README remain ordinary Git text.
+
+A release candidate is not packageable unless all eight retained rows are present,
+their row checksums verify, the aggregate checksum verifies, and the retained GUI
+evidence identifies the immediately preceding source commit. This keeps the
+release source archive self-contained while preventing stale screenshots from
+being silently reused after source changes.
 
 The full-desktop PNGs are actual host screenshot captures. Their canvas regions
 are cropped using Tk-reported screen geometry and compared, after nearest-neighbor

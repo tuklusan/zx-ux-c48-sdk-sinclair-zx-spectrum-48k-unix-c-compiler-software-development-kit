@@ -69,6 +69,8 @@ jobs:
 
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set up Python
         if: runner.os != 'macOS' || matrix.python != '3.10'
@@ -235,3 +237,171 @@ jobs:
           if-no-files-found: error
           retention-days: 90
           compression-level: 9
+
+  retain-evidence:
+    name: Retain bounded GUI evidence on main
+    needs: [desktop, release-evidence]
+    if: >-
+      ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+          needs.desktop.result == 'success' && needs.release-evidence.result == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out certified source commit with LFS objects
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 2
+          lfs: true
+
+      - name: Refuse to attach evidence to a stale main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --depth=1
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git rev-parse origin/main)" = "$GITHUB_SHA"
+          git lfs fsck
+
+      - name: Download all eight certified GUI rows
+        uses: actions/download-artifact@v4
+        with:
+          pattern: gui-desktop-*-${{ github.sha }}
+          path: ${{ runner.temp }}/c48-gui-evidence
+
+      - name: Replace stable in-tree evidence snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVIDENCE_ROOT="$RUNNER_TEMP/c48-gui-evidence" python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+          import os
+          import shutil
+          import subprocess
+
+          source = Path(os.environ["EVIDENCE_ROOT"])
+          target = Path("screenshots/gui-desktop")
+          expected = {
+              (runner, python)
+              for runner in (
+                  "ubuntu-latest", "windows-latest",
+                  "macos-latest", "macos-15-intel",
+              )
+              for python in ("3.10", "3.13")
+          }
+          expected_windowing = {
+              "ubuntu-latest": "x11",
+              "windows-latest": "win32",
+              "macos-latest": "aqua",
+              "macos-15-intel": "aqua",
+          }
+          reports = sorted(source.rglob("GUI-EVIDENCE.json"))
+          if len(reports) != 8:
+              raise SystemExit(f"expected 8 GUI reports, found {len(reports)}")
+
+          rows = []
+          seen = set()
+          for runner in ("ubuntu-latest", "windows-latest", "macos-latest", "macos-15-intel"):
+              shutil.rmtree(target / runner, ignore_errors=True)
+
+          for report in reports:
+              data = json.loads(report.read_text(encoding="ascii"))
+              if data.get("commit") != os.environ["GITHUB_SHA"]:
+                  raise SystemExit(f"stale GUI report: {report}: {data.get('commit')}")
+              python = ".".join(str(data["python"]).split(".")[:2])
+              key = (str(data["runner"]), python)
+              if key not in expected or key in seen:
+                  raise SystemExit(f"unexpected/duplicate GUI row: {key}")
+              if data["tk_windowing_system"] != expected_windowing[key[0]]:
+                  raise SystemExit(f"wrong Tk windowing system for {key}")
+              seen.add(key)
+              destination = target / key[0] / f"python-{key[1]}"
+              destination.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copytree(report.parent, destination)
+              rows.append({
+                  "runner": data["runner"],
+                  "system": data["system"],
+                  "machine": data["machine"],
+                  "python": data["python"],
+                  "tk_patchlevel": data["tk_patchlevel"],
+                  "tk_windowing_system": data["tk_windowing_system"],
+              })
+          if seen != expected:
+              raise SystemExit(f"missing GUI rows: {sorted(expected - seen)}")
+
+          source_tree = subprocess.check_output(
+              ["git", "rev-parse", "HEAD^{tree}"], text=True
+          ).strip()
+          metadata = {
+              "schema": 1,
+              "commit": os.environ["GITHUB_SHA"],
+              "tree": source_tree,
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "workflow": os.environ["GITHUB_WORKFLOW"],
+              "rows": sorted(rows, key=lambda row: (row["runner"], row["python"])),
+          }
+          (target / "RELEASE-GUI-EVIDENCE.json").write_text(
+              json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+              encoding="ascii", newline="\n",
+          )
+
+          members = sorted(
+              p for p in target.rglob("*")
+              if p.is_file() and p.name not in {"SHA256SUMS", "README.md", ".gitignore"}
+          )
+          (target / "SHA256SUMS").write_text(
+              "".join(
+                  f"{hashlib.sha256(p.read_bytes()).hexdigest()}  "
+                  f"{p.relative_to(target).as_posix()}\n"
+                  for p in members
+              ),
+              encoding="ascii", newline="\n",
+          )
+          PY
+
+      - name: Regenerate root manifest over materialized LFS bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+
+          root = Path(".")
+          manifest = root / "MANIFEST.sha256"
+          files = sorted(
+              p for p in root.rglob("*")
+              if p.is_file() and p != manifest and ".git" not in p.parts
+          )
+          lines = []
+          for path in files:
+              data = path.read_bytes()
+              if path.suffix.lower() == ".bat":
+                  data = data.replace(b"\r\n", b"\n")
+              digest = hashlib.sha256(data).hexdigest()
+              lines.append(f"{digest}  {path.as_posix()}\n")
+          manifest.write_text("".join(lines), encoding="ascii", newline="\n")
+          PY
+          python -B compiler/verify_release.py
+
+      - name: Commit bounded screenshot snapshot through Git LFS
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add MANIFEST.sha256 screenshots/gui-desktop
+          git diff --cached --check
+          git lfs fsck
+          if git diff --cached --quiet; then
+            echo "GUI evidence snapshot is already current."
+            exit 0
+          fi
+          git commit -m "Retain host-native GUI evidence for ${GITHUB_SHA:0:12}"
+          # The retained evidence must be the only commit after the tested source.
+          test "$(git rev-parse HEAD^)" = "$GITHUB_SHA"
+          git push origin HEAD:main

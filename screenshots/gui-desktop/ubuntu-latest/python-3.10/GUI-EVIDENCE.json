@@ -1,0 +1,87 @@
+{
+  "commit": "e84a24c254e0e0ee3254c4953a80a0066e49e1ea",
+  "machine": "x86_64",
+  "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
+  "python": "3.10.21",
+  "python_implementation": "CPython",
+  "runner": "ubuntu-latest",
+  "schema": 1,
+  "system": "Linux",
+  "tests": {
+    "forest": {
+      "capture": {
+        "aqua_color_bijection": null,
+        "aqua_palette_spatial": null,
+        "canvas_capture_size": [
+          960,
+          720
+        ],
+        "canvas_png": "forest-canvas.png",
+        "canvas_sha256": "06de24a303ba01a8f32d8f92b88ad752104559290d4a61814abed41550845aa4",
+        "capture_size": [
+          1600,
+          1200
+        ],
+        "comparison": "exact-rgb",
+        "desktop_png": "forest-desktop.png",
+        "desktop_sha256": "eb04f385c01eadd9a1945da83aeccb0b6e0f1f22e69ff6e3f2179d3ece941588",
+        "frame_ppm": "forest-frame.ppm",
+        "frame_ppm_sha256": "d21fdc7d37bbb8ae929e78aaa2158ca2efcfb1ae0914720a19087e827cd6c238",
+        "frame_sha256": "9c6658dae8aae98d0ad5871a0aada6b0d718fd1af9756f3595e95c3d461f3955"
+      },
+      "stderr": "",
+      "stdout": ""
+    },
+    "fortune": {
+      "capture": {
+        "aqua_color_bijection": null,
+        "aqua_palette_spatial": null,
+        "canvas_capture_size": [
+          960,
+          720
+        ],
+        "canvas_png": "fortune-canvas.png",
+        "canvas_sha256": "2e0be84fcf32b9c4d25ecd7ba137fd9b79cbc305df12aba28451b22e1a532443",
+        "capture_size": [
+          1600,
+          1200
+        ],
+        "comparison": "exact-rgb",
+        "desktop_png": "fortune-desktop.png",
+        "desktop_sha256": "79e983a3035756e36e6f5ac2e62b61e247e89618247f7bc75d62f8ce952091fc",
+        "frame_ppm": "fortune-frame.ppm",
+        "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
+        "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
+      },
+      "stderr": "",
+      "stdout": ""
+    },
+    "snake": {
+      "capture": {
+        "aqua_color_bijection": null,
+        "aqua_palette_spatial": null,
+        "canvas_capture_size": [
+          960,
+          720
+        ],
+        "canvas_png": "snake-canvas.png",
+        "canvas_sha256": "2736934f8a74c53e2d5888be67d9c5b1a8a7988b86514d56bf654e44ce0681cd",
+        "capture_size": [
+          1600,
+          1200
+        ],
+        "comparison": "exact-rgb",
+        "desktop_png": "snake-desktop.png",
+        "desktop_sha256": "a68f4b7c4bc60366ab8a867a922aba8deae7e487315a7b429c8a8fe2a64267bf",
+        "frame_ppm": "snake-frame.ppm",
+        "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
+        "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"
+      },
+      "stderr": "",
+      "stdout": ""
+    }
+  },
+  "tk_patchlevel": "8.6.14",
+  "tk_windowing_system": "x11",
+  "version": "1.0.0"
+}

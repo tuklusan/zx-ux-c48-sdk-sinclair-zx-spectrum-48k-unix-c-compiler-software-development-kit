@@ -51,6 +51,14 @@ def check_tree(root: Path) -> list[str]:
         # and is governed by its own provenance/licensing, not the SDK header.
         if rel.startswith("doc/reference/"):
             continue
+        # Generated GUI release evidence is retained byte-for-byte. Injecting a
+        # source header would corrupt images, PPM frames, JSONL probes, or
+        # checksum files. README/.gitignore remain header-governed text.
+        if rel.startswith("screenshots/gui-desktop/") and (
+            path.name == "SHA256SUMS"
+            or path.suffix.lower() in {".json", ".jsonl", ".png", ".ppm"}
+        ):
+            continue
         kind = classify(path)
         if kind == "unknown":
             errors.append(f"unclassified artifact: {rel}")

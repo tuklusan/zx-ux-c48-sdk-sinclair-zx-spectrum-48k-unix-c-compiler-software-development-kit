@@ -11,5 +11,6 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-# Generated host/runner evidence is uploaded by CI and intentionally not tracked.
-*/
+# The eight stable runner/version evidence rows are tracked. The GUI workflow
+# replaces each row atomically after a successful matrix, so the directory is
+# bounded rather than append-only. Binary images are stored through Git LFS.

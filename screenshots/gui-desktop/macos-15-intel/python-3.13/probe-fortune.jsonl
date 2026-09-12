@@ -1,0 +1,15 @@
+{"canvas_height": 720, "canvas_width": 960, "canvas_x": 6, "canvas_y": 58, "event": "window_ready", "monotonic_ns": 581307820913, "pid": 7051, "root_height": 759, "root_width": 962, "root_x": 5, "root_y": 58, "scale": 3, "screen_height": 1080, "screen_width": 1920, "seq": 1, "title": "ZX-UX C48 - fortune.c48b", "tk_patchlevel": "8.6.18", "windowing_system": "aqua"}
+{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 6, "canvas_y": 58, "event": "frame_rendered", "frame_ppm": "probe-fortune-frame.ppm", "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a", "generation": 5, "monotonic_ns": 581373803797, "pid": 7051, "seq": 2}
+{"event": "input_waiting", "monotonic_ns": 581374327824, "pid": 7051, "seq": 3}
+{"event": "key_accepted", "monotonic_ns": 582710215637, "pid": 7051, "seq": 4, "value": 120}
+{"event": "input_return", "monotonic_ns": 582710981399, "pid": 7051, "seq": 5, "value": 120}
+{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 6, "canvas_y": 58, "event": "frame_rendered", "frame_ppm": "probe-fortune-frame.ppm", "frame_sha256": "7da09a68f2a1ef6d8e2a3099ccffe4283ca6be28d97e39a1f262cc22945af119", "generation": 10, "monotonic_ns": 582815315801, "pid": 7051, "seq": 6}
+{"event": "input_waiting", "monotonic_ns": 582815998461, "pid": 7051, "seq": 7}
+{"event": "key_accepted", "monotonic_ns": 583513156999, "pid": 7051, "seq": 8, "value": 113}
+{"event": "input_return", "monotonic_ns": 583514670405, "pid": 7051, "seq": 9, "value": 113}
+{"error_type": null, "event": "program_done", "monotonic_ns": 583515870490, "pid": 7051, "seq": 10, "status": 0}
+{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 6, "canvas_y": 58, "event": "frame_rendered", "frame_ppm": "probe-fortune-frame.ppm", "frame_sha256": "7da09a68f2a1ef6d8e2a3099ccffe4283ca6be28d97e39a1f262cc22945af119", "generation": 11, "monotonic_ns": 583707275105, "pid": 7051, "seq": 11}
+{"background": "yellow", "event": "footer_done", "foreground": "red", "monotonic_ns": 583709441931, "pid": 7051, "seq": 12, "text": "Program ended - Shift+Space to close", "title": "ZX-UX C48 - fortune.c48b - exited 0"}
+{"break_running": false, "done": true, "event": "break_key", "monotonic_ns": 585229782564, "pid": 7051, "seq": 13}
+{"event": "display_close", "monotonic_ns": 585230662806, "pid": 7051, "seq": 14}
+{"break_running": false, "error_type": null, "event": "mainloop_exit", "monotonic_ns": 585245977414, "pid": 7051, "seq": 15, "status": 0}

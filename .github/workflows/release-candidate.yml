@@ -18,6 +18,10 @@ name: C48 release candidate packaging gate
     branches: [main]
     paths:
       - "VERSION"
+      - "MANIFEST.sha256"
+      - ".gitattributes"
+      - "screenshots/gui-desktop/**"
+      - "doc/images/**"
       - ".github/workflows/release-candidate.yml"
   workflow_dispatch:
 
@@ -33,10 +37,113 @@ jobs:
     name: Preserve exact candidate bytes
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Check out repository with LFS objects
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          lfs: true
 
-      - name: Build exact tracked-byte ZIP and metadata
+      - name: Require current bounded GUI evidence snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          git lfs fsck
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+          import subprocess
+
+          root = Path("screenshots/gui-desktop")
+          expected = {
+              (runner, python)
+              for runner in (
+                  "ubuntu-latest", "windows-latest",
+                  "macos-latest", "macos-15-intel",
+              )
+              for python in ("3.10", "3.13")
+          }
+          required = {
+              "GUI-EVIDENCE.json", "SHA256SUMS",
+              "forest-canvas.png", "forest-desktop.png", "forest-frame.ppm", "probe-forest.jsonl",
+              "fortune-canvas.png", "fortune-desktop.png", "fortune-frame.ppm", "probe-fortune.jsonl",
+              "snake-canvas.png", "snake-desktop.png", "snake-frame.ppm", "probe-snake.jsonl",
+          }
+          aggregate_path = root / "RELEASE-GUI-EVIDENCE.json"
+          aggregate_sums = root / "SHA256SUMS"
+          if not aggregate_path.is_file() or not aggregate_sums.is_file():
+              raise SystemExit("retained GUI aggregate evidence is missing")
+          aggregate = json.loads(aggregate_path.read_text(encoding="ascii"))
+          source_commit = str(aggregate.get("commit", ""))
+          parent = subprocess.check_output(["git", "rev-parse", "HEAD^"], text=True).strip()
+          if source_commit != parent:
+              raise SystemExit(
+                  f"stale retained GUI evidence: evidence commit {source_commit!r} != HEAD^ {parent!r}"
+              )
+
+          seen = set()
+          row_commits = set()
+          for runner, python in sorted(expected):
+              row = root / runner / f"python-{python}"
+              if not row.is_dir():
+                  raise SystemExit(f"missing retained GUI row: {row}")
+              actual = {p.name for p in row.iterdir() if p.is_file()}
+              if actual != required:
+                  raise SystemExit(
+                      f"retained GUI row member mismatch for {runner}/{python}: "
+                      f"missing={sorted(required-actual)} extra={sorted(actual-required)}"
+                  )
+              report = json.loads((row / "GUI-EVIDENCE.json").read_text(encoding="ascii"))
+              report_python = ".".join(str(report["python"]).split(".")[:2])
+              key = (str(report["runner"]), report_python)
+              if key != (runner, python):
+                  raise SystemExit(f"retained GUI row identity mismatch: {row}: {key}")
+              row_commits.add(str(report.get("commit", "")))
+              seen.add(key)
+
+              for line in (row / "SHA256SUMS").read_text(encoding="ascii").splitlines():
+                  digest, name = line.split("  ", 1)
+                  path = row / name
+                  if not path.is_file():
+                      raise SystemExit(f"row checksum member missing: {path}")
+                  actual_digest = hashlib.sha256(path.read_bytes()).hexdigest()
+                  if actual_digest != digest:
+                      raise SystemExit(f"row checksum mismatch: {path}")
+
+          if seen != expected:
+              raise SystemExit(f"retained GUI matrix mismatch: {sorted(seen)}")
+          if row_commits != {source_commit}:
+              raise SystemExit(f"retained GUI row commits disagree: {sorted(row_commits)}")
+
+          aggregate_rows = {
+              (str(row["runner"]), ".".join(str(row["python"]).split(".")[:2]))
+              for row in aggregate.get("rows", [])
+          }
+          if aggregate_rows != expected:
+              raise SystemExit("retained GUI aggregate row set mismatch")
+
+          for line in aggregate_sums.read_text(encoding="ascii").splitlines():
+              digest, name = line.split("  ", 1)
+              path = root / name
+              if not path.is_file():
+                  raise SystemExit(f"aggregate checksum member missing: {path}")
+              actual_digest = hashlib.sha256(path.read_bytes()).hexdigest()
+              if actual_digest != digest:
+                  raise SystemExit(f"aggregate checksum mismatch: {path}")
+
+          lfs_candidates = sorted(Path("doc/images").rglob("*")) + sorted(root.rglob("*"))
+          for path in lfs_candidates:
+              if not path.is_file():
+                  continue
+              if path.as_posix().startswith("doc/images/") or path.suffix.lower() in {
+                  ".png", ".jpg", ".jpeg", ".webp", ".ppm",
+              }:
+                  if path.read_bytes().startswith(b"version https://git-lfs.github.com/spec/v1\n"):
+                      raise SystemExit(f"LFS object was not materialized: {path}")
+          print(f"Retained GUI release evidence PASS: source={source_commit}, rows=8")
+          PY
+
+      - name: Build materialized tracked-byte ZIP and metadata
         shell: bash
         run: |
           set -euo pipefail
@@ -44,7 +151,42 @@ jobs:
           safe_version="$(printf '%s' "$version" | tr -c 'A-Za-z0-9._-' '-')"
           archive="zx-ux-c48-sdk-${safe_version}-${GITHUB_SHA}.zip"
           prefix="zx-ux-c48-sdk-${safe_version}/"
-          git archive --format=zip --prefix="$prefix" -o "$archive" "$GITHUB_SHA"
+          ARCHIVE_NAME="$archive" ARCHIVE_PREFIX="$prefix" python - <<'PY'
+          from pathlib import Path
+          import os
+          import subprocess
+          import zipfile
+
+          archive = Path(os.environ["ARCHIVE_NAME"])
+          prefix = os.environ["ARCHIVE_PREFIX"]
+          raw = subprocess.check_output(["git", "ls-files", "--stage", "-z"])
+          entries = []
+          for record in raw.split(b"\0"):
+              if not record:
+                  continue
+              meta, raw_path = record.split(b"\t", 1)
+              mode, _oid, stage = meta.decode("ascii").split()
+              if stage != "0":
+                  raise SystemExit(f"unmerged path in release tree: {raw_path!r}")
+              path = raw_path.decode("utf-8", "surrogateescape")
+              if mode not in {"100644", "100755"}:
+                  raise SystemExit(f"unsupported release-tree mode {mode}: {path}")
+              entries.append((path, int(mode[-3:], 8)))
+
+          with zipfile.ZipFile(
+              archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
+          ) as zf:
+              for rel, perm in sorted(entries):
+                  path = Path(rel)
+                  data = path.read_bytes()
+                  if data.startswith(b"version https://git-lfs.github.com/spec/v1\n"):
+                      raise SystemExit(f"release archive would contain an LFS pointer: {rel}")
+                  info = zipfile.ZipInfo(prefix + rel, date_time=(1980, 1, 1, 0, 0, 0))
+                  info.create_system = 3
+                  info.external_attr = (0o100000 | perm) << 16
+                  info.compress_type = zipfile.ZIP_DEFLATED
+                  zf.writestr(info, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+          PY
           sha256sum "$archive" > SHA256SUMS.release
           VERSION_TEXT="$version" ARCHIVE_NAME="$archive" python - <<'PY'
           import hashlib
@@ -90,8 +232,10 @@ jobs:
       matrix:
         copy: [1, 2, 3]
     steps:
-      - name: Check out repository
+      - name: Check out repository with LFS objects
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set up Python 3.13
         uses: actions/setup-python@v5
@@ -99,7 +243,9 @@ jobs:
           python-version: "3.13"
 
       - name: Verify frozen bytes
-        run: python -B compiler/verify_release.py
+        run: |
+          git lfs fsck
+          python -B compiler/verify_release.py
 
   virgin-zip-verify:
     name: Verify virgin ZIP extraction
@@ -127,9 +273,6 @@ jobs:
           test -n "$archive"
           test "$(printf '%s\n' "$archive" | wc -l)" -eq 1
           mkdir ../virgin
-          # Info-ZIP restores the Unix executable mode bits recorded by git archive.
-          # Python's zipfile.extractall() does not, which would make c48/c48run 0644
-          # and turn the package verifier into a test of the extractor instead.
           unzip -q "$archive" -d ../virgin
           root="$(find ../virgin -mindepth 1 -maxdepth 1 -type d -print -quit)"
           test -n "$root"
