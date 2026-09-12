@@ -132,12 +132,13 @@ def check_members(expect: dict) -> None:
     names = set(expect["demos"])
     src_names = {p.stem for p in SRC.glob("*.c")}
     bin_names = {p.stem for p in BIN.glob("*.c48b")}
-    img_names = {p.stem for p in IMG.glob("*.png")}
+    img_files = {p.name for p in IMG.glob("*.png")}
+    expected_img_files = {f"{name}.png" for name in names} | {"contact-sheet.png"}
     if src_names != names:
         fail("graphics demo source member set mismatch")
     if bin_names != names:
         fail("graphics demo binary member set mismatch")
-    if img_names != names:
+    if img_files != expected_img_files:
         fail("graphics demo image member set mismatch")
     if sha(SRC / "demoapi.h") != expect["helper_sha256"]:
         fail("demoapi.h hash mismatch")

@@ -13,7 +13,7 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# ZX-UX C48 SDK: Sinclair ZX Spectrum 48K C Compiler and Portable Unix-Like Development Runtime
+# ZX-UX C48 SDK for Windows, Linux and macOS: Sinclair ZX Spectrum 48K C Compiler and Portable Unix-Like Development Runtime
 
 [![C48 SDK verification](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml)
 
@@ -23,7 +23,7 @@ patent, trademark, and governing-law provisions.
 |---|---|---|
 | ![UDG Walker](doc/images/demos/spriteanim.png)<br>**UDG Walker**<br>Ubuntu / x64 · `ubuntu-latest` · frame 12 | ![Torus Reactor](doc/images/demos/torus.png)<br>**Torus Reactor**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Raycast Labyrinth](doc/images/demos/raymaze.png)<br>**Raycast Labyrinth**<br>macOS / arm64 · `macos-latest` · frame 2 |
 
-**ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is currently a **pre-1.0 development snapshot**; the final 1.0 release has not yet been declared. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows plus POSIX (Linux/macOS) launchers.
+**ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is currently the **1.0.0-RC1 release candidate**; the final 1.0 release has not yet been declared. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows plus POSIX (Linux/macOS) launchers.
 
 The SDK exists to make C48 programs practical to write, compile, test, and run on a modern **Windows, Linux, or macOS command line** while the native Z80 implementation of the wider **ZX-UX Unix-like operating environment for the 48K ZX Spectrum** continues to evolve.
 
@@ -96,6 +96,9 @@ That makes the Python VM a useful portability and correctness laboratory for cod
 
 No third-party Python packages are required by the compiler or non-audio headless
 runtime. Audible `beep()` playback uses the optional `playsound3==3.3.2` adapter.
+The release package is one platform-neutral ZIP containing both the Windows batch
+launchers and POSIX shell launchers; this SDK does not build separate native MSI,
+PKG/DMG, DEB/RPM, or wheel installers.
 
 ## Continuous verification
 
@@ -125,14 +128,17 @@ CPU architecture as well as the workflow label and canonical frame.
 
 The top three plus this gallery show all 21 current graphics demos exactly once.
 
+The combined 21-demo contact sheet is preserved at [`doc/images/demos/contact-sheet.png`](doc/images/demos/contact-sheet.png) and is covered by `MANIFEST.sha256`.
+
 Each graphics runner preserves its freshly rebuilt `.c48b`, canonical `.scr`, rendered
 `.png`, and machine-readable `.json` evidence. A final aggregation job collects all 21
 runner artifacts, writes `SHA256SUMS` plus release metadata, and retains the combined
 pre-release evidence artifact for 90 days.
 
-See [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the verification contract and
-[`doc/PRE-RELEASE-NEXT-STEPS.md`](doc/PRE-RELEASE-NEXT-STEPS.md) for the remaining
-documentation and release-candidate work.
+See [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the verification contract,
+[`doc/GUI-SMOKE-TESTS.md`](doc/GUI-SMOKE-TESTS.md) for the required real-desktop Tk
+smoke-test record, and [`doc/PRE-RELEASE-NEXT-STEPS.md`](doc/PRE-RELEASE-NEXT-STEPS.md)
+for the remaining release-candidate work.
 
 ## Clone and quick start
 
@@ -316,7 +322,7 @@ For hostile-input testing and CI, `c48run` also provides a deterministic VM exec
 
 The SDK implements five-byte storage, parsing, integer conversion, comparison, and deterministic core arithmetic without allowing IEEE host values to become persistent C48 stored state.
 
-Full byte-for-byte differential certification of every ROM transcendental operation is **not** claimed. Strict execution therefore keeps ROM-dependent transcendental behavior bounded. An explicitly non-certified host approximation can be enabled for experiments with:
+The normal runtime uses the checked-in 48K-ROM-derived implementation for the transcendental family, with Float5 quantization at each C48 operation boundary. Full byte-for-byte differential certification of every ROM/native/host transcendental boundary is **not** claimed. An explicitly non-certified Python host-math approximation remains available only as a development fallback:
 
 ```sh
 ./c48run --allow-approx-rom-math usr/bin/program.c48b
@@ -342,7 +348,7 @@ All shipped C48 `.c` and `.h` files under `usr/src/` obey a **64-character physi
 
 ## Adversarial security fixtures
 
-The pre-1.0 tree includes C48 programs written specifically to attack the host compiler/runtime safety envelope. Their source is under `usr/src/`, and runnable C48B1 forms are under `usr/bin/` where compilation is expected to succeed.
+The 1.0.0-RC1 tree includes C48 programs written specifically to attack the host compiler/runtime safety envelope. Their source is under `usr/src/`, and runnable C48B1 forms are under `usr/bin/` where compilation is expected to succeed.
 
 - `secguard.c` - successful dashboard for recoverable heap, screen-coordinate, UDG, and compiler-forgery protections;
 - `secoob.c` - one-past pointer write;
@@ -464,7 +470,8 @@ The constraints are part of the fun: 16-bit pointers, tiny heap, 4x8 text, attri
 Start with:
 
 - `doc/C48 Language Specification Rev 0.11.docx` - normative language baseline;
-- `doc/ZX-UX C48 Compiler User Manual Rev 0.11.docx` - user-facing compiler manual;
+- `doc/ZX-UX C48 Compiler User Manual Rev 0.11.docx` - frozen/native compiler architecture and user manual;
+- `doc/ZX-UX C48 SDK User Manual.docx` - portable Windows, Linux and macOS host-SDK installation and workflow manual;
 - `doc/CONFORMANCE.md` - host conformance evidence and scope;
 - `doc/HOST-DIVERGENCES.md` - explicit host/native differences;
 - `doc/FLOAT5-ORACLE.md` - five-byte floating-point verification boundary;
@@ -495,4 +502,4 @@ https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compil
 
 ### Search/project taxonomy
 
-Sinclair ZX Spectrum 48K, ZX Spectrum C compiler, ZX Spectrum C programming, Z80 C compiler, Z80 development SDK, retrocomputing, 1982 home computer programming, ZX-UX, Unix-like ZX Spectrum operating system, C48 language, Python C compiler, Windows ZX Spectrum development, Linux ZX Spectrum development, 256x192 Spectrum graphics, UDG graphics, Tasword 64-column font, 4x8 Spectrum font, five-byte Spectrum floating point, classic Unix games, retro C development.
+Sinclair ZX Spectrum 48K, ZX Spectrum C compiler, ZX Spectrum C programming, Z80 C compiler, Z80 development SDK, retrocomputing, 1982 home computer programming, ZX-UX, Unix-like ZX Spectrum operating system, C48 language, Python C compiler, Windows ZX Spectrum development, Linux ZX Spectrum development, macOS ZX Spectrum development, 256x192 Spectrum graphics, UDG graphics, Tasword 64-column font, 4x8 Spectrum font, five-byte Spectrum floating point, classic Unix games, retro C development.

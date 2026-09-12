@@ -127,16 +127,10 @@ jobs:
           test -n "$archive"
           test "$(printf '%s\n' "$archive" | wc -l)" -eq 1
           mkdir ../virgin
-          python - "$archive" ../virgin <<'PY'
-          import sys
-          import zipfile
-          from pathlib import Path
-
-          archive = Path(sys.argv[1])
-          destination = Path(sys.argv[2])
-          with zipfile.ZipFile(archive) as zf:
-              zf.extractall(destination)
-          PY
+          # Info-ZIP restores the Unix executable mode bits recorded by git archive.
+          # Python's zipfile.extractall() does not, which would make c48/c48run 0644
+          # and turn the package verifier into a test of the extractor instead.
+          unzip -q "$archive" -d ../virgin
           root="$(find ../virgin -mindepth 1 -maxdepth 1 -type d -print -quit)"
           test -n "$root"
           cd "$root"

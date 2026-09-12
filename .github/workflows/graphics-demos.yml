@@ -17,6 +17,7 @@ name: C48 graphics demo reel
   push:
     branches: [main]
     paths:
+      - "VERSION"
       - "compiler/**"
       - "usr/src/demos/**"
       - "usr/bin/demos/**"
@@ -27,6 +28,7 @@ name: C48 graphics demo reel
       - "c48run.bat"
   pull_request:
     paths:
+      - "VERSION"
       - "compiler/**"
       - "usr/src/demos/**"
       - "usr/bin/demos/**"

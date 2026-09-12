@@ -13,9 +13,9 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# Pre-Release Next Steps
+# 1.0.0-RC1 Release Staging Record
 
-Status: PRE-RELEASE WORKING CHECKLIST
+Status: RC1 STAGING - FINAL 1.0 NOT YET DECLARED
 
 This file records release-candidate work that must survive ephemeral development
 filesystems and runner workspaces. It is intentionally separate from the frozen
@@ -37,7 +37,7 @@ language/architecture authorities.
 5. Keep the exact candidate commit SHA with every evidence record. Do not treat
    evidence from a different commit as certification of the candidate.
 
-## Documentation modernization before 1.0
+## Documentation modernization for RC1
 
 Audit every non-authoritative README/Markdown/DOCX for stale host-platform claims.
 In particular, replace obsolete Windows/Linux-only wording where the statement is
@@ -59,6 +59,15 @@ Review at least:
 - any pre-1.0 counts, hashes, screenshots, demo inventories or platform matrices
   that became stale during final hardening.
 
+
+The RC1 documentation audit distinguishes the portable host SDK from the frozen
+target-native architecture. The Compiler User Manual remains intentionally
+unchanged where Windows/native wording is part of that frozen portability
+contract; the SDK User Manual carries the current Windows, Linux and macOS host
+support and installation wording. Current release-facing counts and platform
+matrices are checked against `compiler/release_expectations.json` and the
+workflow files rather than copied from older review baselines.
+
 ## Final packaging gates
 
 The release notes currently require three independent fresh-filesystem executions
@@ -69,5 +78,5 @@ evidence workflows, create the release archive, verify the archive extraction,
 then create the formal tag/release only from the exact certified commit.
 
 Interactive Tk desktop behavior is not proved by headless GitHub runners. Perform
-explicit manual GUI smoke tests on the host platforms selected for the release and
-record those separately from deterministic compiler/VM certification.
+the explicit manual matrix in `GUI-SMOKE-TESTS.md` on real release-host desktops and
+record those results separately from deterministic compiler/VM certification.

@@ -17,6 +17,7 @@ name: C48 BEEP numerical proof
   push:
     branches: [main]
     paths:
+      - "VERSION"
       - "compiler/c48/sound.py"
       - "compiler/c48/vm.py"
       - "compiler/tests/test_beep.py"
@@ -27,6 +28,7 @@ name: C48 BEEP numerical proof
       - ".github/workflows/beep.yml"
   pull_request:
     paths:
+      - "VERSION"
       - "compiler/c48/sound.py"
       - "compiler/c48/vm.py"
       - "compiler/tests/test_beep.py"

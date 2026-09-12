@@ -13,7 +13,7 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# Float5 Oracle Boundary - Pre-1.0 SDK
+# Float5 Oracle Boundary - 1.0.0-RC1 Host SDK
 
 ## Normative requirement
 
@@ -23,7 +23,7 @@ against the canonical Spectrum ROM conversion path, the native
 compiler/runtime, and the Windows host implementation. A host implementation
 may not certify itself solely against IEEE floating point.
 
-## What the pre-1.0 SDK implements and tests
+## What the 1.0.0-RC1 host SDK implements and tests
 
 `compiler/c48/float5.py` stores every C48 float as exactly five bytes. Parsing
 from decimal text uses `Decimal`/`Fraction` only as exact host-side construction
@@ -57,7 +57,7 @@ against an independently executing 48K ROM.
 
 It also does not close the language specification's full Section-94 three-way
 ROM/native/host certification, because the future native compiler/runtime side
-is still outside this pre-1.0 SDK's certified envelope. See `CONFORMANCE.md`.
+is still outside this 1.0.0-RC1 host SDK's certified envelope. See `CONFORMANCE.md`.
 
 ## ROM reference source
 
@@ -69,7 +69,7 @@ routines rather than substituting host libm formulas.
 
 ## Release claim
 
-The pre-1.0 SDK may therefore claim a default ROM-derived host implementation
+The 1.0.0-RC1 host SDK may therefore claim a default ROM-derived host implementation
 for the C48 transcendental runtime family. It may not claim complete
 Section-94 three-way ROM/native/host differential certification until that
 separate native and independent-oracle work is complete.

@@ -13,13 +13,13 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# ZX-UX C48 SDK Pre-1.0 Development Notes
+# ZX-UX C48 SDK 1.0.0-RC1 Release Candidate Notes
 
-Status: PRE-1.0 DEVELOPMENT SNAPSHOT
+Status: RELEASE CANDIDATE - FINAL 1.0 NOT YET DECLARED
 
 ## Release purpose
 
-Provide a portable Windows/Linux/macOS command-line C48 development environment for writing,
+Provide a portable Windows, Linux and macOS command-line C48 development environment for writing,
 compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler exists.
 
 ## Core components
@@ -57,18 +57,20 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 
 Release acceptance requires three independent fresh-filesystem executions of
 `compiler/verify_release.py` against identical frozen bytes, followed by creation of the
-ZIP and one more verification from a virgin extraction of that ZIP.  The release is not
-delivered unless those gates pass.
+platform-neutral release ZIP and one more verification from a virgin extraction of that
+ZIP. The ZIP contains both Windows batch and POSIX shell launchers; no separate native
+host installer formats are produced. The release is not delivered unless those gates pass.
 
 ## Certification boundary
 
 The release verifies the documented **host C48 conformance envelope**.  It does not
 claim native Z80/OBJ1/MEX1/C48_REGCALL certification, P11.41's future exact `<c48.h>`,
 an exact native 512-byte process-stack implementation, a host multi-object linker, or
-complete Section-94 three-way ROM/native/host Float5 certification.  ROM-dependent
-transcendentals remain disabled unless explicitly enabled as non-certified host
-approximations.  See `CONFORMANCE.md`, `HOST-DIVERGENCES.md`, and `FLOAT5-ORACLE.md`.
+complete Section-94 three-way ROM/native/host Float5 certification. The normal host
+runtime uses the checked-in ROM-derived transcendental implementation; the explicit
+Python host-math approximation remains opt-in and non-certified. See `CONFORMANCE.md`,
+`HOST-DIVERGENCES.md`, and `FLOAT5-ORACLE.md`.
 
 The Tk display implementation is source-reviewed and its renderer/key mapping are
-headlessly tested in this build environment; an actual Windows/Linux/macOS graphical desktop
-was not available for an interactive Tk smoke test during package certification.
+headlessly tested. Interactive Tk smoke tests on Windows, Linux and macOS remain a
+separate manual release gate: headless CI does not certify real desktop-window behavior.

@@ -13,7 +13,7 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# C48 SDK Pre-1.0 Conformance Record
+# C48 SDK 1.0.0-RC1 Conformance Record
 
 ## Authorities
 
@@ -102,7 +102,7 @@ non-circular hash of itself.
 
 ## Explicit non-claims
 
-The pre-1.0 SDK does not certify native Z80 code generation, OBJ1/MEX1, C48_REGCALL register/stack
+The 1.0.0-RC1 host SDK does not certify native Z80 code generation, OBJ1/MEX1, C48_REGCALL register/stack
 placement, native allocator fragmentation, ZX-UX scheduler/syscalls/cassette behavior,
 P11.41 exact `<c48.h>` prototypes, host multi-object linking, the native default
 512-byte stack budget/register frame layout, or complete three-way Section-94

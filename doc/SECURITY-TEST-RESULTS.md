@@ -32,12 +32,14 @@ or uncontrolled host-resource path is a failure.
 ## Summary
 
 - Review attacks incorporated: **84 / 84**.
-- Full unittest corpus: **291 tests** (207 prior + 84 new).
-- Local full unittest corpus: **PASS**.
+- Security-review incorporation baseline: **291 tests** (207 prior + 84 new).
+- Current 1.0.0-RC1 full unittest corpus: **330 tests**.
+- Local full unittest corpus: **PASS, 330 tests**.
 - Game build/play/human-I/O verifier: **PASS, 14 games**.
 - Graphics-demo static verifier: **PASS, 21 demos**.
 - Release-valid status additionally requires the repository CI matrix on
-  Ubuntu/Windows and Python 3.10/3.13 to pass on the containing commit.
+  Ubuntu x64, Windows x64, macOS arm64 and macOS Intel under Python 3.10 and
+  Python 3.13 to pass on the containing commit.
 
 The new corpus exposed real missing defenses in forged-C48B1 semantic
 cross-checking/width limits and quoted-include symlink/reparse handling. Those
@@ -162,8 +164,10 @@ the documented target ABI.
 
 ## Release evidence
 
-`compiler/verify_release.py` now requires both this ledger and the 84-test
-module. `compiler/release_expectations.json` freezes the complete unittest
-count at 291. The normal release workflow runs the complete verifier on Ubuntu
-and Windows under Python 3.10 and Python 3.13, thereby making this abuse corpus
-a cross-platform CI gate rather than a one-off review exercise.
+`compiler/verify_release.py` requires both this ledger and the 84-test
+module. The 291-test figure above is the historical incorporation baseline for
+that review; `compiler/release_expectations.json` now freezes the complete
+1.0.0-RC1 unittest count at 330. The release workflow runs the complete verifier
+on Ubuntu x64, Windows x64, macOS arm64 and macOS Intel under Python 3.10 and
+Python 3.13, thereby making this abuse corpus a cross-platform CI gate rather
+than a one-off review exercise.
