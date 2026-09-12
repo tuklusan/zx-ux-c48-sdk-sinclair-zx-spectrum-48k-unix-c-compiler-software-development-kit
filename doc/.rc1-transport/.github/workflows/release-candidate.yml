@@ -1,0 +1,137 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: C48 release candidate packaging gate
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "VERSION"
+      - ".github/workflows/release-candidate.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  source-snapshot:
+    name: Preserve exact candidate bytes
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build exact tracked-byte ZIP and metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(tr -d '\r\n' < VERSION)"
+          safe_version="$(printf '%s' "$version" | tr -c 'A-Za-z0-9._-' '-')"
+          archive="zx-ux-c48-sdk-${safe_version}-${GITHUB_SHA}.zip"
+          prefix="zx-ux-c48-sdk-${safe_version}/"
+          git archive --format=zip --prefix="$prefix" -o "$archive" "$GITHUB_SHA"
+          sha256sum "$archive" > SHA256SUMS.release
+          VERSION_TEXT="$version" ARCHIVE_NAME="$archive" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          archive = Path(os.environ["ARCHIVE_NAME"])
+          metadata = {
+              "schema": 1,
+              "version": os.environ["VERSION_TEXT"],
+              "commit": os.environ["GITHUB_SHA"],
+              "workflow": os.environ["GITHUB_WORKFLOW"],
+              "run_id": int(os.environ["GITHUB_RUN_ID"]),
+              "run_attempt": int(os.environ["GITHUB_RUN_ATTEMPT"]),
+              "archive": archive.name,
+              "archive_sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+          }
+          Path("RELEASE-CANDIDATE.json").write_text(
+              json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+              encoding="ascii",
+              newline="\n",
+          )
+          PY
+
+      - name: Upload exact candidate source package
+        uses: actions/upload-artifact@v4
+        with:
+          name: c48-release-source-${{ github.sha }}
+          path: |
+            zx-ux-c48-sdk-*.zip
+            RELEASE-CANDIDATE.json
+            SHA256SUMS.release
+          if-no-files-found: error
+          retention-days: 90
+          compression-level: 0
+
+  fresh-filesystem-verify:
+    name: Fresh filesystem verify ${{ matrix.copy }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        copy: [1, 2, 3]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Verify frozen bytes
+        run: python -B compiler/verify_release.py
+
+  virgin-zip-verify:
+    name: Verify virgin ZIP extraction
+    needs: [source-snapshot, fresh-filesystem-verify]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Download exact candidate source package
+        uses: actions/download-artifact@v4
+        with:
+          name: c48-release-source-${{ github.sha }}
+          path: candidate
+
+      - name: Check package digest and verify from virgin extraction
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd candidate
+          sha256sum -c SHA256SUMS.release
+          archive="$(find . -maxdepth 1 -type f -name 'zx-ux-c48-sdk-*.zip' -printf '%f\n')"
+          test -n "$archive"
+          test "$(printf '%s\n' "$archive" | wc -l)" -eq 1
+          mkdir ../virgin
+          # Info-ZIP restores the Unix executable mode bits recorded by git archive.
+          # Python's zipfile.extractall() does not, which would make c48/c48run 0644
+          # and turn the package verifier into a test of the extractor instead.
+          unzip -q "$archive" -d ../virgin
+          root="$(find ../virgin -mindepth 1 -maxdepth 1 -type d -print -quit)"
+          test -n "$root"
+          cd "$root"
+          python -B compiler/verify_release.py
