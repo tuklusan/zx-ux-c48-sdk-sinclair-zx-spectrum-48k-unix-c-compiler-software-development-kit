@@ -31,7 +31,10 @@ with 90-day retention. Generated row directories are intentionally ignored by
 Git; the workflow and reports carry the candidate commit SHA.
 
 The full-desktop PNGs are actual host screenshot captures. Their canvas regions
-are cropped using Tk-reported screen geometry and compared byte-for-byte, after
-nearest-neighbor normalization, with the RGB framebuffer that Tk reported as
-painted. This makes the screenshots executable release evidence rather than
-decorative images.
+are cropped using Tk-reported screen geometry and compared, after nearest-neighbor
+normalization, with the RGB framebuffer that Tk reported as painted. Linux and
+Windows require byte-for-byte RGB identity. Aqua additionally permits only a
+strict one-to-one color bijection that preserves every pixel position, accounting
+for compositor color management without masking clipping or spatial differences.
+This makes the screenshots executable release evidence rather than decorative
+images.

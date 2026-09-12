@@ -54,6 +54,7 @@ blocker once all eight automated rows and the aggregate evidence job pass.
    candidate commit.
 2. Run the platform `c48run --version` launcher and require `c48run 1.0.0`.
 3. Launch `usr/bin/demos/forest.c48b` without `--headless`; require the Tk window,
+   a fully mapped 960x720 Spectrum canvas (never Tk's 200x200 pre-map default),
    successful program completion, the exact footer text
    `Program ended - Shift+Space to close`, a compositor screenshot whose canvas
    pixels equal the Tk-rendered framebuffer, and Shift+Space close preserving

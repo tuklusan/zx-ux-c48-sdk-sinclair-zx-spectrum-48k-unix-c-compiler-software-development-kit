@@ -300,7 +300,6 @@ class TkDisplay:
         root = tk.Tk()
         self._root = root
         root.title(self.title)
-        root.resizable(False, False)
         canvas_width = FRAME_WIDTH * self.scale
         canvas = tk.Canvas(
             root,
@@ -337,7 +336,16 @@ class TkDisplay:
             foreground="#707070",
         )
         copyright_footer.pack(fill="x")
+
+        # Let the packed canvas and footers establish the client-area request
+        # before locking the toplevel size.  Calling resizable(False, False)
+        # before this point leaves Aqua pinned to Tk's pre-map 200x200 default.
         root.update_idletasks()
+        requested_width = max(canvas_width, int(root.winfo_reqwidth()))
+        requested_height = max(1, int(root.winfo_reqheight()))
+        root.geometry(f"{requested_width}x{requested_height}")
+        root.update_idletasks()
+        root.resizable(False, False)
         if self._probe_path:
             root.lift()
             root.focus_force()

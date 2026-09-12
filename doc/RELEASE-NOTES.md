@@ -40,6 +40,7 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - live-allocation indexing that retains dead allocation IDs for ABA defense without quadratic allocator scans;
 - visible C48 security fixtures, an 84-case adversarial review corpus, and mechanically enforced 64-column C48 source;
 - 50-Hz Tk polling, accelerated byte-run framebuffer conversion, and explicit `yield()`/animation-sleep presentation barriers so intentional logical frames are painted rather than silently coalesced;
+- Tk top-level sizing now waits for the packed canvas/footer requested geometry before locking resize, preventing Aqua from freezing the release window at its 200x200 pre-map default;
 - Windows standard-library `winsound` playback with no pip dependency, plus one-time visible/terminal diagnostics and nonfatal silent completion for the shipped tune when a POSIX audio adapter is absent;
 - categorized `examples`, `sound`, and `security` source/binary trees with no uncategorized programs at `usr/src` or `usr/bin` root;
 - mathematical 64-column overlays on the math-oriented graphics tranche, a 75%-scale Mobius projection, and corrected Hangman gallows alignment.
