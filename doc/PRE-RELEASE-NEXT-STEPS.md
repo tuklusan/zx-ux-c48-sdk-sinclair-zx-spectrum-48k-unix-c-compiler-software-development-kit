@@ -13,9 +13,9 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# 1.0.0-RC1 Release Staging Record
+# 1.0.0 Release Certification Record
 
-Status: RC1 STAGING - FINAL 1.0 NOT YET DECLARED
+Status: FINAL 1.0.0 CANDIDATE - FORMAL RELEASE NOT YET PUBLISHED
 
 This file records release-candidate work that must survive ephemeral development
 filesystems and runner workspaces. It is intentionally separate from the frozen
@@ -37,7 +37,7 @@ language/architecture authorities.
 5. Keep the exact candidate commit SHA with every evidence record. Do not treat
    evidence from a different commit as certification of the candidate.
 
-## Documentation modernization for RC1
+## Documentation freeze for 1.0.0
 
 Audit every non-authoritative README/Markdown/DOCX for stale host-platform claims.
 In particular, replace obsolete Windows/Linux-only wording where the statement is
@@ -60,7 +60,7 @@ Review at least:
   that became stale during final hardening.
 
 
-The RC1 documentation audit distinguishes the portable host SDK from the frozen
+The final documentation audit distinguishes the portable host SDK from the frozen
 target-native architecture. The Compiler User Manual remains intentionally
 unchanged where Windows/native wording is part of that frozen portability
 contract; the SDK User Manual carries the current Windows, Linux and macOS host
@@ -77,6 +77,9 @@ After documentation is frozen, regenerate `MANIFEST.sha256`, rerun all candidate
 evidence workflows, create the release archive, verify the archive extraction,
 then create the formal tag/release only from the exact certified commit.
 
-Interactive Tk desktop behavior is not proved by headless GitHub runners. Perform
-the explicit manual matrix in `GUI-SMOKE-TESTS.md` on real release-host desktops and
-record those results separately from deterministic compiler/VM certification.
+Interactive Tk desktop behavior is not proved by headless GitHub runners. Freeze the
+exact 1.0.0 candidate bytes first, then perform the explicit manual matrix in
+`GUI-SMOKE-TESTS.md` on real release-host desktops. Preserve the completed matrix as
+external durable release evidence keyed to the exact candidate SHA and release-ZIP
+SHA-256; do not edit the tracked template after testing, because that would change
+the bytes that were certified.

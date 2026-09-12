@@ -13,15 +13,15 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# 1.0.0-RC1 Interactive Tk GUI Smoke-Test Record
+# 1.0.0 Interactive Tk GUI Smoke-Test Template
 
 Status: **PENDING REAL-DESKTOP EXECUTION**
 
 This record is intentionally separate from headless CI. A successful compiler,
 BEEP-numerical, or graphics-rendering workflow does not prove that Tk can open,
 paint, accept keyboard input, and close correctly on a physical desktop session.
-The formal 1.0 release remains blocked until every row below is recorded PASS on
-the exact certified release ZIP bytes.
+The formal 1.0.0 release remains blocked until every row below is recorded PASS in
+durable external evidence for the exact certified release ZIP bytes.
 
 ## Required matrix
 
@@ -43,7 +43,7 @@ SHA-256, candidate commit SHA, host OS/version, CPU architecture, Python
 version, and Tk version with the row result.
 
 1. Run `compiler/verify_release.py` from the extracted package and require PASS.
-2. Run the platform launcher `--version` command and require `1.0.0-RC1`.
+2. Run the platform launcher `--version` command and require `1.0.0`.
 3. Launch `usr/bin/demos/forest.c48b` without `--headless`. Require a real Tk
    window showing the Spectrum frame with no clipping, blank canvas, traceback,
    or missing footer. After the program finishes, require the footer text
@@ -65,5 +65,8 @@ Windows uses `c48.bat` / `c48run.bat`; Ubuntu and macOS use `./c48` /
 
 A screenshot may accompany a row, but a screenshot alone is not a PASS because
 it cannot prove keyboard delivery, BREAK handling, exit status, or clean close.
-Keep the completed table (and any supporting screenshots) with the durable
-release evidence for the exact candidate SHA.
+Copy this matrix into the durable release evidence and complete that external copy.
+Record the exact candidate SHA and release-ZIP SHA-256 with it. Do not edit this
+tracked template after the physical tests: changing the repository would create a
+different candidate from the bytes that were actually tested. Keep the completed
+matrix (and any supporting screenshots/logs) with the formal release evidence.

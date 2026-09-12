@@ -13,7 +13,7 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# Deterministic Demo and Security-Fixture Hashes - 1.0.0-RC1 Host SDK
+# Deterministic Demo and Security-Fixture Hashes - 1.0.0 Host SDK
 
 These hashes are release invariants verified by `compiler/verify_release.py`. Each ordinary demo is rebuilt from source, executed from the rebuilt C48B1, and required to produce the exact 6912-byte Spectrum screen hash below. Security fixtures are also rebuilt byte-for-byte; their runtime mitigation behavior is asserted by `compiler/tests/test_security.py`.
 
