@@ -122,9 +122,18 @@ with tempfile.TemporaryDirectory(prefix='rc1-transport-') as td:
     shutil.copytree(cache, TRANSPORT)
 
 run('git', 'add', '-f', 'doc/.rc1-transport')
-status = output('git', 'status', '--porcelain')
-if not status or any(not line[3:].startswith('doc/.rc1-transport/') for line in status.splitlines()):
-    die('transport commit contains paths outside doc/.rc1-transport')
+staged_raw = subprocess.check_output(
+    ['git', 'diff', '--cached', '--name-only', '-z'], cwd=ROOT
+)
+staged = [
+    item.decode('utf-8')
+    for item in staged_raw.split(b'\0')
+    if item
+]
+if not staged or any(not path.startswith('doc/.rc1-transport/') for path in staged):
+    die('transport commit contains staged paths outside doc/.rc1-transport')
+if len(staged) != len(changed):
+    die(f'transport staged {len(staged)} files, expected {len(changed)}')
 run('git', '-c', 'user.name=Supratim Sanyal', '-c', 'user.email=tuklusan@users.noreply.github.com',
     'commit', '-m', 'Transport audited RC1 blobs')
 transport_sha = output('git', 'rev-parse', 'HEAD')
