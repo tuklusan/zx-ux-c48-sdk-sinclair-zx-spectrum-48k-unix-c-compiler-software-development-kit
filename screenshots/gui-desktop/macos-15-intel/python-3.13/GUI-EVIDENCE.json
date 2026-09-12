@@ -1,5 +1,5 @@
 {
-  "commit": "e84a24c254e0e0ee3254c4953a80a0066e49e1ea",
+  "commit": "0f392619abf01483153108d6281269c445c6a9b2",
   "machine": "x86_64",
   "platform": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
   "python": "3.13.15",
@@ -28,7 +28,7 @@
         ],
         "comparison": "aqua-palette-spatial",
         "desktop_png": "forest-desktop.png",
-        "desktop_sha256": "eadce93648f4886e60c63ac1665360e951134ae1643f722112a8670bbf516a6a",
+        "desktop_sha256": "c75640fba7c0999233656d237fcbf83efd355346d158cfaa40b36047d7aa57fb",
         "frame_ppm": "forest-frame.ppm",
         "frame_ppm_sha256": "d21fdc7d37bbb8ae929e78aaa2158ca2efcfb1ae0914720a19087e827cd6c238",
         "frame_sha256": "9c6658dae8aae98d0ad5871a0aada6b0d718fd1af9756f3595e95c3d461f3955"
@@ -52,7 +52,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "fortune-desktop.png",
-        "desktop_sha256": "b1576ef3396f0e9152c5a0d4e83efb2ce1ae9f4c8b5f6f7f74de33c0d571f8cb",
+        "desktop_sha256": "fd040123ce5426991c14b092f6df2d6f4af7faf8f04c844f516b59ae4b0e715b",
         "frame_ppm": "fortune-frame.ppm",
         "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
         "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
@@ -76,7 +76,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "snake-desktop.png",
-        "desktop_sha256": "6729a7584df66ef7cbefd75122fe28ab648e4d5106c00f375548aea873db0fb8",
+        "desktop_sha256": "02e9f5050f82d541b490dcb7e0f289b034c6ec58e8137de379001332eb0d0ebb",
         "frame_ppm": "snake-frame.ppm",
         "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
         "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"

@@ -1,5 +1,5 @@
 {
-  "commit": "e84a24c254e0e0ee3254c4953a80a0066e49e1ea",
+  "commit": "0f392619abf01483153108d6281269c445c6a9b2",
   "machine": "x86_64",
   "platform": "macOS-15.7.9-x86_64-i386-64bit",
   "python": "3.10.21",
@@ -28,7 +28,7 @@
         ],
         "comparison": "aqua-palette-spatial",
         "desktop_png": "forest-desktop.png",
-        "desktop_sha256": "0bdd907682bcaf9e716a365034eeea0beaa1cfa1af791e9bc8e4ba9a0290ed1b",
+        "desktop_sha256": "117d9123e22304510f04cab09e3ef78baaa7c81feaeb0663336ca383e03ca34a",
         "frame_ppm": "forest-frame.ppm",
         "frame_ppm_sha256": "d21fdc7d37bbb8ae929e78aaa2158ca2efcfb1ae0914720a19087e827cd6c238",
         "frame_sha256": "9c6658dae8aae98d0ad5871a0aada6b0d718fd1af9756f3595e95c3d461f3955"
@@ -52,7 +52,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "fortune-desktop.png",
-        "desktop_sha256": "56a56c8c3be88e65af1570420274440cc28fb2518beefd8c613b8f83c4b79dfa",
+        "desktop_sha256": "8d9648e34f1ad6bed62e47578431adfd262b073253db386ad4e15bccc6e40b3f",
         "frame_ppm": "fortune-frame.ppm",
         "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
         "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
@@ -76,7 +76,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "snake-desktop.png",
-        "desktop_sha256": "c36a3a78e3de1df876df9fc558d175493afebf4c1e5b449a373b3f3ec95c8771",
+        "desktop_sha256": "c4ec3476fb000d09ef1f75e648cc13d382d908553deb1ffb85cd83f5af38ca32",
         "frame_ppm": "snake-frame.ppm",
         "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
         "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"

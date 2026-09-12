@@ -1,15 +1,15 @@
-{"canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "window_ready", "monotonic_ns": 324341429301, "pid": 2190, "root_height": 760, "root_width": 962, "root_x": 0, "root_y": 0, "scale": 3, "screen_height": 1200, "screen_width": 1600, "seq": 1, "title": "ZX-UX C48 - fortune.c48b", "tk_patchlevel": "8.6.14", "windowing_system": "x11"}
-{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-fortune-frame.ppm", "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a", "generation": 5, "monotonic_ns": 324362951522, "pid": 2190, "seq": 2}
-{"event": "input_waiting", "monotonic_ns": 324363181330, "pid": 2190, "seq": 3}
-{"event": "key_accepted", "monotonic_ns": 324603331576, "pid": 2190, "seq": 4, "value": 120}
-{"event": "input_return", "monotonic_ns": 324603545318, "pid": 2190, "seq": 5, "value": 120}
-{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-fortune-frame.ppm", "frame_sha256": "7da09a68f2a1ef6d8e2a3099ccffe4283ca6be28d97e39a1f262cc22945af119", "generation": 10, "monotonic_ns": 324624650358, "pid": 2190, "seq": 6}
-{"event": "input_waiting", "monotonic_ns": 324624829260, "pid": 2190, "seq": 7}
-{"event": "key_accepted", "monotonic_ns": 324656440181, "pid": 2190, "seq": 8, "value": 113}
-{"event": "input_return", "monotonic_ns": 324656631458, "pid": 2190, "seq": 9, "value": 113}
-{"error_type": null, "event": "program_done", "monotonic_ns": 324656920655, "pid": 2190, "seq": 10, "status": 0}
-{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-fortune-frame.ppm", "frame_sha256": "7da09a68f2a1ef6d8e2a3099ccffe4283ca6be28d97e39a1f262cc22945af119", "generation": 11, "monotonic_ns": 324686480379, "pid": 2190, "seq": 11}
-{"background": "yellow", "event": "footer_done", "foreground": "red", "monotonic_ns": 324687090296, "pid": 2190, "seq": 12, "text": "Program ended - Shift+Space to close", "title": "ZX-UX C48 - fortune.c48b - exited 0"}
-{"break_running": false, "done": true, "event": "break_key", "monotonic_ns": 324710557729, "pid": 2190, "seq": 13}
-{"event": "display_close", "monotonic_ns": 324710689767, "pid": 2190, "seq": 14}
-{"break_running": false, "error_type": null, "event": "mainloop_exit", "monotonic_ns": 324712222171, "pid": 2190, "seq": 15, "status": 0}
+{"canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "window_ready", "monotonic_ns": 129624171560, "pid": 2520, "root_height": 760, "root_width": 962, "root_x": 0, "root_y": 0, "scale": 3, "screen_height": 1200, "screen_width": 1600, "seq": 1, "title": "ZX-UX C48 - fortune.c48b", "tk_patchlevel": "8.6.14", "windowing_system": "x11"}
+{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-fortune-frame.ppm", "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a", "generation": 5, "monotonic_ns": 129645589832, "pid": 2520, "seq": 2}
+{"event": "input_waiting", "monotonic_ns": 129645752569, "pid": 2520, "seq": 3}
+{"event": "key_accepted", "monotonic_ns": 129902829623, "pid": 2520, "seq": 4, "value": 120}
+{"event": "input_return", "monotonic_ns": 129903064257, "pid": 2520, "seq": 5, "value": 120}
+{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-fortune-frame.ppm", "frame_sha256": "7da09a68f2a1ef6d8e2a3099ccffe4283ca6be28d97e39a1f262cc22945af119", "generation": 10, "monotonic_ns": 129929779721, "pid": 2520, "seq": 6}
+{"event": "input_waiting", "monotonic_ns": 129929981912, "pid": 2520, "seq": 7}
+{"event": "key_accepted", "monotonic_ns": 129956864210, "pid": 2520, "seq": 8, "value": 113}
+{"event": "input_return", "monotonic_ns": 129957051241, "pid": 2520, "seq": 9, "value": 113}
+{"error_type": null, "event": "program_done", "monotonic_ns": 129957392999, "pid": 2520, "seq": 10, "status": 0}
+{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-fortune-frame.ppm", "frame_sha256": "7da09a68f2a1ef6d8e2a3099ccffe4283ca6be28d97e39a1f262cc22945af119", "generation": 11, "monotonic_ns": 129988576703, "pid": 2520, "seq": 11}
+{"background": "yellow", "event": "footer_done", "foreground": "red", "monotonic_ns": 129989157223, "pid": 2520, "seq": 12, "text": "Program ended - Shift+Space to close", "title": "ZX-UX C48 - fortune.c48b - exited 0"}
+{"break_running": false, "done": true, "event": "break_key", "monotonic_ns": 130011422450, "pid": 2520, "seq": 13}
+{"event": "display_close", "monotonic_ns": 130011568218, "pid": 2520, "seq": 14}
+{"break_running": false, "error_type": null, "event": "mainloop_exit", "monotonic_ns": 130013105134, "pid": 2520, "seq": 15, "status": 0}

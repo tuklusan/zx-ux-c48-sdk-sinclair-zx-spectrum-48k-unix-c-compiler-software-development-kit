@@ -1,5 +1,5 @@
 {
-  "commit": "e84a24c254e0e0ee3254c4953a80a0066e49e1ea",
+  "commit": "0f392619abf01483153108d6281269c445c6a9b2",
   "machine": "arm64",
   "platform": "macOS-26.6.2-arm64-arm-64bit",
   "python": "3.10.21",
@@ -70,7 +70,7 @@
         ],
         "comparison": "aqua-color-bijection",
         "desktop_png": "forest-desktop.png",
-        "desktop_sha256": "3677e6c13eb4fb2f6238e64de912cf2ae4503bebf7f0b535b773e922b6b8db03",
+        "desktop_sha256": "924b9d1846eb5ec86ea37141949756e84b62aeee7ff85a8b52252193f158456b",
         "frame_ppm": "forest-frame.ppm",
         "frame_ppm_sha256": "d21fdc7d37bbb8ae929e78aaa2158ca2efcfb1ae0914720a19087e827cd6c238",
         "frame_sha256": "9c6658dae8aae98d0ad5871a0aada6b0d718fd1af9756f3595e95c3d461f3955"
@@ -94,7 +94,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "fortune-desktop.png",
-        "desktop_sha256": "0d9898f137b3ae8e67bef0aadce03d3ce856814a3155bcbc55f4a21764cf1003",
+        "desktop_sha256": "93503cae0e13008468b34fcabf3505c57e64e42968db1a5a1e1f9b3d4b180962",
         "frame_ppm": "fortune-frame.ppm",
         "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
         "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
@@ -118,7 +118,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "snake-desktop.png",
-        "desktop_sha256": "be616c6e938e409d48f06054a535a2a0530d82b1566a947b3fee3094fe4790f4",
+        "desktop_sha256": "e4f89852e99eafbcd675f18e60fdee5558e7a790894b259dd7db2289afcf9427",
         "frame_ppm": "snake-frame.ppm",
         "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
         "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"

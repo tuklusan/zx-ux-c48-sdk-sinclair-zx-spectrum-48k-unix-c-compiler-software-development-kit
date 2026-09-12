@@ -1,5 +1,5 @@
 {
-  "commit": "e84a24c254e0e0ee3254c4953a80a0066e49e1ea",
+  "commit": "0f392619abf01483153108d6281269c445c6a9b2",
   "machine": "AMD64",
   "platform": "Windows-2025Server-10.0.26100-SP0",
   "python": "3.13.15",
@@ -24,7 +24,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "forest-desktop.png",
-        "desktop_sha256": "69482d26947b66b98dbd61e31401ca92a32948ce4ce906537cd6305d95109181",
+        "desktop_sha256": "30d0fa69b0ad27ea5b5afd4a4fa0d83e6a3f505d663835d148aec7a5e91ebe66",
         "frame_ppm": "forest-frame.ppm",
         "frame_ppm_sha256": "d21fdc7d37bbb8ae929e78aaa2158ca2efcfb1ae0914720a19087e827cd6c238",
         "frame_sha256": "9c6658dae8aae98d0ad5871a0aada6b0d718fd1af9756f3595e95c3d461f3955"
@@ -48,7 +48,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "fortune-desktop.png",
-        "desktop_sha256": "ddb012d6d04d1c956013c992fe57d7a3a7dc1cd033258d98bf5797545e5be232",
+        "desktop_sha256": "4f1e5d457ab6e0f42ced9fcd244547697a654c4916013d7699514d3acfb3dec0",
         "frame_ppm": "fortune-frame.ppm",
         "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
         "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
@@ -72,7 +72,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "snake-desktop.png",
-        "desktop_sha256": "438f657a6b4a74ee921eb14b8c6cce5398b35ed5f5995c4dd763ac50cdbd9c46",
+        "desktop_sha256": "8f03508929e2658f55bfce8563ac2c830db023b483bf29abc524d511c82f8611",
         "frame_ppm": "snake-frame.ppm",
         "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
         "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"
