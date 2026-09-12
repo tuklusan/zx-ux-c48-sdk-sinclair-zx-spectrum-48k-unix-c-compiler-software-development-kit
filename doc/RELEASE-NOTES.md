@@ -42,16 +42,20 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - 50-Hz Tk polling, accelerated byte-run framebuffer conversion, and explicit `yield()`/animation-sleep presentation barriers so intentional logical frames are painted rather than silently coalesced;
 - Tk top-level sizing now maps the packed canvas/footer before locking resize and
   automatically steps down to the largest fully visible integer scale when a host
-  desktop constrains the requested surface, preventing Aqua from freezing or clipping
-  the release window; Aqua also keeps a one-pixel horizontal client inset so the
-  NSWindow edge cannot composite over the outer Spectrum border;
+  desktop constrains the requested surface; Windows also rejects a scale whose full
+  client rectangle extends outside the usable work area (for example beneath the
+  taskbar), while Aqua keeps a one-pixel horizontal client inset so the NSWindow edge
+  cannot composite over the outer Spectrum border;
+- the host-native GUI verifier now terminates failed Windows launcher process trees and
+  bounds pipe draining, so a failed desktop assertion cannot hide behind an unbounded
+  cleanup hang;
 - Windows standard-library `winsound` playback with no pip dependency, plus one-time visible/terminal diagnostics and nonfatal silent completion for the shipped tune when a POSIX audio adapter is absent;
 - categorized `examples`, `sound`, and `security` source/binary trees with no uncategorized programs at `usr/src` or `usr/bin` root;
 - mathematical 64-column overlays on the math-oriented graphics tranche, a 75%-scale Mobius projection, and corrected Hangman gallows alignment.
 
 ## Frozen verification surface
 
-- automated conformance/regression/security tests: 338, including the 84 ordered attacks from the adversarial security review, tty64 deferred-wrap regressions, and ROM-derived BEEP/PCM/blocking tests;
+- automated conformance/regression/security tests: 340, including the 84 ordered attacks from the adversarial security review, tty64 deferred-wrap regressions, and ROM-derived BEEP/PCM/blocking tests;
 - deterministic demos: 6 (`hello`, `colors`, `graphics`, `udg`, `maze`, `argv`);
 - default Tasword F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339`;
 - alternate ZX-UX F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339` (currently byte-identical to the supplied Tasword asset);

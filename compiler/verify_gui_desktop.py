@@ -123,13 +123,43 @@ def _start(program: Path, probe: Path) -> subprocess.Popen:
     )
 
 
+def _terminate_process_tree(process: subprocess.Popen) -> tuple[str, str]:
+    """Terminate a failed GUI launch without allowing inherited pipes to hang."""
+    if process.poll() is None:
+        if os.name == "nt":
+            try:
+                subprocess.run(
+                    ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                    timeout=15,
+                )
+            except (OSError, subprocess.TimeoutExpired):
+                process.kill()
+        else:
+            process.kill()
+    try:
+        return process.communicate(timeout=10)
+    except subprocess.TimeoutExpired:
+        # A descendant inherited one of the capture handles.  Never let a
+        # cleanup path turn the release gate into an unbounded hang.
+        if process.stdout is not None:
+            process.stdout.close()
+        if process.stderr is not None:
+            process.stderr.close()
+        return "", "<pipe drain timed out after process-tree termination>"
+
+
 def _finish(process: subprocess.Popen, expected: int) -> tuple[str, str]:
     try:
         stdout, stderr = process.communicate(timeout=TIMEOUT)
     except subprocess.TimeoutExpired:
-        process.kill()
-        stdout, stderr = process.communicate()
-        raise AssertionError("GUI process did not exit after requested close")
+        stdout, stderr = _terminate_process_tree(process)
+        raise AssertionError(
+            "GUI process did not exit after requested close; "
+            f"stdout={stdout!r} stderr={stderr!r}"
+        )
     if process.returncode != expected:
         raise AssertionError(
             f"GUI process returned {process.returncode}, expected {expected}; "
@@ -502,8 +532,7 @@ def _forest(evidence: Path) -> dict:
         return {"capture": capture, "stdout": stdout, "stderr": stderr}
     finally:
         if process.poll() is None:
-            process.kill()
-            process.communicate()
+            _terminate_process_tree(process)
 
 
 def _fortune(evidence: Path) -> dict:
@@ -556,8 +585,7 @@ def _fortune(evidence: Path) -> dict:
         return {"capture": capture, "stdout": stdout, "stderr": stderr}
     finally:
         if process.poll() is None:
-            process.kill()
-            process.communicate()
+            _terminate_process_tree(process)
 
 
 def _snake(evidence: Path) -> dict:
@@ -584,8 +612,7 @@ def _snake(evidence: Path) -> dict:
         return {"capture": capture, "stdout": stdout, "stderr": stderr}
     finally:
         if process.poll() is None:
-            process.kill()
-            process.communicate()
+            _terminate_process_tree(process)
 
 
 def main(argv: list[str] | None = None) -> int:

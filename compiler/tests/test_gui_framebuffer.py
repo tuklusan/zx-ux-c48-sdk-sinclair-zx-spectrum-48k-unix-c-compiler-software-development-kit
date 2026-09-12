@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import sys
+import subprocess
 import threading
 import time
 import unittest
@@ -34,11 +35,13 @@ from c48.gui import (
     largest_fully_mapped_scale,
     render_snapshot_frame_rgb,
     render_snapshot_rgb,
+    rectangle_fits_bounds,
 )
 from c48.screen import Font4x8, ZXScreen, bitmap_offset
 from verify_gui_desktop import (
     AQUA_MAX_CHANNEL_DRIFT,
     _aqua_palette_spatial_match,
+    _terminate_process_tree,
 )
 
 FONT_PATH = COMPILER / "assets" / "font4x8-tasword.bin"
@@ -220,6 +223,28 @@ class GuiFramebufferRegressions(unittest.TestCase):
             largest_fully_mapped_scale(1, lambda scale: (319, 239))
         with self.assertRaisesRegex(ValueError, "scale must be positive"):
             largest_fully_mapped_scale(0, lambda scale: (320, 240))
+
+    def test_client_rectangle_must_fit_usable_desktop_bounds(self):
+        work = (0, 0, 1024, 720)
+        self.assertTrue(rectangle_fits_bounds(55, 31, 642, 522, work))
+        self.assertFalse(rectangle_fits_bounds(54, 31, 962, 762, work))
+        self.assertFalse(rectangle_fits_bounds(55, 31, 960, 720, work))
+        self.assertFalse(rectangle_fits_bounds(-1, 0, 320, 240, work))
+        self.assertFalse(rectangle_fits_bounds(0, 0, 0, 240, work))
+
+    def test_failed_gui_cleanup_is_bounded(self):
+        process = subprocess.Popen(
+            [sys.executable, "-c", "import time; time.sleep(30)"],
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        started = time.monotonic()
+        stdout, stderr = _terminate_process_tree(process)
+        self.assertLess(time.monotonic() - started, 5.0)
+        self.assertIsNotNone(process.poll())
+        self.assertEqual(stdout, "")
+        self.assertEqual(stderr, "")
 
         match = _aqua_palette_spatial_match(
             [(0, 0, 0), (0, 255, 255), (205, 0, 0), (255, 0, 255)],

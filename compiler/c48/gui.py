@@ -130,6 +130,59 @@ def fit_footer_font_size(
     return 1
 
 
+def rectangle_fits_bounds(
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    bounds: tuple[int, int, int, int],
+) -> bool:
+    """Return whether a positive rectangle is completely inside bounds."""
+    left, top, right, bottom = (int(value) for value in bounds)
+    x = int(x)
+    y = int(y)
+    width = int(width)
+    height = int(height)
+    return (
+        width > 0
+        and height > 0
+        and right > left
+        and bottom > top
+        and x >= left
+        and y >= top
+        and x + width <= right
+        and y + height <= bottom
+    )
+
+
+def _host_work_area(root) -> tuple[int, int, int, int]:
+    """Return the usable desktop rectangle for the Tk toplevel's host."""
+    screen = (0, 0, int(root.winfo_screenwidth()), int(root.winfo_screenheight()))
+    if os.name != "nt":
+        return screen
+    # Tk's winfo_screenheight includes the Windows taskbar.  A toplevel can
+    # therefore report its requested client geometry while its lower rows are
+    # actually obscured.  SPI_GETWORKAREA returns the primary desktop area
+    # available to ordinary application windows, excluding app bars/taskbar.
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        rect = wintypes.RECT()
+        if ctypes.windll.user32.SystemParametersInfoW(
+            0x0030,  # SPI_GETWORKAREA
+            0,
+            ctypes.byref(rect),
+            0,
+        ):
+            work = (int(rect.left), int(rect.top), int(rect.right), int(rect.bottom))
+            if work[2] > work[0] and work[3] > work[1]:
+                return work
+    except (AttributeError, OSError):
+        pass
+    return screen
+
+
 def largest_fully_mapped_scale(requested_scale: int, map_scale) -> int:
     """Map the largest integer display scale the host can show completely.
 
@@ -386,7 +439,21 @@ class TkDisplay:
             # can report the requested geometry rather than the host-constrained
             # mapped geometry on Aqua.
             root.update()
-            return int(canvas.winfo_width()), int(canvas.winfo_height())
+            mapped_width = int(canvas.winfo_width())
+            mapped_height = int(canvas.winfo_height())
+            work_area = _host_work_area(root)
+            if not rectangle_fits_bounds(
+                int(root.winfo_rootx()),
+                int(root.winfo_rooty()),
+                int(root.winfo_width()),
+                int(root.winfo_height()),
+                work_area,
+            ):
+                # A mapped client that extends beneath a taskbar/app bar is not
+                # fully visible.  Reject this scale even if Tk reports the
+                # requested canvas dimensions verbatim.
+                return 0, 0
+            return mapped_width, mapped_height
 
         self.scale = largest_fully_mapped_scale(self.scale, map_scale)
         root.resizable(False, False)

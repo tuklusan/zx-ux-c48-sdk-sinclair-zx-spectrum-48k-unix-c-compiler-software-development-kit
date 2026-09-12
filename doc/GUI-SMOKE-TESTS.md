@@ -58,8 +58,9 @@ blocker once all eight automated rows and the aggregate evidence job pass.
 3. Launch `usr/bin/demos/forest.c48b` without `--headless`; require the Tk window,
    a fully mapped Spectrum canvas at the largest host-safe integer scale
    (normally 3x/960x720; constrained desktops may use 2x/640x480), with
-   Aqua keeping the canvas one client pixel inside each vertical window edge,
-   never Tk's clipped pre-map/default geometry,
+   Windows requiring the full Tk client rectangle to remain inside the usable
+   work area and Aqua keeping the canvas one client pixel inside each vertical
+   window edge, never Tk's clipped or taskbar-obscured geometry,
    successful program completion, the exact footer text
    `Program ended - Shift+Space to close`, a compositor screenshot whose canvas
    pixels equal the Tk-rendered framebuffer, and Shift+Space close preserving
