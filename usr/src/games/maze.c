@@ -29,21 +29,35 @@ int maze_turns;
 int maze_x;
 int maze_y;
 
+void maze_cell(int y, int x, int ch)
+{
+    int col;
+    col = 2 + x * 3;
+    game_putc(y + 3, col, ch);
+    game_putc(y + 3, col + 1, ch);
+    game_putc(y + 3, col + 2, ch);
+}
+
 void maze_draw(void)
 {
+    int x;
     int y;
     cls();
     print_at(0, 0, "C48 MAZE - w a s d, q quits");
-    for (y = 0; y < 12; y++)
-        print_at(y + 3, 4, m_map[y]);
-    game_putc(maze_y + 3, maze_x + 4, '@');
+    print_at(1, 0, "Find E. Walls are solid. @ is you.");
+    for (y = 0; y < 12; y++) {
+        for (x = 0; x < 20; x++)
+            maze_cell(y, x, m_map[y][x]);
+    }
+    maze_cell(maze_y, maze_x, '@');
     print_at(16, 0, "Move:");
-    game_show_last(17);
+    game_show_last(18);
+    print_at(21, 0, "S=start   E=exit   ###=wall");
 }
 
 void maze_status(void)
 {
-    game_show_last(17);
+    game_show_last(18);
     game_putc(16, 6, ' ');
 }
 
@@ -60,7 +74,7 @@ int main(void)
     maze_draw();
     while (1) {
         if (m_map[maze_y][maze_x] == 'E') {
-            print_at(18, 4, "You escaped. Press q.");
+            print_at(20, 0, "You escaped. Press q.");
             while (game_key() != 'q')
                 maze_turns++;
             return 0;
@@ -94,8 +108,8 @@ int main(void)
         maze_x = nx;
         maze_y = ny;
         game_record(key, 1);
-        game_putc(oldy + 3, oldx + 4, m_map[oldy][oldx]);
-        game_putc(maze_y + 3, maze_x + 4, '@');
+        maze_cell(oldy, oldx, m_map[oldy][oldx]);
+        maze_cell(maze_y, maze_x, '@');
         maze_status();
     }
 }

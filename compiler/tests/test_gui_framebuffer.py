@@ -25,8 +25,13 @@ sys.path.insert(0, str(COMPILER))
 
 from c48.gui import (
     COPYRIGHT_TEXT,
+    BORDER_X,
+    BORDER_Y,
+    FRAME_HEIGHT,
+    FRAME_WIDTH,
     TkDisplay,
     fit_footer_font_size,
+    render_snapshot_frame_rgb,
     render_snapshot_rgb,
 )
 from c48.screen import Font4x8, ZXScreen, bitmap_offset
@@ -55,8 +60,9 @@ class GuiFramebufferRegressions(unittest.TestCase):
         display.update()
         frame = display._frame_after(-1)
         self.assertIsNotNone(frame)
-        generation, snapshot = frame
+        generation, snapshot, border_color = frame
         self.assertEqual(generation, 1)
+        self.assertEqual(border_color, 0)
         self.assertEqual(snapshot[bitmap_offset(0, 0)], 0x80)
         screen.mem[bitmap_offset(0, 0)] = 0
         self.assertEqual(snapshot[bitmap_offset(0, 0)], 0x80)
@@ -68,12 +74,14 @@ class GuiFramebufferRegressions(unittest.TestCase):
         display.update()
         first = display._frame_after(-1)
         self.assertIsNotNone(first)
-        first_generation, _ = first
+        first_generation, _, first_border = first
+        self.assertEqual(first_border, 0)
         screen.mem[bitmap_offset(0, 0)] = 0x40
         display.update()
         second = display._frame_after(first_generation)
         self.assertIsNotNone(second)
-        second_generation, second_snapshot = second
+        second_generation, second_snapshot, second_border = second
+        self.assertEqual(second_border, 0)
         self.assertGreater(second_generation, first_generation)
         self.assertEqual(second_snapshot[bitmap_offset(0, 0)], 0x40)
         self.assertIsNone(display._frame_after(second_generation))
@@ -86,6 +94,11 @@ class GuiFramebufferRegressions(unittest.TestCase):
         screen.mem[bitmap_offset(0, 0)] = 0
         self.assertEqual(render_snapshot_rgb(snapshot), expected)
         self.assertNotEqual(render_snapshot_rgb(screen.bytes()), expected)
+        framed = render_snapshot_frame_rgb(snapshot, 2)
+        self.assertEqual(len(framed), FRAME_WIDTH * FRAME_HEIGHT * 3)
+        self.assertEqual(framed[:3], bytes((205, 0, 0)))
+        paper = (BORDER_Y * FRAME_WIDTH + BORDER_X) * 3
+        self.assertEqual(framed[paper:paper + 3], expected[:3])
 
     def test_nonwaiting_key_is_discarded(self):
         display = TkDisplay(new_screen())

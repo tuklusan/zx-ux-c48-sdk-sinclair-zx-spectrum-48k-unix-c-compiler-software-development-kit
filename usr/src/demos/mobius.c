@@ -24,6 +24,8 @@ void mpt(int u, int side, int f,
     b = side * 10 * d_sin(u / 2) / 128;
     d_rot3(a, b, c, 20 + f * 2, f * 4, f,
            x, y, z);
+    *x = *x * 2;
+    *y = *y * 2;
 }
 
 void edge(int u1, int u2, int side, int f)
@@ -52,6 +54,7 @@ void scene(int f)
     int z2;
     cls();
     paper(0);
+    border(2 + (f % 6));
     for (i = 0; i < 20; i++) {
         u1 = i * 256 / 20;
         u2 = (i + 1) * 256 / 20;
@@ -66,7 +69,7 @@ void scene(int f)
     }
     ink(7);
     bright(1);
-    print_at(0, 5, "MOBIUS FLIGHT / ONE SIDED RIBBON");
+    print_at(0, 3, "MOBIUS R=48 W=24 / ONE SIDED RIBBON");
 }
 
 int main(int argc, char **argv)
@@ -77,6 +80,8 @@ int main(int argc, char **argv)
     for (f = 0; f < n; f++) {
         scene(f);
         yield();
+        if (argc < 2) sleep(75u);
+        else sleep(1u);
     }
     return 0;
 }

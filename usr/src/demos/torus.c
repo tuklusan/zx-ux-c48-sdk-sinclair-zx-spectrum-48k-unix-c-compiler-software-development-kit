@@ -23,6 +23,8 @@ void tpt(int u, int v, int f, int *x, int *y, int *z)
     c = rr * d_sin(u) / 128;
     d_rot3(a, b, c, 18 + f * 3, f * 5, f * 2,
            x, y, z);
+    *x = *x * 2;
+    *y = *y * 2;
 }
 
 void scene(int f)
@@ -39,6 +41,7 @@ void scene(int f)
     int z2;
     cls();
     paper(0);
+    border(1 + (f % 7));
     for (v = 0; v < 8; v++) {
         ink(1 + v % 7);
         bright(v & 1);
@@ -66,10 +69,12 @@ int main(int argc, char **argv)
 {
     int f;
     int n;
-    n = d_frames(argc, argv, 10);
+    n = d_frames(argc, argv, 4);
+    if (n > 4) n = 4;
     for (f = 0; f < n; f++) {
         scene(f);
         yield();
+        if (argc < 2) sleep(50u);
     }
     return 0;
 }

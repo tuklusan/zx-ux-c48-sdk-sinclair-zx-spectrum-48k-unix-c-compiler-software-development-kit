@@ -48,6 +48,15 @@ int r_mon(int x, int y)
     return -1;
 }
 
+void r_cell(int y, int x, int ch)
+{
+    int col;
+    col = 2 + x * 3;
+    game_putc(y + 3, col, ch);
+    game_putc(y + 3, col + 1, ch);
+    game_putc(y + 3, col + 2, ch);
+}
+
 void r_board(void)
 {
     int x;
@@ -55,25 +64,25 @@ void r_board(void)
     int i;
     cls();
     print_at(0, 0, "C48 ROGUE - w a s d, q quits");
+    print_at(1, 0, "Collect all gold, then reach >.");
     for (y = 0; y < 12; y++) {
         for (x = 0; x < 20; x++)
-            game_putc(y + 3, x + 4, r_map[r_at(x, y)]);
+            r_cell(y, x, r_map[r_at(x, y)]);
     }
     for (i = 0; i < 3; i++) {
         if (r_alive[i])
-            game_putc(r_my[i] + 3, r_mx[i] + 4, 'g');
+            r_cell(r_my[i], r_mx[i], 'g');
     }
-    game_putc(r_y + 3, r_x + 4, '@');
-    print_at(19, 0, "Collect 3 gold, then reach >.");
+    r_cell(r_y, r_x, '@');
 }
 
 void r_status(void)
 {
-    print_at(17, 0, "HP:     Gold:     ");
-    game_num(17, 4, (unsigned int)r_hp);
-    game_num(17, 18, (unsigned int)r_gold);
+    print_at(16, 0, "HP:     Gold:     ");
+    game_num(16, 4, (unsigned int)r_hp);
+    game_num(16, 18, (unsigned int)r_gold);
     game_show_last(18);
-    print_at(20, 0, "Command:");
+    print_at(22, 0, "Command:");
 }
 
 void r_mmove(void)
@@ -105,11 +114,11 @@ void r_mmove(void)
         }
         j = r_mon(nx, ny);
         if (j < 0) {
-            game_putc(r_my[i] + 3, r_mx[i] + 4,
-                r_map[r_at(r_mx[i], r_my[i])]);
+            r_cell(r_my[i], r_mx[i],
+                   r_map[r_at(r_mx[i], r_my[i])]);
             r_mx[i] = nx;
             r_my[i] = ny;
-            game_putc(r_my[i] + 3, r_mx[i] + 4, 'g');
+            r_cell(r_my[i], r_mx[i], 'g');
         }
     }
 }
@@ -130,19 +139,19 @@ int main(void)
     while (1) {
         r_status();
         if (r_hp <= 0) {
-            print_at(21, 0, "The dungeon wins. Press q.");
+            print_at(20, 0, "The dungeon wins. Press q.");
             while (game_key() != 'q')
                 r_turns++;
             return 0;
         }
         cell = r_map[r_at(r_x, r_y)];
         if (cell == '>' && r_gold == 3) {
-            print_at(21, 0, "You escape rich. Press q.");
+            print_at(20, 0, "You escape rich. Press q.");
             while (game_key() != 'q')
                 r_turns++;
             return 0;
         }
-        key = game_key_echo(20, 9);
+        key = game_key_echo(22, 9);
         r_turns++;
         if (key == 'q')
             return 0;
@@ -164,8 +173,7 @@ int main(void)
             game_record(key, 2);
             continue;
         }
-        game_putc(r_y + 3, r_x + 4,
-            r_map[r_at(r_x, r_y)]);
+        r_cell(r_y, r_x, r_map[r_at(r_x, r_y)]);
         mon = r_mon(nx, ny);
         if (mon >= 0) {
             r_alive[mon] = 0;
@@ -180,8 +188,8 @@ int main(void)
             r_gold++;
             r_map[cell] = '.';
         }
-        game_putc(r_y + 3, r_x + 4, '@');
+        r_cell(r_y, r_x, '@');
         r_mmove();
-        game_putc(r_y + 3, r_x + 4, '@');
+        r_cell(r_y, r_x, '@');
     }
 }

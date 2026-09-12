@@ -24,6 +24,7 @@ void scene(int f)
     int py;
     cls();
     paper(0);
+    border(1 + (f % 7));
     for (i = 0; i < 96; i++) {
         arm = i & 3;
         r = 5 + (i % 24) * 2;
@@ -32,6 +33,8 @@ void scene(int f)
         z = r * d_sin(a) / 128;
         y = d_sin(i * 29 + f * 2) * (i % 7) / 50;
         d_rot3(x, y, z, 22, f * 2, 0, &x, &y, &z);
+        x = x * 2;
+        y = y * 2;
         px = d_px(x, z);
         py = d_py(y, z);
         ink(1 + (i % 7));

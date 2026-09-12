@@ -39,6 +39,15 @@ void s_food(void)
     } while (s_hit(s_fx, s_fy, s_len));
 }
 
+void s_cell(int y, int x, int ch)
+{
+    int col;
+    col = 2 + x * 3;
+    game_putc(y + 3, col, ch);
+    game_putc(y + 3, col + 1, ch);
+    game_putc(y + 3, col + 2, ch);
+}
+
 void s_draw_board(void)
 {
     int x;
@@ -47,21 +56,21 @@ void s_draw_board(void)
     cls();
     print_at(0, 0, "C48 SNAKE - w a s d, q quits");
     for (x = 0; x < 20; x++) {
-        game_putc(3, x + 4, '#');
-        game_putc(14, x + 4, '#');
+        s_cell(0, x, '#');
+        s_cell(11, x, '#');
     }
     for (y = 1; y < 11; y++) {
-        game_putc(y + 3, 4, '#');
-        game_putc(y + 3, 23, '#');
+        s_cell(y, 0, '#');
+        s_cell(y, 19, '#');
     }
-    game_putc(s_fy + 3, s_fx + 4, '*');
+    s_cell(s_fy, s_fx, '*');
     for (i = s_len - 1; i > 0; i--)
-        game_putc(s_y[i] + 3, s_x[i] + 4, 'o');
-    game_putc(s_y[0] + 3, s_x[0] + 4, '@');
+        s_cell(s_y[i], s_x[i], 'o');
+    s_cell(s_y[0], s_x[0], '@');
     print_at(17, 0, "Score:");
     game_num(17, 7, (unsigned int)s_score);
     game_show_last(19);
-    print_at(20, 0, "Move:");
+    print_at(22, 0, "Move:");
 }
 
 int main(void)
@@ -92,7 +101,7 @@ int main(void)
     s_food();
     s_draw_board();
     while (1) {
-        key = game_key_echo(20, 6);
+        key = game_key_echo(22, 6);
         s_turns++;
         if (key == 'q')
             return 0;
@@ -100,7 +109,7 @@ int main(void)
             if (s_dy == 1) {
                 game_record(key, 2);
                 game_show_last(19);
-                game_putc(20, 6, ' ');
+                game_putc(22, 6, ' ');
                 continue;
             }
             s_dx = 0;
@@ -110,7 +119,7 @@ int main(void)
             if (s_dy == -1) {
                 game_record(key, 2);
                 game_show_last(19);
-                game_putc(20, 6, ' ');
+                game_putc(22, 6, ' ');
                 continue;
             }
             s_dx = 0;
@@ -120,7 +129,7 @@ int main(void)
             if (s_dx == 1) {
                 game_record(key, 2);
                 game_show_last(19);
-                game_putc(20, 6, ' ');
+                game_putc(22, 6, ' ');
                 continue;
             }
             s_dx = -1;
@@ -130,7 +139,7 @@ int main(void)
             if (s_dx == -1) {
                 game_record(key, 2);
                 game_show_last(19);
-                game_putc(20, 6, ' ');
+                game_putc(22, 6, ' ');
                 continue;
             }
             s_dx = 1;
@@ -139,7 +148,7 @@ int main(void)
         else {
             game_record(key, 3);
             game_show_last(19);
-            game_putc(20, 6, ' ');
+            game_putc(22, 6, ' ');
             continue;
         }
         game_record(key, 1);
@@ -174,16 +183,16 @@ int main(void)
         s_x[0] = nx;
         s_y[0] = ny;
         if (!eat)
-            game_putc(tail_y + 3, tail_x + 4, ' ');
-        game_putc(old_head_y + 3, old_head_x + 4, 'o');
-        game_putc(s_y[0] + 3, s_x[0] + 4, '@');
+            s_cell(tail_y, tail_x, ' ');
+        s_cell(old_head_y, old_head_x, 'o');
+        s_cell(s_y[0], s_x[0], '@');
         if (eat) {
             s_food();
-            game_putc(s_fy + 3, s_fx + 4, '*');
+            s_cell(s_fy, s_fx, '*');
             game_num(17, 7, (unsigned int)s_score);
         }
         game_show_last(19);
-        game_putc(20, 6, ' ');
+        game_putc(22, 6, ' ');
         if (s_score == 20) {
             cls();
             print_at(8, 8, "Snake master. Press q.");

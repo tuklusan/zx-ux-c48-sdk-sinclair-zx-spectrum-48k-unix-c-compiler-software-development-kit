@@ -40,6 +40,7 @@ void scene(int f)
     int z2;
     cls();
     paper(0);
+    border(3 + (f & 1) * 4);
     ink(7);
     bright(1);
     for (p = 0; p < 10; p++) {
@@ -71,6 +72,8 @@ int main(int argc, char **argv)
     for (f = 0; f < n; f++) {
         scene(f);
         yield();
+        if (argc < 2) sleep(75u);
+        else sleep(1u);
     }
     return 0;
 }

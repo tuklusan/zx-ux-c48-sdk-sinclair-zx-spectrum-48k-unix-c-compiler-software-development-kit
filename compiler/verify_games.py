@@ -121,7 +121,8 @@ class HumanKeys:
             if marker not in current:
                 fail(
                     f"human step {self.index}: "
-                    f"missing screen marker {marker!r}"
+                    f"missing screen marker {marker!r}\n"
+                    f"screen was:\n{current}"
                 )
         self.index += 1
         if isinstance(key, str):
@@ -525,10 +526,10 @@ def check_human_io() -> None:
         (
             "trek",
             (
-                (("Command:",), "w"),
-                (("Command: w", "Direction w a s d:"), "a"),
+                (("COMMAND:", "SHORT RANGE SENSOR SCAN"), "w"),
+                (("COMMAND: w",), "a"),
                 (("Last: w a", "blocked", "3000"), "w"),
-                (("Direction w a s d:",), "d"),
+                (("COMMAND: w",), "d"),
                 (("Last: w d", "accepted", "2950"), "q"),
             ),
             1000000,

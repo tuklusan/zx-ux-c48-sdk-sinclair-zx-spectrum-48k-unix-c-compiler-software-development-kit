@@ -33,6 +33,11 @@ COPYRIGHT_TEXT = (
     "SANYALnet Labs"
 )
 
+BORDER_X = 32
+BORDER_Y = 24
+FRAME_WIDTH = WIDTH + BORDER_X * 2
+FRAME_HEIGHT = HEIGHT + BORDER_Y * 2
+
 
 def is_break_key(keysym: str, state: int) -> bool:
     """Return True for the host equivalent of Spectrum BREAK."""
@@ -117,6 +122,27 @@ def render_snapshot_rgb(mem: bytes, flash_phase: bool = False) -> bytes:
     return bytes(out)
 
 
+def render_snapshot_frame_rgb(
+    mem: bytes,
+    border_color: int,
+    flash_phase: bool = False,
+) -> bytes:
+    """Render the paper inside a visible ZX Spectrum border."""
+    if not 0 <= border_color <= 7:
+        raise ValueError("border color out of range")
+    paper = render_snapshot_rgb(mem, flash_phase=flash_phase)
+    border = bytes(PALETTE_NORMAL[border_color])
+    out = bytearray(border * (FRAME_WIDTH * FRAME_HEIGHT))
+    src_stride = WIDTH * 3
+    dst_stride = FRAME_WIDTH * 3
+    xoff = BORDER_X * 3
+    for y in range(HEIGHT):
+        src = y * src_stride
+        dst = (y + BORDER_Y) * dst_stride + xoff
+        out[dst:dst + src_stride] = paper[src:src + src_stride]
+    return bytes(out)
+
+
 @dataclass
 class TkDisplay:
     """Small dependency-free Tk display for the Spectrum framebuffer."""
@@ -134,6 +160,7 @@ class TkDisplay:
         self._frame_lock = threading.Lock()
         self._frame_generation = 0
         self._frame_snapshot = self.screen.bytes()
+        self._frame_border = int(self.screen.border_color) & 7
         self._rendered_generation = -1
         self._stop = False
         self._root = None
@@ -166,15 +193,24 @@ class TkDisplay:
 
     def update(self) -> None:
         snapshot = self.screen.bytes()
+        border = int(self.screen.border_color) & 7
         with self._frame_lock:
             self._frame_generation += 1
             self._frame_snapshot = snapshot
+            self._frame_border = border
 
-    def _frame_after(self, rendered_generation: int) -> tuple[int, bytes] | None:
+    def _frame_after(
+        self,
+        rendered_generation: int,
+    ) -> tuple[int, bytes, int] | None:
         with self._frame_lock:
             if self._frame_generation == rendered_generation:
                 return None
-            return self._frame_generation, self._frame_snapshot
+            return (
+                self._frame_generation,
+                self._frame_snapshot,
+                self._frame_border,
+            )
 
     def close(self) -> None:
         self._stop = True
@@ -191,11 +227,11 @@ class TkDisplay:
         self._root = root
         root.title(self.title)
         root.resizable(False, False)
-        canvas_width = WIDTH * self.scale
+        canvas_width = FRAME_WIDTH * self.scale
         canvas = tk.Canvas(
             root,
             width=canvas_width,
-            height=HEIGHT * self.scale,
+            height=FRAME_HEIGHT * self.scale,
             highlightthickness=0,
         )
         canvas.pack()
@@ -265,12 +301,14 @@ class TkDisplay:
                 return
             frame = self._frame_after(self._rendered_generation)
             if frame is not None:
-                generation, snapshot = frame
-                rgb = render_snapshot_rgb(
+                generation, snapshot, border_color = frame
+                rgb = render_snapshot_frame_rgb(
                     snapshot,
+                    border_color,
                     flash_phase=bool(int(time.monotonic() * 2) & 1),
                 )
-                ppm = b"P6\n256 192\n255\n" + rgb
+                header = f"P6\n{FRAME_WIDTH} {FRAME_HEIGHT}\n255\n"
+                ppm = header.encode("ascii") + rgb
                 photo = tk.PhotoImage(data=ppm, format="PPM")
                 if self.scale != 1:
                     photo = photo.zoom(self.scale, self.scale)

@@ -38,7 +38,8 @@ void scene(int f)
     int sp;
     cls();
     paper(0);
-    sp = 4 + (f % 7);
+    border(1 + (f % 7));
+    sp = 2 + (f % 3);
     for (i = 0; i < 40; i++) {
         z1 = wz[i];
         z2 = z1 - sp;
@@ -69,10 +70,11 @@ int main(int argc, char **argv)
     int f;
     int n;
     init();
-    n = d_frames(argc, argv, 20);
+    n = d_frames(argc, argv, 80);
     for (f = 0; f < n; f++) {
         scene(f);
         yield();
+        if (argc < 2) sleep(4u);
     }
     return 0;
 }

@@ -17,7 +17,7 @@ int hgt(int x, int z, int f)
     int b;
     a = d_sin(x * 2 + z + f * 5);
     b = d_sin(z * 2 - x + f * 3);
-    return -22 + (a + b) / 11;
+    return -34 + (a + b) / 8;
 }
 
 void scene(int f)
@@ -33,15 +33,16 @@ void scene(int f)
     int y2;
     cls();
     paper(0);
+    border(6);
     sh = (f * 5) % 18;
     for (r = 0; r < 10; r++) {
         z1 = 20 + r * 18 - sh;
         if (z1 < 16) z1 = z1 + 180;
         ink(2 + (r & 3));
         bright(r < 5);
-        for (c = 0; c < 8; c++) {
-            x1 = -72 + c * 18;
-            x2 = x1 + 18;
+        for (c = 0; c < 10; c++) {
+            x1 = -110 + c * 22;
+            x2 = x1 + 22;
             y1 = hgt(x1, z1, f);
             y2 = hgt(x2, z1, f);
             d_line3(x1, y1, z1, x2, y2, z1);
@@ -49,8 +50,8 @@ void scene(int f)
     }
     ink(6);
     bright(0);
-    for (c = 0; c < 9; c++) {
-        x1 = -72 + c * 18;
+    for (c = 0; c < 11; c++) {
+        x1 = -110 + c * 22;
         for (r = 0; r < 9; r++) {
             z1 = 20 + r * 18 - sh;
             z2 = z1 + 18;

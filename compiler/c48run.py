@@ -28,7 +28,12 @@ SDK_VERSION = "0.9.0-dev"
 
 from c48.errors import C48Error, RuntimeC48Error
 from c48.format import read
-from c48.gui import TkDisplay
+from c48.gui import (
+    FRAME_HEIGHT,
+    FRAME_WIDTH,
+    TkDisplay,
+    render_snapshot_frame_rgb,
+)
 from c48.screen import Font4x8, ZXScreen
 from c48.romvm import RomMathVM
 
@@ -52,7 +57,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("args", nargs="*")
     ap.add_argument("--headless", action="store_true", help="run without opening a display window")
     ap.add_argument("--dump-screen", type=Path, help="write exact 6912-byte ZX screen after execution")
-    ap.add_argument("--ppm", type=Path, help="write a 256x192 PPM rendering after execution")
+    ap.add_argument("--ppm", type=Path,
+                    help="write a 256x192 paper-only PPM after execution")
+    ap.add_argument(
+        "--frame-ppm",
+        type=Path,
+        help="write a 320x240 PPM including the Spectrum border",
+    )
     ap.add_argument("--scale", type=int, default=3, choices=(1,2,3,4,5))
     ap.add_argument(
         "--font",
@@ -111,6 +122,14 @@ def main(argv: list[str] | None = None) -> int:
         if ns.ppm:
             ns.ppm.parent.mkdir(parents=True, exist_ok=True)
             screen.save_ppm(ns.ppm)
+        if ns.frame_ppm:
+            ns.frame_ppm.parent.mkdir(parents=True, exist_ok=True)
+            rgb = render_snapshot_frame_rgb(
+                screen.bytes(),
+                screen.border_color,
+            )
+            header = f"P6\n{FRAME_WIDTH} {FRAME_HEIGHT}\n255\n"
+            ns.frame_ppm.write_bytes(header.encode("ascii") + rgb)
         return int(status) & 0xFF
     except MemoryError:
         print(

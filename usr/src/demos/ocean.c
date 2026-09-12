@@ -34,21 +34,22 @@ void scene(int f)
     int y2;
     cls();
     paper(1);
+    border(1 + (f & 1) * 4);
     for (r = 0; r < 10; r++) {
         z1 = 18 + r * 18;
         ink(5 + (r & 1));
         bright(r < 6);
-        for (c = 0; c < 8; c++) {
-            x1 = -72 + c * 18;
-            x2 = x1 + 18;
+        for (c = 0; c < 10; c++) {
+            x1 = -110 + c * 22;
+            x2 = x1 + 22;
             y1 = wave(x1, z1, f);
             y2 = wave(x2, z1, f);
             d_line3(x1, y1, z1, x2, y2, z1);
         }
     }
     ink(5);
-    for (c = 0; c < 9; c++) {
-        x1 = -72 + c * 18;
+    for (c = 0; c < 11; c++) {
+        x1 = -110 + c * 22;
         for (r = 0; r < 9; r++) {
             z1 = 18 + r * 18;
             z2 = z1 + 18;

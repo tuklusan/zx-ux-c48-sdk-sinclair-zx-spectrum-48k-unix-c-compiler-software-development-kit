@@ -55,6 +55,7 @@ void scene(int f)
     int y;
     cls();
     paper(0);
+    border(1 + ((f / 8) % 7));
     ink(7);
     for (i = 0; i < 44; i++) {
         x = (i * 47 + f * 3) & 255;
@@ -63,15 +64,18 @@ void scene(int f)
     }
     ink(6);
     bright(1);
-    udg_draw_2x2(0, 9 + d_sin(f * 5) / 32,
-                 14 + d_cos(f * 4) / 32);
+    udg_draw_2x2(0, 9 + d_sin(f * 2) / 48,
+                 14 + d_cos(f * 2) / 24);
     ink(2);
     bright(0);
-    udg_draw_2x2(4, 4 + (f % 5), 3 + (f % 9));
+    udg_draw_2x2(4, 6 + d_sin(f * 2 + 30) / 48,
+                 7 + d_cos(f * 2 + 20) / 24);
     ink(5);
-    udg_draw_2x2(4, 15 - (f % 7), 24 - (f % 8));
+    udg_draw_2x2(4, 15 + d_sin(f * 2 + 90) / 48,
+                 23 + d_cos(f * 2 + 70) / 24);
     ink(3);
-    udg_draw_2x2(4, 5 + (f % 9), 20);
+    udg_draw_2x2(4, 8 + d_sin(f * 2 + 150) / 40,
+                 20 + d_cos(f * 2 + 130) / 32);
     ink(7);
     bright(1);
     print_at(0, 6, "SPRITE STORM / UDG 2X2 FLEET");
@@ -82,11 +86,11 @@ int main(int argc, char **argv)
     int f;
     int n;
     setup();
-    n = d_frames(argc, argv, 100);
+    n = d_frames(argc, argv, 160);
     for (f = 0; f < n; f++) {
         scene(f);
         yield();
-        sleep(3u);
+        sleep(5u);
     }
     return 0;
 }

@@ -41,37 +41,76 @@ int t_left(void)
     return count;
 }
 
+void t_token(int row, int col, char *text)
+{
+    print_at(row, col, text);
+}
+
+void t_sector(void)
+{
+    int x;
+    int y;
+    int enemy;
+    int ex;
+    int ey;
+    enemy = t_here();
+    ex = 3 + (t_quad & 1);
+    ey = 3 + ((t_quad >> 1) & 1);
+    for (y = 0; y < 8; y++) {
+        print_at(4 + y, 0, "|                       |");
+        for (x = 0; x < 8; x++) {
+            if (x == ex && y == ey)
+                t_token(4 + y, 1 + x * 3, "<*>");
+            else if (enemy >= 0 && x == 6 && y == 2)
+                t_token(4 + y, 1 + x * 3, "+K+");
+            else if (((x * 7 + y * 11 + t_quad) % 13) == 0)
+                t_token(4 + y, 1 + x * 3, " * ");
+            else
+                t_token(4 + y, 1 + x * 3, " . ");
+        }
+    }
+}
+
 void t_draw(void)
 {
     int enemy;
     cls();
-    print_at(0, 0, "C48 TREK");
-    print_at(2, 0, "w warp, p phaser, t torpedo");
-    print_at(3, 0, "s scan, q quit");
-    print_at(5, 0, "Quadrant:");
-    game_num(5, 10, (unsigned int)t_quad);
-    print_at(6, 0, "Energy:");
-    game_num(6, 10, (unsigned int)t_energy);
-    print_at(7, 0, "Shields:");
-    game_num(7, 10, (unsigned int)t_shield);
-    print_at(8, 0, "Torpedoes:");
-    game_num(8, 11, (unsigned int)t_torps);
-    print_at(9, 0, "Enemies:");
-    game_num(9, 10, (unsigned int)t_left());
+    print_at(0, 10, "*** C48 STAR TREK ***");
+    print_at(2, 0, "SHORT RANGE SENSOR SCAN");
+    print_at(2, 35, "SHIP STATUS");
+    print_at(3, 0, "+-----------------------+");
+    t_sector();
+    print_at(12, 0, "+-----------------------+");
+    print_at(4, 35, "Quadrant:");
+    game_num(4, 47, (unsigned int)t_quad);
+    print_at(5, 35, "Energy:");
+    game_num(5, 47, (unsigned int)t_energy);
+    print_at(6, 35, "Shields:");
+    game_num(6, 47, (unsigned int)t_shield);
+    print_at(7, 35, "Torpedoes:");
+    game_num(7, 47, (unsigned int)t_torps);
+    print_at(8, 35, "Klingons:");
+    game_num(8, 47, (unsigned int)t_left());
     enemy = t_here();
     if (enemy >= 0)
-        print_at(12, 0, "KLINGON CONTACT!");
+        print_at(10, 35, "CONDITION RED");
+    else
+        print_at(10, 35, "CONDITION GREEN");
+    print_at(14, 0,
+             "w=WARP  p=PHASER  t=TORPEDO  s=SCAN  q=QUIT");
+    if (enemy >= 0)
+        print_at(16, 0, "KLINGON CONTACT IN THIS QUADRANT!");
     if (t_left() == 0 && t_quad == 0)
-        print_at(14, 0, "Mission complete. Press q.");
-    game_show_last(15);
-    print_at(17, 0, "Command:");
+        print_at(16, 0, "Mission complete. Press q.");
+    game_show_last(19);
+    print_at(22, 0, "COMMAND:");
 }
 
 void t_status(void)
 {
-    game_show_last(15);
-    game_putc(17, 9, ' ');
-    print_at(19, 0, "                                ");
+    game_show_last(19);
+    game_putc(22, 9, ' ');
+    print_at(23, 0, "                                ");
 }
 
 void t_attack(void)
@@ -96,8 +135,8 @@ int t_warp(void)
     int y;
     int nx;
     int ny;
-    print_at(19, 0, "Direction w a s d:");
-    key = game_key_echo(19, 19);
+    print_at(23, 0, "WARP COURSE w a s d:");
+    key = game_key_echo(23, 21);
     x = t_quad % 4;
     y = t_quad / 4;
     nx = x;
@@ -137,13 +176,13 @@ int main(void)
     while (1) {
         t_draw();
         if (t_energy <= 0) {
-            print_at(20, 0, "Ship destroyed. Press q.");
+            print_at(16, 0, "Ship destroyed. Press q.");
             while (game_key() != 'q')
                 t_turns++;
             return 0;
         }
         while (1) {
-            key = game_key_echo(17, 9);
+            key = game_key_echo(22, 9);
             t_turns++;
             if (key == 'q')
                 return 0;
