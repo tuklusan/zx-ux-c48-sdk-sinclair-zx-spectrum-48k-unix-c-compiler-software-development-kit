@@ -326,7 +326,10 @@ class TkDisplay:
             height=FRAME_HEIGHT * self.scale,
             highlightthickness=0,
         )
-        canvas.pack()
+        # Aqua can composite a one-pixel NSWindow edge over an otherwise
+        # fully mapped canvas.  Keep the Spectrum border inside the client
+        # area so compositor evidence and the visible frame remain intact.
+        canvas.pack(padx=1)
         footer = tk.Label(root, anchor="w", **footer_config(False))
         footer.pack(fill="x")
 

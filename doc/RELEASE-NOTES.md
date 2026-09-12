@@ -43,7 +43,8 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - Tk top-level sizing now maps the packed canvas/footer before locking resize and
   automatically steps down to the largest fully visible integer scale when a host
   desktop constrains the requested surface, preventing Aqua from freezing or clipping
-  the release window;
+  the release window; Aqua also keeps a one-pixel horizontal client inset so the
+  NSWindow edge cannot composite over the outer Spectrum border;
 - Windows standard-library `winsound` playback with no pip dependency, plus one-time visible/terminal diagnostics and nonfatal silent completion for the shipped tune when a POSIX audio adapter is absent;
 - categorized `examples`, `sound`, and `security` source/binary trees with no uncategorized programs at `usr/src` or `usr/bin` root;
 - mathematical 64-column overlays on the math-oriented graphics tranche, a 75%-scale Mobius projection, and corrected Hangman gallows alignment.

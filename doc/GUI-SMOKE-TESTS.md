@@ -57,8 +57,9 @@ blocker once all eight automated rows and the aggregate evidence job pass.
 2. Run the platform `c48run --version` launcher and require `c48run 1.0.0`.
 3. Launch `usr/bin/demos/forest.c48b` without `--headless`; require the Tk window,
    a fully mapped Spectrum canvas at the largest host-safe integer scale
-   (normally 3x/960x720; constrained desktops may use 2x/640x480), never
-   Tk's clipped pre-map/default geometry,
+   (normally 3x/960x720; constrained desktops may use 2x/640x480), with
+   Aqua keeping the canvas one client pixel inside each vertical window edge,
+   never Tk's clipped pre-map/default geometry,
    successful program completion, the exact footer text
    `Program ended - Shift+Space to close`, a compositor screenshot whose canvas
    pixels equal the Tk-rendered framebuffer, and Shift+Space close preserving
