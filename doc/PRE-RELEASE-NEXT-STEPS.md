@@ -15,11 +15,11 @@ patent, trademark, and governing-law provisions.
 -->
 # 1.0.0 Release Certification Record
 
-Status: 1.0.0 CANDIDATE - FRESH RECERTIFICATION REQUIRED BEFORE RELEASE
+Status: 1.0.0 RELEASE CERTIFICATION RECORD
 
-This file records release-candidate work that must survive ephemeral development
-filesystems and runner workspaces. It is intentionally separate from the frozen
-language/architecture authorities.
+This file records the certification gates and release evidence that must survive
+ephemeral development filesystems and runner workspaces. It is intentionally
+separate from the frozen language/architecture authorities.
 
 ## Evidence now required for each release candidate
 

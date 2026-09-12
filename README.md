@@ -23,7 +23,7 @@ patent, trademark, and governing-law provisions.
 |---|---|---|
 | ![UDG Walker](doc/images/demos/spriteanim.png)<br>**UDG Walker**<br>Ubuntu / x64 · `ubuntu-latest` · frame 12 | ![Torus Reactor](doc/images/demos/torus.png)<br>**Torus Reactor**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Raycast Labyrinth](doc/images/demos/raymaze.png)<br>**Raycast Labyrinth**<br>macOS / arm64 · `macos-latest` · frame 2 |
 
-**ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is currently the **1.0.0 final-release candidate**; the formal 1.0.0 release has not yet been published. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows plus POSIX (Linux/macOS) launchers.
+**ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is the **1.0.0 release line**, frozen for formal release from the fully certified release commit. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows plus POSIX (Linux/macOS) launchers.
 
 The SDK exists to make C48 programs practical to write, compile, test, and run on a modern **Windows, Linux, or macOS command line** while the native Z80 implementation of the wider **ZX-UX Unix-like operating environment for the 48K ZX Spectrum** continues to evolve.
 

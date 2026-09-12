@@ -15,7 +15,7 @@ patent, trademark, and governing-law provisions.
 -->
 # ZX-UX C48 SDK 1.0.0 Release Notes
 
-Status: 1.0.0 CANDIDATE - FORMAL RELEASE PENDING FRESH RECERTIFICATION
+Status: 1.0.0 RELEASE
 
 ## Release purpose
 
