@@ -17,25 +17,27 @@ name: C48 BEEP numerical proof
   push:
     branches: [main]
     paths:
+      # BEEP proof inputs only: executable verifier/runtime code and binary data.
+      # Documentation and images never consume this 8-row matrix.
       - "VERSION"
-      - "compiler/c48/sound.py"
-      - "compiler/c48/vm.py"
-      - "compiler/tests/test_beep.py"
-      - "compiler/verify_beep.py"
+      - "compiler/**/*.py"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
       - "usr/src/c48host.h"
-      - "usr/src/sound/tune.c"
-      - "usr/bin/sound/tune.c48b"
+      - "usr/src/sound/**/*.c"
+      - "usr/src/sound/**/*.h"
+      - "usr/bin/sound/**/*.c48b"
       - ".github/workflows/beep.yml"
   pull_request:
     paths:
       - "VERSION"
-      - "compiler/c48/sound.py"
-      - "compiler/c48/vm.py"
-      - "compiler/tests/test_beep.py"
-      - "compiler/verify_beep.py"
+      - "compiler/**/*.py"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
       - "usr/src/c48host.h"
-      - "usr/src/sound/tune.c"
-      - "usr/bin/sound/tune.c48b"
+      - "usr/src/sound/**/*.c"
+      - "usr/src/sound/**/*.h"
+      - "usr/bin/sound/**/*.c48b"
       - ".github/workflows/beep.yml"
   workflow_dispatch:
 

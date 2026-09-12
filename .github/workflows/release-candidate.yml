@@ -17,11 +17,11 @@ name: C48 release candidate packaging gate
   push:
     branches: [main]
     paths:
+      # Release packaging is expensive and includes a 3-copy verifier matrix.
+      # Retained screenshots/doc images and their manifest are validated when
+      # this gate runs, but those non-executable files do not auto-trigger it.
       - "VERSION"
-      - "MANIFEST.sha256"
       - ".gitattributes"
-      - "screenshots/gui-desktop/**"
-      - "doc/images/**"
       - ".github/workflows/release-candidate.yml"
   workflow_dispatch:
 
@@ -40,7 +40,9 @@ jobs:
       - name: Check out repository with LFS objects
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          # Evidence may legitimately originate several non-GUI commits behind
+          # HEAD, so ancestry and diff validation require complete history.
+          fetch-depth: 0
           lfs: true
 
       - name: Require current bounded GUI evidence snapshot
@@ -75,10 +77,62 @@ jobs:
               raise SystemExit("retained GUI aggregate evidence is missing")
           aggregate = json.loads(aggregate_path.read_text(encoding="ascii"))
           source_commit = str(aggregate.get("commit", ""))
-          parent = subprocess.check_output(["git", "rev-parse", "HEAD^"], text=True).strip()
-          if source_commit != parent:
+          if not source_commit:
+              raise SystemExit("retained GUI evidence has no source commit")
+          ancestry = subprocess.run(
+              ["git", "merge-base", "--is-ancestor", source_commit, "HEAD"],
+              stdout=subprocess.DEVNULL,
+              stderr=subprocess.DEVNULL,
+          )
+          if ancestry.returncode != 0:
               raise SystemExit(
-                  f"stale retained GUI evidence: evidence commit {source_commit!r} != HEAD^ {parent!r}"
+                  f"retained GUI evidence source is not an ancestor of HEAD: {source_commit}"
+              )
+
+          changed = subprocess.check_output(
+              ["git", "diff", "--name-only", f"{source_commit}..HEAD"],
+              text=True,
+          ).splitlines()
+
+          def gui_execution_input(path: str) -> bool:
+              if path in {"VERSION", "c48run", "c48run.bat"}:
+                  return True
+              if path.startswith("compiler/") and Path(path).suffix.lower() in {
+                  ".py", ".json", ".bin", ".rom",
+              }:
+                  return True
+              return path in {
+                  "usr/bin/demos/forest.c48b",
+                  "usr/bin/games/fortune.c48b",
+                  "usr/bin/games/snake.c48b",
+              }
+
+          stale_inputs = sorted(path for path in changed if gui_execution_input(path))
+
+          gui_workflow = ".github/workflows/gui-desktop.yml"
+          if gui_workflow in changed:
+              def without_trigger_block(text: str) -> str:
+                  marker = '"on":\n'
+                  start = text.find(marker)
+                  end = text.find("\nconcurrency:", start)
+                  if start < 0 or end < 0:
+                      raise SystemExit(
+                          "cannot isolate gui-desktop.yml trigger block for evidence validation"
+                      )
+                  return text[:start] + text[end + 1:]
+
+              old_gui = subprocess.check_output(
+                  ["git", "show", f"{source_commit}:{gui_workflow}"],
+                  text=True,
+              )
+              new_gui = Path(gui_workflow).read_text(encoding="utf-8")
+              if without_trigger_block(old_gui) != without_trigger_block(new_gui):
+                  stale_inputs.append(gui_workflow)
+
+          if stale_inputs:
+              raise SystemExit(
+                  "stale retained GUI evidence; execution inputs changed since "
+                  f"{source_commit}: {', '.join(stale_inputs)}"
               )
 
           seen = set()

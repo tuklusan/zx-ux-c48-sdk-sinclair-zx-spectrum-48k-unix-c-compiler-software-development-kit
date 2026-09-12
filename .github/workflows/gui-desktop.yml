@@ -17,11 +17,13 @@ name: C48 host-native Tk desktop acceptance
   push:
     branches: [main]
     paths:
+      # Host-GUI execution inputs only. Docs, screenshots and other images are
+      # retained evidence, never reasons to consume the 8-row desktop matrix.
       - "VERSION"
-      - "compiler/c48/gui.py"
-      - "compiler/c48/vm.py"
-      - "compiler/c48run.py"
-      - "compiler/verify_gui_desktop.py"
+      - "compiler/**/*.py"
+      - "compiler/**/*.json"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
       - "usr/bin/demos/forest.c48b"
       - "usr/bin/games/fortune.c48b"
       - "usr/bin/games/snake.c48b"
@@ -31,10 +33,10 @@ name: C48 host-native Tk desktop acceptance
   pull_request:
     paths:
       - "VERSION"
-      - "compiler/c48/gui.py"
-      - "compiler/c48/vm.py"
-      - "compiler/c48run.py"
-      - "compiler/verify_gui_desktop.py"
+      - "compiler/**/*.py"
+      - "compiler/**/*.json"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
       - "usr/bin/demos/forest.c48b"
       - "usr/bin/games/fortune.c48b"
       - "usr/bin/games/snake.c48b"

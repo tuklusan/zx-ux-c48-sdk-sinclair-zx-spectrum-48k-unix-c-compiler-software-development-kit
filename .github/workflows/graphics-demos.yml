@@ -17,26 +17,38 @@ name: C48 graphics demo reel
   push:
     branches: [main]
     paths:
+      # Only files that can change compiler/demo execution belong here.
+      # Documentation and image-only edits must not fan out into 21 runners.
       - "VERSION"
-      - "compiler/**"
-      - "usr/src/demos/**"
-      - "usr/bin/demos/**"
+      - "compiler/**/*.py"
+      - "compiler/**/*.json"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
+      - "usr/src/demos/**/*.c"
+      - "usr/src/demos/**/*.h"
+      - "usr/bin/demos/**/*.c48b"
       - "usr/src/c48host.h"
       - "c48"
       - "c48.bat"
       - "c48run"
       - "c48run.bat"
+      - ".github/workflows/graphics-demos.yml"
   pull_request:
     paths:
       - "VERSION"
-      - "compiler/**"
-      - "usr/src/demos/**"
-      - "usr/bin/demos/**"
+      - "compiler/**/*.py"
+      - "compiler/**/*.json"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
+      - "usr/src/demos/**/*.c"
+      - "usr/src/demos/**/*.h"
+      - "usr/bin/demos/**/*.c48b"
       - "usr/src/c48host.h"
       - "c48"
       - "c48.bat"
       - "c48run"
       - "c48run.bat"
+      - ".github/workflows/graphics-demos.yml"
   workflow_dispatch:
 
 concurrency:

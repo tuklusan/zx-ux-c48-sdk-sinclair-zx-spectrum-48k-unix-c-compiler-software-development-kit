@@ -16,19 +16,39 @@ name: C48 SDK verification
 "on":
   push:
     branches: [main]
-    paths-ignore:
-      - ".github/workflows/**"
-      - "MANIFEST.sha256"
-      - "README.md"
-      - "LICENSE"
-      - "doc/**"
+    paths:
+      # Executable/test inputs only. Documentation, images, retained evidence,
+      # and generated checksum metadata must not consume the 8-row CI matrix.
+      - "VERSION"
+      - ".gitattributes"
+      - "compiler/**/*.py"
+      - "compiler/**/*.json"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
+      - "usr/src/**/*.c"
+      - "usr/src/**/*.h"
+      - "usr/bin/**/*.c48b"
+      - "c48"
+      - "c48.bat"
+      - "c48run"
+      - "c48run.bat"
+      - ".github/workflows/verify.yml"
   pull_request:
-    paths-ignore:
-      - ".github/workflows/**"
-      - "MANIFEST.sha256"
-      - "README.md"
-      - "LICENSE"
-      - "doc/**"
+    paths:
+      - "VERSION"
+      - ".gitattributes"
+      - "compiler/**/*.py"
+      - "compiler/**/*.json"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
+      - "usr/src/**/*.c"
+      - "usr/src/**/*.h"
+      - "usr/bin/**/*.c48b"
+      - "c48"
+      - "c48.bat"
+      - "c48run"
+      - "c48run.bat"
+      - ".github/workflows/verify.yml"
   workflow_dispatch:
 
 concurrency:
