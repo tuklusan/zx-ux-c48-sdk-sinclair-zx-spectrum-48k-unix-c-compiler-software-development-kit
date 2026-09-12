@@ -3,21 +3,19 @@ from __future__ import annotations
 
 import base64
 import hashlib
-import json
 import os
 from pathlib import Path
 import shutil
 import subprocess
 import tempfile
-import urllib.request
 import zipfile
 import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 BASELINE = '1deae0706dc731540c41134ee38ac035734a83d4'
-BASE_TREE = '0167a8d5fb35780777df38555e0a188411d630d8'
 DOCX = ROOT / 'doc/ZX-UX C48 SDK User Manual.docx'
 BASE_DOCX_SHA256 = '43aebd4543c7859e01868f2bc62b6ab60371c18b4b02c2e60e11f3629829a669'
+TRANSPORT = ROOT / 'doc/.rc1-transport'
 STAGING = [
     ROOT / '.github/workflows/apply-rc1-freeze.yml',
     ROOT / 'tools/rc1_freeze.py',
@@ -52,29 +50,8 @@ def manifest_sha(path: Path) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def api(method: str, endpoint: str, payload: dict) -> dict:
-    token = os.environ.get('GITHUB_TOKEN')
-    repo = os.environ.get('GITHUB_REPOSITORY')
-    if not token or not repo:
-        die('GITHUB_TOKEN/GITHUB_REPOSITORY unavailable')
-    req = urllib.request.Request(
-        f'https://api.github.com/repos/{repo}/{endpoint}',
-        data=json.dumps(payload, separators=(',', ':')).encode('utf-8'),
-        method=method,
-        headers={
-            'Authorization': f'Bearer {token}',
-            'Accept': 'application/vnd.github+json',
-            'X-GitHub-Api-Version': '2022-11-28',
-            'Content-Type': 'application/json',
-        },
-    )
-    with urllib.request.urlopen(req, timeout=60) as response:
-        return json.load(response)
-
-
 prep_sha = output('git', 'rev-parse', 'HEAD')
-if output('git', 'merge-base', '--is-ancestor', BASELINE, 'HEAD') not in ('',):
-    die('baseline is not an ancestor of preparation commit')
+run('git', 'merge-base', '--is-ancestor', BASELINE, 'HEAD')
 if (ROOT / 'VERSION').read_text(encoding='ascii').strip() != '0.9.0-dev':
     die('preparation VERSION is not 0.9.0-dev')
 if hashlib.sha256(DOCX.read_bytes()).hexdigest() != BASE_DOCX_SHA256:
@@ -122,32 +99,36 @@ run('git', 'add', '-A')
 run('git', '-c', 'user.name=Supratim Sanyal', '-c', 'user.email=tuklusan@users.noreply.github.com',
     'commit', '-m', 'Freeze C48 SDK 1.0.0-RC1 candidate')
 run('python', '-B', 'compiler/verify_release.py')
+verified_tree = output('git', 'rev-parse', 'HEAD^{tree}')
+changed = [
+    line.split('\t', 1)[1]
+    for line in output('git', 'diff', '--name-status', BASELINE, 'HEAD').splitlines()
+    if line and line[0] in 'AM'
+]
+if len(changed) != 21:
+    die(f'expected 21 candidate file blobs, found {len(changed)}')
 
-entries = []
-for line in output('git', 'diff', '--name-status', BASELINE, 'HEAD').splitlines():
-    status, path = line.split('\t', 1)
-    if status.startswith('D'):
-        entries.append({'path': path, 'mode': '100644', 'type': 'blob', 'sha': None})
-        continue
-    if status[0] not in 'AM':
-        die(f'unexpected diff status {status} for {path}')
-    mode = output('git', 'ls-tree', 'HEAD', '--', path).split()[0]
-    data = (ROOT / path).read_bytes()
-    blob = api('POST', 'git/blobs', {
-        'content': base64.b64encode(data).decode('ascii'),
-        'encoding': 'base64',
-    })
-    expected = hashlib.sha1(b'blob ' + str(len(data)).encode() + b'\0' + data).hexdigest()
-    if blob.get('sha') != expected:
-        die(f'blob SHA mismatch for {path}: {blob.get("sha")} != {expected}')
-    entries.append({'path': path, 'mode': mode, 'type': 'blob', 'sha': expected})
+with tempfile.TemporaryDirectory(prefix='rc1-transport-') as td:
+    cache = Path(td)
+    for rel in changed:
+        src = ROOT / rel
+        dst = cache / rel
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dst)
 
-remote_tree = api('POST', 'git/trees', {'base_tree': BASE_TREE, 'tree': entries})
-remote_commit = api('POST', 'git/commits', {
-    'message': 'Freeze C48 SDK 1.0.0-RC1 candidate',
-    'tree': remote_tree['sha'],
-    'parents': [prep_sha],
-})
-print('RC1_REMOTE_TREE_SHA=' + remote_tree['sha'])
-print('RC1_REMOTE_CANDIDATE_SHA=' + remote_commit['sha'])
-print('RC1 OBJECT PREPARATION PASS')
+    run('git', 'reset', '--hard', prep_sha)
+    if TRANSPORT.exists():
+        shutil.rmtree(TRANSPORT)
+    shutil.copytree(cache, TRANSPORT)
+
+run('git', 'add', '-f', 'doc/.rc1-transport')
+status = output('git', 'status', '--porcelain')
+if not status or any(not line[3:].startswith('doc/.rc1-transport/') for line in status.splitlines()):
+    die('transport commit contains paths outside doc/.rc1-transport')
+run('git', '-c', 'user.name=Supratim Sanyal', '-c', 'user.email=tuklusan@users.noreply.github.com',
+    'commit', '-m', 'Transport audited RC1 blobs')
+transport_sha = output('git', 'rev-parse', 'HEAD')
+run('git', 'push', 'origin', 'HEAD:main')
+print('RC1_VERIFIED_TREE_SHA=' + verified_tree)
+print('RC1_TRANSPORT_COMMIT_SHA=' + transport_sha)
+print('RC1 BLOB TRANSPORT PASS')
