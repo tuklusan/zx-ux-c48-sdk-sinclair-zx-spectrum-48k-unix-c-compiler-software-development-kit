@@ -95,8 +95,10 @@ jobs:
         shell: pwsh
         run: git config --global core.longpaths true
 
-      - name: Check out repository
+      - name: Check out repository with LFS objects
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set up Python 3.10
         uses: actions/setup-python@v5
