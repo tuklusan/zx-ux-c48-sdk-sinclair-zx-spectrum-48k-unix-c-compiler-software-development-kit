@@ -88,12 +88,14 @@ def check_required_files() -> None:
         "VERSION", "README.md", "LICENSE", ".gitignore", ".gitattributes",
         ".github/workflows/verify.yml",
         ".github/workflows/graphics-demos.yml",
+        ".github/workflows/beep.yml",
         "c48", "c48run", "c48.bat", "c48run.bat",
         "compiler/check_license_headers.py",
         "compiler/check_legacy_sdk_paths.py", "compiler/c48/limits.py",
         "compiler/tests/test_security.py",
         "compiler/tests/test_security_review.py",
         "compiler/tests/test_game_regressions.py", "compiler/verify_games.py",
+        "compiler/tests/test_beep.py", "compiler/verify_beep.py",
         "compiler/verify_graphics_demos.py",
         "compiler/verify_apps.py",
         "compiler/app_expectations.json",
@@ -108,7 +110,8 @@ def check_required_files() -> None:
         "doc/GRAPHICS-DEMOS.md", "doc/APPS.md",
         "doc/ZX-UX C48 SDK Adversarial Security Review.docx",
         "doc/SECURITY-TEST-RESULTS.md",
-        "usr/src/c48host.h", "usr/src/games/gameapi.h",
+        "usr/src/c48host.h", "usr/src/tune.c", "usr/bin/tune.c48b",
+        "usr/src/games/gameapi.h",
         "usr/src/demos/demoapi.h",
         "usr/src/apps/appapi.h",
         "usr/src/apps/sheet48.c",
@@ -204,6 +207,20 @@ def check_tests() -> None:
     m = re.search(r"Ran (\d+) tests?", cp.stdout + cp.stderr)
     if not m or int(m.group(1)) != int(EXPECT["test_count"]):
         fail(f"test count mismatch: expected {EXPECT['test_count']}, got {m.group(1) if m else 'unreported'}")
+
+
+def check_beep() -> None:
+    sound = EXPECT["sound"]
+    if sha(SDK / "usr/src/tune.c") != sound["tune_source_sha256"]:
+        fail("tune.c source hash mismatch")
+    if sha(SDK / "usr/bin/tune.c48b") != sound["tune_binary_sha256"]:
+        fail("tune.c48b hash mismatch")
+    cp = run([sys.executable, "-B", str(ROOT / "verify_beep.py")], timeout=30)
+    if cp.returncode != 0:
+        sys.stderr.write(cp.stdout + cp.stderr)
+        fail("BEEP numerical verification failed")
+    if "BEEP VERIFY PASS:" not in cp.stdout:
+        fail("BEEP verifier completion marker missing")
 
 
 def check_demos() -> None:
@@ -404,6 +421,7 @@ def main() -> int:
         ("version/about", check_versions),
         ("manifest", check_manifest),
         ("automated tests", check_tests),
+        ("ROM-derived BEEP", check_beep),
         ("game corpus", check_games),
         ("graphics demo corpus", check_graphics_demos),
         ("application corpus", check_apps),

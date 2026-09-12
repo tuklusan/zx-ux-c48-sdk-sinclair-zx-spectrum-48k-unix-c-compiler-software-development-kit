@@ -33,7 +33,7 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - 64x24 tty rendering with deferred right-margin wrap, Spectrum graphics/attributes and UDGs;
 - portable Tk GUI plus headless screen-dump mode;
 - Windows `.bat` and Linux shell command launchers;
-- provisional host-game API header;
+- provisional host-game API header with synchronous ROM-derived `beep()`;
 - specification-driven conformance/regression suite and deterministic demos;
 - adversarial hostile-input/resource ceilings and C48B1 hardening;
 - provenance-preserving stale-pointer/forgery defenses;
@@ -41,13 +41,14 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 
 ## Frozen verification surface
 
-- automated conformance/regression/security tests: 312, including the 84 ordered attacks from the adversarial security review and 15 direct tty64 deferred-wrap regressions;
+- automated conformance/regression/security tests: 330, including the 84 ordered attacks from the adversarial security review, tty64 deferred-wrap regressions, and ROM-derived BEEP/PCM/blocking tests;
 - deterministic demos: 6 (`hello`, `colors`, `graphics`, `udg`, `maze`, `argv`);
 - default Tasword F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339`;
 - alternate ZX-UX F4X8 SHA-256: `90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339` (currently byte-identical to the supplied Tasword asset);
 - repository text and DOCX OOXML are fail-closed against the retired SDK tree path;
 - all release files except the manifest itself are covered by `MANIFEST.sha256`;
 - demo source/C48B1/screen hashes are in `DEMO-HASHES.md`;
+- BEEP numerical proof runs on Windows/Linux/macOS and compares ROM-derived frequency and duration against measured WAV edges and blocking wall time;
 - eight runnable security C48B1 fixtures are deterministically rebuilt by the verifier,
   while `seckern.c` remains intentionally compile-negative.
 

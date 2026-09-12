@@ -48,6 +48,7 @@ int udg_draw_2x2(int base, int row, int col);
 unsigned int ticks(void);
 int yield(void);
 int sleep(unsigned int ticks);
+int beep(float duration, float pitch);
 void exit(int status);
 float sin(float x);
 float cos(float x);

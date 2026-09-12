@@ -23,6 +23,10 @@ from .float5 import Float5,Float5Error
 from .limits import VM_CALL_DEPTH
 from .memory import C48Memory,Allocation,PointerRecord
 from .screen import ZXScreen
+from .sound import (
+    AudioBackendUnavailable, AudioPlaybackError, BeepArgumentError, BeepEngine,
+    E_INVAL, E_IO, E_NOTSUP,
+)
 from .typesys import CHAR,FLOAT,INT,SHORT,UCHAR,UINT,USHORT,VOID,CType,arithmetic_common,integer_promotion,ptr
 
 @dataclass(frozen=True)
@@ -45,7 +49,8 @@ class C48VM:
     def __init__(self,program:dict[str,Any],screen:ZXScreen,*,argv:list[str]|None=None,
                  approximate_rom_math:bool=False,input_provider:Callable[[],int]|None=None,
                  display_update:Callable[[],None]|None=None, heap_size:int=1024,
-                 max_steps:int|None=None):
+                 max_steps:int|None=None,
+                 sound_player:Callable[[Path],None]|None=None):
         if not isinstance(heap_size,int) or isinstance(heap_size,bool) or heap_size < 0 or heap_size > 8192 or (heap_size & 1):
             raise RuntimeC48Error("host heap size must be an even value from 0..8192")
         if max_steps is not None and (
@@ -69,6 +74,7 @@ class C48VM:
         self.max_steps=max_steps
         self.steps=0
         self.call_depth=0
+        self.sound=BeepEngine(program,player=sound_player)
         self.builtins=self._builtin_table()
         self._index_program()
 
@@ -505,7 +511,7 @@ class C48VM:
 
     def _builtin_table(self):
         return {
-            "exit":self._b_exit,"yield":self._b_yield,"sleep":self._b_sleep,"getpid":lambda a:Value(INT,1),
+            "exit":self._b_exit,"yield":self._b_yield,"sleep":self._b_sleep,"beep":self._b_beep,"getpid":lambda a:Value(INT,1),
             "getchar":self._b_getchar,"putchar":self._b_putchar,"puts":self._b_puts,
             "strlen":self._b_strlen,"strcmp":self._b_strcmp,"strcpy":self._b_strcpy,"strncpy":self._b_strncpy,
             "memcpy":self._b_memcpy,"memmove":self._b_memmove,"memchr":self._b_memchr,"memset":self._b_memset,
@@ -532,6 +538,16 @@ class C48VM:
     def _b_sleep(self,a):
         # Host profile interprets argument as 50-Hz ticks to mirror SYS_SLEEP semantics.
         ticks=self._to_unsigned(a[0]);time.sleep(ticks/50.0);self.display_update();return Value(INT,0)
+    def _b_beep(self,a):
+        try:
+            self.sound.play(self._farg(a,0),self._farg(a,1))
+        except BeepArgumentError:
+            return Value(INT,E_INVAL)
+        except AudioBackendUnavailable:
+            return Value(INT,E_NOTSUP)
+        except (AudioPlaybackError,OSError,ValueError):
+            return Value(INT,E_IO)
+        self.display_update();return Value(INT,0)
     def _b_getchar(self,a):return Value(INT,self.input_provider())
     def _b_putchar(self,a):
         c=self._to_unsigned(a[0])&0xFF;self.screen.putchar(c);self.display_update();return Value(INT,c)

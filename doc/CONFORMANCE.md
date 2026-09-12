@@ -58,6 +58,10 @@ Coverage includes:
   transactional output and stale-temp ownership;
 - command-line compilation/execution, argv limits/immutability, heap ceiling, bounded
   libc-like memory/string behavior and GUI key mapping;
+- synchronous C48 `beep()` through the SDK ROM VM, including exact 48K ROM semitone
+  bytes/fractional-pitch constant/`FP_TO_BC` rounding, `BEEPER` T-state timing,
+  load-time literal WAV synthesis, dynamic-tone caching, numeric PCM frequency/edge
+  proof, and wall-clock blocking proof without claiming physical CI speaker output;
 - adversarial source nesting, macro-expansion, source-size and line-size limits with no
   Python traceback leakage;
 - hostile C48B1 size/nesting/schema-type rejection before malformed data reaches the VM;

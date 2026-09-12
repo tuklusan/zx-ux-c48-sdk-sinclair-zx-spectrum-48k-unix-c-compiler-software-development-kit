@@ -159,7 +159,27 @@ transcendental approximation is opt-in and non-certified.
 
 ## 11. Sound
 
-The architecture-frozen `int beep(float duration, float pitch)` API is not exposed by
-Host Game API profile 0.1 because the pre-1.0 SDK does not yet provide a portable backend that
-can honestly promise its synchronous Sinclair-compatible pitch/duration contract.
-No fake success/no-op implementation is supplied.
+The architecture-frozen `int beep(float duration, float pitch)` API is exposed by
+the Host Game API profile. Its argument order and synchronous behavior follow the
+Sinclair 48K `BEEP duration,pitch` contract: C48 execution does not continue until
+the requested tone has completed.
+
+The host derives the note from the frozen 48K ROM disassembly rather than from a
+desktop MIDI/equal-temperament approximation. It uses the ROM semitone table, the
+ROM fractional-pitch constant, `FP_TO_BC` rounding, and the exact `BEEPER` period
+`236 + 8*HL` T-states at 3.5 MHz. The resulting 1-bit-style square wave is rendered
+to an 8-bit mono WAV. Literal `beep()` arguments are pre-synthesized when a C48B1
+AST is loaded; computed arguments are synthesized on first use and cached.
+
+Audible playback is an optional host facility provided by `playsound3`. Install the
+verified adapter with `python -m pip install playsound3==3.3.2`. The compiler and
+programs that do not invoke audible `beep()` remain third-party-package-free. No
+fake success/no-op implementation is supplied: invalid ROM arguments return
+`ZX_E_INVAL` (1), a missing playback adapter returns `ZX_E_NOTSUP` (14), and a
+playback/backend failure returns `ZX_E_IO` (5). Zero-cycle ROM BEEP requests remain
+valid no-ops and therefore do not require an audio backend.
+
+CI cannot prove that a physical runner speaker emitted sound. Instead the sound
+gate independently measures the generated WAV's edge count, frequency and duration
+against the ROM-derived integer parameters and compares synchronous VM wall time
+against the WAV duration on Windows, Linux and macOS.

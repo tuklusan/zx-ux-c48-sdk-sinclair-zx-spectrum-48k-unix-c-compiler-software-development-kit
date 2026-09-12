@@ -94,7 +94,8 @@ That makes the Python VM a useful portability and correctness laboratory for cod
 - Linux: `python3` on `PATH`;
 - Tkinter only when using the graphical display window.
 
-No third-party Python packages are required by the compiler or headless runtime.
+No third-party Python packages are required by the compiler or non-audio headless
+runtime. Audible `beep()` playback uses the optional `playsound3==3.3.2` adapter.
 
 ## Continuous verification
 
@@ -247,6 +248,42 @@ See:
 - `doc/HOST-DIVERGENCES.md`
 - `doc/CONFORMANCE.md`
 
+### Sinclair-compatible BEEP
+
+The host profile now exposes the architecture-frozen function:
+
+```c
+int beep(float duration, float pitch);
+```
+
+Its argument order follows Sinclair BASIC. The VM derives pitch and duration from
+the frozen 48K ROM `BEEP`/`BEEPER` routines, generates the corresponding square-wave
+WAV, and blocks C48 execution until playback returns. Literal tones are generated
+when the C48B1 AST is loaded; dynamically computed tones are generated on first use
+and cached.
+
+For audible host playback install the optional adapter:
+
+```sh
+python -m pip install playsound3==3.3.2
+```
+
+Then build and run the shipped fractional-pitch demonstration:
+
+```sh
+./c48 usr/src/tune.c
+./c48run usr/bin/tune.c48b
+```
+
+Windows uses the corresponding `c48.bat` / `c48run.bat` launchers. The compiler and
+non-audio programs do not require `playsound3`. If audible playback is unavailable,
+`beep()` returns a positive ZX-UX error code rather than reporting fake success.
+
+The cross-platform BEEP matrix proves the generated waveform numerically: the logs
+show the requested pitch, ROM frequency, `HL`, cycle count, physical BEEPER
+frequency, measured WAV frequency, modeled duration, WAV duration and blocking wall
+time. It deliberately does not claim that a headless CI runner's speaker was heard.
+
 ## Heap compatibility
 
 The runtime defaults to the normal native-C48 `crt0` heap ceiling of **1024 bytes**.
@@ -288,7 +325,8 @@ The `usr/src/` directory contains small deterministic programs intended both as 
 - `graphics.c` - line, point, and circle graphics;
 - `udg.c` - user-defined graphics;
 - `maze.c` - compact retro maze-style graphics workload;
-- `argv.c` - C48 `argc` / `argv` behavior.
+- `argv.c` - C48 `argc` / `argv` behavior;
+- `tune.c` - synchronous ROM-derived `beep()` including fractional pitch.
 
 The matching frozen `C48B1` files are under `usr/bin/`.
 
