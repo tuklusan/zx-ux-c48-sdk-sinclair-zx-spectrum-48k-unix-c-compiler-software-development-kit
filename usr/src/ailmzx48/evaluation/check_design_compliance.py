@@ -151,23 +151,78 @@ def pass2() -> dict:
     lineage = load(A / "training" / "record-lineage.json")
     records = corpus.get("records")
     lines = lineage.get("records")
-    require(provenance.get("schema") == 2, "provenance schema mismatch")
+    require(provenance.get("schema") == 3, "provenance schema mismatch")
+    require(lineage.get("schema") == 3, "lineage schema mismatch")
     require(isinstance(records, list) and isinstance(lines, list),
             "corpus/lineage lists missing")
     require(len(records) == len(lines) == provenance.get("record_count"),
             "record-lineage coverage mismatch")
-    require(provenance.get("corpus_sha256") == sha(A / "training" / "seed_corpus.json"),
+    corpus_hash = sha(A / "training" / "seed_corpus.json")
+    require(provenance.get("corpus_sha256") == corpus_hash and
+            lineage.get("corpus_sha256") == corpus_hash,
             "provenance corpus hash mismatch")
     catalog = provenance.get("source_catalog")
     require(isinstance(catalog, dict) and catalog, "source catalog missing")
+    required_source_fields = (
+        "title", "source_role", "source_type", "location",
+        "license_or_authorization", "scope", "acquisition_date",
+        "transformation_version", "transformation_method",
+        "split_assignment", "record_indexes", "generated_material",
+        "training_authorized", "normalized_output_sha256",
+    )
+    claimed = []
+    for source_id, src in catalog.items():
+        require(all(field in src for field in required_source_fields),
+                f"source metadata incomplete {source_id}")
+        require(src.get("training_authorized") is True,
+                f"source training use not authorized {source_id}")
+        idxs = src.get("record_indexes")
+        require(isinstance(idxs, list) and idxs,
+                f"source dependency list missing {source_id}")
+        require(len(idxs) == len(set(idxs)),
+                f"source dependency duplicate {source_id}")
+        require(all(isinstance(i, int) and not isinstance(i, bool) and
+                    0 <= i < len(records) for i in idxs),
+                f"source dependency index invalid {source_id}")
+        claimed.extend(idxs)
+        dep = [rec_hash(records[i]) for i in idxs]
+        dep_raw = json.dumps(dep, separators=(",", ":")).encode("ascii")
+        require(src.get("normalized_output_sha256") ==
+                hashlib.sha256(dep_raw).hexdigest(),
+                f"source dependency hash mismatch {source_id}")
+        require("immutable_revision" in src or "source_content_hash" in src or
+                src.get("source_type") == "project factual authority" or
+                src.get("source_role") == "style-only",
+                f"source lacks immutable/hash authority {source_id}")
+    require(sorted(claimed) == list(range(len(records))) and
+            len(claimed) == len(set(claimed)),
+            "source catalog is not exact one-to-one record coverage")
+    seen = set()
     for index, (record, line) in enumerate(zip(records, lines)):
         require(line.get("record_index") == index, f"lineage index {index}")
-        require(line.get("record_sha256") == rec_hash(record),
+        require(line.get("record_sha256") == rec_hash(record) and
+                line.get("normalized_sha256") == rec_hash(record),
                 f"lineage record hash {index}")
-        require(line.get("source_id") in catalog,
-                f"lineage source id {index}")
-        require(line.get("split") == record.get("split"),
+        source_id = line.get("source_id")
+        require(source_id in catalog, f"lineage source id {index}")
+        src = catalog[source_id]
+        require(index in src.get("record_indexes", []),
+                f"source dependency omission {index}")
+        require(line.get("source_location") == src.get("location"),
+                f"lineage authority location {index}")
+        require(line.get("split") == record.get("split") ==
+                src.get("split_assignment"),
                 f"lineage split {index}")
+        if record.get("kind") == "fact-user":
+            require(src.get("source_role") == "factual-authority",
+                    f"factual record lacks factual authority {index}")
+            require(src.get("generated_material") is False,
+                    f"generated material used as factual authority {index}")
+        else:
+            require(src.get("source_role") == "style-only",
+                    f"style record source role mismatch {index}")
+        seen.add(index)
+    require(seen == set(range(len(records))), "lineage exact coverage mismatch")
     return {
         "pass": 2,
         "scope": "implementation-to-retained-evidence-and-lineage",

@@ -22,8 +22,12 @@ inference.  The retained training goal reached `GOALS_ACHIEVED` at iteration 54;
 that token describes the training/convergence program, not native ZX-UX release
 certification.
 
-`provenance.json` identifies the admitted synthetic source classes and explicit
-project authorization basis.  `record-lineage.json` gives one content-addressed
-lineage entry for every seed record, including split and record hash.  Repository
-and upstream prose/source remain excluded from model training unless separately
-authorized; design-authority use is not silently treated as corpus permission.
+`provenance.json` schema 3 identifies non-generated factual authorities, their
+immutable/license or project-authorization basis, dependent record indexes and
+normalized-output hashes.  Synthetic generated material is admitted only for
+style and is forbidden as factual authority.  `record-lineage.json` gives one
+content-addressed lineage entry for every seed record.  Repository and upstream
+prose/source remain excluded unless separately authorized; design authority is
+not silently treated as corpus permission.  `goal-status.json` remains historical
+convergence evidence; later release repairs are requalified against the current
+source/binary/model identities in `evaluation/sdk-conformance/`.

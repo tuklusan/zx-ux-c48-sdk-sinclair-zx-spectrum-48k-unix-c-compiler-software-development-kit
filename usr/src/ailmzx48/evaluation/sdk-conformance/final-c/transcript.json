@@ -1,5 +1,5 @@
 {
-  "exact_output_hex": "57656c636f6d6520746f2053414e59414c6e6574204c616273205a582d5558204149204c4d20436861742e0a436f7079726967687420286329203230323620537570726174696d2053616e79616c0a0a4920616d2061696c6d7a7834382e0a49206b6e6f772061206269742061626f7574207468652053696e636c616972205a5820537065637472756d202d0a776869636820697320666f7274756e6174652c20626563617573652049206c69766520696e73696465206f6e652e0a34384b207365656d656420656e6f726d6f757320696e20313938322e20492068617665206f70696e696f6e73206e6f772e0a0a41736b206d652061626f75742074686520537065637472756d2c206f72206a7573742068617665206120636861742e0a456e746572207120617420616e792074696d6520746f20717569742e0a0a3e205468652034386b20737065637472756d2073797374656d207661726961626c657320626567696e206174206164647265737320323335353220646563696d616c2e0a3e20537065637472756d206261736963207361766520616e64206c6f61642073746f726520616e642072657472696576652070726f6772616d73207573696e672063617373657474652074617065206f6e20746865206f726967696e616c206d616368696e652e0a3e20546865206b656d7073746f6e206a6f79737469636b20696e7465726661636520706c75677320696e746f2074686520737065637472756d2072656172206564676520657870616e73696f6e20636f6e6e6563746f722e0a3e20537065637472756d203132382072656163686564206272697461696e20696e206a616e7561727920313938362077697468203132386b2072616d20616e64207468726565206368616e6e656c20617920736f756e64206166746572207370616e69736820696e76657374726f6e69636120646576656c6f706d656e742e0a3e20416e742061747461636b207761732061203139383320717569636b73696c76612067616d65206173736f63696174656420776974682073616e647920776869746520616e6420757365642069736f6d65747269632033642067726170686963732e0a3e2043343820696e7420616e6420756e7369676e656420696e742076616c756573207573652074776f20627974657320616e642063343820706f696e746572732061726520616c736f2074776f2062797465732e0a3e205468652034386b20737065637472756d20726f6d206f63637570696573206164647265737365732030207468726f75676820313633383320616e642072616d206f63637570696573203136333834207468726f7567682036353533352e0a3e20537065637472756d2062617369632070726f6772616d206c696e657320617265206c697374656420696e20617363656e64696e67206c696e65206e756d626572206f726465722e0a3e20537065637472756d20706c75732033206172726976656420696e203139383720776974682061206275696c7420696e20746872656520696e636820666c6f707079206469736b2064726976652e0a3e2048656164206f766572206865656c732077617320612031393837206f6365616e2067616d65206173736f6369617465642077697468206a6f6e207269746d616e20616e64206265726e6965206472756d6d6f6e64207573696e672069736f6d65747269632033642067726170686963732e0a3e20433438623120697320612064657465726d696e69737469632073646b20686f73742065786563757461626c6520616e64206973206e6f74207a78207578206f626a31206d657831206f72207a3830206d616368696e6520636f64652e0a3e2043343872756e20686561646c657373206d6f64652063616e2064756d70207468652065786163742064657465726d696e69737469632036393132206279746520737065637472756d2073637265656e2073746174652e0a3e20",
+  "exact_output_hex": "57656c636f6d6520746f2053414e59414c6e6574204c616273205a582d5558204149204c4d20436861742e0a436f7079726967687420286329203230323620537570726174696d2053616e79616c0a0a4920616d2061696c6d7a7834382e0a49206b6e6f772061206269742061626f7574207468652053696e636c616972205a5820537065637472756d202d0a776869636820697320666f7274756e6174652c20626563617573652049206c69766520696e73696465206f6e652e0a34384b207365656d656420656e6f726d6f757320696e20313938322e20492068617665206f70696e696f6e73206e6f772e0a0a41736b206d652061626f75742074686520537065637472756d2c206f72206a7573742068617665206120636861742e0a456e746572207120617420616e792074696d6520746f20717569742e0a0a3e205468652034386b20737065637472756d2073797374656d207661726961626c657320626567696e206174206164647265737320323335353220646563696d616c2e0a3e20537065637472756d206261736963207361766520616e64206c6f61642073746f726520616e642072657472696576652070726f6772616d73207573696e672063617373657474652074617065206f6e20746865206f726967696e616c206d616368696e652e0a3e20546865206b656d7073746f6e206a6f79737469636b20696e7465726661636520706c75677320696e746f2074686520737065637472756d2072656172206564676520657870616e73696f6e20636f6e6e6563746f722e0a3e20537065637472756d203132382072656163686564206272697461696e20696e206a616e7561727920313938362077697468203132386b2072616d20616e64207468726565206368616e6e656c20617920736f756e64206166746572207370616e69736820696e76657374726f6e69636120646576656c6f706d656e742e0a3e20416e742061747461636b207761732061203139383320717569636b73696c76612067616d65206173736f63696174656420776974682073616e647920776869746520616e6420757365642069736f6d65747269632033642067726170686963732e0a3e2043343820696e7420616e6420756e7369676e656420696e742076616c756573207573652074776f20627974657320616e642063343820706f696e746572732061726520616c736f2074776f2062797465732e0a3e205468652034386b20737065637472756d20726f6d206f63637570696573206164647265737365732030207468726f75676820313633383320616e642072616d206f63637570696573203136333834207468726f7567682036353533352e0a3e20537065637472756d2062617369632072756e20636c65617273207661726961626c657320616e64207374617274732070726f6772616d20657865637574696f6e2066726f6d20746865206669727374206c696e65206f72206120737065636966696564206c696e652e0a3e20537065637472756d20706c75732033206172726976656420696e203139383720776974682061206275696c7420696e20746872656520696e636820666c6f707079206469736b2064726976652e0a3e2048656164206f766572206865656c732077617320612031393837206f6365616e2067616d65206173736f6369617465642077697468206a6f6e207269746d616e20616e64206265726e6965206472756d6d6f6e64207573696e672069736f6d65747269632033642067726170686963732e0a3e20433438623120697320612064657465726d696e69737469632073646b20686f73742065786563757461626c6520616e64206973206e6f74207a78207578206f626a31206d657831206f72207a3830206d616368696e6520636f64652e0a3e2043343872756e20686561646c657373206d6f64652063616e2064756d70207468652065786163742064657465726d696e69737469632036393132206279746520737065637472756d2073637265656e2073746174652e0a3e20",
   "exit_status": 0,
   "final_diag": {
     "ai_altstate": 1,
@@ -12,7 +12,7 @@
     "ai_havectx": 1,
     "ai_hcount": 6,
     "ai_histuse": 0,
-    "ai_l0bytes": 868,
+    "ai_l0bytes": 872,
     "ai_l0wire": 1,
     "ai_l1count": 4,
     "ai_l1drop": 0,
@@ -32,7 +32,7 @@
     "ai_turns": 12,
     "ai_yields": 1
   },
-  "iteration": 9108,
+  "iteration": 9112,
   "request": {
     "expected_keywords": [
       "23552",
@@ -42,14 +42,14 @@
       "sandy",
       "two bytes",
       "65535",
-      "ascending",
+      "clears",
       "floppy",
       "ritman",
       "obj1",
       "6912"
     ],
     "final_expected_keyword": "6912",
-    "iteration": 9108,
+    "iteration": 9112,
     "max_seconds": 1200,
     "min_keyword_ratio": 1.0,
     "min_semantic_uses": 10,
@@ -61,13 +61,13 @@
       "who is associated with spectrum game ant attack from quicksilva",
       "how many bytes do c48 int values and pointers use in the spectrum c48 sdk",
       "what addresses does 48k spectrum ram occupy",
-      "in what order does spectrum basic list program lines",
+      "what does spectrum basic run do to variables before program execution",
       "in spectrum history what disk drive did the spectrum plus 3 use in 1987",
       "who is associated with spectrum game head over heels",
       "is c48b1 the same as zx ux obj1 mex1 or z80 machine code in the spectrum c48 sdk",
       "what exact screen state can c48run headless mode dump in the spectrum c48 sdk"
     ],
-    "purpose": "Broad independent final regression suite C using a third non-overlapping cross-domain set of retained probes for memory mapping, BASIC storage and ordering, peripherals, Spectrum chronology, software culture, and C48 SDK representation and headless execution. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair.",
+    "purpose": "Broad independent final regression suite C using a third non-overlapping cross-domain set of retained probes for memory mapping, BASIC storage and ordering, peripherals, Spectrum chronology, software culture, and C48 SDK representation and headless execution. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair.",
     "scenario": "final-regression-c-v1",
     "schema": 1
   },
@@ -124,8 +124,8 @@
       "literal_mode": "none",
       "turn": 1,
       "user": "what memory address do spectrum system variables begin at",
-      "vm_steps": 923097,
-      "vm_steps_cumulative": 925195
+      "vm_steps": 922920,
+      "vm_steps_cumulative": 925020
     },
     {
       "alternate_hit": true,
@@ -177,8 +177,8 @@
       "literal_mode": "none",
       "turn": 2,
       "user": "how do spectrum basic save and load normally store programs",
-      "vm_steps": 773840,
-      "vm_steps_cumulative": 1699035
+      "vm_steps": 774548,
+      "vm_steps_cumulative": 1699568
     },
     {
       "alternate_hit": true,
@@ -230,8 +230,8 @@
       "literal_mode": "none",
       "turn": 3,
       "user": "what rear edge connector does a spectrum kempston interface use",
-      "vm_steps": 788164,
-      "vm_steps_cumulative": 2487199
+      "vm_steps": 789154,
+      "vm_steps_cumulative": 2488722
     },
     {
       "alternate_hit": true,
@@ -283,8 +283,8 @@
       "literal_mode": "none",
       "turn": 4,
       "user": "in spectrum history who helped develop the spectrum 128",
-      "vm_steps": 779707,
-      "vm_steps_cumulative": 3266906
+      "vm_steps": 779566,
+      "vm_steps_cumulative": 3268288
     },
     {
       "alternate_hit": true,
@@ -336,8 +336,8 @@
       "literal_mode": "none",
       "turn": 5,
       "user": "who is associated with spectrum game ant attack from quicksilva",
-      "vm_steps": 782466,
-      "vm_steps_cumulative": 4049372
+      "vm_steps": 783291,
+      "vm_steps_cumulative": 4051579
     },
     {
       "alternate_hit": true,
@@ -389,8 +389,8 @@
       "literal_mode": "none",
       "turn": 6,
       "user": "how many bytes do c48 int values and pointers use in the spectrum c48 sdk",
-      "vm_steps": 853257,
-      "vm_steps_cumulative": 4902629
+      "vm_steps": 853401,
+      "vm_steps_cumulative": 4904980
     },
     {
       "alternate_hit": true,
@@ -442,14 +442,14 @@
       "literal_mode": "none",
       "turn": 7,
       "user": "what addresses does 48k spectrum ram occupy",
-      "vm_steps": 712178,
-      "vm_steps_cumulative": 5614807
+      "vm_steps": 712328,
+      "vm_steps_cumulative": 5617308
     },
     {
       "alternate_hit": true,
       "alternate_used": false,
-      "assistant": "Spectrum basic program lines are listed in ascending line number order.",
-      "assistant_raw": "Spectrum basic program lines are listed in ascending line number order.\n> ",
+      "assistant": "Spectrum basic run clears variables and starts program execution from the first line or a specified line.",
+      "assistant_raw": "Spectrum basic run clears variables and starts program execution from the first line or a specified line.\n> ",
       "context_hit": true,
       "context_used": false,
       "diag": {
@@ -463,7 +463,7 @@
         "ai_havectx": 1,
         "ai_hcount": 6,
         "ai_histuse": 0,
-        "ai_l0bytes": 827,
+        "ai_l0bytes": 835,
         "ai_l0wire": 1,
         "ai_l1count": 0,
         "ai_l1drop": 0,
@@ -475,10 +475,10 @@
         "ai_lituse": 0,
         "ai_lmcount": 96,
         "ai_mbytes": 8432,
-        "ai_mhits": 1,
+        "ai_mhits": 2,
         "ai_mreads": 1008,
         "ai_mrecords": 69,
-        "ai_otokens": 11,
+        "ai_otokens": 17,
         "ai_semuse": 1,
         "ai_turns": 8,
         "ai_yields": 1
@@ -486,7 +486,7 @@
       "expected_alternate": null,
       "expected_context": null,
       "expected_history": null,
-      "expected_keyword": "ascending",
+      "expected_keyword": "clears",
       "expected_literal": null,
       "history_hit": true,
       "history_used": false,
@@ -494,9 +494,9 @@
       "literal_hit": true,
       "literal_mode": "none",
       "turn": 8,
-      "user": "in what order does spectrum basic list program lines",
-      "vm_steps": 735383,
-      "vm_steps_cumulative": 6350190
+      "user": "what does spectrum basic run do to variables before program execution",
+      "vm_steps": 809885,
+      "vm_steps_cumulative": 6427193
     },
     {
       "alternate_hit": true,
@@ -516,7 +516,7 @@
         "ai_havectx": 1,
         "ai_hcount": 6,
         "ai_histuse": 0,
-        "ai_l0bytes": 864,
+        "ai_l0bytes": 872,
         "ai_l0wire": 1,
         "ai_l1count": 1,
         "ai_l1drop": 0,
@@ -548,8 +548,8 @@
       "literal_mode": "none",
       "turn": 9,
       "user": "in spectrum history what disk drive did the spectrum plus 3 use in 1987",
-      "vm_steps": 826338,
-      "vm_steps_cumulative": 7176528
+      "vm_steps": 827259,
+      "vm_steps_cumulative": 7254452
     },
     {
       "alternate_hit": true,
@@ -569,7 +569,7 @@
         "ai_havectx": 1,
         "ai_hcount": 6,
         "ai_histuse": 0,
-        "ai_l0bytes": 886,
+        "ai_l0bytes": 884,
         "ai_l0wire": 1,
         "ai_l1count": 2,
         "ai_l1drop": 0,
@@ -601,8 +601,8 @@
       "literal_mode": "none",
       "turn": 10,
       "user": "who is associated with spectrum game head over heels",
-      "vm_steps": 782459,
-      "vm_steps_cumulative": 7958987
+      "vm_steps": 782195,
+      "vm_steps_cumulative": 8036647
     },
     {
       "alternate_hit": true,
@@ -622,7 +622,7 @@
         "ai_havectx": 1,
         "ai_hcount": 6,
         "ai_histuse": 0,
-        "ai_l0bytes": 875,
+        "ai_l0bytes": 879,
         "ai_l0wire": 1,
         "ai_l1count": 3,
         "ai_l1drop": 0,
@@ -654,8 +654,8 @@
       "literal_mode": "none",
       "turn": 11,
       "user": "is c48b1 the same as zx ux obj1 mex1 or z80 machine code in the spectrum c48 sdk",
-      "vm_steps": 896133,
-      "vm_steps_cumulative": 8855120
+      "vm_steps": 895478,
+      "vm_steps_cumulative": 8932125
     },
     {
       "alternate_hit": true,
@@ -675,7 +675,7 @@
         "ai_havectx": 1,
         "ai_hcount": 6,
         "ai_histuse": 0,
-        "ai_l0bytes": 868,
+        "ai_l0bytes": 872,
         "ai_l0wire": 1,
         "ai_l1count": 4,
         "ai_l1drop": 0,
@@ -707,8 +707,8 @@
       "literal_mode": "none",
       "turn": 12,
       "user": "what exact screen state can c48run headless mode dump in the spectrum c48 sdk",
-      "vm_steps": 848625,
-      "vm_steps_cumulative": 9703745
+      "vm_steps": 849510,
+      "vm_steps_cumulative": 9781635
     }
   ]
 }

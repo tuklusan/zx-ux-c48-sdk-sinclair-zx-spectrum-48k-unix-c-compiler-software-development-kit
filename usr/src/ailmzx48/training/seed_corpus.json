@@ -301,8 +301,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "memory",
       "text": "the 48k spectrum screen bitmap occupies addresses 16384 through 22527",
+      "topic": "memory",
       "triggers": [
         "bitmap",
         "16384",
@@ -313,8 +313,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "memory",
       "text": "the spectrum colour attribute memory occupies addresses 22528 through 23295",
+      "topic": "memory",
       "triggers": [
         "attribute",
         "22528",
@@ -325,8 +325,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "memory",
       "text": "the 48k spectrum system variables begin at address 23552 decimal",
+      "topic": "memory",
       "triggers": [
         "system",
         "variables",
@@ -336,8 +336,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "memory",
       "text": "the 48k spectrum rom occupies addresses 0 through 16383 and ram occupies 16384 through 65535",
+      "topic": "memory",
       "triggers": [
         "rom",
         "ram",
@@ -348,8 +348,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "the spectrum z80a processor runs at about 3500000 hz or three point five mhz",
+      "topic": "spectrum",
       "triggers": [
         "z80a",
         "clock",
@@ -360,8 +360,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "the spectrum ula io port 254 controls border colour and also carries beeper and cassette signals",
+      "topic": "spectrum",
       "triggers": [
         "border",
         "port",
@@ -372,8 +372,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "the spectrum keyboard is an eight by five matrix read through the ula by selecting keyboard rows",
+      "topic": "spectrum",
       "triggers": [
         "keyboard",
         "matrix",
@@ -384,8 +384,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "spectrum basic programs and their variables are held in ram while the basic interpreter is held in rom",
+      "topic": "spectrum",
       "triggers": [
         "held",
         "ram",
@@ -396,8 +396,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "spectrum basic peek reads the value of a byte at an address and poke writes a value to a byte at an address",
+      "topic": "spectrum",
       "triggers": [
         "peek",
         "poke",
@@ -408,8 +408,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "spectrum basic randomize usr followed by an address calls a machine code routine at that address",
+      "topic": "spectrum",
       "triggers": [
         "randomize",
         "usr",
@@ -420,8 +420,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "spectrum basic clear with a numeric address can change ramtop so bytes above the new ramtop can be preserved for machine code",
+      "topic": "spectrum",
       "triggers": [
         "clear",
         "ramtop",
@@ -432,8 +432,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "spectrum basic new deletes the current basic program and variables before starting the basic system anew",
+      "topic": "spectrum",
       "triggers": [
         "new",
         "current",
@@ -444,8 +444,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "spectrum basic save and load store and retrieve programs using cassette tape on the original machine",
+      "topic": "spectrum",
       "triggers": [
         "save",
         "load",
@@ -456,8 +456,8 @@
     {
       "kind": "fact-user",
       "split": "train",
+      "text": "spectrum basic run clears variables and starts program execution from the first line or a specified line",
       "topic": "spectrum",
-      "text": "spectrum basic run clears variables and starts program execution from line zero or from a specified line",
       "triggers": [
         "run",
         "execution",
@@ -468,8 +468,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "spectrum basic program lines are listed in ascending line number order",
+      "topic": "spectrum",
       "triggers": [
         "lines",
         "list",
@@ -480,8 +480,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "reading spectrum ula port 254 uses bit 6 for the ear cassette input signal",
+      "topic": "spectrum",
       "triggers": [
         "ear",
         "input"
@@ -490,8 +490,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "writing spectrum ula port 254 bit 4 drives the ear output and internal speaker while bit 3 drives the mic output",
+      "topic": "spectrum",
       "triggers": [
         "speaker",
         "mic"
@@ -500,8 +500,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "a kempston joystick interface is read at io port 31 and uses active high direction and fire bits",
+      "topic": "spectrum",
       "triggers": [
         "kempston",
         "31"
@@ -510,8 +510,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "sinclair interface 2 joysticks appear as spectrum number keys 1 through 5 and 6 through 0",
+      "topic": "spectrum",
       "triggers": [
         "interface",
         "joysticks"
@@ -520,8 +520,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "the kempston joystick interface plugs into the spectrum rear edge expansion connector",
+      "topic": "spectrum",
       "triggers": [
         "edge",
         "connector"
@@ -530,8 +530,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "cassette tape was the primary storage medium for the original spectrum and used the ear and mic connections",
+      "topic": "spectrum",
       "triggers": [
         "cassette",
         "storage"
@@ -540,8 +540,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "history",
       "text": "zx spectrum launched 23 april 1982 at 125 pounds for 16k and 175 pounds for 48k",
+      "topic": "history",
       "triggers": [
         "launch",
         "cost",
@@ -552,8 +552,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "history",
       "text": "spectrum plus arrived in 1984 with ql style keyboard reset button and 48k ram",
+      "topic": "history",
       "triggers": [
         "1984",
         "reset",
@@ -563,8 +563,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "history",
       "text": "spectrum 128 reached britain in january 1986 with 128k ram and three channel ay sound after spanish investronica development",
+      "topic": "history",
       "triggers": [
         "128",
         "investronica",
@@ -575,8 +575,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "history",
       "text": "amstrad acquired spectrum computer rights in april 1986 and continued the line",
+      "topic": "history",
       "triggers": [
         "amstrad",
         "acquired",
@@ -587,8 +587,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "history",
       "text": "spectrum plus 2 was the first amstrad spectrum in 1986 with a built in cassette deck",
+      "topic": "history",
       "triggers": [
         "cassette",
         "built",
@@ -599,8 +599,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "history",
       "text": "spectrum plus 3 arrived in 1987 with a built in three inch floppy disk drive",
+      "topic": "history",
       "triggers": [
         "1987",
         "floppy",
@@ -611,8 +611,8 @@
     {
       "kind": "fact-user",
       "split": "train",
+      "text": "the hobbit was a 1982 melbourne house text adventure for zx spectrum and sold over 500000 units in europe",
       "topic": "games",
-      "text": "the hobbit was a 1982 melbourne house text adventure and the first spectrum game to sell a million copies",
       "triggers": [
         "hobbit",
         "melbourne",
@@ -623,8 +623,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "games",
       "text": "jetpac was a 1983 ultimate play the game shoot em up for the 16k spectrum",
+      "topic": "games",
       "triggers": [
         "jetpac",
         "ultimate",
@@ -635,8 +635,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "games",
       "text": "ant attack was a 1983 quicksilva game associated with sandy white and used isometric 3d graphics",
+      "topic": "games",
       "triggers": [
         "ant",
         "attack",
@@ -647,8 +647,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "games",
       "text": "skool daze was a 1984 microsphere game associated with david reidy",
+      "topic": "games",
       "triggers": [
         "skool",
         "daze",
@@ -659,8 +659,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "games",
       "text": "head over heels was a 1987 ocean game associated with jon ritman and bernie drummond using isometric 3d graphics",
+      "topic": "games",
       "triggers": [
         "head",
         "heels",
@@ -671,8 +671,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "games",
       "text": "saboteur was a 1985 durell software game associated with clive townsend",
+      "topic": "games",
       "triggers": [
         "saboteur",
         "durell",
@@ -683,8 +683,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "the c48 sdk is the portable host side development kit for spectrum c48 programs while future native zx ux cc remains separate",
+      "topic": "spectrum",
       "triggers": [
         "sdk",
         "portable",
@@ -695,8 +695,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "c48 is the command line compiler front end in the spectrum c48 sdk",
+      "topic": "spectrum",
       "triggers": [
         "c48",
         "compiler",
@@ -707,8 +707,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "c48run is the portable host runtime and virtual machine for c48 programs",
+      "topic": "spectrum",
       "triggers": [
         "c48run",
         "runtime",
@@ -719,8 +719,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "c48 int and unsigned int values use two bytes and c48 pointers are also two bytes",
+      "topic": "spectrum",
       "triggers": [
         "int",
         "pointer",
@@ -731,8 +731,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "c48 uses a 16 bit logical address space of 64 kibibytes",
+      "topic": "spectrum",
       "triggers": [
         "logical",
         "address",
@@ -743,8 +743,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "c48 float storage uses five byte spectrum style representation",
+      "topic": "spectrum",
       "triggers": [
         "float",
         "five",
@@ -755,8 +755,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "c48b1 is a deterministic sdk host executable and is not zx ux obj1 mex1 or z80 machine code",
+      "topic": "spectrum",
       "triggers": [
         "c48b1",
         "obj1",
@@ -767,8 +767,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "c48 sources under usr src compile by default to the matching relative path under usr bin",
+      "topic": "spectrum",
       "triggers": [
         "usr",
         "src",
@@ -779,8 +779,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "the c48 sdk software text mode is 64 columns by 24 rows using a four by eight font",
+      "topic": "spectrum",
       "triggers": [
         "text",
         "mode",
@@ -791,8 +791,8 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "topic": "spectrum",
       "text": "c48run headless mode can dump the exact deterministic 6912 byte spectrum screen state",
+      "topic": "spectrum",
       "triggers": [
         "headless",
         "dump",

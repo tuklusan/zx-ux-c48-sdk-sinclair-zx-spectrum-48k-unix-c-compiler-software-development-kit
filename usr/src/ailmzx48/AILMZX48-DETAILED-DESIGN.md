@@ -1344,7 +1344,7 @@ implementation and retained evidence. They are not open tuning placeholders:
   collision-free salted trigger IDs in 224..4095 with accepted salt 23;
 - A48M v2 is 8,432 logical bytes with 69 records, a 192-byte maximum record,
   a 64-byte maximum read request, and cold-model SHA-256
-  `e2df4c13bc0b98999cec1e155bf0c7100d6ffd01965e6d2a4d05071c4da888db`;
+  `5d0ad7ad82c5547f37714df1baa859510d199598e0b4a10e330393a288c70cd6`;
 - fixed context bounds are L0=896 bytes/32 descriptors, L1=48 capsules,
   L2=24 capsules, eight generation-checked literal slots in 272 bytes, and a
   96-token decoded LM window;
@@ -1360,12 +1360,16 @@ implementation and retained evidence. They are not open tuning placeholders:
 - literal-name turns use the same bounded output and L0/L1/L2 commit path as
   normal turns; literal generation/slot bytes and semantic name state are both
   published only after the context commit succeeds;
-- retained post-transaction-repair literal/context iteration 9105 is 70/70 with
+- retained post-provenance-repair literal/context iteration 9109 is 70/70 with
   real compaction, L2 occupancy, semantic retrieval, stale-reference invalidation,
-  and successful newest-name recall under the repaired source identity;
-- retained post-transaction-repair final A/B/C iterations 9106/9107/9108 are each 12/12,
-  clean-exit, zero-unexpected-literal-loss runs against one repaired source,
-  one rebuilt C48B1 binary, and one unchanged cold-model identity;
+  and successful newest-name recall under the current model identity;
+- retained post-provenance-repair final A/B/C iterations 9110/9111/9112 are each 12/12,
+  clean-exit, zero-unexpected-literal-loss runs against one source, one rebuilt
+  C48B1 binary, and one provenance-qualified cold-model identity;
+- provenance schema 3 gives every factual seed record a non-generated licensed
+  or separately authorized authority and permanently rejects synthetic material
+  as factual authority; corrected BASIC RUN and Hobbit sales claims retain the
+  frozen 8,432-byte A48M envelope;
 - the repaired primary `ailmzx48.c` remains below the unchanged 32,768-byte
   compiler source-object ceiling; helper logic moved to ordinary shipped C48
   headers instead of weakening the compiler gate;

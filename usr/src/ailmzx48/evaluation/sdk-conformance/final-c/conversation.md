@@ -14,7 +14,7 @@ patent, trademark, and governing-law provisions.
 ============================================================================
 -->
 
-# ailmzx48 iter-9108 conversation
+# ailmzx48 iter-9112 conversation
 
 ## Startup
 
@@ -98,10 +98,10 @@ The 48k spectrum rom occupies addresses 0 through 16383 and ram occupies 16384 t
 
 ## Turn 8
 
-User: in what order does spectrum basic list program lines
+User: what does spectrum basic run do to variables before program execution
 
 ```text
-Spectrum basic program lines are listed in ascending line number order.
+Spectrum basic run clears variables and starts program execution from the first line or a specified line.
 > 
 ```
 

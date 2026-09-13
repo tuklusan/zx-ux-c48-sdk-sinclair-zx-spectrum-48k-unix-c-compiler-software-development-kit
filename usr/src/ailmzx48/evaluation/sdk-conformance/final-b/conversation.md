@@ -14,7 +14,7 @@ patent, trademark, and governing-law provisions.
 ============================================================================
 -->
 
-# ailmzx48 iter-9107 conversation
+# ailmzx48 iter-9111 conversation
 
 ## Startup
 
@@ -74,7 +74,7 @@ Zx spectrum launched 23 april 1982 at 125 pounds for 16k and 175 pounds for 48k.
 User: what sales milestone did spectrum game the hobbit adventure reach
 
 ```text
-The hobbit was a 1982 melbourne house text adventure and the first spectrum game to sell a million copies.
+The hobbit was a 1982 melbourne house text adventure for zx spectrum and sold over 500000 units in europe.
 > 
 ```
 

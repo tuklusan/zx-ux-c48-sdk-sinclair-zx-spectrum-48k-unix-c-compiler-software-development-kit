@@ -7,14 +7,14 @@
     "sandy",
     "two bytes",
     "65535",
-    "ascending",
+    "clears",
     "floppy",
     "ritman",
     "obj1",
     "6912"
   ],
   "final_expected_keyword": "6912",
-  "iteration": 9108,
+  "iteration": 9112,
   "max_seconds": 1200,
   "min_keyword_ratio": 1.0,
   "min_semantic_uses": 10,
@@ -26,13 +26,13 @@
     "who is associated with spectrum game ant attack from quicksilva",
     "how many bytes do c48 int values and pointers use in the spectrum c48 sdk",
     "what addresses does 48k spectrum ram occupy",
-    "in what order does spectrum basic list program lines",
+    "what does spectrum basic run do to variables before program execution",
     "in spectrum history what disk drive did the spectrum plus 3 use in 1987",
     "who is associated with spectrum game head over heels",
     "is c48b1 the same as zx ux obj1 mex1 or z80 machine code in the spectrum c48 sdk",
     "what exact screen state can c48run headless mode dump in the spectrum c48 sdk"
   ],
-  "purpose": "Broad independent final regression suite C using a third non-overlapping cross-domain set of retained probes for memory mapping, BASIC storage and ordering, peripherals, Spectrum chronology, software culture, and C48 SDK representation and headless execution. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair.",
+  "purpose": "Broad independent final regression suite C using a third non-overlapping cross-domain set of retained probes for memory mapping, BASIC storage and ordering, peripherals, Spectrum chronology, software culture, and C48 SDK representation and headless execution. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair.",
   "scenario": "final-regression-c-v1",
   "schema": 1
 }

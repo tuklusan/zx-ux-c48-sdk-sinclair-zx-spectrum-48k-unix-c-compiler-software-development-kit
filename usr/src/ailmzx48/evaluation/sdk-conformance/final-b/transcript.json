@@ -1,5 +1,5 @@
 {
-  "exact_output_hex": "57656c636f6d6520746f2053414e59414c6e6574204c616273205a582d5558204149204c4d20436861742e0a436f7079726967687420286329203230323620537570726174696d2053616e79616c0a0a4920616d2061696c6d7a7834382e0a49206b6e6f772061206269742061626f7574207468652053696e636c616972205a5820537065637472756d202d0a776869636820697320666f7274756e6174652c20626563617573652049206c69766520696e73696465206f6e652e0a34384b207365656d656420656e6f726d6f757320696e20313938322e20492068617665206f70696e696f6e73206e6f772e0a0a41736b206d652061626f75742074686520537065637472756d2c206f72206a7573742068617665206120636861742e0a456e746572207120617420616e792074696d6520746f20717569742e0a0a3e2054686520737065637472756d20636f6c6f757220617474726962757465206d656d6f7279206f6363757069657320616464726573736573203232353238207468726f7567682032333239352e0a3e20537065637472756d20626173696320636c65617220776974682061206e756d6572696320616464726573732063616e206368616e67652072616d746f7020736f2062797465732061626f766520746865206e65772072616d746f702063616e2062652070726573657276656420666f72206d616368696e6520636f64652e0a3e2057726974696e6720737065637472756d20756c6120706f727420323534206269742034206472697665732074686520656172206f757470757420616e6420696e7465726e616c20737065616b6572207768696c652062697420332064726976657320746865206d6963206f75747075742e0a3e205a7820737065637472756d206c61756e6368656420323320617072696c20313938322061742031323520706f756e647320666f722031366b20616e642031373520706f756e647320666f722034386b2e0a3e2054686520686f626269742077617320612031393832206d656c626f75726e6520686f757365207465787420616476656e7475726520616e642074686520666972737420737065637472756d2067616d6520746f2073656c6c2061206d696c6c696f6e20636f706965732e0a3e204334382069732074686520636f6d6d616e64206c696e6520636f6d70696c65722066726f6e7420656e6420696e2074686520737065637472756d206334382073646b2e0a3e2054686520737065637472756d20646973706c6179206973203235362062792031393220706978656c73207769746820636f6c6f7572206174747269627574657320617272616e67656420696e20382062792038206368617261637465722063656c6c732e0a3e20537065637472756d206261736963206e65772064656c65746573207468652063757272656e742062617369632070726f6772616d20616e64207661726961626c6573206265666f7265207374617274696e67207468652062617369632073797374656d20616e65772e0a3e2053696e636c61697220696e746572666163652032206a6f79737469636b732061707065617220617320737065637472756d206e756d626572206b6579732031207468726f756768203520616e642036207468726f75676820302e0a3e20537065637472756d20706c7573206172726976656420696e2031393834207769746820716c207374796c65206b6579626f61726420726573657420627574746f6e20616e642034386b2072616d2e0a3e204a6574706163207761732061203139383320756c74696d61746520706c6179207468652067616d652073686f6f7420656d20757020666f72207468652031366b20737065637472756d2e0a3e2043343872756e2069732074686520706f727461626c6520686f73742072756e74696d6520616e64207669727475616c206d616368696e6520666f72206334382070726f6772616d732e0a3e20",
+  "exact_output_hex": "57656c636f6d6520746f2053414e59414c6e6574204c616273205a582d5558204149204c4d20436861742e0a436f7079726967687420286329203230323620537570726174696d2053616e79616c0a0a4920616d2061696c6d7a7834382e0a49206b6e6f772061206269742061626f7574207468652053696e636c616972205a5820537065637472756d202d0a776869636820697320666f7274756e6174652c20626563617573652049206c69766520696e73696465206f6e652e0a34384b207365656d656420656e6f726d6f757320696e20313938322e20492068617665206f70696e696f6e73206e6f772e0a0a41736b206d652061626f75742074686520537065637472756d2c206f72206a7573742068617665206120636861742e0a456e746572207120617420616e792074696d6520746f20717569742e0a0a3e2054686520737065637472756d20636f6c6f757220617474726962757465206d656d6f7279206f6363757069657320616464726573736573203232353238207468726f7567682032333239352e0a3e20537065637472756d20626173696320636c65617220776974682061206e756d6572696320616464726573732063616e206368616e67652072616d746f7020736f2062797465732061626f766520746865206e65772072616d746f702063616e2062652070726573657276656420666f72206d616368696e6520636f64652e0a3e2057726974696e6720737065637472756d20756c6120706f727420323534206269742034206472697665732074686520656172206f757470757420616e6420696e7465726e616c20737065616b6572207768696c652062697420332064726976657320746865206d6963206f75747075742e0a3e205a7820737065637472756d206c61756e6368656420323320617072696c20313938322061742031323520706f756e647320666f722031366b20616e642031373520706f756e647320666f722034386b2e0a3e2054686520686f626269742077617320612031393832206d656c626f75726e6520686f757365207465787420616476656e7475726520666f72207a7820737065637472756d20616e6420736f6c64206f7665722035303030303020756e69747320696e206575726f70652e0a3e204334382069732074686520636f6d6d616e64206c696e6520636f6d70696c65722066726f6e7420656e6420696e2074686520737065637472756d206334382073646b2e0a3e2054686520737065637472756d20646973706c6179206973203235362062792031393220706978656c73207769746820636f6c6f7572206174747269627574657320617272616e67656420696e20382062792038206368617261637465722063656c6c732e0a3e20537065637472756d206261736963206e65772064656c65746573207468652063757272656e742062617369632070726f6772616d20616e64207661726961626c6573206265666f7265207374617274696e67207468652062617369632073797374656d20616e65772e0a3e2053696e636c61697220696e746572666163652032206a6f79737469636b732061707065617220617320737065637472756d206e756d626572206b6579732031207468726f756768203520616e642036207468726f75676820302e0a3e20537065637472756d20706c7573206172726976656420696e2031393834207769746820716c207374796c65206b6579626f61726420726573657420627574746f6e20616e642034386b2072616d2e0a3e204a6574706163207761732061203139383320756c74696d61746520706c6179207468652067616d652073686f6f7420656d20757020666f72207468652031366b20737065637472756d2e0a3e2043343872756e2069732074686520706f727461626c6520686f73742072756e74696d6520616e64207669727475616c206d616368696e6520666f72206334382070726f6772616d732e0a3e20",
   "exit_status": 0,
   "final_diag": {
     "ai_altstate": 0,
@@ -12,7 +12,7 @@
     "ai_havectx": 1,
     "ai_hcount": 6,
     "ai_histuse": 0,
-    "ai_l0bytes": 874,
+    "ai_l0bytes": 873,
     "ai_l0wire": 1,
     "ai_l1count": 4,
     "ai_l1drop": 0,
@@ -32,14 +32,14 @@
     "ai_turns": 12,
     "ai_yields": 1
   },
-  "iteration": 9107,
+  "iteration": 9111,
   "request": {
     "expected_keywords": [
       "22528",
       "ramtop",
       "bit 4",
       "175",
-      "million",
+      "500000",
       "compiler",
       "256",
       "deletes",
@@ -49,7 +49,7 @@
       "runtime"
     ],
     "final_expected_keyword": "runtime",
-    "iteration": 9107,
+    "iteration": 9111,
     "max_seconds": 1200,
     "min_keyword_ratio": 1.0,
     "min_semantic_uses": 10,
@@ -67,7 +67,7 @@
       "which publisher made spectrum game jetpac shoot em up",
       "what role does c48run have in the spectrum c48 sdk runtime"
     ],
-    "purpose": "Broad independent final regression suite B using a different cross-domain set of retained probes for memory mapping, BASIC behaviour, ULA sound, launch history, software culture, peripherals, and C48 SDK execution roles. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair.",
+    "purpose": "Broad independent final regression suite B using a different cross-domain set of retained probes for memory mapping, BASIC behaviour, ULA sound, launch history, software culture, peripherals, and C48 SDK execution roles. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair.",
     "scenario": "final-regression-b-v1",
     "schema": 1
   },
@@ -124,8 +124,8 @@
       "literal_mode": "none",
       "turn": 1,
       "user": "where does spectrum colour attribute memory start",
-      "vm_steps": 900089,
-      "vm_steps_cumulative": 902187
+      "vm_steps": 900188,
+      "vm_steps_cumulative": 902288
     },
     {
       "alternate_hit": true,
@@ -177,8 +177,8 @@
       "literal_mode": "none",
       "turn": 2,
       "user": "what can spectrum basic clear change to preserve bytes for machine code",
-      "vm_steps": 827691,
-      "vm_steps_cumulative": 1729878
+      "vm_steps": 828813,
+      "vm_steps_cumulative": 1731101
     },
     {
       "alternate_hit": true,
@@ -230,8 +230,8 @@
       "literal_mode": "none",
       "turn": 3,
       "user": "how does spectrum output sound through the internal speaker and mic",
-      "vm_steps": 832091,
-      "vm_steps_cumulative": 2561969
+      "vm_steps": 832145,
+      "vm_steps_cumulative": 2563246
     },
     {
       "alternate_hit": true,
@@ -283,14 +283,14 @@
       "literal_mode": "none",
       "turn": 4,
       "user": "in spectrum history what was the higher launch price of the original spectrum",
-      "vm_steps": 802589,
-      "vm_steps_cumulative": 3364558
+      "vm_steps": 801497,
+      "vm_steps_cumulative": 3364743
     },
     {
       "alternate_hit": true,
       "alternate_used": false,
-      "assistant": "The hobbit was a 1982 melbourne house text adventure and the first spectrum game to sell a million copies.",
-      "assistant_raw": "The hobbit was a 1982 melbourne house text adventure and the first spectrum game to sell a million copies.\n> ",
+      "assistant": "The hobbit was a 1982 melbourne house text adventure for zx spectrum and sold over 500000 units in europe.",
+      "assistant_raw": "The hobbit was a 1982 melbourne house text adventure for zx spectrum and sold over 500000 units in europe.\n> ",
       "context_hit": true,
       "context_used": false,
       "diag": {
@@ -304,7 +304,7 @@
         "ai_havectx": 1,
         "ai_hcount": 3,
         "ai_histuse": 0,
-        "ai_l0bytes": 568,
+        "ai_l0bytes": 567,
         "ai_l0wire": 1,
         "ai_l1count": 0,
         "ai_l1drop": 0,
@@ -327,7 +327,7 @@
       "expected_alternate": null,
       "expected_context": null,
       "expected_history": null,
-      "expected_keyword": "million",
+      "expected_keyword": "500000",
       "expected_literal": null,
       "history_hit": true,
       "history_used": false,
@@ -336,8 +336,8 @@
       "literal_mode": "none",
       "turn": 5,
       "user": "what sales milestone did spectrum game the hobbit adventure reach",
-      "vm_steps": 796130,
-      "vm_steps_cumulative": 4160688
+      "vm_steps": 799899,
+      "vm_steps_cumulative": 4164642
     },
     {
       "alternate_hit": true,
@@ -357,7 +357,7 @@
         "ai_havectx": 1,
         "ai_hcount": 4,
         "ai_histuse": 0,
-        "ai_l0bytes": 659,
+        "ai_l0bytes": 658,
         "ai_l0wire": 1,
         "ai_l1count": 0,
         "ai_l1drop": 0,
@@ -389,8 +389,8 @@
       "literal_mode": "none",
       "turn": 6,
       "user": "what command is the compiler front end in the spectrum c48 sdk",
-      "vm_steps": 770140,
-      "vm_steps_cumulative": 4930828
+      "vm_steps": 770374,
+      "vm_steps_cumulative": 4935016
     },
     {
       "alternate_hit": true,
@@ -410,7 +410,7 @@
         "ai_havectx": 1,
         "ai_hcount": 4,
         "ai_histuse": 0,
-        "ai_l0bytes": 787,
+        "ai_l0bytes": 786,
         "ai_l0wire": 1,
         "ai_l1count": 0,
         "ai_l1drop": 0,
@@ -442,8 +442,8 @@
       "literal_mode": "none",
       "turn": 7,
       "user": "what resolution does the spectrum display use",
-      "vm_steps": 738821,
-      "vm_steps_cumulative": 5669649
+      "vm_steps": 739196,
+      "vm_steps_cumulative": 5674212
     },
     {
       "alternate_hit": true,
@@ -463,7 +463,7 @@
         "ai_havectx": 1,
         "ai_hcount": 4,
         "ai_histuse": 0,
-        "ai_l0bytes": 893,
+        "ai_l0bytes": 892,
         "ai_l0wire": 1,
         "ai_l1count": 0,
         "ai_l1drop": 0,
@@ -495,8 +495,8 @@
       "literal_mode": "none",
       "turn": 8,
       "user": "what does spectrum basic new do to the current program",
-      "vm_steps": 769385,
-      "vm_steps_cumulative": 6439034
+      "vm_steps": 770885,
+      "vm_steps_cumulative": 6445097
     },
     {
       "alternate_hit": true,
@@ -516,7 +516,7 @@
         "ai_havectx": 1,
         "ai_hcount": 4,
         "ai_histuse": 0,
-        "ai_l0bytes": 833,
+        "ai_l0bytes": 832,
         "ai_l0wire": 1,
         "ai_l1count": 2,
         "ai_l1drop": 0,
@@ -548,8 +548,8 @@
       "literal_mode": "none",
       "turn": 9,
       "user": "what keys do spectrum sinclair interface 2 joysticks appear as",
-      "vm_steps": 790884,
-      "vm_steps_cumulative": 7229918
+      "vm_steps": 790887,
+      "vm_steps_cumulative": 7235984
     },
     {
       "alternate_hit": true,
@@ -569,7 +569,7 @@
         "ai_havectx": 1,
         "ai_hcount": 5,
         "ai_histuse": 0,
-        "ai_l0bytes": 769,
+        "ai_l0bytes": 768,
         "ai_l0wire": 1,
         "ai_l1count": 3,
         "ai_l1drop": 0,
@@ -601,8 +601,8 @@
       "literal_mode": "none",
       "turn": 10,
       "user": "in spectrum history what changed with the spectrum plus in 1984",
-      "vm_steps": 759509,
-      "vm_steps_cumulative": 7989427
+      "vm_steps": 759866,
+      "vm_steps_cumulative": 7995850
     },
     {
       "alternate_hit": true,
@@ -622,7 +622,7 @@
         "ai_havectx": 1,
         "ai_hcount": 6,
         "ai_histuse": 0,
-        "ai_l0bytes": 878,
+        "ai_l0bytes": 877,
         "ai_l0wire": 1,
         "ai_l1count": 3,
         "ai_l1drop": 0,
@@ -654,8 +654,8 @@
       "literal_mode": "none",
       "turn": 11,
       "user": "which publisher made spectrum game jetpac shoot em up",
-      "vm_steps": 756858,
-      "vm_steps_cumulative": 8746285
+      "vm_steps": 756879,
+      "vm_steps_cumulative": 8752729
     },
     {
       "alternate_hit": true,
@@ -675,7 +675,7 @@
         "ai_havectx": 1,
         "ai_hcount": 6,
         "ai_histuse": 0,
-        "ai_l0bytes": 874,
+        "ai_l0bytes": 873,
         "ai_l0wire": 1,
         "ai_l1count": 4,
         "ai_l1drop": 0,
@@ -707,8 +707,8 @@
       "literal_mode": "none",
       "turn": 12,
       "user": "what role does c48run have in the spectrum c48 sdk runtime",
-      "vm_steps": 767885,
-      "vm_steps_cumulative": 9514170
+      "vm_steps": 768407,
+      "vm_steps_cumulative": 9521136
     }
   ]
 }
