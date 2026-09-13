@@ -1,0 +1,13 @@
+{
+  "c48b_sha256": "581d8dac1a498cb2d986a8c063993fac7e1a7af1a353ca7928977030beca2b8c",
+  "corpus_sha256": "86186e751b9d52cf7e85f7c1adb9195646db99e722befd59d489cf3e8608411b",
+  "elapsed_seconds": 0.968,
+  "heap_size": 0,
+  "iteration": 6,
+  "max_steps": 2000000,
+  "model_header_sha256": "a299ef7eec5c2769679c0d3e2690fc40636715c7ea21bfe410512f5da122ca1f",
+  "model_sha256": "d3779cd2f129e060699bc7b6fd109a441b6b99c21e330a7b23e62b790b13dca8",
+  "runner_max_seconds": 1200,
+  "schema": 1,
+  "source_sha256": "bfef047e942e497c7e1cc3915724312fc163dd260fa3fca1a6eec6b2a5eb4f7d"
+}
