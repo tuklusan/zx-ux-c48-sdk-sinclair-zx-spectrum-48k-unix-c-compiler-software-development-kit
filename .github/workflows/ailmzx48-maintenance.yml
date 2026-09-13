@@ -48,13 +48,35 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Test ailmzx48 context reference
+      - name: Make clock fact token-safe
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("usr/src/ailmzx48/training/seed_corpus.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          old = "the spectrum z80a processor runs at about 3.5 mhz"
+          new = "the spectrum z80a processor runs at about 3500000 hz or three point five mhz"
+          matches = [r for r in data["records"] if r.get("text") == old]
+          assert len(matches) == 1, f"expected one clock fact, found {len(matches)}"
+          matches[0]["text"] = new
+          path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+          PY
+
+      - name: Rebuild retained model artifacts
         run: >-
-          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
+          python -B usr/src/ailmzx48/tooling/build_starter_model.py
+          --corpus usr/src/ailmzx48/training/seed_corpus.json
+          --out-json usr/src/ailmzx48/model/current-model.json
+          --out-h usr/src/ailmzx48/aimod.h
+          --iteration 39
+
+      - name: Test ailmzx48 context reference
+        run: python -B usr/src/ailmzx48/evaluation/test_context_reference.py
 
       - name: Test ailmzx48 A48M reference
-        run: >-
-          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+        run: python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
 
       - name: Compile ailmzx48 SDK artifact
         run: >-
@@ -71,12 +93,19 @@ jobs:
           python -B compiler/verify_release.py
           git diff --check
 
-      - name: Commit and push maintenance checkpoint
+      - name: Commit and push clock representation
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Complete ailmzx48 maintenance checkpoint"
-          git push origin HEAD:main
+          git commit -m "ailmzx48: make clock fact token-safe"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then exit 0; fi
+            git fetch origin main
+            git rebase origin/main
+            python -B compiler/verify_release.py
+            git diff --check
+          done
+          exit 1
