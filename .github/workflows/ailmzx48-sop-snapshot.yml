@@ -87,6 +87,33 @@ jobs:
           live = Path.cwd()
           temp = Path('/tmp/ailmzx48-sop-qual')
           base = live / 'usr/src/ailmzx48/evaluation/sdk-conformance'
+          diag = json.loads((base / 'final-c' / 'request.json').read_text(encoding='utf-8'))
+          diag['iteration'] = 9190
+          diag['prompts'] = [
+              'what does spectrum basic run do to variables before program execution'
+          ]
+          diag['expected_keywords'] = ['clears']
+          diag['final_expected_keyword'] = 'clears'
+          diag['min_keyword_ratio'] = 1.0
+          diag['min_semantic_uses'] = 1
+          diag['purpose'] = 'Routing preflight for corrected Spectrum BASIC RUN fact.'
+          diag_path = temp / 'sop-routing-preflight.json'
+          diag_path.write_text(
+              json.dumps(diag, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8', newline='\n'
+          )
+          subprocess.run(
+              [sys.executable, '-B',
+               str(temp / 'usr/src/ailmzx48/tooling/run_iteration.py'),
+               '--request', str(diag_path), '--max-seconds', '1200'],
+              cwd=temp, check=True,
+          )
+          subprocess.run(
+              [sys.executable, '-B',
+               str(temp / 'usr/src/ailmzx48/evaluation/check_iteration_score.py'),
+               '--request', str(diag_path)],
+              cwd=temp, check=True,
+          )
           scenarios = [
               ('literal-context', 9109),
               ('final-a', 9110),
@@ -113,7 +140,7 @@ jobs:
                   if req['expected_keywords'][i] != 'ascending':
                       raise SystemExit('final-c BASIC expectation anchor changed')
                   req['prompts'][i] = (
-                      'what does spectrum basic run do before starting the current program'
+                      'what does spectrum basic run do to variables before program execution'
                   )
                   req['expected_keywords'][i] = 'clears'
               request = temp / f'sop-{name}.json'
