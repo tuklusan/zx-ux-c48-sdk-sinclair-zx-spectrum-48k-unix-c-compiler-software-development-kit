@@ -1,1 +1,1 @@
-session-literal-semantic-refs-v1
+session-literal-semantic-refs-v2
