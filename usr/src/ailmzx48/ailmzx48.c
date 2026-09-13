@@ -51,6 +51,7 @@ unsigned int ai_mhits;
 unsigned int ai_mbytes;
 unsigned int ai_mreads;
 unsigned int ai_mtrusted;
+unsigned int ai_mtopic;
 unsigned int ai_fs1;
 unsigned int ai_fs2;
 unsigned int ai_w1len;
@@ -266,20 +267,6 @@ void ai_histpush(unsigned int topic)
 
 unsigned int ai_pick(void)
 {
-    if (ai_has("memory") || ai_has("bitmap"))
-        return ai_t_mem;
-    if (ai_has("48k")) return ai_t_mem;
-    if (ai_has("game") || ai_has("miner"))
-        return ai_t_games;
-    if (ai_has("lore")) return ai_t_games;
-    if (ai_has("network")) return ai_t_local;
-    if (ai_has("local")) return ai_t_local;
-    if (ai_has("chat")) return ai_t_local;
-    if (ai_has("1982") || ai_has("history"))
-        return ai_t_hist;
-    if (ai_has("before")) return ai_t_hist;
-    if (ai_has("spectrum")) return ai_t_spec;
-    if (ai_has("computer")) return ai_t_spec;
     if (ai_hcount != 0 && ai_has("go back")) {
         ai_ctxuse = 1;
         ai_histuse = 1;
@@ -299,9 +286,8 @@ unsigned int ai_pick(void)
             return ai_lasttop;
         }
     }
-    return ai_t_id;
+    return ai_tcnt;
 }
-
 int ai_addtok(unsigned int id)
 {
     unsigned int i;
@@ -475,6 +461,7 @@ int ai_modelscan(unsigned int topic)
     ai_w2len = 0;
     ai_w1score = -1;
     ai_w2score = -1;
+    ai_mtopic = ai_t_id;
     actual = ai_mstat();
     if (actual < 40) return -1;
     if (ai_mseek(0) != 0) return -1;
@@ -523,6 +510,7 @@ int ai_modelscan(unsigned int topic)
         if (code < 1 || code > 7) return -1;
         if (code <= 6 && acnt == 0) return -1;
         rtopic = ai_getu16(ai_mstage, 2);
+        if (rtopic >= ai_tcnt) return -1;
         if (ai_getu16(ai_mstage, 4) > 32767) return -1;
         if (ai_getu16(ai_mstage, 6) > 32767) return -1;
         thits = 0;
@@ -550,10 +538,15 @@ int ai_modelscan(unsigned int topic)
             if (a1s < a2e && a2s < a1e) return -1;
         }
         score = -1;
-        if (rtopic == topic) {
-            score = (int)ai_mstage[8];
-            score = score + (int)(thits * 16);
-        }
+if (topic == ai_tcnt) {
+    if (thits != 0) {
+        score = (int)(thits * 256);
+        score = score + (int)ai_mstage[8];
+    }
+} else if (rtopic == topic) {
+    score = (int)ai_mstage[8];
+    score = score + (int)(thits * 16);
+}
         slot = 0;
         if (score > ai_w1score) {
             if (ai_w1score >= 0) {
@@ -651,9 +644,10 @@ int ai_modelscan(unsigned int topic)
         if (acnt == 1 && (amask & 3) != 3) return -1;
         if (acnt == 2 && (amask & 15) != 15) return -1;
         if (slot == 1) {
-            ai_w1len = rlen;
-            ai_w1score = score;
-        }
+    ai_w1len = rlen;
+    ai_w1score = score;
+    ai_mtopic = rtopic;
+}
         if (slot == 2) {
             ai_w2len = rlen;
             ai_w2score = score;
@@ -1174,6 +1168,7 @@ int main(void)
     ai_mbytes = 0;
     ai_mreads = 0;
     ai_mtrusted = 0;
+    ai_mtopic = ai_t_id;
     ai_l0head = 0;
     ai_l0bytes = 0;
     ai_l0count = 0;
@@ -1265,18 +1260,29 @@ int main(void)
         } else {
             topic = ai_pick();
         }
-        alt = 0;
-        if (ai_havectx && topic == ai_lasttop) {
-            if (ai_altstate == 0) {
-                ai_altstate = 1;
-                alt = 1;
-            } else {
-                ai_altstate = 0;
-            }
-        } else {
-            ai_altstate = 0;
-        }
         rc = ai_modelscan(topic);
+if (topic == ai_tcnt) {
+    if (rc > 0) {
+        topic = ai_mtopic;
+        ai_semuse = 1;
+    } else if (rc == 0) {
+        topic = ai_t_id;
+        rc = ai_modelscan(topic);
+    } else {
+        topic = ai_t_id;
+    }
+}
+alt = 0;
+if (ai_havectx && topic == ai_lasttop) {
+    if (ai_altstate == 0) {
+        ai_altstate = 1;
+        alt = 1;
+    } else {
+        ai_altstate = 0;
+    }
+} else {
+    ai_altstate = 0;
+}
         if (rc < 0) {
             ai_error = 4;
             ai_settext("Model data unavailable.");
