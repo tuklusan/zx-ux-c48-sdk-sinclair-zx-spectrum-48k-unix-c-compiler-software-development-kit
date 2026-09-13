@@ -48,6 +48,27 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
+      - name: Refine ZX-UX text-mode retrieval evidence
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("usr/src/ailmzx48/training/seed_corpus.json")
+          doc = json.loads(p.read_text(encoding="utf-8"))
+          target = "the c48 sdk software text mode is 64 columns by 24 rows using a four by eight font"
+          hits = [r for r in doc["records"] if r.get("text") == target]
+          if len(hits) != 1:
+              raise SystemExit(f"expected exactly one text-mode record, got {len(hits)}")
+          hits[0]["triggers"] = ["text", "mode", "columns", "rows"]
+          p.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+          PY
+          python -B usr/src/ailmzx48/tooling/build_starter_model.py \
+            --corpus usr/src/ailmzx48/training/seed_corpus.json \
+            --out-json usr/src/ailmzx48/model/current-model.json \
+            --out-h usr/src/ailmzx48/aimod.h \
+            --iteration 46
+
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
