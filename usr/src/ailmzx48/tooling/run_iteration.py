@@ -99,7 +99,8 @@ class Feeder:
         out = {}
         for name in ("ai_turns", "ai_otokens", "ai_yields",
                      "ai_error", "ai_beeps", "ai_ctxuse",
-                     "ai_lasttop", "ai_havectx"):
+                     "ai_lasttop", "ai_havectx", "ai_altuse",
+                     "ai_altstate"):
             lv = self.vm.global_lvalues.get(name)
             if lv is not None:
                 out[name] = int(self.vm._load(lv).data)
@@ -231,8 +232,20 @@ def main() -> int:
     for expected in ctx_expect:
         if expected is not None and not isinstance(expected, bool):
             raise RuntimeError("expected context must be bool or null")
+    alt_expect = req.get("expected_alternate")
+    if alt_expect is None:
+        alt_expect = [None] * len(prompts)
+    if not isinstance(alt_expect, list):
+        raise RuntimeError("expected_alternate must be a list")
+    if len(alt_expect) != len(prompts):
+        raise RuntimeError("expected_alternate length must match prompts")
+    for expected in alt_expect:
+        if expected is not None and not isinstance(expected, bool):
+            raise RuntimeError("expected alternate must be bool or null")
     context_hits = 0
     context_total = 0
+    alternate_hits = 0
+    alternate_total = 0
     for i, prompt in enumerate(prompts):
         event = feeder.events[i + 1]
         reply = derived_reply(event["text"])
@@ -247,6 +260,13 @@ def main() -> int:
             context_total += 1
             if ctx_hit:
                 context_hits += 1
+        want_alt = alt_expect[i]
+        used_alt = event["diag"].get("ai_altuse") == 1
+        alt_hit = want_alt is None or used_alt == want_alt
+        if want_alt is not None:
+            alternate_total += 1
+            if alt_hit:
+                alternate_hits += 1
         turns.append({
             "turn": i + 1,
             "user": prompt,
@@ -258,6 +278,9 @@ def main() -> int:
             "expected_context": want_ctx,
             "context_used": used_ctx,
             "context_hit": ctx_hit,
+            "expected_alternate": want_alt,
+            "alternate_used": used_alt,
+            "alternate_hit": alt_hit,
         })
     transcript = {
         "schema": 1,
@@ -294,6 +317,12 @@ def main() -> int:
         "context_ratio": (
             context_hits / context_total
             if context_total else 1.0
+        ),
+        "alternate_hits": alternate_hits,
+        "alternate_total": alternate_total,
+        "alternate_ratio": (
+            alternate_hits / alternate_total
+            if alternate_total else 1.0
         ),
         "clean_exit": status == 0,
         "beep_calls": feeder.diag().get("ai_beeps"),

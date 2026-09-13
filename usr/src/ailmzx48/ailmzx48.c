@@ -25,6 +25,8 @@ unsigned int ai_beeps;
 unsigned int ai_lasttop;
 unsigned int ai_ctxuse;
 unsigned int ai_havectx;
+unsigned int ai_altuse;
+unsigned int ai_altstate;
 char ai_in[192];
 char ai_out[256];
 int ai_drop_lf;
@@ -147,7 +149,7 @@ int ai_addtok(unsigned int id)
     return 1;
 }
 
-int ai_generate(unsigned int topic)
+int ai_generate(unsigned int topic, unsigned int alt)
 {
     unsigned int cur;
     unsigned int next;
@@ -180,7 +182,13 @@ int ai_generate(unsigned int topic)
             break;
         }
         ai_otokens = ai_otokens + 1;
-        next = ai_n1[base + cur];
+        if (steps == 0 && alt) {
+            next = ai_n2[base + cur];
+            if (next == 0) next = ai_n1[base + cur];
+            if (next != ai_n1[base + cur]) ai_altuse = 1;
+        } else {
+            next = ai_n1[base + cur];
+        }
         if (next != 0 && ai_seen[next] != 0) {
             next = ai_n2[base + cur];
             if (next != 0 && ai_seen[next] != 0) {
@@ -222,11 +230,14 @@ int main(void)
 {
     int rc;
     unsigned int topic;
+    unsigned int alt;
     ai_turns = 0;
     ai_beeps = 0;
     ai_lasttop = ai_t_id;
     ai_ctxuse = 0;
     ai_havectx = 0;
+    ai_altuse = 0;
+    ai_altstate = 0;
     ai_drop_lf = 0;
     ai_start();
     while (1) {
@@ -237,13 +248,27 @@ int main(void)
         rc = ai_readline();
         if (rc == -1) break;
         if (rc < 0) {
+            ai_ctxuse = 0;
+            ai_altuse = 0;
             puts("Input rejected.");
             continue;
         }
         if (ai_isq()) break;
         ai_ctxuse = 0;
+        ai_altuse = 0;
         topic = ai_pick();
-        ai_generate(topic);
+        alt = 0;
+        if (ai_havectx && topic == ai_lasttop) {
+            if (ai_altstate == 0) {
+                ai_altstate = 1;
+                alt = 1;
+            } else {
+                ai_altstate = 0;
+            }
+        } else {
+            ai_altstate = 0;
+        }
+        ai_generate(topic, alt);
         puts(ai_out);
         ai_lasttop = topic;
         ai_havectx = 1;
