@@ -1,0 +1,205 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: ailmzx48 SoP architecture repair
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-sop-architecture-repair.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ailmzx48-sop-architecture-main
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Apply architecture repair
+        run: >-
+          python -B usr/src/ailmzx48/tooling/sop_architecture_repair.py patch
+
+      - name: Rebuild model references and C48 binary
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B usr/src/ailmzx48/tooling/build_starter_model.py \
+            --corpus usr/src/ailmzx48/training/seed_corpus.json \
+            --out-json usr/src/ailmzx48/model/current-model.json \
+            --out-h usr/src/ailmzx48/aimod.h \
+            --iteration 9121
+          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
+          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+          python -B compiler/c48.py usr/src/ailmzx48/ailmzx48.c \
+            -o usr/bin/ailmzx48/ailmzx48.c48b
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py \
+            --pass-id 1
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+
+          a = Path('usr/src/ailmzx48')
+          report = json.loads(
+              (a / 'evaluation/a48m-reference-report.json').read_text()
+          )
+          assert report['status'] == 'PASS', report
+          assert report['logical_length'] == 8458, report
+          assert report['record_count'] == 69, report
+          assert report['max_record_bytes'] <= 192, report
+          assert report['max_read_request'] == 64, report
+          cold = a / 'model/cold-seed.bin'
+          got = hashlib.sha256(cold.read_bytes()).hexdigest()
+          want = (
+              '3dda3f6633cd8731e158970bf0658cd9'
+              '126496e9d7c30ff14ab4cbcae25611ea'
+          )
+          assert got == want, (got, want)
+          model = json.loads((a / 'model/current-model.json').read_text())
+          assert model['schema'] == 3, model.get('schema')
+          assert len(model['topics']) == 7, model['topics']
+          assert model['topics'][0] == 'generic', model['topics']
+          assert len(model['trigram_contexts']) == 64
+          assert len(model['unigram_fallback']) == 12
+          assert len(model['trigger_spellings']) == 158
+          PY
+
+      - name: Requalify architecture repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/ailmzx48-sop-architecture
+          mkdir -p /tmp/ailmzx48-sop-architecture
+          rsync -a --exclude=.git ./ /tmp/ailmzx48-sop-architecture/
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          import shutil
+          import subprocess
+          import sys
+
+          live = Path.cwd()
+          temp = Path('/tmp/ailmzx48-sop-architecture')
+          base = live / 'usr/src/ailmzx48/evaluation/sdk-conformance'
+          scenarios = [
+              ('literal-context', 9117),
+              ('final-a', 9118),
+              ('final-b', 9119),
+              ('final-c', 9120),
+              ('architecture-routing', 9121),
+          ]
+          for name, iteration in scenarios:
+              req = json.loads((base / name / 'request.json').read_text())
+              req['iteration'] = iteration
+              req['purpose'] = (
+                  str(req.get('purpose', ''))
+                  + ' SoP requalification after model/controller architecture repair.'
+              )
+              request = temp / f'sop-{name}.json'
+              request.write_text(
+                  json.dumps(req, indent=2, sort_keys=True) + '\n',
+                  encoding='utf-8', newline='\n'
+              )
+              subprocess.run(
+                  [sys.executable, '-B',
+                   str(temp / 'usr/src/ailmzx48/tooling/run_iteration.py'),
+                   '--request', str(request), '--max-seconds', '1200'],
+                  cwd=temp, check=True,
+              )
+              subprocess.run(
+                  [sys.executable, '-B',
+                   str(temp / 'usr/src/ailmzx48/evaluation/check_iteration_score.py'),
+                   '--request', str(request)],
+                  cwd=temp, check=True,
+              )
+              src = temp / 'usr/src/ailmzx48/conversations' / f'iter-{iteration:04d}'
+              dst = base / name
+              for member in (
+                  'conversation.md', 'run.json', 'score.json', 'transcript.json'
+              ):
+                  shutil.copy2(src / member, dst / member)
+              (dst / 'request.json').write_text(
+                  json.dumps(req, indent=2, sort_keys=True) + '\n',
+                  encoding='utf-8', newline='\n'
+              )
+          for rel, label in [
+              ('usr/bin/ailmzx48/ailmzx48.c48b', 'C48B1'),
+              ('usr/src/ailmzx48/model/cold-seed.bin', 'cold A48M'),
+              ('usr/src/ailmzx48/model/current-model.json', 'hot model'),
+              ('usr/src/ailmzx48/aimod.h', 'resident model header'),
+              ('usr/src/ailmzx48/aicold.h', 'cold identity header'),
+          ]:
+              if (live / rel).read_bytes() != (temp / rel).read_bytes():
+                  raise SystemExit(
+                      f'isolated requalification rebuilt different {label}'
+                  )
+          PY
+
+      - name: Finalize evidence identities
+        run: >-
+          python -B usr/src/ailmzx48/tooling/sop_architecture_repair.py finalize
+
+      - name: Remove temporary SoP instrumentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/ailmzx48-sop-architecture-snapshot.yml
+          rm .github/workflows/ailmzx48-sop-architecture-repair.yml
+          rm usr/src/ailmzx48/tooling/sop_architecture_repair.py
+
+      - name: Run hard release gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B usr/src/ailmzx48/tooling/update_manifest.py
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py \
+            --pass-id 1
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py \
+            --pass-id 2
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py \
+            --pass-id 3
+          python -B compiler/verify_release.py
+          git diff --check
+
+      - name: Commit and push architecture repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && {
+            echo "architecture repair produced no changes" >&2
+            exit 1
+          }
+          git commit -m "ailmzx48: repair model and controller architecture"
+          git push origin HEAD:main
