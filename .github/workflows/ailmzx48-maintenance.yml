@@ -48,30 +48,6 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Cache bounded query trigger IDs
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path("usr/src/ailmzx48/aimatch.h")
-          s = p.read_text(encoding="utf-8")
-          start = s.index("int ai_vhas(unsigned int id)\n{")
-          end = s.index("\n}\n", start) + 3
-          new = '''void ai_hprep(void)\n{\n    unsigned int i;\n    unsigned int n;\n    unsigned int h;\n    unsigned int v;\n    i = 0;\n    n = 0;\n    while (ai_in[i] != 0) {\n        while (ai_in[i] != 0 &&\n               !ai_wordchar(ai_in[i])) i = i + 1;\n        if (ai_in[i] == 0) break;\n        h = 216 + ai_mtsalt;\n        while (ai_in[i] != 0 && ai_wordchar(ai_in[i])) {\n            h = (h * 33) ^ ai_lower(ai_in[i]);\n            i = i + 1;\n        }\n        if (n >= 48) {\n            ai_mhits = 49;\n            return;\n        }\n        v = 224 + (h % 3872);\n        ai_seen[n * 2] = v & 255;\n        ai_seen[(n * 2) + 1] = v / 256;\n        n = n + 1;\n    }\n    ai_mhits = n;\n}\n\nint ai_vhas(unsigned int id)\n{\n    unsigned int i;\n    unsigned int h;\n    unsigned int v;\n    if (ai_mhits <= 48) {\n        i = 0;\n        while (i < ai_mhits) {\n            v = ai_seen[i * 2];\n            v = v + ((unsigned int)ai_seen[(i * 2) + 1] * 256);\n            if (v == id) return 1;\n            i = i + 1;\n        }\n        return 0;\n    }\n    i = 0;\n    while (ai_in[i] != 0) {\n        while (ai_in[i] != 0 &&\n               !ai_wordchar(ai_in[i])) i = i + 1;\n        if (ai_in[i] == 0) break;\n        h = 216 + ai_mtsalt;\n        while (ai_in[i] != 0 && ai_wordchar(ai_in[i])) {\n            h = (h * 33) ^ ai_lower(ai_in[i]);\n            i = i + 1;\n        }\n        if (224 + (h % 3872) == id) return 1;\n    }\n    return 0;\n}\n'''
-          p.write_text(s[:start] + new + s[end:], encoding="utf-8")
-
-          p = Path("usr/src/ailmzx48/ailmzx48.c")
-          s = p.read_text(encoding="utf-8")
-          old = '''    ai_mtsalt=ai_getu16(ai_mhead,34);\n    i=36;\n'''
-          new = '''    ai_mtsalt=ai_getu16(ai_mhead,34);\n    ai_hprep();\n    i=36;\n'''
-          if old not in s:
-              raise SystemExit("query hash prep anchor missing")
-          p.write_text(s.replace(old, new, 1), encoding="utf-8")
-          PY
-          printf 'AILMZX48_SOURCE_BYTES main=%s match=%s limit=32768\n' \
-            "$(wc -c < usr/src/ailmzx48/ailmzx48.c)" \
-            "$(wc -c < usr/src/ailmzx48/aimatch.h)"
-
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
