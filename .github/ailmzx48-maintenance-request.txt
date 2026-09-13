@@ -1,2 +1,0 @@
-iteration=47
-purpose=repair-mixed-topic-launch-price-retrieval

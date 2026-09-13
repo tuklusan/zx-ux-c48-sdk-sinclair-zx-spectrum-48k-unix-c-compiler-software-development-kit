@@ -4,7 +4,7 @@
   "max_record_bytes": 192,
   "record_count": 69,
   "schema": 1,
-  "sha256": "f2018fa51c20dabcfb16a1386bc1d9226b64ab35fb9f4f1d458971954c3739ea",
+  "sha256": "66e645c90a74809b80b55872b8cf7b509cfbdc7e3193f773c8e2ee325f0a1c6a",
   "short_read_calls": 742,
   "status": "PASS",
   "tests": [

@@ -16,8 +16,10 @@
   },
   "goals_achieved": false,
   "next_action": "Pursue unmet scenario retrieval-model-evidence-mixed-topic-v1.",
-  "no_pending_requests_satisfied": true,
-  "pending_iterations": [],
+  "no_pending_requests_satisfied": false,
+  "pending_iterations": [
+    47
+  ],
   "qualification_scenarios": [
     {
       "evidence": {
@@ -122,9 +124,16 @@
       "scenario": "knowledge-deepening-zxux-v1"
     },
     {
+      "candidate_failures": [
+        {
+          "failures": [
+            "retained score evidence is missing"
+          ],
+          "iteration": 47
+        }
+      ],
       "goal": "Generic model-evidence routing across mixed topics without question-specific routing hacks",
       "min_turns": 10,
-      "reason": "no retained request/evidence for this scenario",
       "satisfied": false,
       "scenario": "retrieval-model-evidence-mixed-topic-v1"
     },
