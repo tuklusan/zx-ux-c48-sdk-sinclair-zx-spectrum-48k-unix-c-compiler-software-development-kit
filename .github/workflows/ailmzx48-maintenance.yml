@@ -48,6 +48,58 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
+      - name: Deepen Spectrum history and model chronology
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("usr/src/ailmzx48/training/seed_corpus.json")
+          doc = json.loads(p.read_text(encoding="utf-8"))
+          additions = [
+              {
+                  "kind": "fact-user", "split": "train", "topic": "history",
+                  "text": "the zx spectrum launched in britain on 23 april 1982 at 125 pounds for the 16k model and 175 pounds for the 48k model",
+                  "triggers": ["launch", "125", "175", "april"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "history",
+                  "text": "the spectrum plus arrived in 1984 with a ql style hard keyboard and a reset button while retaining 48k ram",
+                  "triggers": ["1984", "reset", "ql"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "history",
+                  "text": "the spectrum 128 was developed with spanish distributor investronica and reached the united kingdom in january 1986 with 128k ram and three channel ay sound",
+                  "triggers": ["128", "investronica", "january", "ay"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "history",
+                  "text": "amstrad acquired the rights to the spectrum computer range in april 1986 and continued the line with new models",
+                  "triggers": ["amstrad", "acquired", "rights", "1986"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "history",
+                  "text": "the spectrum plus 2 appeared in 1986 as the first amstrad spectrum and included a built in cassette deck",
+                  "triggers": ["cassette", "built", "amstrad", "1986"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "history",
+                  "text": "the spectrum plus 3 appeared in 1987 with a built in three inch floppy disk drive",
+                  "triggers": ["1987", "floppy", "disk", "three"],
+              },
+          ]
+          existing = {r["text"] for r in doc["records"]}
+          for record in additions:
+              if record["text"] not in existing:
+                  doc["records"].append(record)
+          p.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
+          PY
+          python -B usr/src/ailmzx48/tooling/build_starter_model.py \
+            --corpus usr/src/ailmzx48/training/seed_corpus.json \
+            --out-json usr/src/ailmzx48/model/current-model.json \
+            --out-h usr/src/ailmzx48/aimod.h \
+            --iteration 44
+
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
