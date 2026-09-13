@@ -1,11 +1,11 @@
 {
-  "logical_length": 3775,
+  "logical_length": 3806,
   "max_read_request": 64,
   "max_record_bytes": 192,
   "record_count": 33,
   "schema": 1,
-  "sha256": "882607b0da75ad6d2398dae3a7a74be5985a67f675a49d893c57e837a7a1e49f",
-  "short_read_calls": 340,
+  "sha256": "02ba179bd9114174bac74349e617e42ea97a5b32faba3f942847b704a6e595b5",
+  "short_read_calls": 346,
   "status": "PASS",
   "tests": [
     "deterministic-seed-build",
