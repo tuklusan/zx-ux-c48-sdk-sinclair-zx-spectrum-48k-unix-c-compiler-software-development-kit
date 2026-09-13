@@ -26,7 +26,6 @@ jobs:
         run: |
           python -B - <<'PY'
           import copy
-          import hashlib
           import json
           from pathlib import Path
           import sys
@@ -71,9 +70,51 @@ jobs:
               (out / f"{name}.png").write_bytes((v.IMG / f"{name}.png").read_bytes())
           print(json.dumps(report, indent=2, sort_keys=True))
           PY
+      - name: Check persistent HUD rows
+        shell: bash
+        run: |
+          python -B - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+          import sys
+
+          sys.path.insert(0, "compiler")
+          import verify_graphics_demos as v
+
+          expect = v.load_expect()
+          report = {}
+          failures = []
+          for name in expect["demos"]:
+              source = (v.SRC / f"{name}.c").read_text(encoding="ascii")
+              rows = sorted({
+                  int(value)
+                  for value in re.findall(r"print_at\(\s*(\d+)\s*,", source)
+              })
+              one = v.run_demo(name, 1).render_rgb()
+              two = v.run_demo(name, 2).render_rgb()
+              changed = []
+              for row in rows:
+                  start = row * 8 * 256 * 3
+                  end = (row + 1) * 8 * 256 * 3
+                  if one[start:end] != two[start:end]:
+                      changed.append(row)
+              report[name] = {"hud_rows": rows, "changed_rows": changed}
+              if changed:
+                  failures.append(f"{name}:{','.join(map(str, changed))}")
+          out = Path("demo-refresh-candidate")
+          (out / "hud-stability.json").write_text(
+              json.dumps(report, indent=2, sort_keys=True) + "\n",
+              encoding="ascii",
+          )
+          print(json.dumps(report, indent=2, sort_keys=True))
+          if failures:
+              raise SystemExit("HUD rows changed between frames: " + "; ".join(failures))
+          PY
       - name: Verify regenerated static corpus
         run: python -B compiler/verify_graphics_demos.py --static
       - name: Upload candidate artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: demo-refresh-candidate
