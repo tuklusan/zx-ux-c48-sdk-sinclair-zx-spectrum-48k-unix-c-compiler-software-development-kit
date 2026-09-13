@@ -17,8 +17,8 @@ patent, trademark, and governing-law provisions.
 
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
-Status: Design in progress — first measurable model candidate, compressed-context memory plan, and SDK conversation harness established  
-Revision: 0.3-draft  
+Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
+Revision: 0.4-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48`
 
@@ -127,9 +127,9 @@ Consequences for `ailmzx48`:
 
 The canonical language authority is `C48 Language Specification Rev 0.11.docx`. REV12 section 25 mirrors the target-facing C48 contract used by ZX-UX. The implementation is to be written to the canonical Rev 0.11 language, not to host C extensions.
 
-Important frozen constraints include an 8-bit unsigned plain `char`, 16-bit `short`/`int`/pointers, five-byte Spectrum-native `float`, no `long`, and deliberately limited language facilities. REV12 also defers facilities such as `struct`/`union`, `switch`/`case`, variadic functions, function pointers, the conditional operator, compound assignment, and the comma operator.
+Forensic Review Pass 1 re-extracted the actual DOCX from repository bytes rather than inferring it from the Python compiler. The reviewed DOCX has SHA-256 `bc371718637b1ffe840bb220c6fff6421982a05337e30cafdbf05497b202268d`. It directly confirms an unsigned 8-bit plain `char`, 16-bit `short`/`int`/pointers, five-byte Spectrum-compatible `float`, no `long`, a 15-character identifier limit, and the absence of function pointers, variadic functions, `struct`/`union`, `switch`/`case`, compound assignment, the conditional operator and the comma-expression operator.
 
-The design therefore uses flat byte arrays, parallel arrays where a record would otherwise be tempting, explicit indices, small fixed functions, integer/fixed-point scoring, and direct bounds checks. Floating point is not required for model inference.
+The design therefore uses flat byte arrays, parallel arrays where a record would otherwise be tempting, explicit indices, small fixed functions, integer/fixed-point scoring, and direct bounds checks. Floating point is not required for model inference. Target identifiers in this document are kept at or below the canonical 15-character limit.
 
 Before implementation begins, every C construct introduced into `ailmzx48.c` must be accepted by the canonical C48 specification and the SDK compiler acceptance tests. Host-only tooling may use ordinary contemporary languages and data structures.
 
@@ -159,6 +159,22 @@ ZX-UX exposes a 64-column terminal mode and exact terminal semantics in REV12. `
 
 The terminal is part of the behavior contract. Automated evaluation shall capture the logical character stream as well as, for selected cases, the final 6912-byte Spectrum screen. A pretty host transcript cannot substitute for correct target wrapping/scrolling.
 
+### 5.7 SDK repository/release-gate constraints
+
+`ailmzx48` lives inside an already certified SDK repository, so repository rules are part of implementation feasibility rather than clerical cleanup.
+
+For every repository change associated with this project:
+
+- every new or modified `usr/src/**/*.c` or `usr/src/**/*.h` artifact must obey the SDK's current <=64-character source-line release contract;
+- target C/H identifiers must obey the C48 15-character identifier limit;
+- new header-eligible project files must carry the repository-required license/attribution header;
+- a new artifact suffix or exceptional format must be classified by the existing license/release tooling rather than bypassed;
+- `MANIFEST.sha256` must be regenerated from the exact repository bytes using the repository's established normalization rule;
+- `python -B compiler/verify_release.py` must pass on the complete candidate tree before that repository state is accepted;
+- no test, manifest, license, deterministic expectation, source-line gate or release verifier may be weakened merely to admit `ailmzx48`.
+
+The host SDK's passing behavior is useful evidence, but its documented non-claims remain in force: it does not by itself certify native Z80 stack use, allocator fragmentation, OBJ1/MEX1 behavior, ZX-UX syscalls, scheduler behavior or cassette semantics.
+
 ## 6. Architectural choice: a host-trained sparse local language agent
 
 A transformer-style neural LM is not the baseline architecture. Its parameter storage, activation memory, multiply-heavy inference, and context machinery are a poor fit for a 3.5 MHz Z80 and the ZX-UX arena.
@@ -172,7 +188,7 @@ The working architecture is instead a host-trained, target-inferred sparse stati
 
 This is still a language model: probabilities/weights over token continuations are learned from a corpus and used locally at inference time. The surrounding agent controller supplies conversation state, memory retrieval, topic steering, factual anchoring, uncertainty/fallback behavior, and anti-repetition controls.
 
-The exact release model family is not frozen by this revision. Revision 0.3 does freeze one concrete **Candidate A** so implementation and measurements can begin. Candidate A is a benchmark baseline, not a promise that no better representation will replace it.
+The exact release model family is not frozen by this revision. Revision 0.3 introduced concrete **Candidate A**; Revision 0.4 retains it as a corrected benchmark baseline so implementation and measurements can begin without pretending the representation is already optimal. Candidate A is not a promise that no better representation will replace it.
 
 ### 6.1 No remote inference dependency
 
@@ -221,16 +237,23 @@ Common punctuation is represented by ordinary hot/extended vocabulary tokens rat
 
 ### 7.1 Vocabulary selection
 
-The host builder shall select the 224 hot tokens by measured total byte saving, not raw frequency alone. A token that appears often but has a one-character spelling may save less than a longer Spectrum-domain term.
+The host builder shall select the 224 one-byte hot wire tokens by measured total byte saving, not raw frequency alone. A token that appears often but has a one-character spelling may save less than a longer Spectrum-domain term.
 
-The extended vocabulary is chosen from the remaining corpus by a score that considers occurrence count, spelling length, domain importance, and whether the token is needed as a factual entity. Candidate builds must report:
+The extended token-ID space is provisionally limited to 0..4095, but **4096 IDs are an address-space ceiling, not a promise to keep 4096 spellings resident**. Any token that the target tokenizer must recognize by spelling, any token the hot LM may emit, and every token/alias used as a cold-record trigger must have a directly usable resident recognition/presentation entry or another separately measured resident lookup representation. Candidate A initially uses one resident sorted recognition/presentation lexicon rather than hiding a random-access dictionary inside a PACKED object.
 
-- hot token count and coverage;
-- extended token count and coverage;
+Cold-record payload wording that is not needed for target-side recognition may remain literal bytes inside the cold sequential stream. A word must not be assigned a compact extended ID if reconstructing or matching that ID would require an unbudgeted random seek through cold storage.
+
+The resident lexicon is chosen from the remaining corpus by a score that considers occurrence count, spelling length, domain importance, factual-entity/trigger use, LM-output use and total table bytes. Candidate builds must report:
+
+- one-byte hot token count and coverage;
+- resident extended token count and coverage;
+- resident recognition/presentation table bytes;
 - literal escape rate on training/dev/evaluation corpora;
 - mean encoded bytes per lexical token;
 - mean encoded bytes per raw input character;
-- dictionary storage bytes.
+- total dictionary/index storage bytes.
+
+If a later compact alias index beats the resident sorted lexicon, it is a measured candidate change; Candidate A does not assume such an index for free.
 
 ### 7.2 Normalization and case
 
@@ -243,9 +266,26 @@ Unknown proper names can survive through the proper-name literal escape. The tok
 A variable-width encoded stream is compact but inconvenient for repeated backwards language-model lookups. Candidate A therefore maintains two recent-history views:
 
 1. a compact encoded L0 exact-turn ring for storage;
-2. a 96-entry decoded u16 hot-token ring for fast last-token and n-gram context access.
+2. a 96-entry decoded u16 **LM-context reference** ring for fast recent n-gram access.
 
-The decoded ring is a cache of recent canonical token IDs. It is not additional semantic history and may be reconstructed from L0 after reset/debug operations.
+Known vocabulary tokens use their canonical target token IDs. Literal-word, numeric-literal and proper-name escapes are represented in the decoded LM ring by three fixed synthetic class references outside the 0..4095 vocabulary-ID range; their exact literal bytes remain in the encoded current-turn/L0 storage. Synthetic literal classes are context features only and can never be detokenized as invented words.
+
+The decoded ring is therefore a cache of recent LM context, not an independent exact transcript. It may be reconstructed from L0 after reset/debug operations.
+
+### 7.4 Lexical and encoded-turn bounds
+
+Literal escapes are bounded format records, not licenses to truncate input. Candidate A applies these rules before any conversation state is mutated:
+
+- `F1` literal-word payload: 1..31 ASCII bytes;
+- `F2` numeric-literal payload: 1..15 ASCII bytes;
+- `F3` proper-name payload: 1..31 ASCII bytes; a detected multi-word proper-name span may include its internal ASCII spaces;
+- a lexical item/span that exceeds its applicable bound is rejected for that turn with a bounded user-visible error rather than silently shortened or changed;
+- malformed embedded NUL/control bytes are rejected by the tokenizer input contract;
+- the complete user turn must fit the separate current-turn encoded scratch limit defined in Section 8.7 after token expansion.
+
+These are Candidate-A bounds. Later measurements may change them only together with the wire-format and workspace accounting.
+
+## 8. Compressed conversational context
 
 ## 8. Compressed conversational context
 
@@ -259,90 +299,123 @@ The system is hierarchical. Detail is retained while it is likely to matter and 
 
 ### 8.2 Four context levels
 
-The working context has four levels.
+The working context has four levels plus one small session-literal table used by the semantic levels.
 
 **L0 — exact live tail**
 
-The newest dialogue remains as canonical encoded tokens in a fixed circular byte buffer plus a small decoded-token cache. This is the only part treated as exact word-by-word conversational history by the response generator.
+The newest dialogue remains as canonical encoded tokens in a fixed circular byte buffer plus a small decoded LM-context cache. This is the only part treated as exact word-by-word conversational history by the response generator.
 
 L0 contains enough recent user/assistant text to preserve pronouns, immediate corrections, local phrasing, unfinished topic transitions, and short-range linguistic continuity.
 
 **L1 — semantic turn capsules**
 
-When older turns leave L0, they are reduced to compact fixed-format records. A capsule records only information that can influence future conversation: speaker/turn class, topic, salient entities, question/assertion/correction state, selected high-information token IDs, importance, and recency.
+When older turns leave L0, they are reduced to compact fixed-format records. A capsule records only information that can influence future conversation: speaker/source class, topic, salient entities, question/assertion/correction state, selected high-information references, importance and bounded recency.
 
 Candidate A uses a 16-byte L1 capsule:
 
 ```text
-+0      flags: speaker/question/correction/polarity/state bits
++0      flags
 +1      intent or relation class
 +2..3   topic id u16
-+4..5   entity A token/entity id u16, 0 if absent
-+6..7   entity B token/entity id u16, 0 if absent
-+8..9   high-information token A u16, 0 if absent
-+10..11 high-information token B u16, 0 if absent
-+12..13 value/token/date payload u16 interpreted by flags
++4..5   entity A semantic ref u16, 0 if absent
++6..7   entity B semantic ref u16, 0 if absent
++8..9   high-information semantic ref A u16, 0 if absent
++10..11 high-information semantic ref B u16, 0 if absent
++12..13 value/token/date payload u16 interpreted by flags/relation
 +14     importance/confidence rank u8
-+15     age/epoch bucket u8
++15     saturating age bucket u8
 ```
 
-No C48 `struct` is required. The implementation may store these as one byte array and symbolic byte offsets.
+The Candidate-A flag byte is:
+
+```text
+bit 0     speaker: 0 user, 1 assistant
+bit 1     question
+bit 2     explicit correction
+bit 3     negative/polarity marker
+bit 4     unresolved/open state
+bit 5     superseded state
+bits 6-7 source class:
+00 user/session assertion
+01 assistant fact grounded by selected cold knowledge
+10 assistant conversational/unverified state
+11 reserved/system state
+```
+
+No C48 `struct` is required. The implementation stores these as byte arrays and symbolic byte offsets.
 
 A capsule is intentionally lossy. Its job is to remember, for example, that the user was discussing `Manic Miner`, had already been told who wrote it, and then compared it with `Jet Set Willy`; it need not retain every article and adjective from the original turns.
 
+**Session literal table — bounded exact names/values used by L1/L2**
+
+Persistent model entity/token IDs use semantic-reference bit 15 clear. Bit 15 set denotes a session-literal reference: bits 14..3 contain a 12-bit generation and bits 2..0 select one of eight slots. Candidate A reserves eight 34-byte slots:
+
+```text
++0..1   generation, low 12 bits significant
++2      byte length 0..31
++3..33  exact normalized ASCII bytes, unused tail zero
+```
+
+An exact existing literal is reused rather than duplicated. Before a slot is reused, every matching L1/L2 reference is invalidated by a bounded scan and `ai_litloss` is incremented; the new generation makes any missed stale reference fail validation rather than alias a new name. Generation wrap is handled by first invalidating every reference to that slot and restarting its generation from 1. Slot selection is deterministic: prefer an unreferenced slot, otherwise evict the oldest/lowest-retention referenced slot after invalidating it. If exact old literal bytes are lost, the agent may retain the remaining semantic relation but must not pretend it still knows the exact spelling.
+
+This table is what lets a user-supplied unknown name or short temporary string survive L0 eviction without pretending that an arbitrary new word magically acquired a permanent model token ID.
+
 **L2 — hierarchical session synopsis**
 
-When the L1 ring fills, a deterministic compaction pass merges selected old capsules into coarser 16-byte synopsis records. These retain durable topics, named entities, user-stated preferences relevant to the conversation, unresolved questions, corrections, and facts already supplied by the agent.
+Candidate A uses 24 x 16-byte L2 records with the same physical field skeleton as L1. An L2 record is a merged semantic fact/state record, not generated prose. L2 compaction uses a deterministic relation key containing source class, relation class, topic and applicable entity refs. Matching keys are coalesced; correction/supersession state and the newest bounded value are preserved according to Section 8.4.
 
-The synopsis is compressed semantic state, not generated prose. No second language model is needed to summarize the conversation on target.
+When no existing L2 key can absorb an incoming record and all 24 slots are occupied, Candidate A deterministically evicts the lowest-retention record using protection class, importance, saturating age and slot index as the tie-break tuple. It increments `ai_l2evict`. Corrections, unresolved questions and current user/session facts receive stronger retention than repeated low-information chatter, but **L2 is still finite**: unrelated high-information facts can eventually be lost and the evaluation must measure that loss honestly.
 
-Repeated compaction makes context capacity scale by information density rather than raw character count. Repeated or low-information chatter can collapse aggressively while important corrections and entities remain.
+Age is not a modulo turn counter. The u8 age bucket saturates at 255; bounded maintenance/compaction increments or recomputes it with saturation so wrap can never make ancient state appear new.
 
 **L3 — optional exact transcript archive**
 
-For reproducibility, debugging, and occasional recovery, exact user/assistant text may also be appended to a transcript object when memory permits. An eligible closed transcript object may benefit from ZX-UX ZXP1 packing.
+The SDK/GitHub harness always retains an exact external transcript. Candidate A keeps target L3 **disabled by default** because an appendable RAW RAM object consumes the same arena as the process/model and reopening a PACKED object for write can materialize a RAW replacement.
 
-L3 is not required for every inference step. Normal response planning uses L0/L1/L2. This avoids repeatedly seeking through a large PACKED object, whose backwards seeks are intentionally O(n) in REV12.
-
-On GitHub/SDK evaluation runs, the host harness shall always retain an exact external transcript regardless of whether the target L3 archive is enabled. The external transcript is evidence, not hidden runtime context.
+A diagnostic build may enable target L3 only with an explicit fixed logical/physical quota included in the arena budget. When that quota is reached, archival stops with a diagnostic counter; it never grows opportunistically until memory fails. After a closed archive becomes eligible for packing, any later reopen-for-write peak must still be budgeted as a RAW materialization. L3 is not normal inference context and cannot be used to inflate the claimed live context window.
 
 ### 8.3 Promotion and compaction
 
-After each completed exchange:
+A turn is transactional with respect to conversation memory. Candidate A performs these bounded steps:
 
-1. tokenize the new user turn and generated response;
-2. append exact tokens to L0 and update the decoded 96-token hot cache;
-3. if L0 exceeds its fixed capacity, evict whole oldest turn fragments rather than arbitrary half-tokens where practical;
-4. derive or update one L1 semantic capsule from the evicted material;
-5. if L1 is full, merge selected old capsules into L2 according to a deterministic importance/recency rule;
-6. optionally append the exact text to L3 before discarding its live text form;
-7. retain counters and guard bytes in instrumented builds to prove that compaction never writes outside assigned buffers.
+1. read and validate the raw user line;
+2. tokenize it completely into the 320-byte current-turn encoded scratch; reject the turn without changing memory if the encoded form does not fit;
+3. classify/retrieve/generate using that current-turn scratch plus existing L0/L1/L2;
+4. finish the complete encoded response in the 256-byte response-token buffer and validate factual anchors, token count and eventual printed-byte count before printing any response text;
+5. stream the validated response through the production tty path;
+6. append the exact user and assistant encoded turns to L0 as two complete speaker turns;
+7. evict complete oldest speaker turns until the new turns fit; never discard half of a token/escape or knowingly leave a half-turn descriptor;
+8. derive at most two highest-ranked L1 capsules from each evicted speaker turn; if more semantic candidates exist, the deterministic dropped-candidate counter records the loss;
+9. when L1 needs space, compact bounded old L1 records into L2 using the deterministic L2 merge/eviction rule;
+10. update the decoded 96-entry LM-context cache and bounded diagnostic counters;
+11. in a diagnostic L3 build, append only if its pre-budgeted quota permits it;
+12. verify instrumented guard values before emitting the next prompt.
 
-No stage allocates an unbounded temporary copy of the text being compacted.
+The 128-byte L0 directory is exactly 32 four-byte descriptors: `u16` ring start plus `u16` encoded byte length. Speaker/turn type remains encoded in the turn stream itself. Ring reads whose bytes cross the physical end use bounded modulo copying; a descriptor is accepted only when its start/length prove every referenced byte lies within the 896-byte logical ring.
+
+No stage allocates an unbounded temporary copy of text or semantic records.
 
 ### 8.4 Correction and supersession rule
 
-A later explicit correction has priority over an older contradictory capsule when the topic/entity key matches. Candidate A marks the older semantic state superseded or replaces it during compaction; it does not keep both statements with equal authority and hope the generator chooses the newer one.
+Conversation memory records **who asserted what**; they do not mutate the shipped cold knowledge base.
 
-The rule is intentionally conservative. If two statements cannot be proved to refer to the same topic/entity relation, both may remain and the agent should express uncertainty rather than silently rewriting history.
+A later explicit user correction may supersede an older contradictory **user/session assertion** when the source class, topic/entity references and relation key establish that the statements describe the same semantic relation. The older session record is marked superseded or replaced during compaction.
+
+A user assertion does not silently overwrite an assistant fact that was grounded by a cold knowledge record, and neither L1 nor L2 ever rewrites cold model bytes. If a user-supplied correction conflicts with grounded shipped knowledge, both provenance states may be retained: response planning can state the conflict, ask for clarification, or prefer the grounded fact according to measured policy. If identity/relation equivalence cannot be established, the system retains uncertainty rather than merging by guesswork.
+
+This prevents compressed context from becoming either a fossilized contradiction pile or an easy route for a conversational assertion to poison the model's persistent factual state.
 
 ### 8.5 Retrieval into the active decision context
 
-For each new user turn, the controller computes a cheap integer relevance score against L1/L2 records using features such as:
+For each new user turn, the controller computes a bounded integer relevance score against L1/L2 records using features such as exact topic match, persistent/session entity match, overlap of high-information references, unresolved-question marker, correction/current-state marker, saturating recency and importance/confidence.
 
-- exact topic match;
-- salient entity match;
-- overlap of high-information token IDs;
-- unresolved-question marker;
-- correction/current-state marker;
-- recency;
-- importance/confidence.
+Every session-literal reference is validated against its slot and generation before use. A stale reference is treated as absent and counted; it is never allowed to resolve to newly reused bytes.
 
-Only the best small number of records are promoted into current response-planning state. Candidate A initially retains the best four conversational-memory records. That number is a measured knob rather than a user-visible promise.
+Candidate A retains the best four conversational-memory records as **indices plus scores**, not four copied 16-byte records. The original L1/L2 arrays remain the storage. This avoids spending retrieval scratch on data already resident and leaves the scratch budget for cold-model winners and streaming state.
 
-The response generator receives the recent exact L0 tail, the new user turn, bounded retrieved memory features, current topic/intent state, and any Spectrum-domain knowledge records selected for the question.
+The response generator receives the recent exact L0 tail, the current encoded user turn, the bounded selected L1/L2 indices, current topic/intent state, and at most the two cold knowledge records selected in Section 9.
 
-This is how a conversation can behave as though it remembers much more text than can physically coexist as raw text in RAM.
+This is how a conversation can behave as though it remembers much more text than can physically coexist as raw text in RAM, while stale/lost semantic information remains observable rather than silently re-created.
 
 ### 8.6 What "larger context" does and does not promise
 
@@ -352,28 +425,36 @@ It does not promise perfect verbatim recall after old material has been reduced 
 
 Quality tests therefore distinguish exact recent recall, semantic old-turn recall, topic continuity, entity continuity, contradiction avoidance, correction handling, and unsupported pseudo-verbatim recall.
 
-### 8.7 Candidate-A 3,584-byte conversation/context workspace
+### 8.7 Candidate-A 4,336-byte conversation/context workspace
 
-Revision 0.3 gives the first context plan a real byte ledger. These values are intentionally easy to alter in generated constants after measurement, but Candidate A shall be implemented and benchmarked against this baseline before tuning.
+Forensic Review Pass 1 found that the Revision-0.3 ledger omitted simultaneous encoded current-turn state, had no bounded representation for unknown names after L0, and treated one 384-byte decoded response buffer as though it also solved canonical response-token retention. Candidate A therefore uses the following corrected static/BSS ledger:
 
 ```text
-decoded hot-token ring         192   96 x u16 token ids
-L0 encoded exact-turn ring     896   variable-width token bytes
-L0 turn directory              128   32 x 4-byte turn descriptors
+decoded LM-context ring        192   96 x u16 context refs
+L0 encoded exact-turn ring     896
+L0 turn directory              128   32 x 4-byte descriptors
 L1 semantic capsules           768   48 x 16 bytes
 L2 synopsis records            384   24 x 16 bytes
-input line buffer              192
-response text/output buffer    384
-retrieval scratch              256
+session literal slots          272   8 x 34 bytes
+input line buffer              192   at most 191 bytes + NUL
+current-turn encoded scratch   320
+response encoded-token buffer  256   at most 255 encoded bytes
+aim/retrieval scratch          512
 generation/scoring state       256
-guards, counters, cursors      128
-                              ----
-Candidate-A total             3584 bytes
+guards, counters, cursors      160
+                    ----
+Candidate-A total             4336 bytes
 ```
 
-This total is BSS/static working memory, not heap. It excludes program code, immutable hot model tables, stack, external model storage, packed-reader state, ZX-UX objects, shell/process overhead, and optional L3 transcript storage.
+The 512-byte retrieval scratch is explicitly partitionable as two 192-byte cold-record winner slots, up to 64 bytes of bounded streaming read/parser staging, and up to 64 bytes of scores/indices/header state. Conversational-memory winners remain indices into L1/L2 and are not copied here.
 
-The first experimental objective is for semantic recall tests to represent source-equivalent history many times larger than the L0 exact ring without increasing this 3,584-byte workspace. No public ratio is claimed until the harness measures it.
+There is deliberately no second 384-byte decoded response buffer. Generation completes and validates the canonical encoded response first; detokenization then streams through the real tty one bounded token/literal at a time. Before printing, the generator proves the decoded output will satisfy the Section-11 character ceiling.
+
+The 4,336-byte total is static/BSS working memory, not heap. It excludes program code, immutable resident lexicon/hot model tables, native process stack, ARG1/ENV1 allocation, external cold-model storage, PACKED-reader state, shell/system allocations and optional pre-budgeted target L3 storage.
+
+All phase overlays inside the named scratch regions require a generated lifetime/layout report. A local C48 array, parser buffer or model-header copy that is not represented in this ledger is a memory-accounting defect rather than "compiler overhead".
+
+The first experimental objective remains semantic recall over source-equivalent history many times larger than the L0 exact ring without increasing this 4,336-byte baseline. No public ratio is claimed until the harness measures it.
 
 ### 8.8 Context-compression measurements
 
@@ -389,7 +470,9 @@ Every candidate context implementation shall report at least:
 - semantic-recall accuracy by turn distance;
 - correction/supersession accuracy;
 - compaction CPU work;
-- retrieval CPU work.
+- retrieval CPU work;
+- session-literal slot evictions/stale-reference losses;
+- L2 semantic evictions and dropped L1 candidates.
 
 The phrase "effective context" in project documentation must be accompanied by those measurements. It must not be presented as a transformer-equivalent context-window number without qualification.
 
@@ -415,20 +498,22 @@ The hot plane is ordinary executable image/static data and therefore directly ad
 
 ### 9.2 Cold sequential Spectrum knowledge plane
 
-Spectrum-domain knowledge is stored as one or a very small number of external model objects. An eligible object may be ZXP1 PACKED.
+Spectrum-domain knowledge is stored as one or a very small number of external model objects. In Candidate A, **external means a separate resident ZX-UX RAM object during conversation**, not a magic tape-backed random-access file. An eligible resident object may be ZXP1 PACKED when the measured physical saving justifies the 272-byte read-state cost and decompression latency.
 
-The cold plane is designed to be scanned forward once per user turn. It is **not** designed as a desktop random-access database. During the scan, each record's compact trigger/topic/entity header is scored against the user turn. Irrelevant payload tokens are read/discarded; the best few relevant records are copied into bounded retrieval scratch.
+The baseline cold plane is scanned forward exactly once per user turn. With one persistent handle, the scanner seeks to logical offset zero at the start of the next turn; on a PACKED object REV12 therefore resets the decoder and the subsequent scan decodes forward again. The scanner issues bounded logical reads no larger than 64 bytes and places `yield()`/kernel boundaries at measured chunk or record intervals rather than asking one syscall to decompress the entire model.
 
-This converts the PACKED representation's sequential nature into an intended access pattern rather than a handicap. The design pays bounded CPU time to scan compressed knowledge so it does not have to keep the whole logical knowledge base directly addressable.
+Each record header is scored as it streams past. Candidate A retains **at most two complete winning cold records**, each at most 192 logical bytes, in the two fixed winner slots inside retrieval scratch. A later better match replaces the lower-ranked slot deterministically. Irrelevant payload is validated/read and discarded; no backwards probe is needed to recover a winner.
 
-The runner shall measure logical bytes scanned, physical bytes occupied, target/VM work, selected-record count, and answer latency for every candidate model size.
+A tiny index at the front of one PACKED object cannot by itself make the object random access: seeking to a later logical position still requires decoder work through the preceding logical stream, and returning backwards resets to zero. If one full scan per turn is too slow, the next candidates are measured alternatives such as a RAW indexed object, a small number of independently PACKED topic shards opened one at a time, or a larger resident topic/cache plane. Each alternative must account for physical bytes, extra handles/272-byte decoder states, fragmentation and latency.
+
+The runner shall measure logical bytes scanned, resident physical bytes occupied, bounded read count, yields, VM work, selected-record count and answer latency. Host wall-clock time is not presented as Z80 latency; release latency requires Fuse/cycle evidence and ultimately real-machine evidence.
 
 ### 9.3 Candidate cold-record format
 
 Candidate A uses a length-delimited logical record so corrupt lengths can be rejected before buffers are touched. The provisional record header is:
 
 ```text
-u8   logical_record_length      complete record, candidate maximum 255
+u8   logical_record_length      complete record, Candidate-A maximum 192
 u8   record_type
 u16  topic_id
 u16  entity_a
@@ -439,17 +524,21 @@ u16  trigger[trigger_count]
 ...  encoded token payload      must fit logical_record_length
 ```
 
-Host tooling rejects records shorter than their declared header, over 255 logical bytes, with trigger_count above four, with unknown record types, or with token payloads that do not terminate exactly at the record boundary.
+The 192-byte maximum is chosen because two complete winners must coexist inside the 512-byte retrieval scratch with bounded streaming/parser state. Host tooling rejects records shorter than their declared header, over 192 logical bytes, with trigger_count above four, unknown record types, persistent entity IDs using the session-literal high-bit namespace, or token payloads that do not terminate exactly at the record boundary.
+
+Every trigger token/alias must be target-recognizable through the resident lexicon described in Section 7.1. Payload-only wording need not consume resident dictionary bytes.
 
 Record types are expected to distinguish factual statement, biographical fact, game/software fact, hardware/architecture fact, chronology fact, comparison relation, and conversational/domain phrase material. Exact numeric IDs are not frozen until corpus construction begins.
 
 ### 9.4 Candidate model container
 
-The logical cold-model stream begins with a compact header and sequential section directory. Candidate magic is `A48M`; release version numbering and exact integrity polynomial remain to be frozen after the first packer/parser prototype.
+The logical cold-model stream begins with a compact header and sequential section directory. Candidate magic is `A48M`; release version numbering and the exact target integrity algorithm remain to be frozen after the first packer/parser prototype.
 
-The container shall declare at least format version, feature flags, vocabulary identity, record count, logical length, and section lengths. Every declared sum is checked with widened host arithmetic and bounded 16-bit target arithmetic before a section is consumed.
+ZX-UX v1 exposes RAM-object logical/storage lengths and seek offsets as u16 values. Consequently each Candidate-A cold model object has a hard logical length of at most 65535 bytes. If later measurements require sharding, **each shard** independently obeys that bound and its resident physical allocation is budgeted. A PACKED resident object must also satisfy REV12's requirement that physical `storage_length` is strictly smaller than its logical length and must fit the real arena allocation.
 
-The target model must include a cheap integrity check suitable for the Z80/C48 implementation. Host release tooling also records SHA-256 for reproducibility. SHA-256 is not imposed on the target merely because the host can calculate it cheaply.
+The container shall declare at least format version, feature flags, resident-vocabulary identity, record count, logical length and section lengths. Host tooling validates all sums/counts in widened arithmetic, rejects any stream whose mathematical layout exceeds the u16 target object/seek domain, and only then emits narrowed fields. Target validation uses subtraction/reordered comparisons so 16-bit wrap cannot turn an invalid layout into a valid one.
+
+The target model includes an incremental integrity check suitable for the Z80/C48 implementation. Host release tooling also records SHA-256 for reproducibility. SHA-256 is not imposed on the target merely because the host can calculate it cheaply.
 
 ### 9.5 Candidate variable-order language model
 
@@ -459,9 +548,13 @@ Candidate A uses pruned variable-order token continuation statistics with maximu
 - bigram transitions for common local syntax;
 - trigram transitions only where training evidence and byte/value measurements justify them.
 
-The host trainer quantizes continuation likelihoods into small integer ranks/scores. Low-value transitions are pruned under an explicit byte budget. The target generator backs off deterministically when a higher-order context is absent.
+The host trainer quantizes continuation likelihoods into small integer ranks/scores. Low-value transitions are pruned under an explicit byte budget. **Every serialized continuation context, including the unigram fallback, carries at most 12 learned continuation candidates in Candidate A.** The controller may inject at most two obligatory legal factual-anchor candidates, so one generation step evaluates no more than 14 candidates.
 
-The hot LM is not required to memorize Spectrum facts. Facts are supplied by selected cold records. This separation allows factual knowledge to grow in a compressible sequential representation without making every next-token decision scan the whole model.
+Hot transition contexts are sorted and directly addressable. Candidate A uses bounded binary lookup rather than scanning the complete transition table for every output token. A trigram key is compared lexicographically as two u16 context refs; it is never packed into a nonexistent C48 `long`. Literal-class refs from Section 7.3 back off normally when no learned higher-order context exists.
+
+The hot LM is not required to memorize Spectrum facts. Facts are supplied by selected cold records. This separation allows factual knowledge to grow in a compressible sequential representation without making every next-token decision scan the whole cold model.
+
+Candidate reports include total hot-transition bytes, number of contexts by order, maximum/mean continuation fanout, lookup-comparison counts, fallback frequency and quality/latency ablations. The 12-candidate cap is a Candidate-A measurement point, not a frozen release ABI.
 
 ### 9.6 Why Candidate A is not merely a template chatbot
 
@@ -471,86 +564,93 @@ A candidate build shall include ablation tests. If replacing the learned continu
 
 ## 10. Runtime memory budgeting
 
-No release memory claim is frozen until the real compiled C48/MEX1 artifact and model are measured. The budget shall nevertheless be accounted in named categories from the first prototype:
+No release memory claim is frozen until the real compiled C48/MEX1 artifact and model are measured. The budget is nevertheless accounted in named simultaneous categories from the first prototype:
 
 ```text
-process image/text + immutable hot model tables
-process BSS including the 3584-byte Candidate-A workspace
-process FAST stack
-fixed C48 heap reserve
-external cold-model physical storage
-272-byte PACKED-reader state if the cold model is packed
-optional target transcript object physical storage
-shell and other simultaneously resident process allocations
+process image/text + immutable resident lexicon/hot model tables
+process BSS including the 4336-byte Candidate-A workspace
+MEX1 minimum_stack_size plus REV12's additional 64 bootstrap bytes
+ARG1 + ENV1 process bootstrap allocation and alignment
+fixed C48 heap reserve inside BSS
+external cold-model resident physical storage + allocator alignment
+272-byte PACKED-reader state for each independent packed model handle
+optional pre-budgeted target L3 physical storage
+shell and other simultaneously resident process allocations/stacks
 pinned/system arena resources
-free-arena safety margin
+allocator fragmentation / placement-class safety margin
 ```
 
-The invariant is:
+The simple total is a **necessary but not sufficient** invariant:
 
 ```text
 all simultaneous arena consumers + required safety margin <= 32768 bytes
 ```
 
-The build/evaluation harness shall reject a candidate whose measured peak violates that equation, even if it appears to work in a host-side simulation.
+REV12 also requires placement classes and contiguous extents. Release evidence must therefore prove the actual allocation sequence succeeds with image+BSS `ANY`, process stack `FAST_REQUIRED`, object-store placement, two-byte alignment and the measured fragmented free map. Total free bytes cannot rescue a required allocation when the largest legal extent is too small or FAST space is exhausted.
+
+The build/evaluation harness rejects a candidate that violates either the total-byte equation or the class/extent allocation proof, even if a host-side simulation with a flat byte counter appears to work.
 
 ### 10.1 Candidate-A engineering targets
 
 Before measurement supplies better numbers, Candidate A aims for:
 
-- 3,584 bytes fixed conversation/context workspace;
+- 4,336 bytes fixed conversation/context workspace;
 - zero C48 heap for the initial target implementation;
-- 768..1024 bytes target process stack unless measured call depth requires more;
-- low-single-digit-KiB hot model tables;
-- cold model stored externally and PACKED only when physical bytes are materially reduced;
-- exactly one cold-model read handle during normal inference where practical;
-- at least several KiB of measured total-arena headroom under the actual ordinary launch configuration.
+- MEX1 `minimum_stack_size` of 768..1024 bytes unless measured native call depth requires more, which means 832..1088 actual stack-allocation bytes after REV12's mandatory +64 bootstrap allowance;
+- low-single-digit-KiB resident lexicon/hot model tables only if measured tables really meet that goal;
+- one or a very small number of separately resident cold model objects, PACKED only when physical bytes are materially reduced;
+- exactly one cold-model read handle during normal Candidate-A inference;
+- target L3 disabled by default;
+- several KiB of measured total-arena headroom **and** safe largest-extent/FAST headroom under the actual ordinary launch configuration.
 
-These are engineering targets, not release promises. A candidate that cannot leave safe arena headroom is rejected or made smaller even if its conversational score is higher.
+These are engineering targets, not release promises. A candidate that cannot leave safe allocator headroom is rejected or made smaller even if its conversational score is higher.
 
 ### 10.2 Memory evidence
 
-Every retained model candidate shall publish a machine-readable memory report containing at least compiled SDK artifact identity, eventual MEX1 image/BSS size when available, configured heap/stack, BSS workspace bytes, external model logical/physical bytes, packed-reader state, observed target/SDK peak, and total system arena headroom.
+Every retained model candidate publishes a machine-readable memory report containing at least compiled SDK artifact identity; eventual MEX1 image/text/BSS sizes and symbol/map evidence; configured heap; MEX1 minimum stack and actual +64 allocation; native stack canary/high-water result; ARG1/ENV1 bytes; the 4,336-byte workspace; resident lexicon/hot-table bytes; external model logical/physical/aligned bytes; packed-reader states; optional L3 quota; shell/other process allocations; pinned resources; observed arena peak; FAST and CONTENDED free totals/largest extents; and final total/largest-extent headroom in the actual load/launch order.
+
+The host C48 VM is not evidence for native Z80 stack high-water or ZX-UX allocator fragmentation. Those claims require the native/Fuse path and, for final hardware claims, a physical 48K run.
 
 The phrase "fits in 48K" is not sufficient evidence.
 
 ## 11. Response pipeline
 
-A normal turn is a bounded pipeline:
+A normal turn is a bounded transactional pipeline:
 
 ```text
 read bounded line
-  -> normalize/tokenize
+  -> normalize/tokenize completely into current-turn encoded scratch
+  -> reject lexical/encoded overflow before mutating context
   -> detect q/commands
   -> score topic + intent + salient entities
-  -> retrieve L1/L2 conversational memories
-  -> sequentially scan cold Spectrum knowledge and retain best records
+  -> retrieve L1/L2 conversational-memory indices
+  -> seek cold model to zero and perform one bounded forward scan
+  -> retain at most two complete cold records
   -> choose response mode and obligatory factual anchors
-  -> seed learned variable-order token generator
-  -> select/rank continuation tokens with backoff
-  -> apply anti-repeat and factual-anchor checks
-  -> detokenize/print
-  -> update L0/L1/L2
-  -> emit host-side evidence through instrumentation
+  -> generate complete canonical response into encoded response buffer
+  -> validate anchors, repetition, token ceiling and decoded byte ceiling
+  -> stream detokenization through the real tty path
+  -> commit user/assistant encoded turns to L0 and perform bounded compaction
+  -> update diagnostic evidence
 ```
 
-Every stage has a fixed maximum input/output size. A failure in an optional stage falls back to a documented simpler response path rather than overrunning memory.
+Every stage has a fixed maximum input/output size. Optional-stage failure falls back to a documented simpler response path rather than overrunning memory. A response-generation overflow is detected before partial answer text is printed; the controller may substitute a known-small bounded uncertainty/error response.
 
 The controller may choose a direct factual explanation, comparison, historical answer, architecture answer, conversational continuation, clarification request, bounded uncertainty response, or another measured mode. The controller must never invent remote capabilities or hidden access to information outside the shipped model/context.
 
 ### 11.1 Candidate knowledge retrieval score
 
-The first retriever uses only integer additions/comparisons. Candidate features include exact topic match, entity match, trigger-token overlap, question/intent compatibility, current conversational-memory reinforcement, and record importance. No runtime floating point is needed.
+The first retriever uses only integer additions/comparisons. Candidate features include exact topic match, entity/session-literal match, trigger-token overlap, question/intent compatibility, current conversational-memory reinforcement, and record importance. No runtime floating point is needed.
 
 The host reference implementation calculates the same integer score byte-for-byte. Any future improvement that uses a different host-only formula without a target equivalent is not a valid target model improvement.
 
 ### 11.2 Candidate generation policy
 
-Candidate A generates at most 80 canonical output tokens and at most 383 response-buffer bytes excluding the terminating NUL. Earlier termination on a complete sentence is preferred.
+Candidate A generates at most 80 canonical output tokens, at most 255 encoded response bytes inside the 256-byte buffer, and at most 383 printed ASCII bytes for one answer. All three ceilings apply independently. Before accepting a token/literal, the generator proves that its encoded bytes and eventual spelling/literal bytes still fit the remaining limits.
 
-At each step the generator evaluates a bounded candidate continuation set. The highest adjusted score wins; ties use ascending canonical token ID. Adjustments include repetition penalties, obligatory fact-anchor progress, response-mode legality, and end-of-sentence preference near the length ceiling.
+At each step the generator evaluates no more than the Section-9.5 bound of 12 learned candidates plus two controller-injected factual-anchor candidates. The highest adjusted score wins; ties use ascending canonical token/reference order. Adjustments include repetition penalties, obligatory fact-anchor progress, response-mode legality, and end-of-sentence preference near the length ceiling.
 
-There is no unbounded beam. A tiny alternative/backtrack slot may be evaluated later if measurements show a quality win, but the baseline is one active output path plus bounded candidate scratch.
+There is no unbounded beam. A tiny alternative/backtrack slot may be evaluated later if measurements show a quality win, but its byte and candidate-count ceiling must be added explicitly before adoption. The baseline is one active encoded output path plus bounded candidate scratch.
 
 ## 12. Anti-repetition, uncertainty and conversational quality
 
@@ -592,13 +692,13 @@ Enter q at any time to quit.
 >
 ```
 
-This wording remains provisional until terminal character repertoire, wrapping, binary size, and startup-memory cost are measured. If the copyright symbol is not in the guaranteed target character repertoire, the target build shall use an ASCII-safe equivalent rather than rely on an accidental host glyph.
+The humor is retained. The exact target bytes remain provisional until the terminal/source character repertoire is proved. **Every non-ASCII glyph in the display draft, including `©` and the em dash, must have an explicitly supported target encoding or an ASCII-safe replacement**; the C48 source must not rely on a host editor/compiler accidentally accepting Unicode. The favorite `48K seemed enormous...` line has no such dependency and remains part of Candidate A.
 
 ### 13.2 Input
 
-`ailmzx48` owns its application input loop after launch. It shall use a bounded line buffer and normal ZX-UX tty services. It shall not depend on the shell retaining the conversation line for it.
+`ailmzx48` owns its application input loop after launch. It uses a bounded line buffer and normal ZX-UX tty services; it does not depend on the shell retaining the conversation line for it.
 
-Candidate A reserves 192 bytes for the input line including terminator/scratch discipline. The exact accepted user-character maximum will be slightly smaller and will be frozen by implementation. Overlength input must be explicitly rejected or cleanly drained to the next newline; silent semantic truncation is not acceptable.
+Candidate A reserves 192 bytes and accepts at most 191 ASCII input bytes before the terminating NUL. Overlength raw input is cleanly drained/rejected to the next newline. A raw line that fits but violates a literal-span limit from Section 7.4 or expands beyond 319 encoded bytes is likewise rejected before context mutation. Silent text or semantic truncation is not acceptable.
 
 When waiting for ordinary conversational input, the exact command `q` followed by ENTER terminates cleanly. The matcher ignores the line-ending representation but does not treat an arbitrary sentence containing the letter q as a quit request.
 
@@ -617,11 +717,15 @@ The current SDK already gives the project a useful base:
 - `c48run --headless` instantiates the real C48 host VM and Spectrum screen model;
 - the VM's default input provider reads host stdin one byte at a time, so C48 `getchar()` can already consume scripted input;
 - the VM accepts an injected `input_provider`, allowing a host harness to provide bytes interactively rather than preload one static file;
-- C48 `putchar()`/`puts()` update `ZXScreen`, preserving Spectrum terminal semantics;
+- C48 `putchar()`/`puts()` update `ZXScreen`, preserving the SDK Spectrum terminal semantics;
 - `--max-steps` provides a deterministic runaway-execution ceiling;
-- the VM exposes globals and memory internally to SDK-host tooling, enabling non-user-visible diagnostic inspection without changing target responses.
+- the VM exposes globals and memory internally to SDK-host tooling, enabling diagnostic inspection without changing target responses.
 
-The missing feature is exact logical terminal-stream capture. The baseline harness shall add that **outside the C48 program semantics** rather than make the target program print test protocol noise.
+Forensic Review Pass 1 also found an important current-SDK limitation: the host VM builtin surface does **not** yet expose the ZX-UX `open`/`read`/`seek`/`close` object-I/O path needed by Candidate A's external cold model. Therefore a host conversation that only embeds the cold model in Python or directly pokes VM memory is not an end-to-end test of the target storage interface.
+
+Before external-model SDK conversations count as target-interface regressions, the SDK/harness must gain a reviewed, tested read-only object-I/O adapter that lets the same C48 source call the canonical interfaces against registered model fixture bytes. It must fail with target-like bounds/errors and must not become a hidden alternate inference path. A RAW fixture adapter can validate parser/retriever logic; claims about ZXP1 decoder state, packed seek cost, allocator placement or cassette behavior still require their native/architecture-specific tests.
+
+The other missing feature is exact logical terminal-stream capture. The baseline harness adds that **outside the C48 program semantics** rather than making the target program print test protocol noise.
 
 ### 14.1 Harness architecture
 
@@ -631,34 +735,15 @@ The initial harness lives under:
 usr/src/ailmzx48/tooling/
 ```
 
-The preferred first implementation imports the SDK VM classes directly and supplies:
+It imports the SDK VM classes directly and supplies:
 
-- a queued byte `input_provider`;
+- a queued byte `input_provider` whose invocation is itself an observable "program is asking for input" boundary;
 - a tracing `ZXScreen` subclass/wrapper whose `putchar()` records the same logical byte it then passes to the real screen implementation;
+- the reviewed read-only model-object adapter required above before external-model runs are called end-to-end SDK tests;
 - optional VM-global inspection helpers for named `ailmzx48` diagnostic counters;
-- deterministic maximum-step and per-turn progress guards.
+- deterministic maximum-step, per-turn progress and output-size guards.
 
-Conceptually:
-
-```text
-scenario / adaptive interlocutor
-            |
-            v
-      queued input bytes
-            |
-            v
-        RomMathVM
-            |
-      ailmzx48 C48B1
-            |
-            +----> real ZXScreen semantics ----> .scr evidence
-            |
-            +----> traced logical characters --> exact transcript
-            |
-            +----> named debug globals --------> per-turn metrics
-```
-
-The tracing wrapper must call the production screen operation rather than reimplement wrapping. A transcript capture bug must therefore not be able to make a bad Spectrum screen look good.
+Because SDK `puts()` ultimately calls the same `ZXScreen.putchar()` path, the tracer observes both output routes while still exercising production wrapping/scrolling. The tracing layer must never reimplement the terminal renderer.
 
 A future general-purpose SDK `--tty-log PATH` option may be useful, but `ailmzx48` does not require changing the public SDK CLI merely to begin testing.
 
@@ -667,15 +752,16 @@ A future general-purpose SDK `--tty-log PATH` option may be useful, but `ailmzx4
 A conversation runner does not dump hundreds of lines into stdin blindly. It behaves like a user:
 
 1. start the compiled program;
-2. observe output until the complete prompt marker is emitted;
-3. choose the next input turn from the scenario/adaptive driver;
-4. inject its bytes followed by ENTER;
-5. observe the complete response and next prompt;
-6. score/log that turn;
-7. continue for the configured conversation length;
-8. inject `q` and prove clean termination.
+2. observe output until the VM calls the queued `input_provider` for the first normal conversation byte;
+3. assert that the complete expected prompt bytes have actually been emitted before satisfying that read request;
+4. choose the next input turn from the scenario/adaptive driver;
+5. inject its bytes followed by ENTER;
+6. when the program next requests input, treat that callback as the primary response boundary and assert the expected prompt suffix in the traced output;
+7. score/log the completed turn;
+8. continue for the configured conversation length;
+9. inject `q` and prove clean termination without another conversational read request.
 
-The driver may choose later turns based on earlier answers. This is the "keyboard access" required for iterative conversations: input is an active callback/queue attached to the running VM, not a fixed redirected text file.
+The input-provider request is the synchronization event; scanning arbitrary output text for a `>` character alone is not sufficient because answer text can contain prompt-like bytes. Prompt bytes remain asserted as terminal behavior, but they are not the sole framing protocol.
 
 The baseline runner is deterministic. A development-time modern LM may later act as an adaptive human-like interlocutor/reviewer, but deterministic scripted/adversarial suites remain mandatory so a model change can be reproduced without an external service.
 
@@ -705,24 +791,27 @@ Selected regression/convergence transcripts are committed below `conversations/`
 
 ### 14.4 Target-visible diagnostic globals
 
-The C48 program may expose debug-only or always-present small scalar globals such as:
+The C48 program may expose small diagnostic scalar globals. All target names obey the Rev-0.11 15-character identifier limit; Candidate-A names include:
 
 ```text
-ai_dbg_turns
-ai_dbg_l0_bytes
-ai_dbg_l1_count
-ai_dbg_l2_count
-ai_dbg_compactions
-ai_dbg_model_records
-ai_dbg_model_hits
-ai_dbg_output_tokens
-ai_dbg_yields
-ai_dbg_error
+ai_turns
+ai_l0bytes
+ai_l1count
+ai_l2count
+ai_compact
+ai_l2evict
+ai_litloss
+ai_mrecords
+ai_mhits
+ai_otokens
+ai_yields
+ai_encfail
+ai_error
 ```
 
-The SDK harness can inspect these through the VM's global/memory model after a prompt boundary without printing them to the Spectrum terminal. Native ZX-UX verification can later expose equivalent counters through a diagnostic command/build if needed.
+The SDK harness can inspect these through the VM's global/memory model after an input-request boundary without printing them to the Spectrum terminal. Native ZX-UX verification can later expose equivalent counters through a diagnostic build if needed.
 
-Correctness may not depend on the host being able to inspect these globals. They are instrumentation, not a hidden control channel.
+Correctness may not depend on the host being able to inspect these globals. They are instrumentation, not a hidden control channel, and their bytes are charged to the guards/counters portion of the workspace ledger.
 
 ### 14.5 Context-specific long-conversation tests
 
@@ -783,6 +872,9 @@ UNKNOWN_OVERCLAIM
 MODEL_FORMAT
 LATENCY
 MEMORY
+CONTEXT_LITERAL_LOSS
+L2_EVICTION
+EVAL_LEAKAGE
 HARNESS
 ```
 
@@ -811,7 +903,9 @@ The corpus shall distinguish factual source material from conversational style m
 
 ### 16.1 Provenance manifest
 
-Every admitted corpus source receives a host-side record containing source identifier/title, provenance/location, license/authorization basis, acquisition date, source hash where applicable, extraction/transformation version, and which generated fact/training records depend on it.
+Every admitted corpus source receives a host-side record containing at least source identifier/title, exact provenance/location, license/authorization basis and scope, acquisition date, source-byte hash where applicable, extraction/transformation tool version, normalized-output hash, train/dev/evaluation split assignment, and the generated fact/training records that depend on it.
+
+The manifest also records exclusions/withdrawals so a later rebuild can prove that disallowed material no longer contributes to a generated model. Derived facts or conversational records retain source-lineage IDs through aggregation; a final packed target record need not carry bulky citations, but the host build graph must be able to trace it back to admitted sources.
 
 No arbitrary web scrape is admitted merely because the text is easy to fetch.
 
@@ -823,9 +917,19 @@ This design may read those documents to implement correct ZX-UX/C48 behavior. Tr
 
 ### 16.3 Train/dev/evaluation separation
 
-Factual and conversation tests shall include held-out material. At minimum the tooling must prevent the exact evaluation conversation transcript from simply being reinserted as a training response and then counted as generalization.
+The tooling maintains explicit, content-addressed partitions for training, development/tuning, deterministic regression and blind evaluation. Exact transcript exclusion alone is not enough: near-duplicate prompts, paraphrased fact templates and source-derived question/answer pairs are grouped so one semantic item cannot casually leak across a claimed blind boundary.
 
-Some closed-book facts may deliberately exist in the knowledge store because factual retrieval is part of the model architecture. The evaluation report must distinguish retrieval correctness from linguistic generalization rather than pretend the model was never allowed to know the answer.
+Regression cases are allowed to become known to developers and are used to prevent old failures returning. Blind-evaluation cases are different: once a blind result is inspected closely enough to motivate a corpus, controller, pruning or prompt-specific change, that case is retired from the blind set and a new held-out case replaces it. A score repeatedly optimized against the same inspected set is development evidence, not blind generalization evidence.
+
+Some closed-book facts deliberately exist in the knowledge store because factual retrieval is part of the model architecture. Evaluation therefore labels retrieval/fact availability separately from linguistic generation and asks held-out phrasings/relations rather than pretending the system was never allowed to know a shipped fact.
+
+### 16.4 Synthetic/generated conversation material
+
+If a modern model or scripted generator creates development conversations, every generated batch records generator/model identity, version where available, exact prompt/configuration or deterministic seed, generation date, license/authorization basis for using its output, review/admission status and corpus split. Synthetic conversations used for failure mining or tuning cannot later be reported as untouched blind evaluation.
+
+Generated material is never silently promoted into factual truth. Factual records require their own admitted provenance or explicit user-authored authority.
+
+## 17. Evaluation and convergence
 
 ## 17. Evaluation and convergence
 
@@ -867,11 +971,13 @@ A composite score may be useful for ordering experiments, but the component tabl
 
 ### 17.3 Convergence rule
 
-No iteration count is frozen. The project continues while failure mining identifies changes that materially improve important dimensions without violating hard gates.
+No iteration count or numerical plateau threshold is invented before baseline evidence exists. After baseline variance and target runtime are measured, the project freezes a convergence protocol **before** using it to declare success. That protocol names the primary dimensions, allowed regression margins, minimum number of consecutive accepted no-material-gain rounds, blind-evaluation cadence and target memory/latency ceilings.
 
-A provisional plateau detector shall track multiple consecutive accepted candidate rounds and the moving improvement of each important dimension. It may recommend stopping only when new corpus/model/context/controller changes repeatedly fail to produce material gains and manual transcript review agrees that remaining limitations are predominantly capacity/model-class limits.
+A candidate round is accepted only if all hard gates pass and no predeclared critical dimension regresses beyond its frozen allowance. Improvement is assessed on the component table rather than a single composite score. Deterministic suites must reproduce byte-for-byte under the same identities; adaptive/generated suites record their seed/model/configuration so variance is explicit rather than mysterious.
 
-The exact numerical plateau threshold is deferred until baseline variance exists. Picking `0.5%` today would look scientific without any evidence that it means anything.
+Blind evaluation is used as milestone evidence, not an endlessly tuned scoreboard. If its failures drive the next change, those cases become regression/development cases and fresh blind cases replace them.
+
+Development continues while failure mining identifies changes that materially improve important dimensions within the byte/latency budget. Convergence may be declared only after the frozen consecutive-round rule is met, manual transcript review agrees, and remaining failures are documented as capacity/model-class/byte-cost limitations rather than obvious unfixed corpus, retrieval, context or controller defects. The numerical values remain open until baseline measurement can justify them.
 
 ## 18. Cassette and real-machine workflow constraints
 
@@ -888,7 +994,9 @@ The exact physical M48O order is not frozen yet.
 
 ZX-UX native C48 compilation and linking are ordinary program activities; the compiler is not architectural permanently resident kernel state. `SYS_EXEC` is a real process-image replacement operation. ZX-UX tape facilities include save/load/verify/scan semantics, and REV12 provides a direct tape-backed MEX1 execution path that can decode a RAW or ZXP1 executable directly into its final process allocation rather than require a second resident executable copy.
 
-Therefore a reboot is **not inherently required merely to "unload the compiler"**. The actual memory problem is the complete set of still-live process allocations and RAM objects after the build: shell/tool processes, source, OBJ1, final executable object, model objects, temporary files and pinned/system state.
+That direct tape-backed path solves an **executable-copy** problem. It does not turn Candidate A's repeatedly scanned cold knowledge into a random-access cassette resource. In the baseline runtime, the cold model must already exist as one or a few resident ZX-UX RAM objects before normal inference, optionally PACKED. Their physical bytes and any 272-byte decoder states consume the same arena as the running process.
+
+Therefore a reboot is not inherently required merely to "unload the compiler". The actual memory problem is the complete set of still-live process allocations and RAM objects after the build: shell/tool processes, source, OBJ1, final executable object, model objects, temporary files and pinned/system state. A future proposal to stream knowledge from cassette during every answer would be a different, heavily blocking sequential-storage design and requires separate proof rather than being smuggled into the word "external".
 
 ### 18.2 Required final proof sequence
 
@@ -900,12 +1008,13 @@ Before user documentation claims an exact command sequence, the native implement
 4. link the MEX1 executable with measured stack/heap values;
 5. save the executable and required model resource(s) to cassette;
 6. reclaim build-only RAM objects through supported commands/semantics;
-7. return to a state with enough arena space for the runtime configuration;
-8. load or directly tape-execute `ailmzx48` using only documented operations;
-9. make required model knowledge available without exceeding the arena;
-10. hold a multi-turn conversation and quit cleanly.
+7. return to a state with enough total, FAST and contiguous arena space for the runtime configuration;
+8. load the model resource(s) into resident RAM-object form, packing only through documented ZX-UX behavior when it improves the measured physical budget;
+9. load or directly tape-execute the MEX1 executable using only documented operations;
+10. open the model in the exact normal read configuration and prove process + shell/system state + model physical bytes + every decoder state coexist with required allocator headroom;
+11. hold a multi-turn conversation that performs repeated model scans, exercises context compaction and quits cleanly.
 
-Every step records `mem`/equivalent evidence where available so the manual can explain why the sequence works.
+Every stage records `mem`/equivalent evidence including FAST/CONTENDED totals and largest extents where available. The final manual explains not only that the sequence worked once, but why its allocation order is valid.
 
 ### 18.3 Compiler/linker lifetime question
 
@@ -923,57 +1032,61 @@ The design preference is to avoid reboot if supported cleanup/direct execution m
 
 Implementation begins only after enough of this design is frozen to prevent incompatible model/context/harness work. The current intended order is:
 
-1. canonical-constraint verifier and host reference tokenizer;
-2. corpus provenance format and small hand-audited seed corpus;
-3. Candidate-A token statistics and vocabulary builder;
-4. host reference L0/L1/L2 compressor/retriever with adversarial long-conversation tests;
-5. cold knowledge-record builder and sequential retrieval benchmark;
-6. pruned order-1/2/3 hot language-model trainer and quantizer;
-7. frozen experimental A48M container plus host packer/verifier;
-8. minimal C48 `ailmzx48` shell that prints startup text, reads bounded input and handles `q`;
-9. target tokenizer/detokenizer and Candidate-A 3,584-byte context workspace;
-10. target L0/L1/L2 compaction/retrieval with debug counters and guards;
-11. cold model reader/sequential scorer;
-12. hot LM continuation generator and factual-anchor controller;
-13. anti-repetition, uncertainty and response-mode integration;
-14. SDK active conversation harness with traced output and global telemetry;
-15. long GitHub-runner conversation workflow and retained artifacts;
-16. repeated corpus/model/controller/context training/evaluation cycles until plateau;
-17. native ZX-UX memory/tty/cassette integration and physical-machine verification;
-18. final source/runtime tape packaging, exact native build/save/load transcript and certification evidence.
+1. canonical-authority identity/extraction verifier for REV12, REV03 and the actual C48 Rev-0.11 DOCX, plus repository release-gate checks;
+2. corpus provenance/split format and small hand-audited seed corpus;
+3. Candidate-A tokenizer, resident recognition/presentation lexicon and token statistics;
+4. host reference L0/L1/L2/session-literal compressor/retriever with adversarial long-conversation tests;
+5. cold knowledge-record builder and sequential two-winner retrieval benchmark;
+6. pruned bounded-fanout order-1/2/3 hot language-model trainer and quantizer;
+7. frozen experimental A48M container plus host packer/verifier with u16 target-limit tests;
+8. reviewed SDK read-only object-I/O adapter/conformance tests needed for the external model fixture;
+9. minimal C48 `ailmzx48` program that prints startup text, reads bounded input and handles `q`;
+10. target tokenizer/detokenizer, 4,336-byte workspace and session-literal logic;
+11. target L0/L1/L2 compaction/retrieval with counters, guards and loss instrumentation;
+12. cold model reader/sequential scorer using bounded reads/yields and at most two winners;
+13. hot LM lookup/generator and factual-anchor controller;
+14. anti-repetition, uncertainty and response-mode integration;
+15. SDK active conversation harness with traced output, input-request framing, object fixture and global telemetry;
+16. long GitHub-runner conversation workflow and retained artifacts;
+17. repeated corpus/model/controller/context training/evaluation cycles under frozen split/convergence rules;
+18. native ZX-UX memory/stack/allocator/tty integration and Fuse evidence;
+19. physical 48K cassette/runtime verification;
+20. final source/runtime tape packaging, exact native build/save/load transcript and certification evidence.
 
-Each phase must preserve a working, testable state. Model sophistication is never allowed to outrun memory-safety and reproducibility evidence.
+Each phase preserves a working, release-verifiable repository state on `main`. New target C/H files obey the <=64-column and <=15-character-identifier rules from the moment they are introduced. Model sophistication is never allowed to outrun memory-safety, provenance and reproducibility evidence.
 
 ## 20. Candidate-A implementation interfaces
 
-Revision 0.3 introduces conceptual interfaces so the C48 source can later be split into small functions without depending on unsupported C features. Names are provisional; contracts are more important than spelling.
+Revision 0.4 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
 
 ```text
-ai_read_line()              bounded tty line input
-ai_tokenize()               ASCII line -> canonical encoded tokens
-ai_detokenize()             canonical tokens -> bounded output text
-ai_classify()               intent/topic/entity extraction
-ai_memory_retrieve()        top L1/L2 semantic records
-ai_model_scan()             one forward cold-model scan, top knowledge records
-ai_plan_response()          response mode + factual anchors
-ai_generate()               deterministic LM continuation
-ai_context_commit()         L0 append, eviction, L1/L2 compaction
-ai_print_response()         normal tty output
+ai_readline()     bounded tty line input
+ai_tokenize()     ASCII line -> bounded canonical encoded tokens
+ai_detok()        one canonical token/literal -> tty bytes
+ai_classify()     intent/topic/entity/session-literal extraction
+ai_memget()       top L1/L2 record indices
+ai_modelscan()    one forward cold scan, at most two winners
+ai_plan()         response mode + factual anchors
+ai_generate()     deterministic bounded LM continuation
+ai_ctxcommit()    L0 append, eviction, L1/L2 compaction
+ai_print()        validated streaming tty output
 ```
 
-C48 functions receive explicit buffer pointers/capacities or operate on named fixed globals. There are no hidden unbounded local arrays.
+Exact signatures are not frozen. Every target function remains within the canonical argument-count/type rules, receives explicit buffer pointers/capacities where needed, and uses no function pointers or unsupported aggregate types. Candidate A uses no recursion in the inference path. Large automatic arrays are prohibited; persistent and sizeable scratch arrays are named globals charged to Section 8.7. Every shipped C/H source line remains <=64 characters.
 
 ### 20.1 Error-state discipline
 
 A single small error/status value records the first hard turn failure. Functions return status rather than relying on undefined state after malformed input/model data.
 
-Recoverable cases include no matching knowledge record, literal-token overflow, optional transcript unavailable, or low retrieval confidence. Fatal session cases include model container corruption discovered after startup validation or internal guard failure.
+Recoverable cases include no matching knowledge record, raw/encoded input rejection, optional transcript unavailable, low retrieval confidence, exhausted/reused session-literal capacity, or a safely degraded stale semantic reference. Fatal session cases include model container corruption discovered during validated access or internal guard failure.
+
+A recoverable semantic loss is counted and must never be repaired by reading uninitialized/stale bytes or inventing the missing spelling.
 
 ### 20.2 Bounds arithmetic
 
 All target length additions are written so a 16-bit `int` cannot wrap into a passing bounds test. The host model packer/verifier performs the same checks in widened arithmetic and generates only target-safe lengths.
 
-Where a target expression would need a 17-bit intermediate to prove safety, the C48 implementation uses subtraction/reordered comparisons or explicit high/low reasoning rather than relying on nonexistent `long`.
+Where a target expression would need a 17-bit intermediate to prove safety, the C48 implementation uses subtraction/reordered comparisons or explicit high/low reasoning rather than relying on nonexistent `long`. Model-object/seek offsets never exceed the u16 domain established in Section 9.4.
 
 ## 21. GitHub-runner iterative conversation cycle
 
@@ -1023,42 +1136,48 @@ The model builder never edits target source during a training run. Training gene
 
 Before the model format is declared final, the project must answer with retained measurements:
 
-1. What is the compiled C48/target inference code size?
-2. What is the exact BSS/stack/heap budget?
-3. How many encoded L0 tokens/turns fit in 896 bytes for real conversations?
-4. How much source-equivalent history do 48 L1 capsules and 24 L2 records preserve at measured recall quality?
-5. What vocabulary size minimizes total hot-table + cold-model + literal cost?
-6. What variable-order LM pruning budget gives the best fluency per resident byte?
-7. How large is the cold knowledge stream logically and after ZXP1 packing?
-8. How long does one complete cold scan take in the SDK and later on real Z80/Fuse evidence?
-9. Is one cold scan per turn acceptable, or must a small topic index/cache be added?
-10. How much arena remains with the shell/system state and model reader alive?
-11. Which Spectrum factual categories remain weak after corpus saturation?
-12. Does any quality improvement require enough bytes to make the ordinary runtime configuration unsafe?
-13. What is the longest retained semantic dependency demonstrated by an actual transcript, not a synthetic byte count?
-14. At convergence, what failures remain and why are they intrinsic or not worth the byte cost to fix?
+1. What are the compiled C48 and native MEX1 image/text/BSS sizes?
+2. What is the exact 4,336-byte workspace map, heap reserve, MEX1 minimum stack, actual +64 stack allocation and measured native stack high-water?
+3. What raw-input patterns hit the 191-byte, lexical-span or 319-byte encoded-turn rejection bounds, and are all rejected without state mutation?
+4. How many exact L0 turns/tokens fit in 896 bytes for real conversations?
+5. How much source-equivalent history do 48 L1 capsules, 24 L2 records and eight generation-checked session-literal slots preserve at measured recall quality?
+6. How often are session literals/L2 facts evicted and how does that affect old-name/correction recall?
+7. What resident recognition/presentation vocabulary minimizes total lexicon + hot-LM + cold-literal cost while still covering every retrieval trigger?
+8. What variable-order pruning/fanout budget gives the best fluency per resident byte and per target lookup cost?
+9. How large is each cold knowledge object logically and physically after ZXP1 packing, within the u16 object limit?
+10. How long does one complete cold scan take in SDK work units, Fuse/cycle evidence and a real 48K run?
+11. Is one full scan per turn acceptable, or does RAW indexing, topic sharding or a resident cache win after all byte/decoder/fragmentation costs are counted?
+12. Does the SDK object-I/O adapter produce the same logical parser/retrieval results as the native RAW path, without being misrepresented as PACKED/cassette certification?
+13. How much total, FAST and largest-contiguous arena headroom remains with shell/system state, ARG1/ENV1, model object and decoder alive in the real launch order?
+14. Which Spectrum factual categories remain weak after corpus saturation?
+15. Does any quality improvement require enough bytes or latency to make the ordinary runtime configuration unsafe or unpleasant?
+16. What is the longest retained semantic dependency demonstrated by an actual transcript, not a synthetic byte count?
+17. What frozen train/dev/regression/blind split and convergence protocol supports the final model-selection claim?
+18. At convergence, what failures remain and why are they intrinsic or not worth the byte/latency cost to fix?
 
 The final design replaces these questions with measured answers.
 
-## 23. Open design questions after Revision 0.3
+## 23. Open design questions after Revision 0.4
 
 The following remain deliberately open until measurement resolves them:
 
-- exact 224-token hot vocabulary contents;
-- final extended vocabulary size below the Candidate-A 4096 ceiling;
+- exact 224-token one-byte hot vocabulary contents;
+- final resident extended-vocabulary/recognition-lexicon size below the 4096 ID ceiling;
 - final A48M numeric field IDs, section order and integrity algorithm;
 - exact cold-record type IDs and trigger weights;
-- exact hot LM byte budget and pruning thresholds;
+- exact hot LM byte budget, pruning thresholds and whether the Candidate-A 12-continuation cap should move;
 - whether maximum LM order three wins over a smaller order-two model;
-- whether the 3,584-byte context split should trade bytes between L0/L1/L2 after real transcripts;
-- whether target L3 transcript storage is enabled by default;
-- cold model embedded-vs-external split after native MEX1 measurement;
-- exact model logical/physical byte budget and ZXP1 ratio;
-- final response token ceiling after terminal/latency testing;
-- final stack reservation and whether heap remains zero;
+- whether the 4,336-byte context split should trade bytes among L0/L1/L2/session literals/retrieval scratch after real transcripts;
+- whether eight session-literal slots is the best byte/recall trade after measured unknown-name conversations;
+- whether any target L3 archival mode is worth its explicitly reserved arena bytes; it remains off by default in Candidate A;
+- cold model embedded-vs-separate-object split after native MEX1 measurement;
+- one PACKED scan versus RAW indexing, a few PACKED shards or a larger resident cache;
+- exact model logical/physical byte budget and ZXP1 ratio within the u16 object limit;
+- final response token/encoded/printed-byte ceilings after terminal and latency testing;
+- final MEX1 minimum stack reservation and whether heap remains zero;
 - exact target object names and cassette physical ordering;
 - ordinary-shell launch versus any proven process-replacement launch option;
-- quantitative convergence thresholds after baseline variance is known.
+- quantitative convergence thresholds/consecutive-round count after baseline variance is known.
 
 These are measurement questions, not invitations to silently assume desktop defaults.
 
@@ -1068,4 +1187,6 @@ This file is the canonical evolving `ailmzx48` design record within the SDK repo
 
 Before each substantive edit, the latest repository copy shall be read. Canonical ZX-UX/C48 documents shall be rechecked whenever a design statement depends on their contracts. If a later canonical revision changes a relevant contract, this document must be reconciled explicitly rather than carrying an accidental stale assumption forward.
 
-An ephemeral local or runner copy is never considered a durable checkpoint. A design step is complete only after the updated canonical file has been pushed to `main` and read back from GitHub with its new blob/commit identity recorded.
+Because this SDK release gate covers repository bytes, a design edit is not complete merely when this Markdown file changes. The exact edited tree must regenerate `MANIFEST.sha256`, pass `python -B compiler/verify_release.py`, and preserve every existing license/header/source-line/deterministic verification rule. A failing gate is investigated and corrected; the gate is not relaxed for design convenience.
+
+An ephemeral local or runner copy is never considered a durable checkpoint. A design step is complete only after the updated canonical file and matching manifest have been pushed to `main`, read back from GitHub, and their new blob/commit identities recorded.
