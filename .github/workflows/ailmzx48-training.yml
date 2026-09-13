@@ -86,6 +86,11 @@ jobs:
           python -B usr/src/ailmzx48/evaluation/check_iteration_score.py
           --request "${{ steps.req.outputs.request }}"
 
+      - name: Evaluate iterative exit criteria
+        run: >-
+          python -B usr/src/ailmzx48/evaluation/check_exit_criteria.py
+          --write-status usr/src/ailmzx48/training/goal-status.json
+
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
 
