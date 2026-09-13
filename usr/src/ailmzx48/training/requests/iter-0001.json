@@ -1,0 +1,7 @@
+{
+  "iteration": 1,
+  "max_seconds": 600,
+  "purpose": "Initial vertical slice: deterministic learned micro-model, C48 compile, SDK active conversation, exact transcript and diagnostics.",
+  "scenario": "starter-smoke-v1",
+  "schema": 1
+}

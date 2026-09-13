@@ -1,0 +1,15 @@
+{
+  "authorization_basis": "Project user explicitly directed creation of a starter ailmzx48 model and training iterations in this conversation.",
+  "corpus": "seed_corpus.json",
+  "excluded_from_training": [
+    "ZX-UX C48 SDK repository prose/source unless separately authorized",
+    "ZX-UX upstream repository prose/source unless separately authorized"
+  ],
+  "factual_basis": [
+    "User project brief: Sinclair ZX Spectrum home computer of 1982.",
+    "User project brief: target machine is the ZX Spectrum 48K."
+  ],
+  "generation_date": "2026-09-12",
+  "generator": "OpenAI GPT-5.6 Sol",
+  "schema": 1
+}

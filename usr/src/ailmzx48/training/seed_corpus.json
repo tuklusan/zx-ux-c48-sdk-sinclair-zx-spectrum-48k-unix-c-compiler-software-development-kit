@@ -1,0 +1,62 @@
+{
+  "name": "ailmzx48 starter synthetic seed",
+  "policy": "Original project-specific seed text generated at the user's direction. No ZX-UX SDK or upstream project prose/source is copied into this corpus.",
+  "records": [
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "spectrum is a home computer from 1982"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "spectrum is a home computer from 1982 with 48k memory"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "spectrum has 48k memory"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "spectrum is a home computer from 1982 with a lively personality"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "memory matters because every byte deserves care"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "memory pressure rewards careful software design"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i am local language model made for conversation"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i am local language model made for this machine"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i am local language model made for small computers"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i can chat locally without a network"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "small models need careful planning and honest uncertainty"
+    }
+  ],
+  "schema": 1
+}

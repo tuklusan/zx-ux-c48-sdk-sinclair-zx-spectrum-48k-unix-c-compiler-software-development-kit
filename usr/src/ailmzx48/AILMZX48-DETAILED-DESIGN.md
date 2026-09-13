@@ -18,9 +18,9 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.11-draft
+Revision: 0.12-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
-Canonical SDK executable path: `usr/bin/ailmzx48`
+Canonical SDK executable path: `usr/bin/ailmzx48/ailmzx48.c48b`
 
 ## 1. Purpose
 
@@ -78,7 +78,8 @@ usr/
 │       ├── conversations/
 │       └── tooling/
 └── bin/
-    └── ailmzx48                       # generated runnable SDK artifact
+    └── ailmzx48/
+        └── ailmzx48.c48b              # generated SDK C48B1 artifact
 ```
 
 The repository `usr/...` layout is an SDK/repository layout. It must not be confused with the much smaller fixed ZX-UX target namespace defined by REV12. Target-side filenames, object placement, and cassette packaging will be specified separately and must obey the ZX-UX namespace limits.
@@ -724,6 +725,8 @@ Enter q at any time to quit.
 
 The humor is retained. The exact ASCII attribution line `Based on original work by Supratim Sanyal of SANYALnet Labs.` is mandatory because the repository license requires discoverable attribution in user-facing text interfaces; at 60 characters it fits tty64. Decorative target bytes remain provisional until the terminal/source character repertoire is proved. **Every non-ASCII glyph in the draft, including `©` and the em dash, must have an explicitly supported target encoding or an ASCII-safe replacement**; changing a decorative glyph does not remove/alter the mandatory ASCII attribution. The C48 source must not rely on a host editor/compiler accidentally accepting Unicode.
 
+At the start of every normal conversational input turn, immediately before the prompt becomes input-ready, `ailmzx48` emits a short approximately 0.5-second `beep()` cue. Candidate-A bootstrap uses pitch offset `0.0`; exact release pitch may change after terminal/audio testing. Audio-backend unavailability in the host SDK is non-fatal and is never used as the conversation framing signal. The harness records the target-visible beep-call counter separately from logical tty bytes.
+
 ### 13.2 Input
 
 `ailmzx48` owns its application input loop after launch. It uses a bounded line buffer and normal ZX-UX tty services; it does not depend on the shell retaining the conversation line for it.
@@ -1041,7 +1044,7 @@ Therefore a reboot is not inherently required merely to "unload the compiler". T
 
 The release operator has two conceptual build paths. Both begin from an exact accepted source/model identity and both must preserve the same runtime interfaces, memory limits, provenance records and release gates.
 
-For the **host/SDK build**, the operator starts from a clean repository `main` plus an admitted, content-addressed corpus/provenance snapshot. Deterministic host tooling builds the resident vocabulary/topic/semantic maps, bounded hot LM tables, cold A48M knowledge object(s), interface identity and model manifest. The portable repository C48 toolchain compiles `ailmzx48.c` into the deterministic SDK C48B1/VM form and produces the runnable SDK artifact under the project `usr/bin/ailmzx48` release path. That host artifact is explicitly not OBJ1, MEX1 or Z80 machine code. Host tooling also emits the accepted model resources/manifests that feed native packaging. Host format tests, active SDK conversations, model/interface checks, `MANIFEST.sha256`, `git diff --check` and the complete SDK release verifier must all pass before those identities can feed the native release build.
+For the **host/SDK build**, the operator starts from a clean repository `main` plus an admitted, content-addressed corpus/provenance snapshot. Deterministic host tooling builds the resident vocabulary/topic/semantic maps, bounded hot LM tables, cold A48M knowledge object(s), interface identity and model manifest. The portable repository C48 toolchain compiles `ailmzx48.c` into the deterministic SDK C48B1/VM form and produces the runnable SDK artifact under `usr/bin/ailmzx48/ailmzx48.c48b`. That host artifact is explicitly not OBJ1, MEX1 or Z80 machine code. Host tooling also emits the accepted model resources/manifests that feed native packaging. Host format tests, active SDK conversations, model/interface checks, `MANIFEST.sha256`, `git diff --check` and the complete SDK release verifier must all pass before those identities can feed the native release build.
 
 For the **native-on-ZX-UX build**, model training is not repeated on the Spectrum. The operator boots canonical ZX-UX, loads the source/development tape containing the native C48 toolchain, `ailmzx48` source and already-generated accepted model resources, compiles the source to the canonical native object form, links the MEX1 image with measured heap/stack settings, verifies the resulting executable/model objects using documented target facilities, and saves the accepted runtime objects to cassette. Build-only source/tool/intermediate RAM objects are then reclaimed through supported ZX-UX semantics before runtime memory proof. Host and native builds must use the same frozen source/model/interface contracts; byte-identical executables are claimed only if measurement proves them, otherwise retained hashes plus behavioral/native verification identify each accepted build.
 
@@ -1114,9 +1117,29 @@ Implementation begins only after enough of this design is frozen to prevent inco
 
 Each phase preserves a working, release-verifiable repository state on `main`. New target C/H files obey the <=64-column and <=15-character-identifier rules from the moment they are introduced. Model sophistication is never allowed to outrun memory-safety, provenance and reproducibility evidence.
 
+
+### 19.1 Bootstrap vertical slice and runner bound
+
+Implementation is allowed to cross several later phases with a deliberately
+tiny smoke implementation before claiming those phases complete. The first
+vertical slice may embed a learned micro-model in generated C48 data solely to
+prove deterministic model construction, C48 compilation, SDK conversation
+framing, telemetry and durable transcript retention. It is not the release
+substitute for the external A48M cold-object path; the read-only object-I/O
+adapter and normal hot/cold split remain required before external-model SDK
+regressions count as target-interface evidence.
+
+Every individual GitHub-hosted ailmzx48 training/evaluation job has a hard
+20-minute job timeout. Active model build/conversation work is additionally
+bounded to at most 10 minutes in the baseline workflow, leaving explicit time
+for artifact finalization, `MANIFEST.sha256`, the full SDK release verifier,
+`git diff --check`, commit and push. A completed iteration is not disposable
+runner state: its model candidate, exact conversation transcript, run metadata
+and score report must be committed to `main` before a later iteration begins.
+
 ## 20. Candidate-A implementation interfaces
 
-Revision 0.11 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
+Revision 0.12 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
 
 ```text
 ai_readline()     bounded byte-aware tty line input
@@ -1217,7 +1240,7 @@ Before the model format is declared final, the project must answer with retained
 
 The final design replaces these questions with measured answers.
 
-## 23. Open design questions after Revision 0.11
+## 23. Open design questions after Revision 0.12
 
 The following remain deliberately open until measurement resolves them:
 
@@ -1237,6 +1260,7 @@ The following remain deliberately open until measurement resolves them:
 - final MEX1 minimum stack reservation, selected from measured native high-water rather than a guessed range, and whether heap remains zero;
 - exact target model object names/types/paths and cassette physical ordering;
 - ordinary-shell launch versus any proven process-replacement launch option;
+- final turn-start beep pitch/cue behavior after real-machine audio/usability testing;
 - quantitative convergence thresholds/consecutive-round count after baseline variance is known.
 
 These are measurement questions, not invitations to silently assume desktop defaults.
