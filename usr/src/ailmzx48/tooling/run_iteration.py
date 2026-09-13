@@ -100,7 +100,8 @@ class Feeder:
         for name in ("ai_turns", "ai_otokens", "ai_yields",
                      "ai_error", "ai_beeps", "ai_ctxuse",
                      "ai_lasttop", "ai_havectx", "ai_altuse",
-                     "ai_altstate"):
+                     "ai_altstate", "ai_histuse",
+                     "ai_hcount"):
             lv = self.vm.global_lvalues.get(name)
             if lv is not None:
                 out[name] = int(self.vm._load(lv).data)
@@ -242,10 +243,22 @@ def main() -> int:
     for expected in alt_expect:
         if expected is not None and not isinstance(expected, bool):
             raise RuntimeError("expected alternate must be bool or null")
+    hist_expect = req.get("expected_history")
+    if hist_expect is None:
+        hist_expect = [None] * len(prompts)
+    if not isinstance(hist_expect, list):
+        raise RuntimeError("expected_history must be a list")
+    if len(hist_expect) != len(prompts):
+        raise RuntimeError("expected_history length mismatch")
+    for expected in hist_expect:
+        if expected is not None and not isinstance(expected, bool):
+            raise RuntimeError("expected history must be bool or null")
     context_hits = 0
     context_total = 0
     alternate_hits = 0
     alternate_total = 0
+    history_hits = 0
+    history_total = 0
     for i, prompt in enumerate(prompts):
         event = feeder.events[i + 1]
         reply = derived_reply(event["text"])
@@ -267,6 +280,13 @@ def main() -> int:
             alternate_total += 1
             if alt_hit:
                 alternate_hits += 1
+        want_hist = hist_expect[i]
+        used_hist = event["diag"].get("ai_histuse") == 1
+        hist_hit = want_hist is None or used_hist == want_hist
+        if want_hist is not None:
+            history_total += 1
+            if hist_hit:
+                history_hits += 1
         turns.append({
             "turn": i + 1,
             "user": prompt,
@@ -281,6 +301,9 @@ def main() -> int:
             "expected_alternate": want_alt,
             "alternate_used": used_alt,
             "alternate_hit": alt_hit,
+            "expected_history": want_hist,
+            "history_used": used_hist,
+            "history_hit": hist_hit,
         })
     transcript = {
         "schema": 1,
@@ -323,6 +346,12 @@ def main() -> int:
         "alternate_ratio": (
             alternate_hits / alternate_total
             if alternate_total else 1.0
+        ),
+        "history_hits": history_hits,
+        "history_total": history_total,
+        "history_ratio": (
+            history_hits / history_total
+            if history_total else 1.0
         ),
         "clean_exit": status == 0,
         "beep_calls": feeder.diag().get("ai_beeps"),

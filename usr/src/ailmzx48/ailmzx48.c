@@ -27,6 +27,9 @@ unsigned int ai_ctxuse;
 unsigned int ai_havectx;
 unsigned int ai_altuse;
 unsigned int ai_altstate;
+unsigned int ai_histuse;
+unsigned int ai_hcount;
+unsigned char ai_hist[6];
 char ai_in[192];
 char ai_out[256];
 int ai_drop_lf;
@@ -97,6 +100,22 @@ int ai_isq(void)
     return 0;
 }
 
+void ai_histpush(unsigned int topic)
+{
+    unsigned int i;
+    if (ai_hcount < 6) {
+        ai_hist[ai_hcount] = topic;
+        ai_hcount = ai_hcount + 1;
+        return;
+    }
+    i = 1;
+    while (i < 6) {
+        ai_hist[i - 1] = ai_hist[i];
+        i = i + 1;
+    }
+    ai_hist[5] = topic;
+}
+
 unsigned int ai_pick(void)
 {
     if (ai_has("memory")) return ai_t_mem;
@@ -109,6 +128,11 @@ unsigned int ai_pick(void)
     if (ai_has("history")) return ai_t_hist;
     if (ai_has("spectrum")) return ai_t_spec;
     if (ai_has("computer")) return ai_t_spec;
+    if (ai_hcount != 0 && ai_has("go back")) {
+        ai_ctxuse = 1;
+        ai_histuse = 1;
+        return ai_hist[ai_hcount - 1];
+    }
     if (ai_havectx) {
         if (ai_has("tell me more")) {
             ai_ctxuse = 1;
@@ -238,6 +262,8 @@ int main(void)
     ai_havectx = 0;
     ai_altuse = 0;
     ai_altstate = 0;
+    ai_histuse = 0;
+    ai_hcount = 0;
     ai_drop_lf = 0;
     ai_start();
     while (1) {
@@ -256,6 +282,7 @@ int main(void)
         if (ai_isq()) break;
         ai_ctxuse = 0;
         ai_altuse = 0;
+        ai_histuse = 0;
         topic = ai_pick();
         alt = 0;
         if (ai_havectx && topic == ai_lasttop) {
@@ -270,6 +297,17 @@ int main(void)
         }
         ai_generate(topic, alt);
         puts(ai_out);
+        if (ai_histuse) {
+            if (ai_hcount != 0) {
+                ai_hcount = ai_hcount - 1;
+            }
+        } else {
+            if (!ai_ctxuse && ai_havectx) {
+                if (topic != ai_lasttop) {
+                    ai_histpush(ai_lasttop);
+                }
+            }
+        }
         ai_lasttop = topic;
         ai_havectx = 1;
         if (ai_turns != 65535) ai_turns = ai_turns + 1;
