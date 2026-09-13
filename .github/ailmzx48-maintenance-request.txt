@@ -1,2 +1,0 @@
-iteration=42
-purpose=validate-stable-checksum-cache
