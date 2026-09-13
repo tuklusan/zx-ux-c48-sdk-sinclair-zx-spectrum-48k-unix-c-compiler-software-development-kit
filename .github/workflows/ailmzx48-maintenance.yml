@@ -1,0 +1,69 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: ailmzx48 maintenance
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/ailmzx48-maintenance-task.py"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ailmzx48-maintenance-main
+  cancel-in-progress: false
+
+jobs:
+  maintain:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Apply requested maintenance
+        shell: bash
+        run: |
+          test -f .github/ailmzx48-maintenance-task.py
+          python -B .github/ailmzx48-maintenance-task.py
+          git rm .github/ailmzx48-maintenance-task.py
+
+      - name: Regenerate release manifest
+        run: python -B usr/src/ailmzx48/tooling/update_manifest.py
+
+      - name: Verify complete repository
+        shell: bash
+        run: |
+          python -B compiler/verify_release.py
+          git diff --check
+
+      - name: Commit and push maintenance checkpoint
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete ailmzx48 maintenance task"
+          git push origin HEAD:main
