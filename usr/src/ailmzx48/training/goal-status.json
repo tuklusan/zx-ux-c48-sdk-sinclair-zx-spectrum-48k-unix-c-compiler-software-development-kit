@@ -16,10 +16,8 @@
   },
   "goals_achieved": false,
   "next_action": "Pursue unmet scenario knowledge-deepening-rom-basic-v1.",
-  "no_pending_requests_satisfied": false,
-  "pending_iterations": [
-    41
-  ],
+  "no_pending_requests_satisfied": true,
+  "pending_iterations": [],
   "qualification_scenarios": [
     {
       "evidence": {
@@ -42,7 +40,7 @@
       "candidate_failures": [
         {
           "failures": [
-            "retained score evidence is missing"
+            "vm_step_utilization 0.940115 > allowed 0.850000"
           ],
           "iteration": 41
         }
