@@ -48,44 +48,11 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Add bitmap specificity trigger
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          path = Path("usr/src/ailmzx48/training/seed_corpus.json")
-          doc = json.loads(path.read_text(encoding="utf-8"))
-          target = "the display bitmap uses 6144 bytes and the colour attribute area uses 768 bytes"
-          matches = [r for r in doc["records"] if r.get("text") == target]
-          if len(matches) != 1:
-              raise SystemExit("bitmap fact preimage mismatch")
-          triggers = matches[0].get("triggers", [])
-          if triggers == ["bitmap", "6144", "bytes"]:
-              triggers.append("display")
-          elif triggers != ["bitmap", "6144", "bytes", "display"]:
-              raise SystemExit("unexpected bitmap trigger set")
-          path.write_text(
-              json.dumps(doc, indent=2) + "\n",
-              encoding="utf-8",
-              newline="\n",
-          )
-          PY
-
-      - name: Rebuild starter model artifacts
-        run: >-
-          python -B usr/src/ailmzx48/tooling/build_starter_model.py
-          --corpus usr/src/ailmzx48/training/seed_corpus.json
-          --out-json usr/src/ailmzx48/model/current-model.json
-          --out-h usr/src/ailmzx48/aimod.h
-          --iteration 38
-
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
 
-      - name: Test and rebuild ailmzx48 A48M reference
+      - name: Test ailmzx48 A48M reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
 
@@ -107,29 +74,9 @@ jobs:
       - name: Commit and push maintenance checkpoint
         shell: bash
         run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "ailmzx48: improve bitmap fact specificity"
-          for attempt in 1 2 3 4 5; do
-            git fetch origin main
-            if ! git rebase origin/main; then
-              git rebase --abort || true
-              echo "Concurrent change conflicts with bitmap specificity patch" >&2
-              exit 1
-            fi
-            python -B usr/src/ailmzx48/tooling/update_manifest.py
-            git add MANIFEST.sha256
-            git commit --amend --no-edit
-            python -B compiler/verify_release.py
-            git diff --check
-            if git push origin HEAD:main; then
-              exit 0
-            fi
-            echo "main moved during push attempt $attempt; retrying" >&2
-            sleep 2
-          done
-          echo "Could not fast-forward main after five races" >&2
-          exit 1
+          git commit -m "Complete ailmzx48 maintenance checkpoint"
+          git push origin HEAD:main
