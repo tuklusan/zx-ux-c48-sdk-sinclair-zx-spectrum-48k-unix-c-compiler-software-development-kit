@@ -1,1 +1,0 @@
-Add the display trigger to the 6144-byte bitmap fact, rebuild deterministic ailmzx48 model artifacts, run the complete repository verifier, and retain only if clean.

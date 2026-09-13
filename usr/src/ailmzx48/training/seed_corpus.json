@@ -128,7 +128,8 @@
       "triggers": [
         "bitmap",
         "6144",
-        "bytes"
+        "bytes",
+        "display"
       ]
     },
     {
