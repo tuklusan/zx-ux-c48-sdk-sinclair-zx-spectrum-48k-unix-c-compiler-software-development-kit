@@ -4,18 +4,18 @@
     "iterations": [
       52,
       53,
-      null
+      54
     ],
-    "reason": "one or more final regression scenarios are not yet satisfied",
-    "satisfied": false,
+    "reason": null,
+    "satisfied": true,
     "scenarios": [
       "final-regression-a-v1",
       "final-regression-b-v1",
       "final-regression-c-v1"
     ]
   },
-  "goals_achieved": false,
-  "next_action": "Pursue unmet scenario final-regression-c-v1.",
+  "goals_achieved": true,
+  "next_action": "Report goals achieved; do not invent another iteration.",
   "no_pending_requests_satisfied": true,
   "pending_iterations": [],
   "qualification_scenarios": [
@@ -241,16 +241,24 @@
       "scenario": "final-regression-b-v1"
     },
     {
+      "evidence": {
+        "clean_exit": true,
+        "iteration": 54,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 12,
+        "vm_step_limit": 16542080,
+        "vm_step_utilization": 0.5865686781831547,
+        "vm_steps": 9703066
+      },
       "goal": "Broad independent final regression suite C",
+      "iteration": 54,
       "min_turns": 12,
-      "reason": "no retained request/evidence for this scenario",
-      "satisfied": false,
+      "satisfied": true,
       "scenario": "final-regression-c-v1"
     }
   ],
   "schema": 1,
-  "status": "GOALS_PENDING",
-  "unmet_scenarios": [
-    "final-regression-c-v1"
-  ]
+  "status": "GOALS_ACHIEVED",
+  "unmet_scenarios": []
 }
