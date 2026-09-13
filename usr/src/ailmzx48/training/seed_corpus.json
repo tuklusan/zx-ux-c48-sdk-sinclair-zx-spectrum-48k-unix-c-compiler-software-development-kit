@@ -783,9 +783,9 @@
       "text": "the c48 sdk software text mode is 64 columns by 24 rows using a four by eight font",
       "triggers": [
         "text",
-        "64",
-        "24",
-        "font"
+        "mode",
+        "columns",
+        "rows"
       ]
     },
     {

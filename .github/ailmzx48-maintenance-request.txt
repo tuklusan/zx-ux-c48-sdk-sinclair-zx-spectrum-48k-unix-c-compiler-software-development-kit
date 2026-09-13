@@ -1,2 +1,0 @@
-iteration=46
-purpose=repair-text-mode-retrieval-discrimination
