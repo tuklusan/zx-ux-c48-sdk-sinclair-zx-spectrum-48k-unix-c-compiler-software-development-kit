@@ -1,0 +1,2 @@
+iteration=47
+purpose=stable-launch-price-retrieval-repair-checkpoint
