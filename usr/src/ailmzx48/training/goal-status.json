@@ -15,11 +15,9 @@
     ]
   },
   "goals_achieved": false,
-  "next_action": "Pursue unmet scenario retrieval-model-evidence-mixed-topic-v1.",
-  "no_pending_requests_satisfied": false,
-  "pending_iterations": [
-    47
-  ],
+  "next_action": "Pursue unmet scenario retrieval-model-evidence-same-topic-v1.",
+  "no_pending_requests_satisfied": true,
+  "pending_iterations": [],
   "qualification_scenarios": [
     {
       "evidence": {
@@ -124,17 +122,20 @@
       "scenario": "knowledge-deepening-zxux-v1"
     },
     {
-      "candidate_failures": [
-        {
-          "failures": [
-            "retained score evidence is missing"
-          ],
-          "iteration": 47
-        }
-      ],
+      "evidence": {
+        "clean_exit": true,
+        "iteration": 47,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 10,
+        "vm_step_limit": 14118400,
+        "vm_step_utilization": 0.6015723453082502,
+        "vm_steps": 8493239
+      },
       "goal": "Generic model-evidence routing across mixed topics without question-specific routing hacks",
+      "iteration": 47,
       "min_turns": 10,
-      "satisfied": false,
+      "satisfied": true,
       "scenario": "retrieval-model-evidence-mixed-topic-v1"
     },
     {
@@ -190,7 +191,6 @@
   "schema": 1,
   "status": "GOALS_PENDING",
   "unmet_scenarios": [
-    "retrieval-model-evidence-mixed-topic-v1",
     "retrieval-model-evidence-same-topic-v1",
     "retrieval-paraphrase-ambiguity-v1",
     "conversation-context-regression-v1",
