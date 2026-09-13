@@ -15,7 +15,7 @@
     ]
   },
   "goals_achieved": false,
-  "next_action": "Pursue unmet scenario knowledge-deepening-rom-basic-v1.",
+  "next_action": "Pursue unmet scenario knowledge-deepening-io-peripherals-v1.",
   "no_pending_requests_satisfied": true,
   "pending_iterations": [],
   "qualification_scenarios": [
@@ -37,17 +37,20 @@
       "scenario": "knowledge-deepening-spectrum-hardware-v1"
     },
     {
-      "candidate_failures": [
-        {
-          "failures": [
-            "vm_step_utilization 0.940115 > allowed 0.850000"
-          ],
-          "iteration": 41
-        }
-      ],
+      "evidence": {
+        "clean_exit": true,
+        "iteration": 42,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 10,
+        "vm_step_limit": 9934000,
+        "vm_step_utilization": 0.8281277431044897,
+        "vm_steps": 8226621
+      },
       "goal": "ROM, Sinclair BASIC, system software, and machine-behaviour factual coverage",
+      "iteration": 42,
       "min_turns": 8,
-      "satisfied": false,
+      "satisfied": true,
       "scenario": "knowledge-deepening-rom-basic-v1"
     },
     {
@@ -138,7 +141,6 @@
   "schema": 1,
   "status": "GOALS_PENDING",
   "unmet_scenarios": [
-    "knowledge-deepening-rom-basic-v1",
     "knowledge-deepening-io-peripherals-v1",
     "knowledge-deepening-history-models-v1",
     "knowledge-deepening-software-games-v1",
