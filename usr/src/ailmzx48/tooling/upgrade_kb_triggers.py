@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[4]
 A = ROOT / "usr" / "src" / "ailmzx48"
 REF = A / "tooling" / "a48m_reference.py"
 SRC = A / "ailmzx48.c"
+MATCH = A / "aimatch.h"
 CORPUS = A / "training" / "seed_corpus.json"
 TEST = A / "evaluation" / "test_a48m_reference.py"
 
@@ -64,16 +65,27 @@ def patch_reference() -> None:
     REF.write_text(text, encoding="utf-8")
 
 
+def patch_match_header() -> None:
+    text = '''int ai_wordchar(int c)\n{
+    c = ai_lower(c);\n    if (c >= 'a' && c <= 'z') return 1;\n    if (c >= '0' && c <= '9') return 1;\n    return 0;\n}\n\nint ai_vhas(unsigned int id)\n{
+    unsigned int i;\n    unsigned int j;\n    unsigned int off;\n    unsigned int len;\n    int ok;\n    if (id == 0 || id >= ai_vcnt) return 0;\n    off = ai_voff[id];\n    len = ai_vlen[id];\n    if (len == 0) return 0;\n    i = 0;\n    while (ai_in[i] != 0) {\n        if (i != 0 && ai_wordchar(ai_in[i - 1])) {\n            i = i + 1;\n            continue;\n        }\n        j = 0;\n        ok = 1;\n        while (j < len) {\n            if (ai_in[i + j] == 0) {\n                ok = 0;\n                break;\n            }\n            if (ai_lower(ai_in[i + j]) != ai_vblob[off + j]) {\n                ok = 0;\n                break;\n            }\n            j = j + 1;\n        }\n        if (ok && !ai_wordchar(ai_in[i + len])) return 1;\n        i = i + 1;\n    }\n    return 0;\n}\n'''
+    bad = [
+        (n, len(line), line)
+        for n, line in enumerate(text.splitlines(), 1)
+        if len(line) > 64
+    ]
+    if bad:
+        raise RuntimeError("aimatch.h exceeds 64 columns: " + repr(bad))
+    MATCH.write_text(text, encoding="utf-8")
+
+
 def patch_source() -> None:
     text = SRC.read_text(encoding="utf-8")
-    helper = '''int ai_wordchar(int c)\n{
-    c = ai_lower(c);\n    if (c >= 'a' && c <= 'z') return 1;\n    if (c >= '0' && c <= '9') return 1;\n    return 0;\n}\n\nint ai_vhas(unsigned int id)\n{
-    unsigned int i;\n    unsigned int j;\n    unsigned int off;\n    unsigned int len;\n    int ok;\n    if (id == 0 || id >= ai_vcnt) return 0;\n    off = ai_voff[id];\n    len = ai_vlen[id];\n    if (len == 0) return 0;\n    i = 0;\n    while (ai_in[i] != 0) {\n        if (i != 0 && ai_wordchar(ai_in[i - 1])) {\n            i = i + 1;\n            continue;\n        }\n        j = 0;\n        ok = 1;\n        while (j < len) {\n            if (ai_in[i + j] == 0) {\n                ok = 0;\n                break;\n            }\n            if (ai_lower(ai_in[i + j]) != ai_vblob[off + j]) {\n                ok = 0;\n                break;\n            }\n            j = j + 1;\n        }\n        if (ok && !ai_wordchar(ai_in[i + len])) return 1;\n        i = i + 1;\n    }\n    return 0;\n}\n\n'''
     text = replace_once(
         text,
         "int ai_modelscan(unsigned int topic)\n{\n",
-        helper + "int ai_modelscan(unsigned int topic)\n{\n",
-        "target trigger helper",
+        '#include "aimatch.h"\n\nint ai_modelscan(unsigned int topic)\n{\n',
+        "target trigger helper include",
     )
     text = replace_once(
         text,
@@ -124,9 +136,9 @@ def patch_corpus() -> None:
     for item in doc["records"]:
         if item.get("kind") != "fact-user":
             continue
-        text = item["text"]
+        value = item["text"]
         for needle, triggers in trigger_map.items():
-            if needle in text:
+            if needle in value:
                 item["triggers"] = triggers
                 found.add(needle)
                 break
@@ -154,6 +166,7 @@ def patch_test() -> None:
 
 def main() -> int:
     patch_reference()
+    patch_match_header()
     patch_source()
     patch_corpus()
     patch_test()
