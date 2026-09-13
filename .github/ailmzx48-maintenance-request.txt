@@ -1,0 +1,1 @@
+Regenerate the manifest and verify the exact canonical stable maintenance workflow after the bitmap-specificity checkpoint.
