@@ -444,6 +444,14 @@ def check_versions() -> None:
                 fail(f"{tool.name}: --about text mismatch for {marker!r}")
 
 
+
+def check_ailmzx48_design() -> None:
+    checker = SDK / "usr/src/ailmzx48/evaluation/check_design_compliance.py"
+    cp = run([sys.executable, "-B", str(checker)], timeout=120)
+    if cp.returncode != 0:
+        detail = (cp.stdout + cp.stderr).strip()
+        fail("ailmzx48 design compliance failed: " + detail)
+
 def main() -> int:
     checks = (
         ("clean-tree preflight", check_clean_tree),
@@ -457,6 +465,7 @@ def main() -> int:
         ("launchers", check_launchers),
         ("version/about", check_versions),
         ("manifest", check_manifest),
+        ("ailmzx48 design compliance", check_ailmzx48_design),
         ("automated tests", check_tests),
         ("ROM-derived BEEP", check_beep),
         ("game corpus", check_games),

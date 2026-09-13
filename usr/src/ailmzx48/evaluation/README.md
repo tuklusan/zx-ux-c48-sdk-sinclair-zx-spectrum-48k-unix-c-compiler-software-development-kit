@@ -15,4 +15,15 @@ patent, trademark, and governing-law provisions.
 -->
 # ailmzx48 evaluation
 
-This directory will contain evaluation cases, scoring rules, regression expectations, and convergence evidence for conversational quality and Spectrum-domain knowledge.
+This directory contains the executable reference tests, retained score gates,
+training exit criteria, SDK conformance evidence and design-compliance status.
+`test_context_reference.py` validates the bounded L0/L1/L2/session-literal
+oracle.  `test_a48m_reference.py` validates the cold A48M stream.  The
+`sdk-conformance/` subtree retains post-runtime-repair literal/context and final
+A/B/C requalification runs.
+
+`check_design_compliance.py` is the durable three-pass SDK-profile compliance
+gate.  It intentionally reports the full native-release profile as
+`BLOCKED_EXTERNAL` until native ZX-UX C48/OBJ1/MEX1, allocator/stack/Fuse and
+physical-cassette evidence exists.  `DESIGN-REVIEW-CERTIFICATE.md` records that
+scope distinction; an SDK PASS is never a native certification.

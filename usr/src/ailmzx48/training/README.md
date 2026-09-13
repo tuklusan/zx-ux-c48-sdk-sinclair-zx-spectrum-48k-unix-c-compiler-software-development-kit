@@ -15,4 +15,15 @@ patent, trademark, and governing-law provisions.
 -->
 # ailmzx48 training
 
-This directory will contain reproducible corpus preparation, model-building, and iterative training material. Training artifacts must remain separable from the target-runtime implementation.
+This directory contains the admitted seed corpus, provenance/record-lineage
+metadata, retained iteration requests, convergence criteria and final training
+goal status.  Host construction is intentionally separate from shipped target
+inference.  The retained training goal reached `GOALS_ACHIEVED` at iteration 54;
+that token describes the training/convergence program, not native ZX-UX release
+certification.
+
+`provenance.json` identifies the admitted synthetic source classes and explicit
+project authorization basis.  `record-lineage.json` gives one content-addressed
+lineage entry for every seed record, including split and record hash.  Repository
+and upstream prose/source remain excluded from model training unless separately
+authorized; design-authority use is not silently treated as corpus permission.

@@ -1,0 +1,63 @@
+{
+  "cold_model_sha256": "e2df4c13bc0b98999cec1e155bf0c7100d6ffd01965e6d2a4d05071c4da888db",
+  "design_git_blob_sha1": "fb090795488eb9cd168f4c5a3e6df89667f4bf34",
+  "design_revision": "0.26-draft",
+  "design_sha256": "50effb12fb2c37a391821849f18bf4fceac2212ebb203ff06926836b8b073660",
+  "full_native_release": {
+    "latest_durable_evidence": "P1.25",
+    "missing_native_evidence": [
+      "native C48 compile to OBJ1 and link to MEX1",
+      "native MEX1 image/BSS and stack high-water",
+      "real ZX-UX allocator class/extent and model-object coexistence",
+      "Fuse/cycle native inference evidence",
+      "physical 48K cassette build/save/load/run proof",
+      "Section 18.4 eleven-step native proof sequence"
+    ],
+    "policy": "No SDK result is promoted to native certification. Other GitHub projects remain read-only.",
+    "status": "BLOCKED_EXTERNAL",
+    "upstream_main": "cb8e4ea0b68df693e5d4133fc906ed46234427b6",
+    "upstream_repository": "tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project"
+  },
+  "schema": 1,
+  "sdk_c48b_sha256": "d6a1b234877e8592c53db17018e59e64c4bf7055d5b682f35b7b24302bfe73da",
+  "sdk_profile": {
+    "literal_context": {
+      "context_compactions": 15,
+      "final_keyword_hit": true,
+      "keyword_ratio": 1.0,
+      "literal_reference_losses": 1,
+      "max_l2count": 2,
+      "max_lmcount": 96,
+      "semantic_retrieval_uses": 61,
+      "turns": 70
+    },
+    "post_repair_final_regressions": {
+      "final-a": {
+        "clean_exit": true,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 12
+      },
+      "final-b": {
+        "clean_exit": true,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 12
+      },
+      "final-c": {
+        "clean_exit": true,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 12
+      }
+    },
+    "review_passes": [
+      "requirements-to-implementation",
+      "implementation-to-retained-evidence-and-lineage",
+      "durability-release-boundary-and-native-nonclaim"
+    ],
+    "status": "PASS",
+    "zero_gap_passes": 3
+  },
+  "source_sha256": "d8def7e22c53657bab1fa66b85bdd1f3be4a04ada54579d488301e7014227693"
+}

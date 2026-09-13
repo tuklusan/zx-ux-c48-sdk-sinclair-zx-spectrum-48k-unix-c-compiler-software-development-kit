@@ -17,8 +17,8 @@ patent, trademark, and governing-law provisions.
 
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
-Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.25-draft
+Status: SDK implementation profile qualified; full native-release profile blocked on upstream ZX-UX implementation
+Revision: 0.26-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48/ailmzx48.c48b`
 
@@ -209,6 +209,37 @@ Implementation measurement note (Revision 0.23): the target L0 slice now stores 
 Implementation measurement note (Revision 0.24): iteration 12 repeated the retained 500-turn actual-SDK endurance scenario after replacing the temporary printable L0 with the Section-7 token/literal wire. The C48 program again accepted 500 turns plus `q`, emitted 501 beeps, processed 48,820 source-equivalent dialogue bytes, recovered the turn-2 memory topic at turn 500, and completed in 266.794 seconds. The encoded L0 peak fell from iteration 11's 884 bytes to 830 of 896 bytes; L1 reached 48 records, L2 reached five, 436 L1-to-L2 compactions occurred, and the decoded 96-entry u16 LM-context ring reached its exact capacity without exceeding it. This supersedes the raw-L0 endurance evidence for the implemented wire slice while leaving punctuation-token coverage and richer semantic capsules as open work.
 
 Implementation measurement note (Revision 0.25): the target session-literal prototype now uses all eight designed 31-byte presentation slots with 1..4095 generations and bit-15 session references. User-name corrections rotate deterministically through the eight slots. Name state is stored in the value field of relation-3 L1/L2 capsules rather than recalled directly from slot zero; recall generation-checks the reference before resolving bytes. A correction marks older name capsules superseded, and reusing a slot scans both semantic tiers for the old generation reference, clears it and increments `ai_litloss`. L2 merging preserves a current relation-3 capsule over superseded history. This is the first target-side generation-checked session-reference slice, but it is still specialized to the user-name relation rather than the complete Candidate-A semantic relation schema. The next retained conversation must force slot reuse, observe stale-reference loss, compact across a long dialogue and recover only the newest name.
+
+Implementation measurement note (Revision 0.26): the SDK-target
+implementation now closes the context/literal gaps identified after the
+training convergence checkpoint.  Target code performs an explicit no-mutation
+capacity/descriptor preflight before an accepted dialogue pair is committed,
+uses protection/importance/age/slot ordering for semantic-record eviction,
+uses generation-checked session-literal reuse with the designed preference for
+an unreferenced slot and otherwise the weakest strongest live-retention tuple,
+and invalidates schema-declared semantic-reference fields before slot reuse.
+Name assignment/recall turns now pass through the same bounded L0/L1/L2
+conversation commit path rather than living only in a side channel.  The added
+logic was split into C48 headers rather than raising the compiler's 32768-byte
+source-object safety ceiling.
+
+The retained post-repair SDK conformance case contains 70 accepted turns.  It
+scores 70/70 expected keywords, performs 15 L1-to-L2 compactions, reaches two
+L2 records, fills the 96-entry decoded LM-context ring, records exactly one
+deliberate stale-generation invalidation after the ninth distinct name, and
+recalls only the newest name at the end.  Independent post-change replays of
+final regression suites A, B and C each remain 12/12 with clean exit and zero
+literal-reference losses.  These measurements supersede the open-work sentence
+at the end of Revision 0.25 for the implemented SDK profile.
+
+The SDK profile is not a substitute for native certification.  As of this
+revision the read-only upstream ZX-UX repository main identity checked for the
+native dependency is `cb8e4ea0b68df693e5d4133fc906ed46234427b6`; its latest
+inspected durable certification item is Phase-1 `P1.25`.  That upstream state
+does not yet provide the native C48/OBJ1/MEX1 build, allocator/stack/Fuse, and
+physical-cassette execution path required by Sections 18, 19 and 22.  Those
+native-only obligations therefore remain explicitly `BLOCKED_EXTERNAL`; they
+are neither silently waived nor counted as SDK zero-gap evidence.
 
 
 ### 6.1 No remote inference dependency
@@ -1262,6 +1293,44 @@ Before the model format is declared final, the project must answer with retained
 18. At convergence, what failures remain and why are they intrinsic or not worth the byte/latency cost to fix?
 
 The final design replaces these questions with measured answers.
+
+### 22.1 Revision-0.26 measured SDK answers and release-profile boundary
+
+The acceptance questions above are now classified by evidence scope rather
+than left as an undifferentiated to-do list.  The durable machine-readable
+source of this classification is
+`evaluation/DESIGN-COMPLIANCE-STATUS.json`.
+
+For the **SDK implementation profile**, retained measurements establish the
+following: the shipped SDK artifact is C48B1 and is never mislabeled as native
+OBJ1/MEX1/Z80 code; the active runner uses zero C48 heap; L0 is bounded to 896
+bytes/32 descriptors, L1 to 48 x 16-byte capsules, L2 to 24 x 16-byte records,
+the session-literal store to 272 bytes/eight generation-checked slots, and the
+decoded LM-context ring to 96 u16 entries; the cold A48M object is 8432 logical
+bytes with 69 records, a 64-byte maximum read request and a 192-byte maximum
+record; the host context oracle has retained a 500-dialogue/51000-source-byte
+stress while fixed capacities remained bounded; the post-repair target-SDK
+literal/context conversation retained 70/70 expected answers with real
+compaction and stale-reference invalidation; and post-repair final regression
+A/B/C remain 12/12 each.  The repository release verifier and `git diff
+--check` are mandatory for the exact committed tree.
+
+Questions that require **native ZX-UX evidence** remain intentionally open:
+final MEX1 image/text/BSS and stack high-water, ARG1/ENV1 and real allocator
+extent maps, RAW/PACKED native object placement, cycle/Fuse latency, native tty
+and syscall equivalence, native compiler/linker lifetime, cassette save/load
+ordering, physical 48K coexistence/headroom, and the Section-18.4 eleven-step
+real-machine proof.  The upstream dependency is currently only at Phase-1
+durable certification (`P1.25` at the inspected upstream main identity above),
+so fabricating answers for those questions would violate the accuracy-first
+rule.  Full native-release compliance becomes eligible for its own three-pass
+zero-gap certificate only after those upstream facilities exist and the native
+proof is retained.
+
+The current compliance certificate therefore has two independent fields:
+`SDK_PROFILE = PASS (3/3 zero-gap review passes)` and
+`FULL_NATIVE_RELEASE = BLOCKED_EXTERNAL`.  A PASS in the first field must never
+be rendered or summarized as a PASS in the second.
 
 ## 23. Open design questions after Revision 0.12
 

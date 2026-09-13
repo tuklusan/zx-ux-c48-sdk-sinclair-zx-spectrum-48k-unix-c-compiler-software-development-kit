@@ -1,15 +1,42 @@
 {
-  "authorization_basis": "Project user explicitly directed creation of a starter ailmzx48 model and training iterations in this conversation.",
+  "authorization_basis": "Project user explicitly directed creation, training, repair and completion of ailmzx48 in this repository.",
   "corpus": "seed_corpus.json",
+  "corpus_sha256": "d6528cc9fdf4b8826f8d31318241c90c89fc2ab6ec22bb671ea11afd849330ab",
   "excluded_from_training": [
     "ZX-UX C48 SDK repository prose/source unless separately authorized",
     "ZX-UX upstream repository prose/source unless separately authorized"
   ],
-  "factual_basis": [
-    "User project brief: Sinclair ZX Spectrum home computer of 1982.",
-    "User project brief: target machine is the ZX Spectrum 48K."
-  ],
-  "generation_date": "2026-09-12",
-  "generator": "OpenAI GPT-5.6 Sol",
-  "schema": 1
+  "policy": "Every admitted seed record has a content-addressed lineage entry. Synthetic style is not factual authority. Project facts are admitted under the explicit project-user directive and are not verbatim copies of repository/upstream prose.",
+  "record_count": 85,
+  "record_lineage": "record-lineage.json",
+  "schema": 2,
+  "source_catalog": {
+    "user-directed-sdk-facts": {
+      "authorization_basis": "Project user explicitly directed ailmzx48 work inside this SDK; records are compact project facts, not copied repository prose.",
+      "generation_date": "2026-09-12",
+      "generator": "OpenAI GPT-5.6 Sol",
+      "location": "training/seed_corpus.json",
+      "scope": "C48 SDK identity and behavior facts used by the local model",
+      "source_type": "project-authorized synthetic SDK factual seed",
+      "verbatim_repository_text": false
+    },
+    "user-directed-spectrum-facts": {
+      "authorization_basis": "Project user explicitly directed creation, training, repair, and completion of the Spectrum-specialist ailmzx48 model.",
+      "generation_date": "2026-09-12",
+      "generator": "OpenAI GPT-5.6 Sol",
+      "location": "training/seed_corpus.json",
+      "scope": "Spectrum history, hardware, software, games and culture facts",
+      "source_type": "project-authorized synthetic factual seed",
+      "verbatim_repository_text": false
+    },
+    "user-directed-style-synthesis": {
+      "authorization_basis": "Project user explicitly directed creation of synthetic ailmzx48 conversation material.",
+      "generation_date": "2026-09-12",
+      "generator": "OpenAI GPT-5.6 Sol",
+      "location": "training/seed_corpus.json",
+      "scope": "non-authoritative conversational wording/style",
+      "source_type": "project-authorized synthetic conversational style",
+      "verbatim_repository_text": false
+    }
+  }
 }
