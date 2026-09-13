@@ -1,0 +1,1 @@
+Refresh manifest and verify restored hardened maintenance workflow after repeated-pattern support.
