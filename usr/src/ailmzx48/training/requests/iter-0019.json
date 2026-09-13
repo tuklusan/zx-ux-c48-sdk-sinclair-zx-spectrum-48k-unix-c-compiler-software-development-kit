@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "iteration": 19,
+  "scenario": "target-encoded-turn-boundary-500-turn-v1",
+  "purpose": "Exercise the exact one-turn Candidate-A encoded-size boundary using punctuation literals. Eighty-four one-byte punctuation literals encode to 254 bytes including speaker and turn-end controls and must remain valid; eighty-five encode to 257 bytes and must fail preflight without partially mutating context. Alternate both cases with cold-topic traffic for 500 actual C48 turns and verify distant pinned-topic recovery.",
+  "max_seconds": 1200,
+  "prompt_plan": {
+    "prefix": [
+      "what about 48k memory",
+      "remember this topic"
+    ],
+    "cycle": [
+      "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+      "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+      "please tell me something about the spectrum home computer again",
+      "please tell me again what happened in spectrum history in 1982",
+      "please tell me something about spectrum games and its culture again"
+    ],
+    "cycle_count": 99,
+    "suffix": [
+      "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!",
+      "please tell me something about the spectrum home computer again",
+      "return to the topic i asked you to remember"
+    ]
+  },
+  "min_dialogue_bytes": 32769,
+  "min_compactions": 50,
+  "min_l2_count": 1,
+  "min_semantic_uses": 1,
+  "min_lmcount": 96,
+  "final_expected_keyword": "memory"
+}
