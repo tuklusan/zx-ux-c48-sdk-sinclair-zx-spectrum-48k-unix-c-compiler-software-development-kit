@@ -32,6 +32,8 @@ if str(COMP) not in sys.path:
 from c48.format import read
 from c48.romvm import RomMathVM
 from c48.screen import Font4x8, ZXScreen
+from c48.typesys import INT, UINT
+from c48.vm import Value
 
 A = ROOT / "usr" / "src" / "ailmzx48"
 SRC = A / "ailmzx48.c"
@@ -39,6 +41,7 @@ CORPUS = A / "training" / "seed_corpus.json"
 MODEL_DIR = A / "model"
 CONV_DIR = A / "conversations"
 BIN = ROOT / "usr" / "bin" / "ailmzx48" / "ailmzx48.c48b"
+COLD = MODEL_DIR / "cold-seed.bin"
 
 MD_HEADER = '''<!--
 ============================================================================
@@ -73,6 +76,59 @@ def run(cmd: list[str], timeout: int) -> None:
         raise RuntimeError("command failed: " + " ".join(cmd))
 
 
+
+class ModelVM(RomMathVM):
+    def __init__(self, *args, model_data, **kwargs):
+        self.model_data = model_data
+        self.model_pos = 0
+        self.model_calls = 0
+        self.model_bytes = 0
+        self.model_seeks = 0
+        self.model_max_request = 0
+        self.model_pattern = (1, 7, 3, 64, 2, 11)
+        super().__init__(*args, **kwargs)
+        self.builtins["ai_mstat"] = self._b_ai_mstat
+        self.builtins["ai_mseek"] = self._b_ai_mseek
+        self.builtins["ai_mread"] = self._b_ai_mread
+
+    def _b_ai_mstat(self, args):
+        return Value(UINT, len(self.model_data))
+
+    def _b_ai_mseek(self, args):
+        offset = self._to_unsigned(args[0])
+        if offset > len(self.model_data):
+            return Value(INT, -1)
+        self.model_pos = offset
+        self.model_seeks += 1
+        return Value(INT, 0)
+
+    def _b_ai_mread(self, args):
+        ptr = self._as_pointer(args[0])
+        count = self._to_unsigned(args[1])
+        if count > 64:
+            return Value(INT, -1)
+        if count > self.model_max_request:
+            self.model_max_request = count
+        if count == 0 or self.model_pos >= len(self.model_data):
+            return Value(INT, 0)
+        cap = self.model_pattern[
+            self.model_calls % len(self.model_pattern)
+        ]
+        self.model_calls += 1
+        take = min(
+            count, cap, len(self.model_data) - self.model_pos
+        )
+        if take:
+            self.mem.require_range(ptr, take, write=True)
+            data = self.model_data[
+                self.model_pos:self.model_pos + take
+            ]
+            self.mem.write_bytes(ptr.address, data)
+            self.model_pos += take
+            self.model_bytes += take
+        return Value(INT, take)
+
+
 class TraceScreen(ZXScreen):
     def __init__(self, font):
         super().__init__(font)
@@ -103,7 +159,9 @@ class Feeder:
                      "ai_lasttop", "ai_havectx", "ai_altuse",
                      "ai_altstate", "ai_histuse",
                      "ai_hcount", "ai_litset",
-                     "ai_lituse"):
+                     "ai_lituse", "ai_mrecords",
+                     "ai_mhits", "ai_mbytes",
+                     "ai_mreads"):
             lv = self.vm.global_lvalues.get(name)
             if lv is not None:
                 out[name] = int(self.vm._load(lv).data)
@@ -172,6 +230,9 @@ def main() -> int:
          "--out-h", str(header),
          "--iteration", str(iteration)], remaining)
     model_iter.write_bytes(current_model.read_bytes())
+    cold_test = A / "evaluation" / "test_a48m_reference.py"
+    remaining = max(30, limit - int(time.monotonic() - started))
+    run([sys.executable, "-B", str(cold_test)], remaining)
     BIN.parent.mkdir(parents=True, exist_ok=True)
     remaining = max(30, limit - int(time.monotonic() - started))
     run([sys.executable, "-B", str(COMP / "c48.py"),
@@ -205,11 +266,12 @@ def main() -> int:
     font = Font4x8.load(COMP / "assets" / "font4x8-tasword.bin")
     screen = TraceScreen(font)
     feeder = Feeder(screen, prompts)
-    vm = RomMathVM(program, screen,
-                   argv=[str(BIN)],
-                   heap_size=0,
-                   max_steps=max_steps,
-                   input_provider=feeder)
+    vm = ModelVM(program, screen,
+                 model_data=COLD.read_bytes(),
+                 argv=[str(BIN)],
+                 heap_size=0,
+                 max_steps=max_steps,
+                 input_provider=feeder)
     feeder.vm = vm
     remaining = limit - int(time.monotonic() - started)
     if remaining < 1:
@@ -435,6 +497,12 @@ def main() -> int:
         "heap_size": 0,
         "max_steps": max_steps,
         "runner_max_seconds": limit,
+        "cold_model_sha256": sha(COLD),
+        "cold_model_logical_length": len(vm.model_data),
+        "cold_model_read_calls": vm.model_calls,
+        "cold_model_bytes_read": vm.model_bytes,
+        "cold_model_seek_calls": vm.model_seeks,
+        "cold_model_max_request": vm.model_max_request,
     }
     (out_dir / "run.json").write_text(
         json.dumps(run_meta, indent=2, sort_keys=True) + "\n",
