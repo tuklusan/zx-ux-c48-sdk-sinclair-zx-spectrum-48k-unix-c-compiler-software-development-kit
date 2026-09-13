@@ -458,6 +458,9 @@ def main() -> int:
     semuse_total = sum(
         turn["diag"].get("ai_semuse", 0) for turn in turns
     )
+    litloss_total = sum(
+        turn["diag"].get("ai_litloss", 0) for turn in turns
+    )
     max_l0bytes = max(
         (turn["diag"].get("ai_l0bytes", 0) for turn in turns),
         default=0,
@@ -488,6 +491,8 @@ def main() -> int:
         raise RuntimeError("L2 occupancy gate failed")
     if semuse_total < int(req.get("min_semantic_uses", 0)):
         raise RuntimeError("semantic retrieval gate failed")
+    if litloss_total < int(req.get("min_literal_losses", 0)):
+        raise RuntimeError("literal invalidation gate failed")
     if max_lmcount < int(req.get("min_lmcount", 0)):
         raise RuntimeError("decoded LM-context gate failed")
     final_keyword = req.get("final_expected_keyword")
@@ -565,6 +570,7 @@ def main() -> int:
         "context_compactions": compact_total,
         "context_l2_evictions": l2evict_total,
         "semantic_retrieval_uses": semuse_total,
+        "literal_reference_losses": litloss_total,
         "max_l0bytes": max_l0bytes,
         "max_l1count": max_l1count,
         "max_l2count": max_l2count,
@@ -596,6 +602,7 @@ def main() -> int:
         "context_compactions": compact_total,
         "context_l2_evictions": l2evict_total,
         "semantic_retrieval_uses": semuse_total,
+        "literal_reference_losses": litloss_total,
         "max_l0bytes": max_l0bytes,
         "max_l1count": max_l1count,
         "max_l2count": max_l2count,

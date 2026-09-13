@@ -38,6 +38,9 @@ unsigned char ai_litlen[8];
 char ai_litbuf[248];
 unsigned int ai_litset;
 unsigned int ai_lituse;
+unsigned int ai_litcur;
+unsigned int ai_litold;
+unsigned int ai_litnext;
 char ai_in[192];
 char ai_out[256];
 int ai_drop_lf;
@@ -164,6 +167,11 @@ int ai_isq(void)
     return 0;
 }
 
+unsigned int ai_slotref(unsigned int slot);
+unsigned int ai_namefind(void);
+void ai_namesem(void);
+void ai_putref(unsigned int ref);
+
 int ai_namecmd(void)
 {
     if (ai_find("my name is ") >= 0) return 1;
@@ -179,6 +187,8 @@ int ai_setname(void)
     unsigned int n;
     unsigned int i;
     unsigned int gen;
+    unsigned int slot;
+    unsigned int off;
     pos = ai_find("my name is ");
     if (pos < 0) return 0;
     start = pos + 11;
@@ -187,15 +197,20 @@ int ai_setname(void)
         n = n + 1;
     }
     if (n == 0 || n > 31) return 0;
-    gen = ai_litgen[0] + 1;
+    slot = ai_litnext;
+    ai_litnext = (ai_litnext + 1) % 8;
+    ai_litold = ai_slotref(slot);
+    gen = ai_litgen[slot] + 1;
     if (gen == 0 || gen > 4095) gen = 1;
-    ai_litgen[0] = gen;
-    ai_litlen[0] = n;
+    ai_litgen[slot] = gen;
+    ai_litlen[slot] = n;
+    off = slot * 31;
     i = 0;
     while (i < n) {
-        ai_litbuf[i] = ai_in[start + i];
+        ai_litbuf[off + i] = ai_in[start + i];
         i = i + 1;
     }
+    ai_litcur = ai_slotref(slot);
     ai_litset = 1;
     return 1;
 }
@@ -210,32 +225,25 @@ void ai_putraw(char *s)
     }
 }
 
-void ai_putname(void)
-{
-    unsigned int i;
-    i = 0;
-    while (i < ai_litlen[0]) {
-        putchar(ai_litbuf[i]);
-        i = i + 1;
-    }
-}
-
 void ai_nameack(void)
 {
     ai_putraw("I will remember ");
-    ai_putname();
+    ai_putref(ai_litcur);
     puts(".");
 }
 
 void ai_nameans(void)
 {
-    if (ai_litlen[0] == 0) {
+    unsigned int ref;
+    ref = ai_namefind();
+    if (ref == 0) {
         puts("I do not have your name yet.");
         return;
     }
     ai_lituse = 1;
+    ai_semuse = 1;
     ai_putraw("I remember your name as ");
-    ai_putname();
+    ai_putref(ref);
     puts(".");
 }
 
@@ -894,6 +902,14 @@ void ai_l2merge(unsigned char *src)
         o = ai_capoff(i);
         if (ai_l2[o + 1] == rel) {
             if (ai_capget(ai_l2, o + 2) == topic) {
+                if (rel == 3) {
+                    if ((src[0] & 32) == 0 ||
+                        ((ai_l2[o] & 32) != 0 &&
+                         age < ai_l2[o + 15])) {
+                        ai_mcopy(&ai_l2[o], src, 16);
+                    }
+                    return;
+                }
                 if (imp > ai_l2[o + 14]) {
                     ai_l2[o + 14] = imp;
                 }
@@ -943,6 +959,8 @@ void ai_l1add(unsigned int topic, unsigned int rel,
     ai_compact = ai_compact + 1;
     ai_capset(&ai_l1[o], topic, rel, imp, age);
 }
+
+#include "ailit.h"
 
 void ai_descshift(void)
 {
@@ -1155,6 +1173,9 @@ int main(void)
     ai_hcount = 0;
     ai_litset = 0;
     ai_lituse = 0;
+    ai_litcur = 0;
+    ai_litold = 0;
+    ai_litnext = 0;
     ai_drop_lf = 0;
     ai_mrecords = 0;
     ai_mhits = 0;
@@ -1209,6 +1230,7 @@ int main(void)
             ai_error = 0;
             if (namecmd == 1) {
                 if (ai_setname()) {
+                    ai_namesem();
                     ai_nameack();
                 } else {
                     puts("I could not store that name.");
