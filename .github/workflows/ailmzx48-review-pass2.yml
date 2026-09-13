@@ -1,0 +1,250 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: One-shot ailmzx48 review pass 2 correction
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-review-pass2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  correct:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact main tree
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Apply pass 2 corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md')
+          text = path.read_text(encoding='utf-8')
+
+          def once(old, new):
+              global text
+              n = text.count(old)
+              if n != 1:
+                  raise SystemExit(
+                      'expected exactly one match, found '
+                      + str(n) + ': ' + repr(old[:100])
+                  )
+              text = text.replace(old, new, 1)
+
+          def replace_section(start, end, lines):
+              global text
+              i = text.index(start)
+              j = text.index(end, i + len(start))
+              text = text[:i] + '\n'.join(lines).rstrip() + '\n\n' + text[j:]
+
+          once('Revision: 0.4-draft', 'Revision: 0.5-draft')
+          once(
+              'Revision 0.3 introduced concrete **Candidate A**; Revision 0.4 retains it as a corrected benchmark baseline',
+              'Revision 0.3 introduced concrete **Candidate A**; Revision 0.5 retains it as a corrected benchmark baseline',
+          )
+          once(
+              'Revision 0.4 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:',
+              'Revision 0.5 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:',
+          )
+          once(
+              '## 23. Open design questions after Revision 0.4',
+              '## 23. Open design questions after Revision 0.5',
+          )
+
+          once(
+              '## 8. Compressed conversational context\n\n## 8. Compressed conversational context',
+              '## 8. Compressed conversational context',
+          )
+          once(
+              '## 17. Evaluation and convergence\n\n## 17. Evaluation and convergence',
+              '## 17. Evaluation and convergence',
+          )
+
+          once(
+              '**L0 — exact live tail**',
+              '**L0 — exact canonical-token live tail**',
+          )
+          once(
+              'The newest dialogue remains as canonical encoded tokens in a fixed circular byte buffer plus a small decoded LM-context cache. This is the only part treated as exact word-by-word conversational history by the response generator.',
+              'The newest dialogue remains as canonical encoded tokens in a fixed circular byte buffer plus a small decoded LM-context cache. This is the only part treated as exact canonical-token conversational history by the response generator. Because tokenization normalizes presentation such as ordinary case/spacing, L0 is not a byte-perfect transcript of what the user typed.',
+          )
+
+          replace_section(
+              '### 8.3 Promotion and compaction\n',
+              '### 8.4 Correction and supersession rule\n',
+              [
+                  '### 8.3 Promotion and compaction',
+                  '',
+                  'A turn is transactional with respect to conversation memory. Candidate A performs these bounded steps:',
+                  '',
+                  '1. read and validate the raw user line;',
+                  '2. tokenize it completely into the 320-byte current-turn encoded scratch, including all user-turn/BOS/EOS/turn-end framing; reject the turn without changing memory if the complete framed encoding exceeds 319 bytes;',
+                  '3. classify/retrieve/generate using that current-turn scratch plus existing L0/L1/L2;',
+                  '4. finish the complete framed encoded response in the 256-byte response-token buffer and validate factual anchors, token count and eventual printed-byte count before printing any response text;',
+                  '5. stream the validated response through the production tty path;',
+                  '6. compute the L0 byte and directory capacity required by both complete new speaker turns; the Candidate-A input/response caps are host-tested to prove one maximal accepted user/assistant pair can fit an otherwise empty 896-byte L0 and two of the 32 descriptors;',
+                  '7. while either L0 bytes or directory descriptors are insufficient, inspect the oldest complete speaker turn before overwriting it, derive at most two highest-ranked L1 capsules, compact bounded L1 records into L2 if needed, record any dropped semantic candidates, then evict that complete descriptor and its bytes;',
+                  '8. append the complete user and assistant encoded turns only after both byte capacity and two descriptor slots are proven available; no half-token, half-escape or half-turn is ever committed;',
+                  '9. update the decoded 96-entry LM-context cache and bounded diagnostic counters;',
+                  '10. in a diagnostic L3 build, append raw accepted input bytes and exact logical output bytes only if its pre-budgeted quota permits it;',
+                  '11. verify instrumented guard values before emitting the next prompt.',
+                  '',
+                  'The 128-byte L0 directory is exactly 32 four-byte descriptors: `u16` ring start plus `u16` encoded byte length. Speaker/turn type remains encoded in the turn stream itself. Ring reads whose bytes cross the physical end use bounded modulo copying; a descriptor is accepted only when its start/length prove every referenced byte lies within the 896-byte logical ring.',
+                  '',
+                  'The commit path is tested at both limiting resources: nearly full ring bytes with free descriptors, and free bytes with all descriptors occupied by tiny turns. No stage allocates an unbounded temporary copy of text or semantic records.',
+              ],
+          )
+
+          replace_section(
+              '### 8.6 What "larger context" does and does not promise\n',
+              '### 8.7 Candidate-A 4,336-byte conversation/context workspace\n',
+              [
+                  '### 8.6 What "larger context" does and does not promise',
+                  '',
+                  'The design promises preservation of useful conversational information across much longer sessions than an all-raw live buffer could hold.',
+                  '',
+                  'L0 preserves the exact **canonical token sequence** that survived tokenization. It does not by itself preserve byte-for-byte source spelling, capitalization or whitespace that normalization discarded. Perfect verbatim quotation is therefore promised only when the exact source bytes are still available from the current raw line, the external SDK transcript, or an enabled exact L3 archive.',
+                  '',
+                  'After old material has been reduced to L1/L2, even canonical token wording is no longer promised. If exact quotation matters and no exact transcript source is available, the agent must not fabricate the wording.',
+                  '',
+                  'Quality tests therefore distinguish canonical-token recent recall, source-byte/verbatim transcript recall, semantic old-turn recall, topic continuity, entity continuity, contradiction avoidance, correction handling, and unsupported pseudo-verbatim recall.',
+              ],
+          )
+
+          once(
+              'current-turn encoded scratch   320\nresponse encoded-token buffer  256   at most 255 encoded bytes',
+              'current-turn encoded scratch   320   <=319 bytes incl. turn framing\nresponse encoded-token buffer  256   <=255 bytes incl. turn framing',
+          )
+
+          once(
+              '- hot-token spelling/presentation metadata;',
+              '- resident hot + extended recognition/spelling/presentation lexicon;',
+          )
+
+          once(
+              'The target model includes an incremental integrity check suitable for the Z80/C48 implementation. Host release tooling also records SHA-256 for reproducibility. SHA-256 is not imposed on the target merely because the host can calculate it cheaply.',
+              'The target model includes an incremental integrity check suitable for the Z80/C48 implementation. Every complete cold scan validates structural bounds and accumulates that integrity check while bytes are already streaming. No selected cold record may reach response generation until the scan has reached the declared logical end and the integrity result matches. Thus the first question also performs full model validation without requiring an extra unbudgeted startup copy/scan; later scans retain the same fail-closed check unless a separately proved immutable-object optimization replaces it. Host release tooling also records SHA-256 for reproducibility. SHA-256 is not imposed on the target merely because the host can calculate it cheaply.',
+          )
+
+          once(
+              'process image/text + immutable resident lexicon/hot model tables\nprocess BSS including the 4336-byte Candidate-A workspace\nMEX1 minimum_stack_size plus REV12\'s additional 64 bootstrap bytes\nARG1 + ENV1 process bootstrap allocation and alignment\nfixed C48 heap reserve inside BSS',
+              'process image/text + immutable resident lexicon/hot model tables\nprocess BSS total, including workspace and any fixed C48 heap reserve\nMEX1 minimum_stack_size plus REV12\'s additional 64 bootstrap bytes\nARG1 + ENV1 process bootstrap allocation and alignment',
+          )
+          once(
+              'The simple total is a **necessary but not sufficient** invariant:',
+              'The workspace and configured heap are reported as BSS subdivisions and are never added a second time on top of measured total BSS. The simple total is a **necessary but not sufficient** invariant:',
+          )
+          once(
+              '- MEX1 `minimum_stack_size` of 768..1024 bytes unless measured native call depth requires more, which means 832..1088 actual stack-allocation bytes after REV12\'s mandatory +64 bootstrap allowance;',
+              '- no arbitrary release stack target: begin measurement from the canonical linker default `minimum_stack_size` of 512 bytes, test native high-water/canaries and call-depth stress, then select the smallest safe even value in REV12\'s 64..4096 range with an explicitly justified safety margin; the allocator always consumes that chosen value plus REV12\'s mandatory 64 bootstrap bytes;',
+          )
+
+          once(
+              'runner/tool hash\nexact injected input bytes',
+              'runner/tool hash\nupstream ZX-UX authority commit and hashes of REV12/REV03 bytes\nC48 Rev-0.11 DOCX SHA-256\nexact injected input bytes',
+          )
+          once(
+              'ai_l2evict\nai_litloss',
+              'ai_l2evict\nai_l1drop\nai_litloss',
+          )
+          once(
+              'Tests separately prove that recent exact wording remains available inside the declared L0 horizon; old semantically important facts survive compaction; low-value chatter can be forgotten safely; later corrections supersede older state according to the documented rule; the agent never claims verbatim recall from lossy state; repeated compaction never grows the fixed workspace; and conversations far longer than L0 complete without memory corruption.',
+              'Tests separately prove that the recent canonical token sequence remains available inside the declared L0 horizon; source-byte quotation is claimed only when an exact transcript source exists; old semantically important facts survive compaction; low-value chatter can be forgotten safely; later corrections supersede older state according to the documented rule; repeated compaction never grows the fixed workspace; and conversations far longer than L0 complete without memory corruption.',
+          )
+
+          once(
+              'This design may read those documents to implement correct ZX-UX/C48 behavior. Training the conversational model on their textual content requires a separately recorded authorization or a user-authored/otherwise permitted factual corpus. Design authority and training permission are different questions.',
+              'This design may read those documents to implement correct ZX-UX/C48 behavior. Training the conversational model on their textual content requires the separate express written authorization required by the repository license or a user-authored/otherwise permitted factual corpus. Merely placing text, generated conversations, extracts, or model-building inputs under `usr/src/ailmzx48/training/` does not grant training permission: every admitted item still needs an independent manifest basis that permits the intended AI/ML use, and any item whose only governing permission is the root SDK license is excluded from training. Design authority, repository location and training permission are three different questions.',
+          )
+
+          once(
+              '- false claim of verbatim recall where only lossy context remains;',
+              '- false claim of verbatim/source-byte recall where exact source bytes are not retained;',
+          )
+
+          once(
+              'What is the exact 4,336-byte workspace map, heap reserve, MEX1 minimum stack, actual +64 stack allocation and measured native stack high-water?',
+              'What is the exact 4,336-byte workspace map, BSS total/subdivision accounting, heap reserve, measured MEX1 minimum stack, actual +64 stack allocation and native stack high-water?',
+          )
+
+          once(
+              '- final MEX1 minimum stack reservation and whether heap remains zero;',
+              '- final MEX1 minimum stack reservation, selected from measured native high-water rather than a guessed range, and whether heap remains zero;',
+          )
+
+          if text.count('## 8. Compressed conversational context') != 1:
+              raise SystemExit('section 8 heading is not unique after correction')
+          if text.count('## 17. Evaluation and convergence') != 1:
+              raise SystemExit('section 17 heading is not unique after correction')
+          if 'Revision: 0.5-draft' not in text:
+              raise SystemExit('revision did not advance')
+          if '768..1024' in text:
+              raise SystemExit('arbitrary stack range survived')
+          path.write_text(text, encoding='utf-8', newline='\n')
+          PY
+
+      - name: Remove helper and regenerate manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/ailmzx48-review-pass2.yml
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          root = Path('.').resolve()
+          manifest = root / 'MANIFEST.sha256'
+          lines = []
+          for path in sorted(root.rglob('*')):
+              if not path.is_file():
+                  continue
+              rel = path.relative_to(root)
+              name = rel.as_posix()
+              if '.git' in rel.parts or name == 'MANIFEST.sha256':
+                  continue
+              data = path.read_bytes()
+              if path.suffix.lower() == '.bat':
+                  data = data.replace(b'\r\n', b'\n')
+              lines.append(
+                  hashlib.sha256(data).hexdigest() + '  ' + name + '\n'
+              )
+          manifest.write_text(''.join(lines), encoding='ascii', newline='\n')
+          PY
+
+      - name: Verify complete corrected repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          python -B compiler/verify_release.py
+
+      - name: Commit corrected pass 2 design
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Resolve ailmzx48 review pass 2 findings"
+          git push origin HEAD:main
