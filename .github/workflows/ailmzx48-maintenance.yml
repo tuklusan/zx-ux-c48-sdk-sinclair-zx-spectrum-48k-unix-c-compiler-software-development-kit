@@ -23,8 +23,8 @@ permissions:
   contents: write
 
 concurrency:
-    group: ailmzx48-maintenance-main
-    cancel-in-progress: false
+  group: ailmzx48-maintenance-main
+  cancel-in-progress: false
 
 jobs:
   maintain:
