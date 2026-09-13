@@ -114,8 +114,8 @@ implementation and retained evidence. They are not open tuning placeholders:
   compiler source-object ceiling; helper logic moved to ordinary shipped C48
   headers instead of weakening the compiler gate;
 - `compiler/verify_release.py` permanently invokes the three-pass design
-  compliance checker, so source/evidence/provenance drift fails the full SDK
-  release gate.
+  compliance checker, so source/binary/model/evidence/provenance drift fails
+  the full SDK release gate.
 
 The remaining questions are specifically native-release questions:
 
@@ -164,6 +164,41 @@ def patch_checker() -> None:
     path = EVAL / "check_design_compliance.py"
     replace_once(
         path,
+        'def pass2() -> dict:\n'
+        '    source_hash = sha(A / "ailmzx48.c")\n'
+        '    base = A / "evaluation" / "sdk-conformance"\n',
+        'def pass2() -> dict:\n'
+        '    source_hash = sha(A / "ailmzx48.c")\n'
+        '    binary_hash = sha(ROOT / "usr/bin/ailmzx48/ailmzx48.c48b")\n'
+        '    cold_hash = sha(A / "model" / "cold-seed.bin")\n'
+        '    base = A / "evaluation" / "sdk-conformance"\n',
+    )
+    replace_once(
+        path,
+        '        require(run.get("source_sha256") == source_hash,\n'
+        '                f"{name}: source identity mismatch")\n',
+        '        require(run.get("source_sha256") == source_hash,\n'
+        '                f"{name}: source identity mismatch")\n'
+        '        require(run.get("c48b_sha256") == binary_hash,\n'
+        '                f"{name}: binary identity mismatch")\n'
+        '        require(run.get("cold_model_sha256") == cold_hash,\n'
+        '                f"{name}: cold-model identity mismatch")\n',
+    )
+    replace_once(
+        path,
+        '    require(run.get("source_sha256") == source_hash,\n'
+        '            "literal-context: source identity mismatch")\n\n'
+        '    corpus = load(A / "training" / "seed_corpus.json")\n',
+        '    require(run.get("source_sha256") == source_hash,\n'
+        '            "literal-context: source identity mismatch")\n'
+        '    require(run.get("c48b_sha256") == binary_hash,\n'
+        '            "literal-context: binary identity mismatch")\n'
+        '    require(run.get("cold_model_sha256") == cold_hash,\n'
+        '            "literal-context: cold-model identity mismatch")\n\n'
+        '    corpus = load(A / "training" / "seed_corpus.json")\n',
+    )
+    replace_once(
+        path,
         '    require(native.get("upstream_main") ==\n'
         '            "cb8e4ea0b68df693e5d4133fc906ed46234427b6",\n'
         '            "upstream blocker identity mismatch")\n'
@@ -177,6 +212,21 @@ def patch_checker() -> None:
         '    require(native.get("upstream_certified_source_commit") ==\n'
         f'            "{UP_SOURCE}",\n'
         '            "upstream certified source identity mismatch")\n',
+    )
+    replace_once(
+        path,
+        '    require(status.get("source_sha256") == sha(A / "ailmzx48.c"),\n'
+        '            "status source identity mismatch")\n'
+        '    require(status.get("design_sha256") ==\n',
+        '    require(status.get("source_sha256") == sha(A / "ailmzx48.c"),\n'
+        '            "status source identity mismatch")\n'
+        '    require(status.get("sdk_c48b_sha256") ==\n'
+        '            sha(ROOT / "usr/bin/ailmzx48/ailmzx48.c48b"),\n'
+        '            "status binary identity mismatch")\n'
+        '    require(status.get("cold_model_sha256") ==\n'
+        '            sha(A / "model" / "cold-seed.bin"),\n'
+        '            "status cold-model identity mismatch")\n'
+        '    require(status.get("design_sha256") ==\n',
     )
 
 
