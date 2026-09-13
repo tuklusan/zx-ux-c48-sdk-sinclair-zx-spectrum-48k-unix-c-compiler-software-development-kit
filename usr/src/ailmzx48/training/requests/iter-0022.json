@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "iteration": 22,
+  "scenario": "target-history-semantic-500-turn-v1",
+  "purpose": "Stress repeated topic-history traversal and semantic pinned-topic recall while session literals and canonical wire failures continue to compete for bounded context resources.",
+  "max_seconds": 1200,
+  "prompt_plan": {
+    "prefix": [
+      "what about 48k memory",
+      "remember this topic",
+      "my name is Carol",
+      "please tell me something about the spectrum home computer again",
+      "please tell me something about spectrum games and its culture again",
+      "can you chat locally without a network on this small computer",
+      "please tell me again what happened in spectrum history in 1982",
+      "go back"
+    ],
+    "cycle": [
+      "what is my name",
+      "please tell me something about the spectrum home computer again",
+      "go back",
+      "please tell me something about spectrum games and its culture again",
+      "go back",
+      "can you chat locally without a network on this small computer",
+      "1234567890123456",
+      "abcdefghijklmnopqrstuvwxyzabcdef",
+      "please tell me again what happened in spectrum history in 1982",
+      "return to the topic i asked you to remember"
+    ],
+    "cycle_count": 49,
+    "suffix": [
+      "what is my name",
+      "return to the topic i asked you to remember"
+    ]
+  },
+  "min_dialogue_bytes": 32769,
+  "min_compactions": 100,
+  "min_l2_count": 1,
+  "min_semantic_uses": 50,
+  "min_lmcount": 96,
+  "final_expected_keyword": "memory"
+}
