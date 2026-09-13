@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "iteration": 32,
+  "scenario": "knowledge-identity-enrichment-v1",
+  "purpose": "Hard-gate enriched model identity knowledge after the resident knowledge expansion while checking the other major routed domains remain coherent.",
+  "max_seconds": 1200,
+  "prompts": [
+    "tell me about the spectrum hardware",
+    "how is 48k memory arranged",
+    "name some classic spectrum games",
+    "does local chat need a network",
+    "who are you"
+  ],
+  "expected_keywords": ["z80a","64k","manic","network","ailmzx48"],
+  "final_expected_keyword": "ailmzx48"
+}
