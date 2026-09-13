@@ -81,6 +81,11 @@ jobs:
           --request "${{ steps.req.outputs.request }}"
           --max-seconds 1200
 
+      - name: Enforce requested evaluation gates
+        run: >-
+          python -B usr/src/ailmzx48/evaluation/check_iteration_score.py
+          --request "${{ steps.req.outputs.request }}"
+
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
 
