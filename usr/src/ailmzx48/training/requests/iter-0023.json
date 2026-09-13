@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "iteration": 23,
-  "scenario": "target-literal-recall-churn-500-turn-v1",
-  "purpose": "Stress repeated session-name replacement and semantic name recall while cold-topic traffic drives L0/L1/L2 compaction for the full 500-turn target session.",
+  "scenario": "target-literal-recall-churn-500-turn-v2",
+  "purpose": "Stress repeated session-name replacement and semantic name recall while a denser mix of cold-topic traffic drives L0/L1/L2 compaction and keeps the actual 500-turn dialogue source above 32 KiB.",
   "max_seconds": 1200,
   "prompt_plan": {
     "prefix": [
@@ -13,8 +13,6 @@
       "can you chat locally without a network on this small computer",
       "please tell me again what happened in spectrum history in 1982",
       "my name is Alice",
-      "what is my name",
-      "my name is Bob",
       "what is my name"
     ],
     "cycle": [
@@ -26,10 +24,12 @@
       "what is my name",
       "can you chat locally without a network on this small computer",
       "please tell me again what happened in spectrum history in 1982",
+      "please tell me something about the spectrum home computer again",
+      "please tell me something about spectrum games and its culture again",
       "my name is Dave",
       "what is my name"
     ],
-    "cycle_count": 49,
+    "cycle_count": 41,
     "suffix": []
   },
   "min_dialogue_bytes": 32769,
