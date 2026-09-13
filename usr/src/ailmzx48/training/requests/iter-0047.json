@@ -2,7 +2,7 @@
   "schema": 1,
   "iteration": 47,
   "scenario": "retrieval-model-evidence-mixed-topic-v1",
-  "purpose": "Qualify generic cold-model evidence routing across mixed-topic prompts after removing hand-written noun routing. Distractor topic words must lose to stronger record-trigger evidence without weakening the evaluation gate.",
+  "purpose": "Qualify generic cold-model evidence routing across the same mixed-topic prompts after strengthening the launch-price record with a natural retrieval alias. The 100 percent gate and prompts remain unchanged.",
   "max_seconds": 1200,
   "prompts": [
     "for the 48k memory machine which company acquired spectrum computer rights in 1986",
