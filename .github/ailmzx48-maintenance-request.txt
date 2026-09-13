@@ -1,0 +1,2 @@
+iteration=43
+purpose=deepen-io-peripheral-seed
