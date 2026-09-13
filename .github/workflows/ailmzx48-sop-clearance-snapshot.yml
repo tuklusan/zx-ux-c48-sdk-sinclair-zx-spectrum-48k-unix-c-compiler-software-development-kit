@@ -139,6 +139,97 @@ jobs:
         run: >-
           python -B usr/src/ailmzx48/tooling/sop_integrity_repair.py finalize
 
+      - name: Close SoP documentation consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+
+          root = Path('.')
+          a = root / 'usr/src/ailmzx48'
+          e = a / 'evaluation'
+          design = a / 'AILMZX48-DETAILED-DESIGN.md'
+          checker = e / 'check_design_compliance.py'
+          cert = e / 'DESIGN-REVIEW-CERTIFICATE.md'
+          status_path = e / 'DESIGN-COMPLIANCE-STATUS.json'
+
+          old = (
+              'A turn is transactional with respect to conversation memory for every recoverable failure. '
+              'Classification/retrieval may read the session-literal table but may not allocate, reuse or '
+              'invalidate a slot before commit. A new literal remains in current-turn scratch for the current '
+              'answer; persistent session-literal allocation is needed only when an evicted L0 turn is reduced '
+              'into L1/L2.'
+          )
+          new = (
+              'A turn is transactional with respect to conversation memory for every recoverable failure. '
+              'Classification/retrieval may read the session-literal table but may not allocate, reuse or '
+              'invalidate a slot before the normal context commit succeeds. Ordinary new literals remain in '
+              'current-turn scratch until an evicted L0 turn requires semantic persistence. The explicit '
+              'name-memory command is the measured exception: after `ai_ctxpair()` succeeds for the complete '
+              'name turn, `ai_namecommit()` may allocate/reuse the bounded session-literal slot and publish the '
+              'semantic name relation. If the context commit fails, no literal generation, slot bytes, '
+              'stale-reference invalidation, or name semantic state is changed.'
+          )
+          text = design.read_text(encoding='utf-8')
+          if text.count(old) != 1:
+              raise SystemExit('Section 8.3 stale-literal anchor missing or non-unique')
+          design.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
+
+          ctext = cert.read_text(encoding='utf-8')
+          marker = (
+              'Every cold scan recomputes Fletcher-16 and rejects vocabulary/interface '
+              'identity mismatch before record use.'
+          )
+          boundary = '## Native release boundary\n'
+          if marker not in ctext:
+              if ctext.count(boundary) != 1:
+                  raise SystemExit('certificate native-boundary anchor missing or non-unique')
+              ctext = ctext.replace(boundary, marker + '\n\n' + boundary, 1)
+
+          ktext = checker.read_text(encoding='utf-8')
+          kanchor = (
+              '    require("void ai_namecommit" in lit and\n'
+              '            "ai_litgen[slot] = gen;" in lit,\n'
+              '            "post-context literal commit implementation missing")\n'
+          )
+          kinsert = kanchor + (
+              '    require("persistent session-literal allocation is needed only when an evicted L0 turn" not in design,\n'
+              '            "stale literal-allocation rule remains in design")\n'
+              '    require("The explicit name-memory command is the measured exception" in design,\n'
+              '            "post-context name-literal design rule missing")\n'
+          )
+          if 'stale literal-allocation rule remains in design' not in ktext:
+              if ktext.count(kanchor) != 1:
+                  raise SystemExit('pass-1 name-commit checker anchor missing or non-unique')
+              ktext = ktext.replace(kanchor, kinsert, 1)
+          checker.write_text(ktext, encoding='utf-8', newline='\n')
+
+          data = design.read_bytes()
+          design_sha = hashlib.sha256(data).hexdigest()
+          design_blob = hashlib.sha1(
+              b'blob ' + str(len(data)).encode('ascii') + b'\0' + data
+          ).hexdigest()
+          status = json.loads(status_path.read_text(encoding='utf-8'))
+          status['design_sha256'] = design_sha
+          status['design_git_blob_sha1'] = design_blob
+          status_path.write_text(
+              json.dumps(status, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8', newline='\n'
+          )
+
+          lines = []
+          for line in ctext.splitlines():
+              if line.startswith('- detailed-design Git blob:'):
+                  line = f'- detailed-design Git blob: `{design_blob}`'
+              elif line.startswith('- detailed-design SHA-256:'):
+                  line = f'- detailed-design SHA-256: `{design_sha}`'
+              lines.append(line)
+          cert.write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')
+          PY
+
       - name: Remove temporary SoP instrumentation
         shell: bash
         run: |
