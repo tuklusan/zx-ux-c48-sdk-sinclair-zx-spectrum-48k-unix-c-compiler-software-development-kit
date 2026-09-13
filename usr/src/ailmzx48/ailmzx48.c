@@ -75,6 +75,10 @@ unsigned int ai_l1drop;
 unsigned int ai_litloss;
 unsigned int ai_encfail;
 unsigned int ai_semuse;
+unsigned int ai_lmring[96];
+unsigned int ai_lmhead;
+unsigned int ai_lmcount;
+unsigned int ai_l0wire;
 
 int ai_lower(int c)
 {
@@ -961,7 +965,7 @@ void ai_promote(void)
     topic = (ai_l0meta[0] / 2) & 7;
     rel = 2;
     imp = 32;
-    if (ai_l0has(0, "remember this topic")) {
+    if ((ai_l0meta[0] & 32) != 0) {
         rel = 1;
         imp = 255;
     }
@@ -980,25 +984,24 @@ int ai_ctxevict(void)
     return 0;
 }
 
+
+int ai_pinreq(void);
+#include "aictx.h"
+
 int ai_ctxwrite(char *s, unsigned int speaker,
                 unsigned int topic)
 {
     unsigned int n;
-    unsigned int i;
-    unsigned int p;
-    n = ai_strlen(s);
-    if (n == 0 || n > 255) return -1;
+    unsigned int meta;
+    n = ai_encsize(s);
+    if (n == 65535 || n == 0 || n > 255) return -1;
     if (ai_l0count >= 32) return -1;
     ai_l0start[ai_l0count] = ai_l0head;
     ai_l0len[ai_l0count] = n;
-    ai_l0meta[ai_l0count] = speaker + (topic * 2);
-    i = 0;
-    while (i < n) {
-        p = (ai_l0head + i) % 896;
-        ai_l0ring[p] = s[i];
-        i = i + 1;
-    }
-    ai_l0head = (ai_l0head + n) % 896;
+    meta = speaker + (topic * 2);
+    if (speaker == 0 && ai_pinreq()) meta = meta | 32;
+    ai_l0meta[ai_l0count] = meta;
+    if (ai_wirewrite(s, speaker) != 0) return -1;
     ai_l0bytes = ai_l0bytes + n;
     ai_l0count = ai_l0count + 1;
     return 0;
@@ -1009,9 +1012,9 @@ int ai_ctxpair(unsigned int topic)
     unsigned int un;
     unsigned int an;
     unsigned int need;
-    un = ai_strlen(ai_in);
-    an = ai_strlen(ai_out);
-    if (un == 0 || an == 0) {
+    un = ai_encsize(ai_in);
+    an = ai_encsize(ai_out);
+    if (un == 65535 || an == 65535) {
         ai_encfail = ai_encfail + 1;
         return -1;
     }
@@ -1066,7 +1069,7 @@ unsigned int ai_semrecall(void)
     i = ai_l0count;
     while (i >= 2) {
         i = i - 2;
-        if (ai_l0has(i, "remember this topic")) {
+        if ((ai_l0meta[i] & 32) != 0) {
             return (ai_l0meta[i] / 2) & 7;
         }
     }
@@ -1168,6 +1171,9 @@ int main(void)
     ai_litloss = 0;
     ai_encfail = 0;
     ai_semuse = 0;
+    ai_lmhead = 0;
+    ai_lmcount = 0;
+    ai_l0wire = 1;
     ai_start();
     while (1) {
         ai_beeps = ai_beeps + 1;

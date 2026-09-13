@@ -165,7 +165,8 @@ class Feeder:
                      "ai_l1count", "ai_l2count",
                      "ai_compact", "ai_l2evict",
                      "ai_l1drop", "ai_litloss",
-                     "ai_encfail", "ai_semuse"):
+                     "ai_encfail", "ai_semuse",
+                     "ai_lmcount", "ai_l0wire"):
             lv = self.vm.global_lvalues.get(name)
             if lv is not None:
                 out[name] = int(self.vm._load(lv).data)
@@ -469,6 +470,10 @@ def main() -> int:
         (turn["diag"].get("ai_l2count", 0) for turn in turns),
         default=0,
     )
+    max_lmcount = max(
+        (turn["diag"].get("ai_lmcount", 0) for turn in turns),
+        default=0,
+    )
     if max_l0bytes > 896:
         raise RuntimeError("target L0 exceeded 896 bytes")
     if max_l1count > 48:
@@ -483,6 +488,8 @@ def main() -> int:
         raise RuntimeError("L2 occupancy gate failed")
     if semuse_total < int(req.get("min_semantic_uses", 0)):
         raise RuntimeError("semantic retrieval gate failed")
+    if max_lmcount < int(req.get("min_lmcount", 0)):
+        raise RuntimeError("decoded LM-context gate failed")
     final_keyword = req.get("final_expected_keyword")
     final_keyword_hit = True
     if final_keyword is not None:
@@ -561,6 +568,7 @@ def main() -> int:
         "max_l0bytes": max_l0bytes,
         "max_l1count": max_l1count,
         "max_l2count": max_l2count,
+        "max_lmcount": max_lmcount,
         "final_keyword_hit": final_keyword_hit,
     }
     (out_dir / "score.json").write_text(
@@ -591,6 +599,7 @@ def main() -> int:
         "max_l0bytes": max_l0bytes,
         "max_l1count": max_l1count,
         "max_l2count": max_l2count,
+        "max_lmcount": max_lmcount,
         "final_keyword_hit": final_keyword_hit,
     }
     (out_dir / "run.json").write_text(
