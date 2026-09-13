@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.10-draft
+Revision: 0.11-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48`
 
@@ -188,7 +188,7 @@ The working architecture is instead a host-trained, target-inferred sparse stati
 
 This is still a language model: probabilities/weights over token continuations are learned from a corpus and used locally at inference time. The surrounding agent controller supplies conversation state, memory retrieval, topic steering, factual anchoring, uncertainty/fallback behavior, and anti-repetition controls.
 
-The exact release model family is not frozen by this revision. Revision 0.3 introduced concrete **Candidate A**; Revision 0.10 retains it as a corrected benchmark baseline so implementation and measurements can begin without pretending the representation is already optimal. Candidate A is not a promise that no better representation will replace it.
+The exact release model family is not frozen by this revision. Revision 0.3 introduced concrete **Candidate A**; Revision 0.11 retains it as a corrected benchmark baseline so implementation and measurements can begin without pretending the representation is already optimal. Candidate A is not a promise that no better representation will replace it.
 
 ### 6.1 No remote inference dependency
 
@@ -1037,7 +1037,27 @@ That direct tape-backed path solves an **executable-copy** problem. It does not 
 
 Therefore a reboot is not inherently required merely to "unload the compiler". The actual memory problem is the complete set of still-live process allocations and RAM objects after the build: shell/tool processes, source, OBJ1, final executable object, model objects, temporary files and pinned/system state. A future proposal to stream knowledge from cassette during every answer would be a different, heavily blocking sequential-storage design and requires separate proof rather than being smuggled into the word "external".
 
-### 18.2 Required final proof sequence
+### 18.2 Operator Build Overview
+
+The release operator has two conceptual build paths. Both begin from an exact accepted source/model identity and both must preserve the same runtime interfaces, memory limits, provenance records and release gates.
+
+For the **host/SDK build**, the operator starts from a clean repository `main` plus an admitted, content-addressed corpus/provenance snapshot. Deterministic host tooling builds the resident vocabulary/topic/semantic maps, bounded hot LM tables, cold A48M knowledge object(s), interface identity and model manifest. The repository C48 toolchain then compiles/links `ailmzx48.c` with the candidate heap/stack settings and produces the SDK runnable artifact plus the native executable/model payloads intended for packaging. Host format tests, active SDK conversations, model/interface checks, `MANIFEST.sha256`, `git diff --check` and the complete SDK release verifier must all pass before those identities are eligible for a release tape.
+
+For the **native-on-ZX-UX build**, model training is not repeated on the Spectrum. The operator boots canonical ZX-UX, loads the source/development tape containing the native C48 toolchain, `ailmzx48` source and already-generated accepted model resources, compiles the source to the canonical native object form, links the MEX1 image with measured heap/stack settings, verifies the resulting executable/model objects using documented target facilities, and saves the accepted runtime objects to cassette. Build-only source/tool/intermediate RAM objects are then reclaimed through supported ZX-UX semantics before runtime memory proof. Host and native builds must use the same frozen source/model/interface contracts; byte-identical executables are claimed only if measurement proves them, otherwise retained hashes plus behavioral/native verification identify each accepted build.
+
+Packaging is the final operator step, not an inference step: the accepted prebuilt executable and required model resource(s) form the runtime/distribution tape, while source, native build inputs and development tools belong on the source/development tape. Exact M48O order, target object names and final commands remain subject to the proof sequence below rather than being invented here.
+
+### 18.3 Independent Installation Overview
+
+Ordinary installation/use starts from a clean 48K-compatible machine that can boot the canonical ZX-UX system tape and from an accepted `ailmzx48` runtime/distribution tape. The user does **not** need the C48 compiler, source/development tape, host SDK, training corpus or model-building tools merely to install and run the released program.
+
+The runtime tape contains the prebuilt MEX1 executable plus every required cold-model/resource object and the release identity information needed by the documented verification flow. After boot, the user enters the normal ZX-UX shell session, scans/loads or directly executes the runtime objects only through the cassette/object operations actually provided by ZX-UX, and verifies the loaded objects with documented tape/object metadata checks. The normal launch path must leave the required model object(s) resident in the form expected by `ailmzx48`; launch-time A48M length/interface/integrity validation remains mandatory before model records can influence an answer. Exact target names, directories, commands and tape ordering are deliberately deferred until native proof freezes them.
+
+A successful launch presents the normal startup conversation. Entering exact `q` at a normal input prompt terminates the program cleanly and returns control according to the proven ZX-UX launch path; no hidden daemon or background model service remains resident. Process allocations, stack and open-description/decoder state are released by normal close/exit semantics.
+
+"Uninstall" on ZX-UX primarily means reclaiming the volatile runtime objects after `ailmzx48` has exited and all relevant handles are closed. Mutable executable/model RAM objects are removed only through supported object-removal semantics; pinned/system resources are never treated as application files. Removing RAM objects does not erase their cassette copies, because cassette is sequential persistent media rather than an in-place deletable filesystem. A distribution tape that should no longer contain `ailmzx48` is replaced/recreated without those objects rather than being described as having an in-place uninstall operation. Memory/extent evidence after reclaim must show that the application's arena allocations are actually gone.
+
+### 18.4 Required final proof sequence
 
 Before user documentation claims an exact command sequence, the native implementation must prove the following on a 48K configuration:
 
@@ -1055,13 +1075,13 @@ Before user documentation claims an exact command sequence, the native implement
 
 Every stage records `mem`/equivalent evidence including FAST/CONTENDED totals and largest extents where available. The final manual explains not only that the sequence worked once, but why its allocation order is valid.
 
-### 18.3 Compiler/linker lifetime question
+### 18.5 Compiler/linker lifetime question
 
 The final manual must distinguish process lifetime from stored tool/source objects. A completed `cc` or `ld` process no longer needs to occupy its former process allocation, but resident source/object/executable/model data can still consume the shared arena.
 
 The user should not be told to "unload C48" unless ZX-UX actually has a command with that meaning. The documentation will instead name the real objects/processes to remove or the real process-image transition to perform.
 
-### 18.4 Reboot fallback
+### 18.6 Reboot fallback
 
 If measurement proves that a clean post-build runtime state cannot be reached conveniently without bootstrapping again, the release may document a reboot/reload workflow. Reboot is a valid engineering answer; an invented unload command is not.
 
@@ -1096,7 +1116,7 @@ Each phase preserves a working, release-verifiable repository state on `main`. N
 
 ## 20. Candidate-A implementation interfaces
 
-Revision 0.10 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
+Revision 0.11 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
 
 ```text
 ai_readline()     bounded byte-aware tty line input
@@ -1197,7 +1217,7 @@ Before the model format is declared final, the project must answer with retained
 
 The final design replaces these questions with measured answers.
 
-## 23. Open design questions after Revision 0.10
+## 23. Open design questions after Revision 0.11
 
 The following remain deliberately open until measurement resolves them:
 
