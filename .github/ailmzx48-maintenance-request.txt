@@ -1,2 +1,0 @@
-iteration=41
-purpose=validate-stable-expanded-model
