@@ -1,1 +1,1 @@
-Apply the bounded topic-routing patch for ailmzx48 iteration 39, compile it, run the complete repository verifier, and retain the checkpoint on main.
+Retry the bounded topic-routing patch for ailmzx48 iteration 39 after fixing the repository license-header verifier blocker.
