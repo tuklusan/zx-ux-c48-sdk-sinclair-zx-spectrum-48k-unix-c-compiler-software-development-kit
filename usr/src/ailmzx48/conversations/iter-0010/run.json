@@ -1,0 +1,19 @@
+{
+  "c48b_sha256": "8b705aa9b769f7debc63f6a0d32bf72e53c1c11b54173c727c8996b89e6a2899",
+  "cold_model_bytes_read": 3773,
+  "cold_model_logical_length": 343,
+  "cold_model_max_request": 64,
+  "cold_model_read_calls": 394,
+  "cold_model_seek_calls": 11,
+  "cold_model_sha256": "bda8952603d05e8337571f1b63b230021d7db6e59e8511d45dd59e8877636bf3",
+  "corpus_sha256": "86186e751b9d52cf7e85f7c1adb9195646db99e722befd59d489cf3e8608411b",
+  "elapsed_seconds": 3.148,
+  "heap_size": 0,
+  "iteration": 10,
+  "max_steps": 5250000,
+  "model_header_sha256": "a299ef7eec5c2769679c0d3e2690fc40636715c7ea21bfe410512f5da122ca1f",
+  "model_sha256": "38908a91cc579505a2bd93cda90bdee1d74aef51d5b256f76c7023c253dc347e",
+  "runner_max_seconds": 1200,
+  "schema": 1,
+  "source_sha256": "329a5cecd7a57905c7fd66833c66b697176b6a0c188bce72b72511f0676d72be"
+}
