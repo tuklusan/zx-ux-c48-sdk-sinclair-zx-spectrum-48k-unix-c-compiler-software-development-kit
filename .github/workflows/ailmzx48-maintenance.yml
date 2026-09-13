@@ -48,6 +48,12 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
+      - name: Repair session-ref staging patch
+        shell: bash
+        run: |
+          python -B usr/src/ailmzx48/tooling/fix_session_refs_patch.py
+          git rm usr/src/ailmzx48/tooling/fix_session_refs_patch.py
+
       - name: Apply session-literal semantic references
         shell: bash
         run: |
