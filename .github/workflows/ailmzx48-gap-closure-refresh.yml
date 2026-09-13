@@ -1,0 +1,81 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: ailmzx48 gap closure refresh
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-gap-closure-refresh.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ailmzx48-gap-closure-refresh-main
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Refresh design compliance boundary
+        run: python -B usr/src/ailmzx48/tooling/finalize_gap_closure.py
+
+      - name: Remove temporary instrumentation
+        run: |
+          rm .github/workflows/ailmzx48-gap-closure-refresh.yml
+          rm usr/src/ailmzx48/tooling/finalize_gap_closure.py
+
+      - name: Verify ailmzx48 reference models and deterministic rebuild
+        run: |
+          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
+          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+          python -B compiler/c48.py usr/src/ailmzx48/ailmzx48.c \
+            -o /tmp/ailmzx48.c48b
+          cmp /tmp/ailmzx48.c48b usr/bin/ailmzx48/ailmzx48.c48b
+
+      - name: Run three design compliance passes
+        run: |
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py --pass-id 1
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py --pass-id 2
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py --pass-id 3
+
+      - name: Regenerate manifest and verify complete repository
+        run: |
+          python -B usr/src/ailmzx48/tooling/update_manifest.py
+          python -B compiler/verify_release.py
+          git diff --check
+
+      - name: Commit final gap closure
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "ailmzx48: close remaining SDK documentation gaps"
+          git push origin HEAD:main
