@@ -1,0 +1,2 @@
+iteration=42
+purpose=trusted-cold-scan-fast-path
