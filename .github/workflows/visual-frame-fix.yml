@@ -1,0 +1,125 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: Complete visual frame-drop fix
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/visual-frame-fix.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PRE_FIX_SHA: "447881d3ffe24457ccd9bb885503e0fa7d39fd2f"
+      PRE_FIX_TAG: "BEFORE-VISUAL-FRAME-DROP-FIX"
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Prove rollback tag before mutation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          test "$(git rev-list -n 1 "$PRE_FIX_TAG")" = "$PRE_FIX_SHA"
+
+      - name: Apply VM and frontend synchronization patch
+        run: python -B compiler/visual_fix_core.py
+
+      - name: Add temporal desktop acceptance instrumentation
+        run: python -B compiler/visual_fix_verifier.py
+
+      - name: Remove C48 pacing compensations and rebuild frozen binaries
+        run: python -B compiler/visual_fix_sources.py
+
+      - name: Prove source cleanup boundaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -q 'sleep(3u);' usr/src/demos/spriteanim.c
+          ! grep -q 'sleep(' usr/src/demos/goblet.c
+          ! grep -q 'sleep(' usr/src/demos/mobius.c
+          ! grep -q 'sleep(' usr/src/demos/sprites.c
+          ! grep -q 'sleep(' usr/src/demos/torus.c
+          ! grep -q 'sleep(' usr/src/demos/warp.c
+          ! grep -q 'sleep(' usr/src/examples/colors.c
+
+      - name: Remove one-shot scaffolding
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm compiler/visual_fix_core.py
+          rm compiler/visual_fix_sources.py
+          rm compiler/visual_fix_verifier.py
+          rm .github/workflows/visual-frame-fix.yml
+
+      - name: Run focused and complete verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/run_tests.py
+          python -B compiler/verify_graphics_demos.py --static
+          git diff --check
+
+      - name: Rebuild canonical manifest
+        shell: bash
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          root = Path('.')
+          rows = []
+          for path in root.rglob('*'):
+              if not path.is_file():
+                  continue
+              rel = path.relative_to(root)
+              if '.git' in rel.parts or rel.as_posix() == 'MANIFEST.sha256':
+                  continue
+              data = path.read_bytes()
+              if path.suffix.lower() == '.bat':
+                  data = data.replace(b'\r\n', b'\n')
+              rows.append((rel.as_posix(), hashlib.sha256(data).hexdigest()))
+          rows.sort()
+          Path('MANIFEST.sha256').write_text(
+              ''.join(f'{digest}  {rel}\n' for rel, digest in rows),
+              encoding='ascii', newline='\n')
+          PY
+
+      - name: Run release gate
+        run: python -B compiler/verify_release.py
+
+      - name: Commit verified fix to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "C48 visual-frame builder"
+          git config user.email "actions@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Fix VM visual frame presentation synchronization"
+          git push origin HEAD:main
