@@ -43,8 +43,76 @@ jobs:
           python-version: "3.13"
 
       - name: Apply architecture repair
-        run: >-
-          python -B usr/src/ailmzx48/tooling/sop_architecture_repair.py patch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+          import gzip
+          import hashlib
+          import subprocess
+
+          root = Path('.')
+          base = root / 'usr/src/ailmzx48/tooling'
+          expected = [
+              (
+                  'sop_architecture_patch.part1',
+                  8000,
+                  '55ecd259c76db4da20a761899b57209408041a4ca26de4c12a71916931827e9a',
+              ),
+              (
+                  'sop_architecture_patch.part2',
+                  8000,
+                  '2f9e943d55dbf0806356a57e6b7a11d33b1f3ca497c578824d738a39fcb3990c',
+              ),
+              (
+                  'sop_architecture_patch.part3',
+                  8000,
+                  'bdf6dc324b1a896f9c3873696c43ffbf236d985b6c60e252cfc653755a44003a',
+              ),
+              (
+                  'sop_architecture_patch.part4',
+                  7912,
+                  '6550189f0e74ca08ea224c20f4d9466abd4f1c6779edbbb49491b65dc434c9a2',
+              ),
+          ]
+          chunks = []
+          for name, length, want in expected:
+              raw = (base / name).read_text(encoding='ascii').strip()
+              got = hashlib.sha256(raw.encode('ascii')).hexdigest()
+              if len(raw) != length or got != want:
+                  raise SystemExit(
+                      f'payload chunk mismatch {name}: len={len(raw)} sha={got}'
+                  )
+              chunks.append(raw)
+          payload = ''.join(chunks)
+          got = hashlib.sha256(payload.encode('ascii')).hexdigest()
+          want = (
+              '62207eecb976da8e3508473da6ab51f2'
+              'a8ba4661e2cd6edb67d99e9fe7738ee7'
+          )
+          if len(payload) != 31912 or got != want:
+              raise SystemExit(
+                  f'combined payload mismatch: len={len(payload)} sha={got}'
+              )
+          patch = gzip.decompress(
+              base64.b64decode(payload, validate=True)
+          )
+          got = hashlib.sha256(patch).hexdigest()
+          want = (
+              'c7baadbc7f42ac716e7350ff28a0b33a'
+              '6cba1884023083455e82abaf2371ad37'
+          )
+          if len(patch) != 95375 or got != want:
+              raise SystemExit(
+                  f'decoded patch mismatch: len={len(patch)} sha={got}'
+              )
+          subprocess.run(
+              ['patch', '-p1', '--forward', '--batch'],
+              input=patch, cwd=root, check=True,
+          )
+          PY
 
       - name: Rebuild model references and C48 binary
         shell: bash
@@ -173,6 +241,10 @@ jobs:
           rm .github/workflows/ailmzx48-sop-architecture-snapshot.yml
           rm .github/workflows/ailmzx48-sop-architecture-repair.yml
           rm usr/src/ailmzx48/tooling/sop_architecture_repair.py
+          rm usr/src/ailmzx48/tooling/sop_architecture_patch.part1
+          rm usr/src/ailmzx48/tooling/sop_architecture_patch.part2
+          rm usr/src/ailmzx48/tooling/sop_architecture_patch.part3
+          rm usr/src/ailmzx48/tooling/sop_architecture_patch.part4
 
       - name: Run hard release gates
         shell: bash
