@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "iteration": 43,
+  "scenario": "knowledge-deepening-io-peripherals-v1",
+  "purpose": "Qualify keyboard, cassette, ULA I/O, sound, expansion, and joystick peripheral knowledge with exact retrieval gates on the enlarged retained corpus.",
+  "max_seconds": 1200,
+  "prompts": [
+    "which bit does spectrum ula port 254 use for the ear cassette input",
+    "how does spectrum output sound through the internal speaker and mic",
+    "how is a kempston joystick read on the spectrum",
+    "what keys do spectrum sinclair interface 2 joysticks appear as",
+    "what rear edge connector does a spectrum kempston interface use",
+    "what was the primary storage medium for the original spectrum",
+    "how is the spectrum keyboard matrix arranged",
+    "what spectrum ula port controls border colour and beeper"
+  ],
+  "expected_keywords": [
+    "bit 6",
+    "bit 4",
+    "31",
+    "1 through 5",
+    "edge",
+    "cassette",
+    "eight by five",
+    "254"
+  ],
+  "min_keyword_ratio": 1.0
+}
