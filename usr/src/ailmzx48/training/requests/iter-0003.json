@@ -1,0 +1,35 @@
+{
+  "expected_keywords": [
+    "ailmzx48",
+    "spectrum",
+    "1982",
+    "memory",
+    "network",
+    "games",
+    "network",
+    "1982",
+    "1982",
+    "network",
+    "games",
+    "ailmzx48"
+  ],
+  "iteration": 3,
+  "max_seconds": 1200,
+  "prompts": [
+    "who are you",
+    "tell me about the spectrum",
+    "what happened in 1982",
+    "what about 48k memory",
+    "can you chat locally",
+    "tell me about spectrum games",
+    "are you local or remote",
+    "what is the spectrum",
+    "when did spectrum history start",
+    "does this chat need a network",
+    "what were spectrum games like",
+    "hello"
+  ],
+  "purpose": "Measure topic-conditioned learned transitions against iteration-2 regressions plus fresh paraphrases, with no new corpus text after observing iteration 2.",
+  "scenario": "topic-conditioned-v1",
+  "schema": 1
+}
