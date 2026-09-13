@@ -184,8 +184,18 @@ def main() -> int:
         "why does memory matter",
         "can you chat locally",
     ]
-    if not isinstance(prompts, list) or len(prompts) > 500:
-        raise RuntimeError("prompts must be a list of at most 500 strings")
+    repeat_count = req.get("repeat_count", 1)
+    if isinstance(repeat_count, bool):
+        raise RuntimeError("repeat_count must be an integer")
+    if not isinstance(repeat_count, int):
+        raise RuntimeError("repeat_count must be an integer")
+    if repeat_count < 1 or repeat_count > 500:
+        raise RuntimeError("repeat_count must be in 1..500")
+    if not isinstance(prompts, list):
+        raise RuntimeError("prompts must be a list")
+    prompts = prompts * repeat_count
+    if len(prompts) > 500:
+        raise RuntimeError("expanded prompts exceed 500 turns")
     for p in prompts:
         if not isinstance(p, str) or not p or len(p) > 160:
             raise RuntimeError("invalid prompt")
