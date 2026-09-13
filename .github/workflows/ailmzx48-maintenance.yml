@@ -48,6 +48,36 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
+      - name: Add trusted cold-scan fast path
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path("usr/src/ailmzx48/ailmzx48.c")
+          s = p.read_text(encoding="utf-8")
+          old = "unsigned int ai_mreads;\nunsigned int ai_fs1;"
+          new = "unsigned int ai_mreads;\nunsigned int ai_mtrusted;\nunsigned int ai_fs1;"
+          if old not in s:
+              raise SystemExit("global insertion anchor missing")
+          s = s.replace(old, new, 1)
+          old = '''        if (slot == 1) ai_mcopy(ai_win1, ai_mstage, hlen);\n        if (slot == 2) ai_mcopy(ai_win2, ai_mstage, hlen);\n        amask = 0;\n'''
+          new = '''        if (slot == 1) ai_mcopy(ai_win1, ai_mstage, hlen);\n        if (slot == 2) ai_mcopy(ai_win2, ai_mstage, hlen);\n        if (ai_mtrusted) {\n            if (slot == 0) {\n                if (ai_mseek(40 + used + rlen) != 0) return -1;\n            } else {\n                pos = 0;\n                while (pos < plen) {\n                    take = plen - pos;\n                    if (take > 64) take = 64;\n                    if (ai_readfull(ai_mstage, take) != 0) return -1;\n                    if (slot == 1) {\n                        ai_mcopy(&ai_win1[hlen + pos], ai_mstage, take);\n                    }\n                    if (slot == 2) {\n                        ai_mcopy(&ai_win2[hlen + pos], ai_mstage, take);\n                    }\n                    pos = pos + take;\n                }\n            }\n            if (slot == 1) {\n                ai_w1len = rlen;\n                ai_w1score = score;\n            }\n            if (slot == 2) {\n                ai_w2len = rlen;\n                ai_w2score = score;\n            }\n            used = used + rlen;\n            rn = rn + 1;\n            ai_mrecords = ai_mrecords + 1;\n            continue;\n        }\n        amask = 0;\n'''
+          if old not in s:
+              raise SystemExit("fast-path insertion anchor missing")
+          s = s.replace(old, new, 1)
+          old = '''    if (used != rbytes) return -1;\n    calc = ai_fs1 + (ai_fs2 * 256);\n    if (calc != ai_getu16(ai_mhead, 32)) return -1;\n    if (ai_mbytes != logical) return -1;\n    if (ai_w1score >= 0) {\n'''
+          new = '''    if (used != rbytes) return -1;\n    if (!ai_mtrusted) {\n        calc = ai_fs1 + (ai_fs2 * 256);\n        if (calc != ai_getu16(ai_mhead, 32)) return -1;\n        if (ai_mbytes != logical) return -1;\n        ai_mtrusted = 1;\n    }\n    if (ai_w1score >= 0) {\n'''
+          if old not in s:
+              raise SystemExit("validation-tail anchor missing")
+          s = s.replace(old, new, 1)
+          old = '''    ai_mbytes = 0;\n    ai_mreads = 0;\n    ai_l0head = 0;\n'''
+          new = '''    ai_mbytes = 0;\n    ai_mreads = 0;\n    ai_mtrusted = 0;\n    ai_l0head = 0;\n'''
+          if old not in s:
+              raise SystemExit("initialization anchor missing")
+          s = s.replace(old, new, 1)
+          p.write_text(s, encoding="utf-8")
+          PY
+
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
