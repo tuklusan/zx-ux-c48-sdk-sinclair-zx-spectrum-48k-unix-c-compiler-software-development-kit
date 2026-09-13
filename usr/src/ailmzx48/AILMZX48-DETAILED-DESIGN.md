@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.19-draft
+Revision: 0.20-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48/ailmzx48.c48b`
 
@@ -419,6 +419,8 @@ The 128-byte L0 directory is exactly 32 four-byte descriptors: `u16` ring start 
 The commit path is tested at both limiting resources: nearly full ring bytes with free descriptors, and free bytes with all descriptors occupied by tiny turns. When L1 needs slots, victim selection is deterministic: weaker protection class first, then lower importance, then greater saturating age, then lower slot index. Explicit corrections and unresolved state outrank ordinary chatter through a frozen protection-class table. Every selected L1 victim is merged into L2 before its slot is reused; if all records are highly protected, the same total order still chooses a victim rather than deadlocking. The host reference freezes/tests that mapping before target implementation.
 
 No stage allocates an unbounded temporary copy of text or semantic records.
+
+Implementation measurement note (Revision 0.20): a deterministic host reference for the Candidate-A L0/L1/L2/session-literal context machinery now exists in `tooling/context_reference.py`. It models the 896-byte L0 ring and 32-descriptor limit, complete-dialogue eviction, 48 fixed L1 records, 24 fixed L2 records, saturating ages, deterministic L1-to-L2 compaction/L2 eviction, four-record bounded retrieval, generation-checked session literals, and transactional preflight by clone-and-apply. Host-only descriptor metadata is an oracle sidecar; the target descriptor remains exactly four bytes. The retained stress report covers 500 dialogue pairs and 51,000 raw source-equivalent bytes while all modeled target context capacities remain fixed. This is a host correctness oracle, not yet proof that the C48 target implements the same state machine or native memory layout.
 
 ### 8.4 Correction and supersession rule
 

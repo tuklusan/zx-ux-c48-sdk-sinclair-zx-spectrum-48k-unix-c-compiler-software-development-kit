@@ -1,0 +1,32 @@
+{
+  "capsule_bytes": 16,
+  "l0_bytes": 896,
+  "l0_descriptors": 32,
+  "l0_directory_bytes": 128,
+  "l1_records": 48,
+  "l2_records": 24,
+  "schema": 1,
+  "session_literal_bytes": 272,
+  "status": "PASS",
+  "stress": {
+    "dialogue_pairs": 500,
+    "l0_bytes": 816,
+    "l0_descriptors": 16,
+    "l1_records": 48,
+    "l1_to_l2_compactions": 444,
+    "l2_evictions": 376,
+    "l2_records": 24,
+    "raw_source_bytes": 51000
+  },
+  "tests": [
+    "descriptor-pressure-complete-dialogue-eviction",
+    "byte-pressure-complete-dialogue-eviction",
+    "transactional-preflight-rollback",
+    "l1-to-l2-deterministic-compaction",
+    "l2-deterministic-eviction",
+    "saturating-age",
+    "bounded-four-record-retrieval",
+    "session-literal-generation-and-invalidation",
+    "source-history-over-32k-with-fixed-context-bounds"
+  ]
+}
