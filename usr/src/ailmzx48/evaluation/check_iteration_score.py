@@ -48,10 +48,16 @@ def report_keyword_misses(out_dir: Path) -> None:
         print("keyword gate diagnostics: no per-turn misses recorded")
         return
     for turn in misses:
+        diag = turn.get("diag") or {}
         print(
             "keyword miss: "
             f"turn={turn.get('turn')} "
             f"expected={turn.get('expected_keyword')!r} "
+            f"topic={diag.get('ai_lasttop')} "
+            f"mhits={diag.get('ai_mhits')} "
+            f"mrecords={diag.get('ai_mrecords')} "
+            f"mreads={diag.get('ai_mreads')} "
+            f"lmcount={diag.get('ai_lmcount')} "
             f"user={turn.get('user')!r} "
             f"assistant={turn.get('assistant')!r}"
         )
