@@ -11,6 +11,47 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void view_line3(int x1, int y1, int z1,
+                int x2, int y2, int z2)
+{
+    int a;
+    int b;
+    int c;
+    int d;
+    a = d_px(x1, z1);
+    b = d_py(y1, z1);
+    c = d_px(x2, z2);
+    d = d_py(y2, z2);
+    if (d_ok(a, b) && d_ok(c, d) &&
+        b >= 16 && b < 184 && d >= 16 && d < 184)
+        draw(a, b, c, d);
+}
+
+void draw_labels(void)
+{
+    paper(1);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 4, "OCEAN GRID / THREE WAVE FIELD");
+    print_at(22, 0, "MATH: y=(sin(3x+7f)+");
+    print_at(23, 0, "sin(2z-5f)+sin(x+z+3f))/18");
+}
+
 int wave(int x, int z, int f)
 {
     int a;
@@ -32,8 +73,8 @@ void scene(int f)
     int z2;
     int y1;
     int y2;
-    cls();
     paper(1);
+    clear_demo_rows(1, 21);
     border(1 + (f & 1) * 4);
     for (r = 0; r < 10; r++) {
         z1 = 18 + r * 18;
@@ -44,7 +85,7 @@ void scene(int f)
             x2 = x1 + 22;
             y1 = wave(x1, z1, f);
             y2 = wave(x2, z1, f);
-            d_line3(x1, y1, z1, x2, y2, z1);
+            view_line3(x1, y1, z1, x2, y2, z1);
         }
     }
     ink(5);
@@ -55,21 +96,21 @@ void scene(int f)
             z2 = z1 + 18;
             y1 = wave(x1, z1, f);
             y2 = wave(x1, z2, f);
-            d_line3(x1, y1, z1, x1, y2, z2);
+            view_line3(x1, y1, z1, x1, y2, z2);
         }
     }
     ink(7);
     bright(1);
     circle(54, 148, 10);
-    print_at(0, 4, "OCEAN GRID / THREE WAVE FIELD");
-    print_at(23, 0,
-    "MATH: y=(sin(3x+7f)+sin(2z-5f)+sin(x+z+3f))/18");
 }
 
 int main(int argc, char **argv)
 {
     int f;
     int n;
+    paper(1);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 12);
     for (f = 0; f < n; f++) {
         scene(f);

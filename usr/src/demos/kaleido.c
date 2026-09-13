@@ -11,16 +11,41 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 7, "KALEIDOSCOPE / EIGHTFOLD LINES");
+    print_at(22, 0, "MATH: reflect across x,y,x=y");
+    print_at(23, 0, "each line becomes eight copies");
+}
+
 void ray8(int x, int y, int u, int v)
 {
-    draw(128 + x, 96 + y, 128 + u, 96 + v);
-    draw(128 - x, 96 + y, 128 - u, 96 + v);
-    draw(128 + x, 96 - y, 128 + u, 96 - v);
-    draw(128 - x, 96 - y, 128 - u, 96 - v);
-    draw(128 + y, 96 + x, 128 + v, 96 + u);
-    draw(128 - y, 96 + x, 128 - v, 96 + u);
-    draw(128 + y, 96 - x, 128 + v, 96 - u);
-    draw(128 - y, 96 - x, 128 - v, 96 - u);
+    draw(128 + x, 100 + y, 128 + u, 100 + v);
+    draw(128 - x, 100 + y, 128 - u, 100 + v);
+    draw(128 + x, 100 - y, 128 + u, 100 - v);
+    draw(128 - x, 100 - y, 128 - u, 100 - v);
+    draw(128 + y, 100 + x, 128 + v, 100 + u);
+    draw(128 - y, 100 + x, 128 - v, 100 + u);
+    draw(128 + y, 100 - x, 128 + v, 100 - u);
+    draw(128 - y, 100 - x, 128 - v, 100 - u);
 }
 
 void scene(int f)
@@ -34,8 +59,8 @@ void scene(int f)
     int y1;
     int x2;
     int y2;
-    cls();
     paper(0);
+    clear_demo_rows(1, 21);
     over(1);
     for (i = 0; i < 22; i++) {
         r1 = 12 + i * 3;
@@ -53,16 +78,16 @@ void scene(int f)
     over(0);
     ink(7);
     bright(1);
-    circle(128, 96, 14 + (f & 7));
-    print_at(0, 7, "KALEIDOSCOPE / EIGHTFOLD LINES");
-    print_at(23, 0,
-    "MATH: reflect line across x,y and x=y -> eight copies");
+    circle(128, 100, 14 + (f & 7));
 }
 
 int main(int argc, char **argv)
 {
     int f;
     int n;
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 12);
     for (f = 0; f < n; f++) {
         scene(f);

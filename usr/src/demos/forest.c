@@ -11,6 +11,29 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 7, "FRACTAL FOREST / RECURSIVE WIND");
+}
+
 void branch(int x, int y, int len, int ang, int dep)
 {
     int nx;
@@ -36,8 +59,8 @@ void scene(int f)
     int i;
     int x;
     int sway;
-    cls();
     paper(0);
+    clear_demo_rows(1, 23);
     ink(2);
     bright(0);
     draw(0, 18, 255, 18);
@@ -50,13 +73,15 @@ void scene(int f)
     ink(6);
     bright(1);
     circle(214, 156, 11);
-    print_at(0, 7, "FRACTAL FOREST / RECURSIVE WIND");
 }
 
 int main(int argc, char **argv)
 {
     int f;
     int n;
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 12);
     for (f = 0; f < n; f++) {
         scene(f);

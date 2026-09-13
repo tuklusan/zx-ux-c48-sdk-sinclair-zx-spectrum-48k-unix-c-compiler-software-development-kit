@@ -11,6 +11,29 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 6, "SPRITE STORM / UDG 2X2 FLEET");
+}
+
 unsigned char s0[8] = {
     24, 60, 126, 255, 255, 90, 24, 24
 };
@@ -53,8 +76,8 @@ void scene(int f)
     int i;
     int x;
     int y;
-    cls();
     paper(0);
+    clear_demo_rows(1, 23);
     border(1 + ((f / 8) % 7));
     ink(7);
     for (i = 0; i < 44; i++) {
@@ -76,9 +99,6 @@ void scene(int f)
     ink(3);
     udg_draw_2x2(4, 8 + d_sin(f * 2 + 150) / 40,
                  20 + d_cos(f * 2 + 130) / 32);
-    ink(7);
-    bright(1);
-    print_at(0, 6, "SPRITE STORM / UDG 2X2 FLEET");
 }
 
 int main(int argc, char **argv)
@@ -86,6 +106,9 @@ int main(int argc, char **argv)
     int f;
     int n;
     setup();
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 14);
     for (f = 0; f < n; f++) {
         scene(f);

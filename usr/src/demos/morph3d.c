@@ -11,6 +11,47 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void view_line3(int x1, int y1, int z1,
+                int x2, int y2, int z2)
+{
+    int a;
+    int b;
+    int c;
+    int d;
+    a = d_px(x1, z1);
+    b = d_py(y1, z1);
+    c = d_px(x2, z2);
+    d = d_py(y2, z2);
+    if (d_ok(a, b) && d_ok(c, d) &&
+        b >= 16 && b < 184 && d >= 16 && d < 184)
+        draw(a, b, c, d);
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 4, "POLYHEDRON MORPH / CUBE TO STAR");
+    print_at(22, 0, "MATH: p=((64-ph)cube+ph*star)/64");
+    print_at(23, 0, "then rotate3");
+}
+
 int vx[8] = {-28, 28, 28, -28, -28, 28, 28, -28};
 int vy[8] = {-28, -28, 28, 28, -28, -28, 28, 28};
 int vz[8] = {-28, -28, -28, -28, 28, 28, 28, 28};
@@ -52,7 +93,7 @@ void shp(int sc, int ph, int f)
                &x1, &y1, &z1);
         d_rot3(x2, y2, z2, f * 3, f * 5, f,
                &x2, &y2, &z2);
-        d_line3(x1, y1, z1, x2, y2, z2);
+        view_line3(x1, y1, z1, x2, y2, z2);
     }
 }
 
@@ -61,8 +102,8 @@ void scene(int f)
     int ph;
     ph = (f * 8) & 127;
     if (ph > 64) ph = 128 - ph;
-    cls();
     paper(0);
+    clear_demo_rows(1, 21);
     ink(5);
     bright(0);
     shp(3, ph, f);
@@ -71,15 +112,15 @@ void scene(int f)
     shp(4, ph, f);
     ink(7);
     shp(5, ph, f);
-    print_at(0, 4, "POLYHEDRON MORPH / CUBE TO STAR");
-    print_at(23, 0,
-    "MATH: p=((64-ph)*cube+ph*star)/64; then rotate3");
 }
 
 int main(int argc, char **argv)
 {
     int f;
     int n;
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 12);
     for (f = 0; f < n; f++) {
         scene(f);

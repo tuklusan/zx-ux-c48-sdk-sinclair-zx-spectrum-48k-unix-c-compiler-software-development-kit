@@ -11,6 +11,29 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 3, "VECTOR METROPOLIS / NIGHT FLIGHT");
+}
+
 void bldg(int x, int z, int w, int h)
 {
     int y0;
@@ -39,8 +62,8 @@ void scene(int f)
     int z;
     int sh;
     int h;
-    cls();
     paper(0);
+    clear_demo_rows(1, 23);
     border(1);
     sh = (f * 6) % 24;
     ink(4);
@@ -58,15 +81,15 @@ void scene(int f)
         bldg(-106, z, 38, h);
         bldg(68, z + 8, 38, 28 + ((h * 3) % 54));
     }
-    ink(7);
-    bright(1);
-    print_at(0, 3, "VECTOR METROPOLIS / NIGHT FLIGHT");
 }
 
 int main(int argc, char **argv)
 {
     int f;
     int n;
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 10);
     for (f = 0; f < n; f++) {
         scene(f);

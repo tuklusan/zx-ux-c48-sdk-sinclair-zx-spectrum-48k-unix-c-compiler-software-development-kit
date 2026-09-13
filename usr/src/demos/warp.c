@@ -11,6 +11,29 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 6, "WARP DRIVE / STAR STREAKS");
+}
+
 int wx[40];
 int wy[40];
 int wz[40];
@@ -36,8 +59,8 @@ void scene(int f)
     int x2;
     int y2;
     int sp;
-    cls();
     paper(0);
+    clear_demo_rows(1, 23);
     border(1 + (f % 7));
     sp = 2 + (f % 3);
     for (i = 0; i < 40; i++) {
@@ -55,14 +78,11 @@ void scene(int f)
         y2 = 96 + wy[i] * 120 / z2;
         ink(1 + ((z2 >> 4) % 7));
         bright(z2 < 70);
-        if (d_ok(x1, y1) && d_ok(x2, y2)) {
+        if (d_ok(x1, y1) && d_ok(x2, y2) && y1 < 184 && y2 < 184) {
             draw(x1, y1, x2, y2);
         }
         wz[i] = z2;
     }
-    ink(7);
-    bright(1);
-    print_at(0, 6, "WARP DRIVE / STAR STREAKS");
 }
 
 int main(int argc, char **argv)
@@ -70,6 +90,9 @@ int main(int argc, char **argv)
     int f;
     int n;
     init();
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 20);
     for (f = 0; f < n; f++) {
         scene(f);

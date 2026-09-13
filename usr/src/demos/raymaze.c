@@ -11,6 +11,29 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 6, "RAYCAST LABYRINTH / DDA VIEW");
+}
+
 unsigned char wm[256] = {
 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
 1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,
@@ -51,8 +74,8 @@ void scene(int f)
     int top;
     int bot;
     int x;
-    cls();
     paper(0);
+    clear_demo_rows(1, 23);
     draw(0, 96, 255, 96);
     for (c = 0; c < 64; c++) {
         a = 20 + f * 4 + c - 32;
@@ -77,15 +100,15 @@ void scene(int f)
         draw(x, top, x, bot);
         draw(x + 1, top, x + 1, bot);
     }
-    ink(7);
-    bright(1);
-    print_at(0, 6, "RAYCAST LABYRINTH / DDA VIEW");
 }
 
 int main(int argc, char **argv)
 {
     int f;
     int n;
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 12);
     for (f = 0; f < n; f++) {
         scene(f);

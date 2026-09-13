@@ -11,6 +11,29 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 7, "FIREWORK NIGHT / PARTICLES");
+}
+
 void burst(int cx, int cy, int t, int col)
 {
     int i;
@@ -32,7 +55,7 @@ void burst(int cx, int cy, int t, int col)
         x1 = cx + d_cos(a) * sp * (t - 2) / 128;
         y1 = cy + d_sin(a) * sp * (t - 2) / 128;
         y1 = y1 - (t - 2) * (t - 2) / 18;
-        if (d_ok(x1, y1) && d_ok(x2, y2)) {
+        if (d_ok(x1, y1) && d_ok(x2, y2) && y1 < 184 && y2 < 184) {
             draw(x1, y1, x2, y2);
         }
     }
@@ -55,8 +78,8 @@ void scene(int f)
     int t1;
     int t2;
     int t3;
-    cls();
     paper(0);
+    clear_demo_rows(1, 23);
     sky();
     t1 = f % 32;
     t2 = (f + 21) % 32;
@@ -64,15 +87,15 @@ void scene(int f)
     burst(70, 118, t1, 2);
     burst(132, 142, t2, 6);
     burst(196, 110, t3, 5);
-    ink(7);
-    bright(1);
-    print_at(0, 7, "FIREWORK NIGHT / PARTICLES");
 }
 
 int main(int argc, char **argv)
 {
     int f;
     int n;
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 18);
     for (f = 0; f < n; f++) {
         scene(f);

@@ -11,6 +11,31 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 7, "MANDELBROT DIVE / FIXED POINT");
+    print_at(22, 0, "MATH: z=z*z+c");
+    print_at(23, 0, "escape if zx*zx+zy*zy>4096");
+}
+
 void scene(int f)
 {
     int x;
@@ -22,10 +47,12 @@ void scene(int f)
     int zy;
     int xx;
     int span;
-    cls();
+    int py;
     paper(0);
+    clear_demo_rows(1, 21);
     span = 96 - (f % 4) * 10;
     for (y = 0; y < 48; y++) {
+        py = 16 + y * 167 / 47;
         for (x = 0; x < 64; x++) {
             cx = -24 + (x - 32) * span / 32;
             cy = (y - 24) * span / 40;
@@ -41,22 +68,20 @@ void scene(int f)
             }
             ink(i & 7);
             bright(i > 7);
-            plot(x * 4, y * 4);
-            if (i > 9) plot(x * 4 + 1, y * 4);
+            plot(x * 4, py);
+            if (i > 9) plot(x * 4 + 1, py);
         }
         if ((y & 7) == 0) yield();
     }
-    ink(7);
-    bright(1);
-    print_at(0, 7, "MANDELBROT DIVE / FIXED POINT");
-    print_at(23, 0,
-    "MATH: z=(z*z)+c; escape when zx*zx+zy*zy > 4096");
 }
 
 int main(int argc, char **argv)
 {
     int f;
     int n;
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 3);
     for (f = 0; f < n; f++) {
         scene(f);
