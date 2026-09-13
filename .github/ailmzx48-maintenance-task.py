@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+import base64
+from pathlib import Path
+import subprocess
+import sys
+import zlib
+
+root = Path(__file__).resolve().parents[1]
+a = root / "usr" / "src" / "ailmzx48"
+
+MOD = "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"
+TEST = "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"
+
+def decode(text: str) -> str:
+    return zlib.decompress(base64.b64decode(text)).decode("utf-8")
+
+module = decode(MOD)
+test = decode(TEST)
+(a / "tooling" / "context_reference.py").write_text(
+    module, encoding="utf-8", newline="\n"
+)
+(a / "evaluation" / "test_context_reference.py").write_text(
+    test, encoding="utf-8", newline="\n"
+)
+report = a / "evaluation" / "context-reference-report.json"
+subprocess.run(
+    [sys.executable, "-B", str(a / "evaluation" / "test_context_reference.py"),
+     "--report", str(report)],
+    cwd=root,
+    check=True,
+)
+
+design_path = a / "AILMZX48-DETAILED-DESIGN.md"
+design = design_path.read_text(encoding="utf-8")
+if design.count("Revision: 0.19-draft") != 1:
+    raise SystemExit("unexpected design revision")
+design = design.replace(
+    "Revision: 0.19-draft",
+    "Revision: 0.20-draft",
+    1,
+)
+marker = "### 8.4 Correction and supersession rule"
+if design.count(marker) != 1:
+    raise SystemExit("design insertion marker mismatch")
+note = (
+    "Implementation measurement note (Revision 0.20): a deterministic "
+    "host reference for the Candidate-A L0/L1/L2/session-literal context "
+    "machinery now exists in `tooling/context_reference.py`. It models "
+    "the 896-byte L0 ring and 32-descriptor limit, complete-dialogue "
+    "eviction, 48 fixed L1 records, 24 fixed L2 records, saturating ages, "
+    "deterministic L1-to-L2 compaction/L2 eviction, four-record bounded "
+    "retrieval, generation-checked session literals, and transactional "
+    "preflight by clone-and-apply. Host-only descriptor metadata is an "
+    "oracle sidecar; the target descriptor remains exactly four bytes. "
+    "The retained stress report covers 500 dialogue pairs and 51,000 raw "
+    "source-equivalent bytes while all modeled target context capacities "
+    "remain fixed. This is a host correctness oracle, not yet proof that "
+    "the C48 target implements the same state machine or native memory "
+    "layout.\n\n"
+)
+design = design.replace(marker, note + marker, 1)
+design_path.write_text(design, encoding="utf-8", newline="\n")
+print("host context reference and stress report created")
