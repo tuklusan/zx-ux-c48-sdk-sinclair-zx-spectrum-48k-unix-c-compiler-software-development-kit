@@ -42,6 +42,7 @@ MODEL_DIR = A / "model"
 CONV_DIR = A / "conversations"
 BIN = ROOT / "usr" / "bin" / "ailmzx48" / "ailmzx48.c48b"
 COLD = MODEL_DIR / "cold-seed.bin"
+COLD_META = MODEL_DIR / "cold-seed.json"
 
 MD_HEADER = '''<!--
 ============================================================================
@@ -284,7 +285,15 @@ def main() -> int:
         if not isinstance(p, str) or not p or len(p) > 160:
             raise RuntimeError("invalid prompt")
         p.encode("ascii")
-    max_steps = 2000000 + len(prompts) * 250000
+    cold_meta = json.loads(COLD_META.read_text(encoding="utf-8"))
+    cold_record_count = cold_meta.get("record_count")
+    if (isinstance(cold_record_count, bool)
+            or not isinstance(cold_record_count, int)
+            or cold_record_count < 1
+            or cold_record_count > 255):
+        raise RuntimeError("invalid cold model record count")
+    per_turn_step_budget = 100000 + cold_record_count * 8000
+    max_steps = 2000000 + len(prompts) * per_turn_step_budget
     program = read(BIN)
     font = Font4x8.load(COMP / "assets" / "font4x8-tasword.bin")
     screen = TraceScreen(font)
@@ -576,6 +585,9 @@ def main() -> int:
         "max_l2count": max_l2count,
         "max_lmcount": max_lmcount,
         "final_keyword_hit": final_keyword_hit,
+        "vm_steps": vm.steps,
+        "vm_step_limit": max_steps,
+        "cold_record_count": cold_record_count,
     }
     (out_dir / "score.json").write_text(
         json.dumps(score, indent=2, sort_keys=True) + "\n",
@@ -591,6 +603,9 @@ def main() -> int:
         "c48b_sha256": sha(BIN),
         "heap_size": 0,
         "max_steps": max_steps,
+        "vm_steps": vm.steps,
+        "per_turn_step_budget": per_turn_step_budget,
+        "cold_record_count": cold_record_count,
         "runner_max_seconds": limit,
         "cold_model_sha256": sha(COLD),
         "cold_model_logical_length": len(vm.model_data),
