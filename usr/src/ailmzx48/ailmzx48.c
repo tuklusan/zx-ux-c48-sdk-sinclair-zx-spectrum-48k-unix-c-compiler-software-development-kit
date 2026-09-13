@@ -30,6 +30,11 @@ unsigned int ai_altstate;
 unsigned int ai_histuse;
 unsigned int ai_hcount;
 unsigned char ai_hist[6];
+unsigned int ai_litgen[8];
+unsigned char ai_litlen[8];
+char ai_litbuf[248];
+unsigned int ai_litset;
+unsigned int ai_lituse;
 char ai_in[192];
 char ai_out[256];
 int ai_drop_lf;
@@ -60,6 +65,26 @@ int ai_has(char *s)
         i = i + 1;
     }
     return 0;
+}
+
+int ai_find(char *s)
+{
+    unsigned int i;
+    unsigned int j;
+    int ok;
+    i = 0;
+    while (ai_in[i] != 0) {
+        j = 0;
+        ok = 1;
+        while (s[j] != 0 && ai_in[i + j] != 0) {
+            if (ai_lower(ai_in[i + j]) != s[j]) ok = 0;
+            if (!ok) break;
+            j = j + 1;
+        }
+        if (s[j] == 0 && ok) return i;
+        i = i + 1;
+    }
+    return -1;
 }
 
 int ai_readline(void)
@@ -98,6 +123,81 @@ int ai_isq(void)
 {
     if (ai_in[0] == 'q' && ai_in[1] == 0) return 1;
     return 0;
+}
+
+int ai_namecmd(void)
+{
+    if (ai_find("my name is ") >= 0) return 1;
+    if (ai_has("what is my name")) return 2;
+    if (ai_has("remember my name")) return 2;
+    return 0;
+}
+
+int ai_setname(void)
+{
+    int pos;
+    unsigned int start;
+    unsigned int n;
+    unsigned int i;
+    unsigned int gen;
+    pos = ai_find("my name is ");
+    if (pos < 0) return 0;
+    start = pos + 11;
+    n = 0;
+    while (ai_in[start + n] != 0 && n < 32) {
+        n = n + 1;
+    }
+    if (n == 0 || n > 31) return 0;
+    gen = ai_litgen[0] + 1;
+    if (gen == 0 || gen > 4095) gen = 1;
+    ai_litgen[0] = gen;
+    ai_litlen[0] = n;
+    i = 0;
+    while (i < n) {
+        ai_litbuf[i] = ai_in[start + i];
+        i = i + 1;
+    }
+    ai_litset = 1;
+    return 1;
+}
+
+void ai_putraw(char *s)
+{
+    unsigned int i;
+    i = 0;
+    while (s[i] != 0) {
+        putchar(s[i]);
+        i = i + 1;
+    }
+}
+
+void ai_putname(void)
+{
+    unsigned int i;
+    i = 0;
+    while (i < ai_litlen[0]) {
+        putchar(ai_litbuf[i]);
+        i = i + 1;
+    }
+}
+
+void ai_nameack(void)
+{
+    ai_putraw("I will remember ");
+    ai_putname();
+    puts(".");
+}
+
+void ai_nameans(void)
+{
+    if (ai_litlen[0] == 0) {
+        puts("I do not have your name yet.");
+        return;
+    }
+    ai_lituse = 1;
+    ai_putraw("I remember your name as ");
+    ai_putname();
+    puts(".");
 }
 
 void ai_histpush(unsigned int topic)
@@ -255,6 +355,7 @@ int main(void)
     int rc;
     unsigned int topic;
     unsigned int alt;
+    int namecmd;
     ai_turns = 0;
     ai_beeps = 0;
     ai_lasttop = ai_t_id;
@@ -264,6 +365,8 @@ int main(void)
     ai_altstate = 0;
     ai_histuse = 0;
     ai_hcount = 0;
+    ai_litset = 0;
+    ai_lituse = 0;
     ai_drop_lf = 0;
     ai_start();
     while (1) {
@@ -276,6 +379,9 @@ int main(void)
         if (rc < 0) {
             ai_ctxuse = 0;
             ai_altuse = 0;
+            ai_histuse = 0;
+            ai_litset = 0;
+            ai_lituse = 0;
             puts("Input rejected.");
             continue;
         }
@@ -283,6 +389,29 @@ int main(void)
         ai_ctxuse = 0;
         ai_altuse = 0;
         ai_histuse = 0;
+        ai_litset = 0;
+        ai_lituse = 0;
+        namecmd = ai_namecmd();
+        if (namecmd != 0) {
+            ai_otokens = 0;
+            ai_error = 0;
+            if (namecmd == 1) {
+                if (ai_setname()) {
+                    ai_nameack();
+                } else {
+                    puts("I could not store that name.");
+                }
+            } else {
+                ai_nameans();
+            }
+            if (ai_turns != 65535) {
+                ai_turns = ai_turns + 1;
+            }
+            ai_yields = 0;
+            yield();
+            ai_yields = ai_yields + 1;
+            continue;
+        }
         topic = ai_pick();
         alt = 0;
         if (ai_havectx && topic == ai_lasttop) {

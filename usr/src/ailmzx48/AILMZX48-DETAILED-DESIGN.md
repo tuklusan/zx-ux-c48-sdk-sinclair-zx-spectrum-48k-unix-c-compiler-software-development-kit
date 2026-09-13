@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.18-draft
+Revision: 0.19-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48/ailmzx48.c48b`
 
@@ -198,6 +198,8 @@ Implementation measurement note (Revision 0.16): iteration 3 reached 12/12 keywo
 Implementation measurement note (Revision 0.17): iteration 4 reached 14/14 answer expectations and 14/14 expected context-use decisions. Immediate topic inheritance therefore works as an instrumented controller primitive. Repeated same-topic answers still duplicated the same learned path, so the bootstrap generator now alternates deterministically between the learned primary and secondary continuation from the topic seed when a topic repeats. `ai_altuse` reports whether the secondary path was actually taken. This is anti-repetition measurement over learned statistics, not a canned response table and not stochastic sampling.
 
 Implementation measurement note (Revision 0.18): iteration 5 validated deterministic learned secondary continuations without breaking immediate topic context. The next bounded prototype adds a six-entry recent-distinct-topic history so explicit `go back` requests can recover prior topics across intervening topic changes. This is instrumentation for conversational-history behavior only; it is not the final L0/L1/L2 representation and makes no expanded context-window claim until the designed compressor is implemented and stress-tested.
+
+Implementation measurement note (Revision 0.19): iteration 6 validated bounded recovery of earlier topics across intervening topic changes. The next prototype allocates the full designed 272-byte session-literal storage as parallel C48 arrays (eight generation values, eight lengths, and 8 x 31 presentation bytes) while initially using slot 0 only for an exact user-name literal. Generation advances in the designed 1..4095 range on correction. This slice tests exact literal retention/correction; semantic refs, eight-slot eviction and L1/L2 invalidation remain future work.
 
 ### 6.1 No remote inference dependency
 

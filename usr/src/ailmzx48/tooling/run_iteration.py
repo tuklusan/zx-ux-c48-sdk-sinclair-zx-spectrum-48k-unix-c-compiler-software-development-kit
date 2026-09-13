@@ -101,7 +101,8 @@ class Feeder:
                      "ai_error", "ai_beeps", "ai_ctxuse",
                      "ai_lasttop", "ai_havectx", "ai_altuse",
                      "ai_altstate", "ai_histuse",
-                     "ai_hcount"):
+                     "ai_hcount", "ai_litset",
+                     "ai_lituse"):
             lv = self.vm.global_lvalues.get(name)
             if lv is not None:
                 out[name] = int(self.vm._load(lv).data)
@@ -253,12 +254,24 @@ def main() -> int:
     for expected in hist_expect:
         if expected is not None and not isinstance(expected, bool):
             raise RuntimeError("expected history must be bool or null")
+    lit_expect = req.get("expected_literal")
+    if lit_expect is None:
+        lit_expect = [None] * len(prompts)
+    if not isinstance(lit_expect, list):
+        raise RuntimeError("expected_literal must be a list")
+    if len(lit_expect) != len(prompts):
+        raise RuntimeError("expected_literal length mismatch")
+    for expected in lit_expect:
+        if expected not in (None, "none", "set", "use"):
+            raise RuntimeError("invalid expected literal mode")
     context_hits = 0
     context_total = 0
     alternate_hits = 0
     alternate_total = 0
     history_hits = 0
     history_total = 0
+    literal_hits = 0
+    literal_total = 0
     for i, prompt in enumerate(prompts):
         event = feeder.events[i + 1]
         reply = derived_reply(event["text"])
@@ -287,6 +300,18 @@ def main() -> int:
             history_total += 1
             if hist_hit:
                 history_hits += 1
+        want_lit = lit_expect[i]
+        if event["diag"].get("ai_litset") == 1:
+            used_lit = "set"
+        elif event["diag"].get("ai_lituse") == 1:
+            used_lit = "use"
+        else:
+            used_lit = "none"
+        lit_hit = want_lit is None or used_lit == want_lit
+        if want_lit is not None:
+            literal_total += 1
+            if lit_hit:
+                literal_hits += 1
         turns.append({
             "turn": i + 1,
             "user": prompt,
@@ -304,6 +329,9 @@ def main() -> int:
             "expected_history": want_hist,
             "history_used": used_hist,
             "history_hit": hist_hit,
+            "expected_literal": want_lit,
+            "literal_mode": used_lit,
+            "literal_hit": lit_hit,
         })
     transcript = {
         "schema": 1,
@@ -352,6 +380,12 @@ def main() -> int:
         "history_ratio": (
             history_hits / history_total
             if history_total else 1.0
+        ),
+        "literal_hits": literal_hits,
+        "literal_total": literal_total,
+        "literal_ratio": (
+            literal_hits / literal_total
+            if literal_total else 1.0
         ),
         "clean_exit": status == 0,
         "beep_calls": feeder.diag().get("ai_beeps"),
