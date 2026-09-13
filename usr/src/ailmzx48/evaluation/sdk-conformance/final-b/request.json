@@ -1,0 +1,38 @@
+{
+  "schema": 1,
+  "iteration": 9103,
+  "scenario": "final-regression-b-v1",
+  "purpose": "Broad independent final regression suite B using a different cross-domain set of retained probes for memory mapping, BASIC behaviour, ULA sound, launch history, software culture, peripherals, and C48 SDK execution roles. Post-design-gap-repair SDK requalification.",
+  "max_seconds": 1200,
+  "prompts": [
+    "where does spectrum colour attribute memory start",
+    "what can spectrum basic clear change to preserve bytes for machine code",
+    "how does spectrum output sound through the internal speaker and mic",
+    "in spectrum history what was the higher launch price of the original spectrum",
+    "what sales milestone did spectrum game the hobbit adventure reach",
+    "what command is the compiler front end in the spectrum c48 sdk",
+    "what resolution does the spectrum display use",
+    "what does spectrum basic new do to the current program",
+    "what keys do spectrum sinclair interface 2 joysticks appear as",
+    "in spectrum history what changed with the spectrum plus in 1984",
+    "which publisher made spectrum game jetpac shoot em up",
+    "what role does c48run have in the spectrum c48 sdk runtime"
+  ],
+  "expected_keywords": [
+    "22528",
+    "ramtop",
+    "bit 4",
+    "175",
+    "million",
+    "compiler",
+    "256",
+    "deletes",
+    "1 through 5",
+    "reset",
+    "ultimate",
+    "runtime"
+  ],
+  "min_keyword_ratio": 1.0,
+  "min_semantic_uses": 10,
+  "final_expected_keyword": "runtime"
+}

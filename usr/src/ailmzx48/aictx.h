@@ -176,3 +176,29 @@ int ai_wirewrite(char *s, unsigned int speaker)
     ai_lmput(4103);
     return 0;
 }
+
+int ai_ctxcheck(unsigned int un, unsigned int an)
+{
+    unsigned int bytes;
+    unsigned int count;
+    unsigned int drop;
+    unsigned int need;
+    unsigned int n;
+    if (un == 65535 || an == 65535) return -1;
+    need = un + an;
+    if (need > 896) return -1;
+    if (ai_l0bytes > 896 || ai_l0count > 32) return -2;
+    if ((ai_l0count & 1) != 0) return -2;
+    bytes = ai_l0bytes;
+    count = ai_l0count;
+    drop = 0;
+    while (bytes + need > 896 || count + 2 > 32) {
+        if (count < 2 || drop + 1 >= ai_l0count) return -2;
+        n = ai_l0len[drop] + ai_l0len[drop + 1];
+        if (n == 0 || n > bytes) return -2;
+        bytes = bytes - n;
+        count = count - 2;
+        drop = drop + 2;
+    }
+    return 0;
+}

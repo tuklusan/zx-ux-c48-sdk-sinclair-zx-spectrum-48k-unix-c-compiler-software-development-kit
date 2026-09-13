@@ -40,7 +40,6 @@ unsigned int ai_litset;
 unsigned int ai_lituse;
 unsigned int ai_litcur;
 unsigned int ai_litold;
-unsigned int ai_litnext;
 char ai_in[192];
 char ai_out[256];
 int ai_drop_lf;
@@ -171,8 +170,11 @@ int ai_isq(void)
 
 unsigned int ai_slotref(unsigned int slot);
 unsigned int ai_namefind(void);
+unsigned int ai_litpick(char *s, unsigned int start,
+                        unsigned int n);
+int ai_refvalid(unsigned int ref);
 void ai_namesem(void);
-void ai_putref(unsigned int ref);
+void ai_settext(char *s);
 
 int ai_namecmd(void)
 {
@@ -199,8 +201,14 @@ int ai_setname(void)
         n = n + 1;
     }
     if (n == 0 || n > 31) return 0;
-    slot = ai_litnext;
-    ai_litnext = (ai_litnext + 1) % 8;
+    slot = ai_litpick(ai_in, start, n);
+    if (slot >= 8) {
+        slot = slot - 8;
+        ai_litold = 0;
+        ai_litcur = ai_slotref(slot);
+        ai_litset = 1;
+        return 1;
+    }
     ai_litold = ai_slotref(slot);
     gen = ai_litgen[slot] + 1;
     if (gen == 0 || gen > 4095) gen = 1;
@@ -217,37 +225,8 @@ int ai_setname(void)
     return 1;
 }
 
-void ai_putraw(char *s)
-{
-    unsigned int i;
-    i = 0;
-    while (s[i] != 0) {
-        putchar(s[i]);
-        i = i + 1;
-    }
-}
-
-void ai_nameack(void)
-{
-    ai_putraw("I will remember ");
-    ai_putref(ai_litcur);
-    puts(".");
-}
-
-void ai_nameans(void)
-{
-    unsigned int ref;
-    ref = ai_namefind();
-    if (ref == 0) {
-        puts("I do not have your name yet.");
-        return;
-    }
-    ai_lituse = 1;
-    ai_semuse = 1;
-    ai_putraw("I remember your name as ");
-    ai_putref(ref);
-    puts(".");
-}
+void ai_nameack(void);
+void ai_nameans(void);
 
 void ai_histpush(unsigned int topic)
 {
@@ -838,37 +817,7 @@ void ai_capage(void)
     }
 }
 
-unsigned int ai_victim(unsigned char *p, unsigned int count)
-{
-    unsigned int i;
-    unsigned int o;
-    unsigned int best;
-    unsigned int bimp;
-    unsigned int bage;
-    unsigned int imp;
-    unsigned int age;
-    best = 0;
-    bimp = 256;
-    bage = 0;
-    i = 0;
-    while (i < count) {
-        o = ai_capoff(i);
-        if (p[o + 1] != 0) {
-            imp = p[o + 14];
-            age = p[o + 15];
-            if (imp < bimp) {
-                best = i;
-                bimp = imp;
-                bage = age;
-            } else if (imp == bimp && age > bage) {
-                best = i;
-                bage = age;
-            }
-        }
-        i = i + 1;
-    }
-    return best;
-}
+#include "aievict.h"
 
 void ai_l2merge(unsigned char *src)
 {
@@ -1018,29 +967,25 @@ int ai_ctxpair(unsigned int topic)
     unsigned int need;
     un = ai_encsize(ai_in);
     an = ai_encsize(ai_out);
-    if (un == 65535 || an == 65535) {
+    if (ai_ctxcheck(un, an) != 0) {
         ai_encfail = ai_encfail + 1;
         return -1;
     }
     need = un + an;
-    if (need > 896) {
-        ai_encfail = ai_encfail + 1;
-        return -1;
-    }
     ai_capage();
     while (ai_l0bytes + need > 896 ||
            ai_l0count + 2 > 32) {
         if (ai_ctxevict() != 0) {
-            ai_encfail = ai_encfail + 1;
+            ai_error = 6;
             return -1;
         }
     }
     if (ai_ctxwrite(ai_in, 0, topic) != 0) {
-        ai_encfail = ai_encfail + 1;
+        ai_error = 6;
         return -1;
     }
     if (ai_ctxwrite(ai_out, 1, topic) != 0) {
-        ai_encfail = ai_encfail + 1;
+        ai_error = 6;
         return -1;
     }
     return 0;
@@ -1148,6 +1093,7 @@ int main(void)
     unsigned int topic;
     unsigned int alt;
     int namecmd;
+    int stored;
     ai_turns = 0;
     ai_beeps = 0;
     ai_lasttop = ai_t_id;
@@ -1161,7 +1107,6 @@ int main(void)
     ai_lituse = 0;
     ai_litcur = 0;
     ai_litold = 0;
-    ai_litnext = 0;
     ai_drop_lf = 0;
     ai_mrecords = 0;
     ai_mhits = 0;
@@ -1216,16 +1161,21 @@ int main(void)
         if (namecmd != 0) {
             ai_otokens = 0;
             ai_error = 0;
+            stored = 0;
             if (namecmd == 1) {
                 if (ai_setname()) {
-                    ai_namesem();
                     ai_nameack();
+                    stored = 1;
                 } else {
-                    puts("I could not store that name.");
+                    ai_settext("I could not store that name.");
+                    puts(ai_out);
                 }
             } else {
                 ai_nameans();
             }
+            rc = ai_ctxpair(ai_t_id);
+            if (rc < 0 && ai_error == 0) ai_error = 5;
+            if (stored && rc >= 0) ai_namesem();
             if (ai_turns != 65535) {
                 ai_turns = ai_turns + 1;
             }
