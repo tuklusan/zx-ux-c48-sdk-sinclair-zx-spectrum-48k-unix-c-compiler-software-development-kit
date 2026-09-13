@@ -60,6 +60,12 @@ jobs:
           python -B usr/src/ailmzx48/tooling/upgrade_context_wire.py
           git rm -f usr/src/ailmzx48/tooling/upgrade_context_wire.py
 
+      - name: Split canonical-wire source object
+        shell: bash
+        run: |
+          python -B usr/src/ailmzx48/tooling/split_context_wire.py
+          git rm usr/src/ailmzx48/tooling/split_context_wire.py
+
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
