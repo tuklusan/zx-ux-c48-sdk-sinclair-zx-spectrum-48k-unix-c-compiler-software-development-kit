@@ -387,10 +387,10 @@
       "topic": "spectrum",
       "text": "spectrum basic programs and their variables are held in ram while the basic interpreter is held in rom",
       "triggers": [
-        "basic",
-        "program",
-        "variables",
-        "ram"
+        "held",
+        "ram",
+        "interpreter",
+        "rom"
       ]
     },
     {
@@ -413,8 +413,8 @@
       "triggers": [
         "randomize",
         "usr",
-        "machine",
-        "code"
+        "calls",
+        "routine"
       ]
     },
     {
@@ -425,8 +425,8 @@
       "triggers": [
         "clear",
         "ramtop",
-        "preserved",
-        "code"
+        "preserve",
+        "bytes"
       ]
     },
     {
@@ -436,9 +436,9 @@
       "text": "spectrum basic new deletes the current basic program and variables before starting the basic system anew",
       "triggers": [
         "new",
+        "current",
         "deletes",
-        "program",
-        "variables"
+        "anew"
       ]
     },
     {
@@ -450,7 +450,7 @@
         "save",
         "load",
         "cassette",
-        "program"
+        "retrieve"
       ]
     },
     {
@@ -461,8 +461,8 @@
       "triggers": [
         "run",
         "execution",
-        "line",
-        "clear"
+        "clears",
+        "line"
       ]
     },
     {
@@ -472,9 +472,9 @@
       "text": "spectrum basic program lines are listed in ascending line number order",
       "triggers": [
         "lines",
-        "listed",
-        "number",
-        "order"
+        "list",
+        "order",
+        "ascending"
       ]
     }
   ],

@@ -16,8 +16,10 @@
   },
   "goals_achieved": false,
   "next_action": "Pursue unmet scenario knowledge-deepening-rom-basic-v1.",
-  "no_pending_requests_satisfied": true,
-  "pending_iterations": [],
+  "no_pending_requests_satisfied": false,
+  "pending_iterations": [
+    41
+  ],
   "qualification_scenarios": [
     {
       "evidence": {
@@ -37,9 +39,16 @@
       "scenario": "knowledge-deepening-spectrum-hardware-v1"
     },
     {
+      "candidate_failures": [
+        {
+          "failures": [
+            "retained score evidence is missing"
+          ],
+          "iteration": 41
+        }
+      ],
       "goal": "ROM, Sinclair BASIC, system software, and machine-behaviour factual coverage",
       "min_turns": 8,
-      "reason": "no retained request/evidence for this scenario",
       "satisfied": false,
       "scenario": "knowledge-deepening-rom-basic-v1"
     },
