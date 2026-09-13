@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "iteration": 37,
+  "scenario": "trigger-retrieval-jet-set-willy-v1",
+  "purpose": "Prove trigger-aware cold retrieval can select the Jet Set Willy secondary games fact on the actual C48 target.",
+  "max_seconds": 1200,
+  "prompts": [
+    "in spectrum games what did jet set willy follow"
+  ],
+  "expected_keywords": ["manic"],
+  "final_expected_keyword": "manic"
+}
