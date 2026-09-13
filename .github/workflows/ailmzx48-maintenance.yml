@@ -17,7 +17,7 @@ name: ailmzx48 maintenance
   push:
     branches: [main]
     paths:
-      - ".github/ailmzx48-maintenance-task.py"
+      - ".github/ailmzx48-maintenance-request.txt"
 
 permissions:
   contents: write
@@ -42,12 +42,15 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Apply requested maintenance
+      - name: Validate maintenance marker
         shell: bash
         run: |
-          test -f .github/ailmzx48-maintenance-task.py
-          python -B .github/ailmzx48-maintenance-task.py
-          git rm .github/ailmzx48-maintenance-task.py
+          test -f .github/ailmzx48-maintenance-request.txt
+          git rm .github/ailmzx48-maintenance-request.txt
+
+      - name: Test ailmzx48 context reference
+        run: >-
+          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
 
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
@@ -65,5 +68,5 @@ jobs:
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Complete ailmzx48 maintenance task"
+          git commit -m "Complete ailmzx48 maintenance checkpoint"
           git push origin HEAD:main
