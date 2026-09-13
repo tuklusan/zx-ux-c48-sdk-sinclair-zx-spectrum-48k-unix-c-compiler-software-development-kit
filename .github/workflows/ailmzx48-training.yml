@@ -47,6 +47,10 @@ jobs:
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
 
+      - name: Test ailmzx48 A48M reference
+        run: >-
+          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+
       - name: Select pending iteration request
         id: req
         shell: bash
