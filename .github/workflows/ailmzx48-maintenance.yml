@@ -48,19 +48,70 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
+      - name: Instrument record-scaled evaluator budget
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("usr/src/ailmzx48/tooling/run_iteration.py")
+          text = path.read_text(encoding="utf-8")
+          replacements = [
+              (
+                  'COLD = MODEL_DIR / "cold-seed.bin"\n',
+                  'COLD = MODEL_DIR / "cold-seed.bin"\nCOLD_META = MODEL_DIR / "cold-seed.json"\n',
+              ),
+              (
+                  '    max_steps = 2000000 + len(prompts) * 250000\n',
+                  '    cold_meta = json.loads(COLD_META.read_text(encoding="utf-8"))\n'
+                  '    cold_record_count = cold_meta.get("record_count")\n'
+                  '    if (isinstance(cold_record_count, bool)\n'
+                  '            or not isinstance(cold_record_count, int)\n'
+                  '            or cold_record_count < 1\n'
+                  '            or cold_record_count > 255):\n'
+                  '        raise RuntimeError("invalid cold model record count")\n'
+                  '    per_turn_step_budget = 100000 + cold_record_count * 8000\n'
+                  '    max_steps = 2000000 + len(prompts) * per_turn_step_budget\n',
+              ),
+              (
+                  '        "final_keyword_hit": final_keyword_hit,\n    }\n    (out_dir / "score.json").write_text(',
+                  '        "final_keyword_hit": final_keyword_hit,\n'
+                  '        "vm_steps": vm.steps,\n'
+                  '        "vm_step_limit": max_steps,\n'
+                  '        "cold_record_count": cold_record_count,\n'
+                  '    }\n    (out_dir / "score.json").write_text(',
+              ),
+              (
+                  '        "max_steps": max_steps,\n        "runner_max_seconds": limit,\n',
+                  '        "max_steps": max_steps,\n'
+                  '        "vm_steps": vm.steps,\n'
+                  '        "per_turn_step_budget": per_turn_step_budget,\n'
+                  '        "cold_record_count": cold_record_count,\n'
+                  '        "runner_max_seconds": limit,\n',
+              ),
+          ]
+          for old, new in replacements:
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"expected one patch target, found {count}: {old!r}")
+              text = text.replace(old, new)
+          path.write_text(text, encoding="utf-8")
+          PY
+
       - name: Test ailmzx48 context reference
-        run: >-
-          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
+        run: python -B usr/src/ailmzx48/evaluation/test_context_reference.py
 
       - name: Test ailmzx48 A48M reference
-        run: >-
-          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+        run: python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
 
       - name: Compile ailmzx48 SDK artifact
         run: >-
           python -B compiler/c48.py
           usr/src/ailmzx48/ailmzx48.c
           -o usr/bin/ailmzx48/ailmzx48.c48b
+
+      - name: Syntax-check iteration runner
+        run: python -m py_compile usr/src/ailmzx48/tooling/run_iteration.py
 
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
@@ -71,12 +122,21 @@ jobs:
           python -B compiler/verify_release.py
           git diff --check
 
-      - name: Commit and push maintenance checkpoint
+      - name: Commit and push evaluator instrumentation
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Complete ailmzx48 maintenance checkpoint"
-          git push origin HEAD:main
+          git commit -m "ailmzx48: scale evaluator budget with cold records"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+            python -B compiler/verify_release.py
+            git diff --check
+          done
+          exit 1
