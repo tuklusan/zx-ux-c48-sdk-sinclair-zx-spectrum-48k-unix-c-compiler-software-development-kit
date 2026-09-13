@@ -3,7 +3,7 @@
   "final_stability_tail": {
     "iterations": [
       52,
-      null,
+      53,
       null
     ],
     "reason": "one or more final regression scenarios are not yet satisfied",
@@ -15,7 +15,7 @@
     ]
   },
   "goals_achieved": false,
-  "next_action": "Pursue unmet scenario final-regression-b-v1.",
+  "next_action": "Pursue unmet scenario final-regression-c-v1.",
   "no_pending_requests_satisfied": true,
   "pending_iterations": [],
   "qualification_scenarios": [
@@ -224,10 +224,20 @@
       "scenario": "final-regression-a-v1"
     },
     {
+      "evidence": {
+        "clean_exit": true,
+        "iteration": 53,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 12,
+        "vm_step_limit": 16542080,
+        "vm_step_utilization": 0.5751085111424924,
+        "vm_steps": 9513491
+      },
       "goal": "Broad independent final regression suite B",
+      "iteration": 53,
       "min_turns": 12,
-      "reason": "no retained request/evidence for this scenario",
-      "satisfied": false,
+      "satisfied": true,
       "scenario": "final-regression-b-v1"
     },
     {
@@ -241,7 +251,6 @@
   "schema": 1,
   "status": "GOALS_PENDING",
   "unmet_scenarios": [
-    "final-regression-b-v1",
     "final-regression-c-v1"
   ]
 }
