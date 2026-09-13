@@ -297,6 +297,89 @@
       "split": "train",
       "text": "classic games show how much personality can fit in a small computer",
       "topic": "games"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "memory",
+      "text": "the 48k spectrum screen bitmap occupies addresses 16384 through 22527",
+      "triggers": [
+        "bitmap",
+        "16384",
+        "22527",
+        "screen"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "memory",
+      "text": "the spectrum colour attribute memory occupies addresses 22528 through 23295",
+      "triggers": [
+        "attribute",
+        "22528",
+        "23295",
+        "colour"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "memory",
+      "text": "the 48k spectrum system variables begin at address 23552 decimal",
+      "triggers": [
+        "system",
+        "variables",
+        "23552"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "memory",
+      "text": "the 48k spectrum rom occupies addresses 0 through 16383 and ram occupies 16384 through 65535",
+      "triggers": [
+        "rom",
+        "ram",
+        "16384",
+        "65535"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "the spectrum z80a processor runs at about 3.5 mhz",
+      "triggers": [
+        "z80a",
+        "clock",
+        "processor",
+        "mhz"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "the spectrum ula io port 254 controls border colour and also carries beeper and cassette signals",
+      "triggers": [
+        "border",
+        "port",
+        "254",
+        "beeper"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "the spectrum keyboard is an eight by five matrix read through the ula by selecting keyboard rows",
+      "triggers": [
+        "keyboard",
+        "matrix",
+        "ula",
+        "rows"
+      ]
     }
   ],
   "schema": 2
