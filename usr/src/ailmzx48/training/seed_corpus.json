@@ -380,6 +380,102 @@
         "ula",
         "rows"
       ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "spectrum basic programs and their variables are held in ram while the basic interpreter is held in rom",
+      "triggers": [
+        "basic",
+        "program",
+        "variables",
+        "ram"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "spectrum basic peek reads the value of a byte at an address and poke writes a value to a byte at an address",
+      "triggers": [
+        "peek",
+        "poke",
+        "byte",
+        "address"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "spectrum basic randomize usr followed by an address calls a machine code routine at that address",
+      "triggers": [
+        "randomize",
+        "usr",
+        "machine",
+        "code"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "spectrum basic clear with a numeric address can change ramtop so bytes above the new ramtop can be preserved for machine code",
+      "triggers": [
+        "clear",
+        "ramtop",
+        "preserved",
+        "code"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "spectrum basic new deletes the current basic program and variables before starting the basic system anew",
+      "triggers": [
+        "new",
+        "deletes",
+        "program",
+        "variables"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "spectrum basic save and load store and retrieve programs using cassette tape on the original machine",
+      "triggers": [
+        "save",
+        "load",
+        "cassette",
+        "program"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "spectrum basic run clears variables and starts program execution from line zero or from a specified line",
+      "triggers": [
+        "run",
+        "execution",
+        "line",
+        "clear"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "spectrum basic program lines are listed in ascending line number order",
+      "triggers": [
+        "lines",
+        "listed",
+        "number",
+        "order"
+      ]
     }
   ],
   "schema": 2
