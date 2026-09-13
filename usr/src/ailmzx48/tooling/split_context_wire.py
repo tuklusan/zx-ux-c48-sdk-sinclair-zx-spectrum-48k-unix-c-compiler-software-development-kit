@@ -47,7 +47,8 @@ def main() -> int:
     if "int ai_wirewrite(char *s, unsigned int speaker)" not in block:
         raise RuntimeError("wire-helper block incomplete")
     header = HEADER + block
-    source = text[:start] + '#include "aictx.h"\n\n' + text[end:]
+    prefix = 'int ai_pinreq(void);\n#include "aictx.h"\n\n'
+    source = text[:start] + prefix + text[end:]
     for label, data in (("source", source), ("header", header)):
         bad = [
             (n, len(line), line)
