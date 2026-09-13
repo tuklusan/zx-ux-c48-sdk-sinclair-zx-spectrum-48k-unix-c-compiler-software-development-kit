@@ -1,0 +1,2 @@
+iteration=41
+purpose=validate-stable-basic-trigger-checkpoint
