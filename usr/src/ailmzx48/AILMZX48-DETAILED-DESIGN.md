@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.9-draft
+Revision: 0.10-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48`
 
@@ -188,7 +188,7 @@ The working architecture is instead a host-trained, target-inferred sparse stati
 
 This is still a language model: probabilities/weights over token continuations are learned from a corpus and used locally at inference time. The surrounding agent controller supplies conversation state, memory retrieval, topic steering, factual anchoring, uncertainty/fallback behavior, and anti-repetition controls.
 
-The exact release model family is not frozen by this revision. Revision 0.3 introduced concrete **Candidate A**; Revision 0.9 retains it as a corrected benchmark baseline so implementation and measurements can begin without pretending the representation is already optimal. Candidate A is not a promise that no better representation will replace it.
+The exact release model family is not frozen by this revision. Revision 0.3 introduced concrete **Candidate A**; Revision 0.10 retains it as a corrected benchmark baseline so implementation and measurements can begin without pretending the representation is already optimal. Candidate A is not a promise that no better representation will replace it.
 
 ### 6.1 No remote inference dependency
 
@@ -262,6 +262,8 @@ The resident lexicon is chosen from the remaining corpus by a score that conside
 If a later compact alias index beats the resident sorted lexicon, it is a measured candidate change; Candidate A does not assume such an index for free.
 
 The 16-bit **semantic-reference** namespace used by L1/L2 and cold-record entity fields is deliberately separate from the 0..4095 lexical token-ID namespace. Semantic reference 0 means absent; persistent semantic symbols use 1..0x7FFF; bit-15-set values are session literals. Host tooling owns the mapping from recognized lexical tokens/phrases to persistent semantic symbols and charges that mapping to resident hot-table bytes. A lexical token ID is never copied blindly into a semantic-reference field.
+
+Topic IDs are a third namespace. Candidate A reserves topic ID 0 for generic/unknown and assigns 1..65535 only through the generated model's frozen topic-ID map. L1/L2 topic fields, classifier outputs and cold-record `topic_id` values all use that same map. The map is a hot/cold compatibility input, not an incidental trainer ordering.
 
 ### 7.2 Normalization and case
 
@@ -561,7 +563,7 @@ The logical cold-model stream begins with a compact header and sequential sectio
 
 ZX-UX v1 exposes RAM-object logical/storage lengths and seek offsets as u16 values. Consequently each Candidate-A cold model object has a hard logical length of at most 65535 bytes. If later measurements require sharding, **each shard** independently obeys that bound and its resident physical allocation is budgeted. A PACKED resident object must also satisfy REV12's requirement that physical `storage_length` is strictly smaller than its logical length and must fit the real arena allocation.
 
-The container shall declare at least format version, feature flags, resident-vocabulary identity, a fixed-size hot/cold **interface identity**, record count, logical length and section lengths. The interface identity is generated from the canonical lexical-ID map, semantic-symbol map, relation/record schemas and scoring-feature schema; target code compares the fixed bytes before accepting records. This prevents a cold object from a different build from being interpreted under merely similar vocabulary. Host provenance additionally records SHA-256 of the full interface description; the exact compact target identity width is frozen with A48M. Host tooling validates all sums/counts in widened arithmetic, rejects any stream whose mathematical layout exceeds the u16 target object/seek domain, and only then emits narrowed fields. Target validation uses subtraction/reordered comparisons so 16-bit wrap cannot turn an invalid layout into a valid one.
+The container shall declare at least format version, feature flags, resident-vocabulary identity, a fixed-size hot/cold **interface identity**, record count, logical length and section lengths. The interface identity is generated from the canonical lexical-ID map, topic-ID map, semantic-symbol map, relation/record schemas and scoring-feature schema; target code compares the fixed bytes before accepting records. This prevents a cold object from a different build from being interpreted under merely similar vocabulary. Host provenance additionally records SHA-256 of the full interface description; the exact compact target identity width is frozen with A48M. Host tooling validates all sums/counts in widened arithmetic, rejects any stream whose mathematical layout exceeds the u16 target object/seek domain, and only then emits narrowed fields. Target validation uses subtraction/reordered comparisons so 16-bit wrap cannot turn an invalid layout into a valid one.
 
 The target model includes an incremental integrity check suitable for the Z80/C48 implementation. Before record scoring, the target validates the A48M header/version/declared lengths, requires actual object logical length == declared logical length, and checks resident-vocabulary plus hot/cold-interface identities. Every complete cold scan then validates section boundaries, exact declared record count, structural bounds and the requirement that the last declared section/record ends exactly at logical length while accumulating the integrity check over the canonical protected bytes. No selected cold record may reach response generation until the scan has reached the declared logical end and the integrity result matches. Thus the first question also performs full model validation without requiring an extra unbudgeted startup copy/scan; later scans retain the same fail-closed check unless a separately proved immutable-object optimization replaces it. Host release tooling also records SHA-256 for reproducibility. SHA-256 is not imposed on the target merely because the host can calculate it cheaply.
 
@@ -1075,7 +1077,7 @@ Implementation begins only after enough of this design is frozen to prevent inco
 4. host reference L0/L1/L2/session-literal compressor/retriever with adversarial long-conversation tests;
 5. cold knowledge-record builder, frozen relation/semantic-reference schemas, anchor-span validation and sequential two-winner retrieval benchmark;
 6. pruned bounded-fanout order-1/2/3 hot language-model trainer, quantizer and widened score-bound proof;
-7. frozen experimental A48M container plus host packer/verifier with u16 target-limit and hot/cold-interface-identity mismatch tests;
+7. frozen experimental A48M container plus host packer/verifier with u16 target-limit and hot/cold-interface-identity mismatch tests, including changed topic-ID assignments;
 8. reviewed SDK read-only object-I/O adapter/conformance tests needed for the external model fixture;
 9. minimal C48 `ailmzx48` program that prints startup text, reads bounded input and handles `q`;
 10. target tokenizer/detokenizer, 4,336-byte workspace and session-literal logic;
@@ -1094,7 +1096,7 @@ Each phase preserves a working, release-verifiable repository state on `main`. N
 
 ## 20. Candidate-A implementation interfaces
 
-Revision 0.9 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
+Revision 0.10 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
 
 ```text
 ai_readline()     bounded byte-aware tty line input
@@ -1182,7 +1184,7 @@ Before the model format is declared final, the project must answer with retained
 6. How often are session literals/L2 facts evicted and how does that affect old-name/correction recall?
 7. What resident recognition/presentation vocabulary minimizes total lexicon + hot-LM + cold-literal cost while still covering every retrieval trigger?
 8. What variable-order pruning/fanout budget gives the best fluency per resident byte and per target lookup cost?
-9. How large is each cold knowledge object logically and physically after ZXP1 packing, within the u16 object limit, and do object/header length mismatches, short/premature reads and mismatched hot/cold interface identities fail before record use?
+9. How large is each cold knowledge object logically and physically after ZXP1 packing, within the u16 object limit, and do object/header length mismatches, short/premature reads and mismatched hot/cold interface identities—including changed topic-ID maps—fail before record use?
 10. How long does one complete cold scan take in SDK work units, Fuse/cycle evidence and a real 48K run?
 11. Is one full scan per turn acceptable, or does RAW indexing, topic sharding or a resident cache win after all byte/decoder/fragmentation costs are counted?
 12. Does the SDK object-I/O adapter produce the same logical parser/retrieval results as the native RAW path, without being misrepresented as PACKED/cassette certification?
@@ -1195,7 +1197,7 @@ Before the model format is declared final, the project must answer with retained
 
 The final design replaces these questions with measured answers.
 
-## 23. Open design questions after Revision 0.9
+## 23. Open design questions after Revision 0.10
 
 The following remain deliberately open until measurement resolves them:
 
