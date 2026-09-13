@@ -1,0 +1,84 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: ailmzx48 design compliance finalize
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-design-compliance-finalize.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ailmzx48-design-compliance-finalize-main
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Finalize design compliance material
+        run: >-
+          python -B
+          usr/src/ailmzx48/tooling/finalize_design_compliance.py
+
+      - name: Remove temporary finalization instrumentation
+        run: |
+          rm .github/workflows/ailmzx48-design-compliance-finalize.yml
+          rm usr/src/ailmzx48/tooling/finalize_design_compliance.py
+
+      - name: Rebuild and test ailmzx48 references
+        run: |
+          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
+          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+          python -B compiler/c48.py usr/src/ailmzx48/ailmzx48.c \
+            -o usr/bin/ailmzx48/ailmzx48.c48b
+
+      - name: Run three zero-gap SDK compliance passes
+        run: |
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py --pass-id 1
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py --pass-id 2
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py --pass-id 3
+
+      - name: Regenerate manifest
+        run: python -B usr/src/ailmzx48/tooling/update_manifest.py
+
+      - name: Verify complete repository and exact tree
+        run: |
+          python -B compiler/verify_release.py
+          git diff --check
+
+      - name: Commit design compliance closure
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "ailmzx48: certify SDK design compliance"
+          git push origin HEAD:main
