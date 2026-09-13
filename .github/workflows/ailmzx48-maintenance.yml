@@ -53,6 +53,7 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+
           p = Path("usr/src/ailmzx48/ailmzx48.c")
           s = p.read_text(encoding="utf-8")
 
@@ -69,43 +70,19 @@ jobs:
               "model topic state",
           )
 
-          old_pick = '''unsigned int ai_pick(void)
-          {
-              if (ai_has("memory") || ai_has("bitmap"))
-                  return ai_t_mem;
-              if (ai_has("48k")) return ai_t_mem;
-              if (ai_has("game") || ai_has("miner"))
-                  return ai_t_games;
-              if (ai_has("lore")) return ai_t_games;
-              if (ai_has("network")) return ai_t_local;
-              if (ai_has("local")) return ai_t_local;
-              if (ai_has("chat")) return ai_t_local;
-              if (ai_has("1982") || ai_has("history"))
-                  return ai_t_hist;
-              if (ai_has("before")) return ai_t_hist;
-              if (ai_has("spectrum")) return ai_t_spec;
-              if (ai_has("computer")) return ai_t_spec;
-              if (ai_hcount != 0 && ai_has("go back")) {
-                  ai_ctxuse = 1;
-                  ai_histuse = 1;
-                  return ai_hist[ai_hcount - 1];
-              }
-              if (ai_havectx) {
-                  if (ai_has("tell me more")) {
-                      ai_ctxuse = 1;
-                      return ai_lasttop;
-                  }
-                  if (ai_has("what about that")) {
-                      ai_ctxuse = 1;
-                      return ai_lasttop;
-                  }
-                  if (ai_has("same topic")) {
-                      ai_ctxuse = 1;
-                      return ai_lasttop;
-                  }
-              }
-              return ai_t_id;
-          }'''.replace("          ", "")
+          start = s.index("unsigned int ai_pick(void)\n")
+          end = s.index("\nint ai_addtok(", start)
+          old_pick = s[start:end]
+          required = (
+              'ai_has("memory")', 'ai_has("bitmap")', 'ai_has("48k")',
+              'ai_has("game")', 'ai_has("miner")', 'ai_has("lore")',
+              'ai_has("network")', 'ai_has("local")', 'ai_has("chat")',
+              'ai_has("1982")', 'ai_has("history")', 'ai_has("before")',
+              'ai_has("spectrum")', 'ai_has("computer")',
+          )
+          missing = [x for x in required if x not in old_pick]
+          if missing:
+              raise SystemExit("unexpected ai_pick source: " + repr(missing))
           new_pick = '''unsigned int ai_pick(void)
           {
               if (ai_hcount != 0 && ai_has("go back")) {
@@ -128,8 +105,8 @@ jobs:
                   }
               }
               return ai_tcnt;
-          }'''.replace("          ", "")
-          once(old_pick, new_pick, "ai_pick")
+          }'''
+          s = s[:start] + new_pick + s[end:]
 
           once(
               "    ai_w2score = -1;\n    actual = ai_mstat();",
@@ -142,12 +119,12 @@ jobs:
               "runtime topic bound",
           )
           once(
-              '''        score = -1;
+              """        score = -1;
               if (rtopic == topic) {
                   score = (int)ai_mstage[8];
                   score = score + (int)(thits * 16);
-              }'''.replace("              ", ""),
-              '''        score = -1;
+              }""".replace("              ", ""),
+              """        score = -1;
               if (topic == ai_tcnt) {
                   if (thits != 0) {
                       score = (int)(thits * 256);
@@ -156,19 +133,19 @@ jobs:
               } else if (rtopic == topic) {
                   score = (int)ai_mstage[8];
                   score = score + (int)(thits * 16);
-              }'''.replace("              ", ""),
+              }""".replace("              ", ""),
               "generic score",
           )
           once(
-              '''        if (slot == 1) {
+              """        if (slot == 1) {
               ai_w1len = rlen;
               ai_w1score = score;
-          }'''.replace("              ", ""),
-              '''        if (slot == 1) {
+          }""".replace("              ", ""),
+              """        if (slot == 1) {
               ai_w1len = rlen;
               ai_w1score = score;
               ai_mtopic = rtopic;
-          }'''.replace("              ", ""),
+          }""".replace("              ", ""),
               "winning topic capture",
           )
           once(
@@ -177,18 +154,12 @@ jobs:
               "main topic init",
           )
 
-          old_route = '''        alt = 0;
-          if (ai_havectx && topic == ai_lasttop) {
-              if (ai_altstate == 0) {
-                  ai_altstate = 1;
-                  alt = 1;
-              } else {
-                  ai_altstate = 0;
-              }
-          } else {
-              ai_altstate = 0;
-          }
-          rc = ai_modelscan(topic);'''.replace("          ", "")
+          rstart = s.index("        alt = 0;\n        if (ai_havectx && topic == ai_lasttop)")
+          rend_marker = "        rc = ai_modelscan(topic);"
+          rend = s.index(rend_marker, rstart) + len(rend_marker)
+          old_route = s[rstart:rend]
+          if old_route.count("ai_modelscan(topic)") != 1:
+              raise SystemExit("unexpected main routing span")
           new_route = '''        rc = ai_modelscan(topic);
           if (topic == ai_tcnt) {
               if (rc > 0) {
@@ -211,24 +182,29 @@ jobs:
               }
           } else {
               ai_altstate = 0;
-          }'''.replace("          ", "")
-          once(old_route, new_route, "main generic route")
+          }'''
+          s = s[:rstart] + new_route + s[rend:]
 
-          forbidden = (
-              'ai_has("memory")', 'ai_has("bitmap")', 'ai_has("48k")',
-              'ai_has("game")', 'ai_has("miner")', 'ai_has("lore")',
-              'ai_has("network")', 'ai_has("local")', 'ai_has("chat")',
-              'ai_has("1982")', 'ai_has("history")', 'ai_has("before")',
-              'ai_has("spectrum")', 'ai_has("computer")',
-          )
-          leftovers = [x for x in forbidden if x in s]
+          leftovers = [x for x in required if x in s]
           if leftovers:
               raise SystemExit("hand-written routing remains: " + repr(leftovers))
-          if "score = (int)(thits * 256);" not in s:
-              raise SystemExit("generic trigger-dominant score missing")
+          checks = (
+              "return ai_tcnt;",
+              "score = (int)(thits * 256);",
+              "ai_mtopic = rtopic;",
+              "topic = ai_mtopic;",
+              "ai_semuse = 1;",
+          )
+          absent = [x for x in checks if x not in s]
+          if absent:
+              raise SystemExit("generic routing checks missing: " + repr(absent))
+
           p.write_text(s, encoding="utf-8")
-          print({"source_bytes": p.stat().st_size,
-                 "routing": "cold-model-trigger-evidence"})
+          print({
+              "source_bytes": p.stat().st_size,
+              "routing": "cold-model-trigger-evidence",
+              "removed_noun_routes": len(required),
+          })
           PY
 
       - name: Test ailmzx48 context reference
