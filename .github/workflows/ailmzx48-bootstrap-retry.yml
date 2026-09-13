@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: One-shot ailmzx48 UI correction
+name: One-shot ailmzx48 iteration 2 prep
 
 "on":
   push:
@@ -23,7 +23,7 @@ permissions:
   contents: write
 
 jobs:
-  maintenance:
+  prepare:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -38,41 +38,52 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Apply exact corrections
+      - name: Apply iteration 2 preparation
         shell: bash
         env:
-          PATCH_B64: "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"
+          PATCH_B64: "eNrtWm1v2zYQ/v5+CiEIlFSJkZJbGmxJ0rRp0qQp0iYp2r4YizwJkRmK5JQp3f/9DskJpUuWZMfnQuMA0nY8PvfePXI8T2vYatKX4spK1GnnSwg3qb2W7iWwd5qhEY3L0MgqIvV6/OA1O8+om7iVSpmF3S2hVu4iiLAuZlEnLJY3DjKiGT1hKkyT1gllqJXHcKVG64O/XC6Z3+rFmR/mKZJjGO/8DrUNRZSmU1P4sbOxsPjnduY6V6FnrYq6TcNIuL/Jk/hpy/O2DG/i/5pLI1jVyvm5eLyvbTDWSze1yKzImdgki24zQomK/aB2PmYsLmy7IOj9DHcWqdLL63wjLmrg5TDVraEHY8Ststz1FeHoxU/u7q4fH59GSfRYDA4Ttm5tVpOGytVlbeXhWB8qm4FRKlXWs4LyypnZSYSZgtpmMxFZaVdMb4+ljBe5e5nuqEWeiGNwXo4yUzBy5JNBYTMyiaH3JCWlnCHF CYhUxvLQZeXjCyNs1hVm s g9FVrecivB0j+VfmeYmuEqKFTN7JJr8KXFnOu8hKO0v0FD4JLeFtDHTGbc kSRyC54LL6YW/26kBjM9Sbw jSHPK4i+5cQYCG3IuK3C2xPVs umLXT a1BcEHkrnm1wk+46fr8+Xfnz yph2TM+NWmMO6CuPu1FYyzjdS24dt7BU3ZVOX6NanQmxqW4FSXLVdYswL7juZWIrAF otrXBhiKdp4wHZ3t1ef70m0s2k6WgzSTgLS9JFVbVgby3yegJ2YyOTcHF3XfUiDDQgDDVijVG6PGMZ/AyWNEKjWcRrh/ONa8LaLskMplaLHDHuJSVG LGM13xKbM1YLg18ckUUnLqtAmX4bu6IJ4EYuQgrlTcdjMWNqkBhRcczOKh25GaURGzB7ZaZVidVIBSfT1Vjk5jFX4uypv8vYHVpDR7BZjwegxi5a3yEZ06b8UNj68aOUqLxCfUU3ECp+xUD+ztH75kJ2U5z7ShNefaOxIam asQnzLSUtiBiORwzs+zNFYLa4C4zc+o6HvIR6FHW8LFmmhm8W+JoStH8/5D+34U0KaAfx0Tq94TyVhATmbviGNFL0tHrWnxEFEwT4gzvkND5XhefyUZ0wg/IwBWtgzEFLvV+f3Zetr eqkA+DY32UF SJ7d1OCt8qImwL1FNGV1itfb2jvPXYN5yaNHA+nI1JLKEmtAGYzxvsKh5IhvV5FnlCfSW/njlPnEHap2MuVLXDy4tkVcoxF5NVKUjZDEVYozNIGWrbQqpkXLOSAhC2hqoJ0y0ujELfGelWOxwUSiUsNbAZ9aVgDfA17Ojh57CRmG0u6qWh1tIYGA XYMtYL1jojQ6JMI ZH1rMLa7uk1cCbt48fK7V1dff/06OcTh7/D2Hp8B3XRXkrNJH1mbm+if0FrB4hQVVQ6wQ4rvmeDIMYqg1e/gZR9aml/oj8zlmGp+SqslYZ82pXkDnf f9AFYJ4XbURlnLHz2n7E3PNYgFYjZYmnJeRekElJCzVpTtDbKgT4chiL3nsjm3h3g9fFLOVjfgG4VKbLi7v5Pre c21Ibi3YkvEIQ tVJ+jDuQLPMqVz58yqi0kUhdwWKSOHjtYEQ4T1hSbBiE6DQ+sIkiVye+Jsxqle/iQqVhcrQ3lg gx6qyhTe9w7JW7mahFTM+Ax8nHpXqnKFHU Fhhamp ts0APsFr2hFxktwEp0adTf+FSBu61dTY3P1Xg5vhaNO Vgy+QI294U3zRFa xhNmIPH zx8dIjjJptEPisItmg9V9X4AplT6IwK2zNvg96u3aDx4mthG03xLKg7eMDWUodYWutuN6JmXJYIpA9WqTKt+EJ8PG2z1GY1ksY3E6TUD54+4mor kLy52/PwHC4riiZncYCO DiUctS6WqepWVEAZVAD+2sb+6xnIae hOyyCz/P4yspOT/GK5lnjwh0XD27dV/LYa9EgPRocyQSXzLDaFWm64L KHM1s1kBTUseLcu0CzHyWA/kTWWPYDE3tyNsnEUgMf4a2Cuy1f jly+w8F26yH32vndvo4r0+I4iBzepbE8CjYmHCR2E2YCgDo/d1cNEe+GWSdmXQGNsArNPnEAT7wATQpJaQFjR4phJcLhJC92Fq12Rw2PG90i0SLXQlziKa+uC396Fndedxb3NGgwRarFXE50SiPAWfPv1XpegbJQrsQFmd0i0LSMUWmvSlENAPWTbx7JRH+Y6tLih3D16RR6AStbaZLyXG6Pd3Nj3uHBZwqaN7QzA9kkUbUOXvoTUbFOudRCLzOab0V9HIY3RR0ZnR8hCi5/en zzuHtJsDUNA wQx3kuyDnSQbj55E6/2/JV1sntyBk082qtB+dh7uZcfLnQsj59V6eLcr9vnVs2++//bk8fjp5Ws8Xz7Fw/XVV88poKNQqTyVO1E2akL8StxKQmen7EF6/H Cca+CgeBPzBoIb47j955Iten/r1o9HkSh37mt/38XZO7PEuKm6YWJOrlu6B6cpHWjSGBBQ7aYDlGdI3IPvvx2/+TYkD3LxRyfjTJXNol oDzwVVQ59GCRh06waYAeA5IxiNdvUfxw8RSq0VJmE24CaWzM FZGnd0h53aYGHqMeHdFYO sS3Rh6PSXIb o1GgdkN00JwTiwXLv8C05q5MraIvgLfiupRlMDjlQATEoq4HPKZzYkNLrNrmi2XIouyyRhZEEUczFDtyLysQPknVgu0qJKLP eqrM2u/u366d/bDOx1WHA NZUE4xMjDE594fM4KtP4MXQHCZ1qVpXv8k/UGd97wtk8GTX+3G2b33toA2TDGAWHR7Q2xgF6GuxrhDs9UU+VtWBjLtfUG/uXnvSkx+hzQ1NeJv+oghbit ySG oGKCsl0gOyKiH6M9d39Q9mHWHBuknr0DC AkWzgIOhFfWlVOR+FONzyPn1xdXGOMD3nZPP0fCELqPCy61C9ExFxlHpg y8jMqVb3uqX754x/fpcyTyhme6jB6wLdGRB6IOCEkHz6CRlTwW6eD/YgxbnYHO6QpyFVotC0edlCNMgbkrHa euwRy026/II ZBDaKkIOkJNOk0rv37+kORiMUY29Uuflqi48ZhDMFZB+yE5++XnSpS6xYDk3ReLTAFKCcBP49+jXMmmBT01T09CWRolegrZKU l+Ere7GseEz0WJ/yhP37z8hvqu5y9YIvU4Pn rceElpAiiNeWpfYRM96Ow7ivefi5HGLWh3PngqNbugzQaGwRDN9hQ4ptEo0THGTbTfhwYuoLfH1ppLU5a1z/EHe6+wPe5AwbWx04jgcuuVvA8MOwXieOoz6L5r37/iog38HA2hGORzAJmXXgUXnu40r8MFovYimyHviPurMGjS/om+wbbf6Yx3lv2rTkGudWQ9KtbTT1x3/1K85jspvyJd9W3269MDlFzLzznfumo xSuIaGnK2dc9IpGuUrQ5kqQpdSQR O40IpThwUIppU0osslgkgkIdW6qY02no7VvAIkkDWSAiiwBbw bm3lEKQF5UHvfRXVqkQE1M9Ja/zVhQplrgmXXcXJWcorcNZtTgZjv4aa/omDUp7kP7oG5NS+uRXZfBVyG3NFAZBVc24Gw36aK4Irt hYc4o9/r3bF97jtk oHWA S+6Iud8RQ0O09QcGe/+WYP0XGSlU7ZvPH8zKpOK9yBpLVgRiGX+5PbHy43B2QK/q94wVUaCdU1nt23nyeBr/6Hdn y/yMGsLEW/HstW7E7xuo bU0S72I0zN6mKl/R55vQkB70+cZ9RilToHZDH3thph2yYdvg rg58QJLR/ZvDyD1eEMgjriQ6DVeqNoZTvc9KdOnugOAzryIS4Q5RGnG6NUA2Yu6K45m7IoyMB7xOeY5g0HNX3YZvq84u7ZeuQXI8+uH4x3Aid hS3TsW05cGPffkOH2jE66Fv4PET8s9i99mqG/zeofD/AEltU/8="
         run: |
           python - <<'PY'
           import base64, os, zlib
           from pathlib import Path
           data = zlib.decompress(base64.b64decode(os.environ["PATCH_B64"]))
-          Path(".github/ailmzx48_ui_patch.py").write_bytes(data)
+          Path(".github/ailmzx48_iter2_prep.py").write_bytes(data)
           PY
-          python -B .github/ailmzx48_ui_patch.py
-          rm -f .github/ailmzx48_ui_patch.py
+          python -B .github/ailmzx48_iter2_prep.py
+          rm -f .github/ailmzx48_iter2_prep.py
+
+      - name: Prove generated model source compiles
+        shell: bash
+        run: |
+          cp usr/src/ailmzx48/aimod.h /tmp/aimod.h
+          trap 'cp /tmp/aimod.h usr/src/ailmzx48/aimod.h' EXIT
+          python -B usr/src/ailmzx48/tooling/build_starter_model.py \
+            --corpus usr/src/ailmzx48/training/seed_corpus.json \
+            --out-json /tmp/iter-0002-model.json \
+            --out-h usr/src/ailmzx48/aimod.h \
+            --iteration 2
+          python -B compiler/c48.py \
+            usr/src/ailmzx48/ailmzx48.c \
+            -o /tmp/ailmzx48-iter2.c48b
+          cp /tmp/aimod.h usr/src/ailmzx48/aimod.h
+          trap - EXIT
 
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
 
-      - name: Verify complete repository
+      - name: Verify complete preparation
         shell: bash
         run: |
           python -B compiler/verify_release.py
           git diff --check
-          grep -q 'Revision: 0.13-draft' \
-            usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md
-          ! grep -q 'Copyright (c) 2006' \
-            usr/src/ailmzx48/ailmzx48.c
-          ! grep -q 'puts("Based on original work' \
-            usr/src/ailmzx48/ailmzx48.c
+          test ! -e usr/src/ailmzx48/training/requests/iter-0002.json
 
-      - name: Commit and push correction
+      - name: Commit and push preparation
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Correct ailmzx48 UI attribution policy"
+          git commit -m "Prepare ailmzx48 iteration 2"
           git push origin HEAD:main
