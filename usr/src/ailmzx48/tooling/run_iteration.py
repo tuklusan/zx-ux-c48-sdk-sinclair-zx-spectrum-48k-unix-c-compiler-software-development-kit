@@ -210,9 +210,16 @@ def main() -> int:
         raise RuntimeError("unexpected conversation boundary count")
     turns = []
     keyword_hits = 0
-    expectations = [
-        None, "spectrum", "1982", "memory", "memory", None,
-    ]
+    expectations = req.get("expected_keywords")
+    if expectations is None:
+        expectations = [None] * len(prompts)
+    if not isinstance(expectations, list):
+        raise RuntimeError("expected_keywords must be a list")
+    if len(expectations) != len(prompts):
+        raise RuntimeError("expected_keywords length must match prompts")
+    for expected in expectations:
+        if expected is not None and not isinstance(expected, str):
+            raise RuntimeError("expected keyword must be string or null")
     for i, prompt in enumerate(prompts):
         event = feeder.events[i + 1]
         reply = derived_reply(event["text"])

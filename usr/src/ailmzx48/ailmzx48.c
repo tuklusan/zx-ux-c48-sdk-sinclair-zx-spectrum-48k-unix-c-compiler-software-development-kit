@@ -96,8 +96,12 @@ unsigned int ai_pick(void)
 {
     if (ai_has("memory")) return ai_s_mem;
     if (ai_has("48k")) return ai_s_mem;
-    if (ai_has("1982")) return ai_s_spec;
-    if (ai_has("history")) return ai_s_spec;
+    if (ai_has("game")) return ai_s_games;
+    if (ai_has("network")) return ai_s_local;
+    if (ai_has("local")) return ai_s_local;
+    if (ai_has("chat")) return ai_s_local;
+    if (ai_has("1982")) return ai_s_hist;
+    if (ai_has("history")) return ai_s_hist;
     if (ai_has("spectrum")) return ai_s_spec;
     if (ai_has("computer")) return ai_s_spec;
     return ai_s_chat;

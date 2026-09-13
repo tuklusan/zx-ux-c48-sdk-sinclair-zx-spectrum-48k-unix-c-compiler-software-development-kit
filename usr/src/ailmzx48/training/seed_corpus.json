@@ -56,6 +56,56 @@
       "kind": "style-synthetic",
       "split": "train",
       "text": "small models need careful planning and honest uncertainty"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i am ailmzx48 a local language model"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i am ailmzx48 a local language model"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i am ailmzx48 a local language model"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i am ailmzx48 a local language model"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "history of spectrum starts in 1982"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "history remembers spectrum arriving in 1982"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "local chat runs without a network"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "local conversation runs without a network"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "games are part of spectrum culture"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "games gave spectrum much of its character"
     }
   ],
   "schema": 1

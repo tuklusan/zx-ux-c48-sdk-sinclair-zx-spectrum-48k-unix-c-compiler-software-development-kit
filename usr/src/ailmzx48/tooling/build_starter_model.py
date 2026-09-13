@@ -24,7 +24,7 @@ from pathlib import Path
 
 TOKEN_RE = re.compile(r"[a-z0-9]+")
 MAX_VOCAB = 96
-REQ = ("i", "spectrum", "memory")
+REQ = ("i", "spectrum", "memory", "history", "local", "games")
 
 
 def sha256(path: Path) -> str:
@@ -107,7 +107,10 @@ def build(corpus: Path, out_json: Path, out_h: Path,
         "next_secondary": n2,
         "seeds": {"chat": ids["i"],
                   "spectrum": ids["spectrum"],
-                  "memory": ids["memory"]},
+                  "memory": ids["memory"],
+                  "history": ids["history"],
+                  "local": ids["local"],
+                  "games": ids["games"]},
     }
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n",
@@ -129,6 +132,9 @@ def build(corpus: Path, out_json: Path, out_h: Path,
         f"unsigned int ai_s_chat = {ids['i']};",
         f"unsigned int ai_s_spec = {ids['spectrum']};",
         f"unsigned int ai_s_mem = {ids['memory']};",
+        f"unsigned int ai_s_hist = {ids['history']};",
+        f"unsigned int ai_s_local = {ids['local']};",
+        f"unsigned int ai_s_games = {ids['games']};",
     ])
     hdr.append(wrap_nums("ai_voff", "unsigned int", offs))
     hdr.append(wrap_nums("ai_vlen", "unsigned char", lens))
