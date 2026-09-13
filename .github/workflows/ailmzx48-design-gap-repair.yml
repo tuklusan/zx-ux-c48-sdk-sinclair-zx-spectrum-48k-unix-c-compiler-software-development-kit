@@ -18,6 +18,7 @@ name: ailmzx48 design gap repair
     branches: [main]
     paths:
       - ".github/workflows/ailmzx48-design-gap-repair.yml"
+      - "usr/src/ailmzx48/tooling/design_gap_repair_compact.py"
 
 permissions:
   contents: write
