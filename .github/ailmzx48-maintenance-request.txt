@@ -1,0 +1,2 @@
+iteration=43
+purpose=validate-stable-io-peripheral-checkpoint
