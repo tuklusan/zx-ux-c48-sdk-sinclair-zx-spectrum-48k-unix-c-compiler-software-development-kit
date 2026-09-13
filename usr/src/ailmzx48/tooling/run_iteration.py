@@ -292,7 +292,10 @@ def main() -> int:
             or cold_record_count < 1
             or cold_record_count > 255):
         raise RuntimeError("invalid cold model record count")
-    per_turn_step_budget = 100000 + cold_record_count * 8000
+    cold_model_bytes = len(COLD.read_bytes())
+    if cold_model_bytes < 40 or cold_model_bytes > 65535:
+        raise RuntimeError("invalid cold model byte length")
+    per_turn_step_budget = 200000 + cold_model_bytes * 120
     max_steps = 2000000 + len(prompts) * per_turn_step_budget
     program = read(BIN)
     font = Font4x8.load(COMP / "assets" / "font4x8-tasword.bin")
@@ -314,6 +317,21 @@ def main() -> int:
     signal.alarm(remaining)
     try:
         status = vm.run()
+    except Exception:
+        failure = {
+            "vm_steps": vm.steps,
+            "vm_step_limit": max_steps,
+            "conversation_boundaries": len(feeder.events),
+            "cold_record_count": cold_record_count,
+            "cold_model_bytes": cold_model_bytes,
+            "cold_model_read_calls": vm.model_calls,
+            "cold_model_bytes_read": vm.model_bytes,
+            "cold_model_seek_calls": vm.model_seeks,
+        }
+        sys.stderr.write("AILMZX48_VM_FAILURE "
+                         + json.dumps(failure, sort_keys=True)
+                         + "\n")
+        raise
     finally:
         signal.alarm(0)
         signal.signal(signal.SIGALRM, old_handler)
@@ -606,6 +624,7 @@ def main() -> int:
         "vm_steps": vm.steps,
         "per_turn_step_budget": per_turn_step_budget,
         "cold_record_count": cold_record_count,
+        "cold_model_budget_bytes": cold_model_bytes,
         "runner_max_seconds": limit,
         "cold_model_sha256": sha(COLD),
         "cold_model_logical_length": len(vm.model_data),
