@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "iteration": 35,
+  "scenario": "trigger-retrieval-manic-fact-v1",
+  "purpose": "Prove trigger-aware cold retrieval can select a non-primary games fact and surface a specific associated name on the actual C48 target.",
+  "max_seconds": 1200,
+  "prompts": [
+    "in spectrum games who is manic miner associated with"
+  ],
+  "expected_keywords": ["matthew"],
+  "final_expected_keyword": "matthew"
+}
