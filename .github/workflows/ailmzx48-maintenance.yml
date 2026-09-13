@@ -48,6 +48,12 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
+      - name: Apply trigger-aware A48M migration
+        shell: bash
+        run: |
+          python -B usr/src/ailmzx48/tooling/upgrade_kb_triggers.py
+          git rm usr/src/ailmzx48/tooling/upgrade_kb_triggers.py
+
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
