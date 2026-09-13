@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.12-draft
+Revision: 0.13-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48/ailmzx48.c48b`
 
@@ -156,7 +156,7 @@ The first target implementation shall place yield checkpoints at outer bounded s
 
 ### 5.6 Terminal behavior
 
-ZX-UX exposes a 64-column terminal mode and exact terminal semantics in REV12. `ailmzx48` shall write ordinary terminal text rather than draw its own text renderer. Its wrapping and prompt behavior must be tested against the real tty implementation, including deferred-wrap semantics.
+ZX-UX and the ZX-UX SDK expose a 64-character by 24-line text terminal. `ailmzx48` shall write ordinary terminal text rather than draw its own text renderer. Its wrapping, scrolling, and prompt behavior must be tested against the real tty implementation, including deferred-wrap semantics.
 
 The terminal is part of the behavior contract. Automated evaluation shall capture the logical character stream as well as, for selected cases, the final 6912-byte Spectrum screen. A pretty host transcript cannot substitute for correct target wrapping/scrolling.
 
@@ -708,8 +708,7 @@ The startup text remains deliberately small and slightly self-aware:
 
 ```text
 Welcome to SANYALnet Labs ZX-UX AI LM Chat.
-© 2006 Supratim Sanyal
-Based on original work by Supratim Sanyal of SANYALnet Labs.
+Copyright (c) 2026 Supratim Sanyal
 
 I am ailmzx48.
 I know a bit about the Sinclair ZX Spectrum —
@@ -723,7 +722,7 @@ Enter q at any time to quit.
 >
 ```
 
-The humor is retained. The exact ASCII attribution line `Based on original work by Supratim Sanyal of SANYALnet Labs.` is mandatory because the repository license requires discoverable attribution in user-facing text interfaces; at 60 characters it fits tty64. Decorative target bytes remain provisional until the terminal/source character repertoire is proved. **Every non-ASCII glyph in the draft, including `©` and the em dash, must have an explicitly supported target encoding or an ASCII-safe replacement**; changing a decorative glyph does not remove/alter the mandatory ASCII attribution. The C48 source must not rely on a host editor/compiler accidentally accepting Unicode.
+The humor is retained. The interactive startup does not print the repository's source/document attribution sentence. The project license requires that attribution in source-level documentation instead. Startup text uses an ASCII copyright line; any future decorative non-ASCII glyph must have an explicitly supported target encoding or an ASCII-safe replacement. The C48 source must not rely on a host editor/compiler accidentally accepting Unicode.
 
 At the start of every normal conversational input turn, immediately before the prompt becomes input-ready, `ailmzx48` emits a short approximately 0.5-second `beep()` cue. Candidate-A bootstrap uses pitch offset `0.0`; exact release pitch may change after terminal/audio testing. Audio-backend unavailability in the host SDK is non-fatal and is never used as the conversation framing signal. The harness records the target-visible beep-call counter separately from logical tty bytes.
 
@@ -1135,7 +1134,8 @@ bounded to at most 10 minutes in the baseline workflow, leaving explicit time
 for artifact finalization, `MANIFEST.sha256`, the full SDK release verifier,
 `git diff --check`, commit and push. A completed iteration is not disposable
 runner state: its model candidate, exact conversation transcript, run metadata
-and score report must be committed to `main` before a later iteration begins.
+and score report form one atomic iteration checkpoint and must be committed
+together to `main` before a later iteration begins.
 
 ## 20. Candidate-A implementation interfaces
 

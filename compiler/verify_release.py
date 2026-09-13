@@ -434,17 +434,14 @@ def check_versions() -> None:
         if cp.returncode != 0 or cp.stdout.strip() != f"{tool.stem} {EXPECT['version']}":
             fail(f"{tool.name}: --version mismatch: {cp.stdout.strip()!r} {cp.stderr.strip()!r}")
         about = run([sys.executable, "-B", str(tool), "--about"])
-        # argparse may wrap version/about text according to terminal width.  The
-        # license requirement is textual discoverability, not a frozen physical
-        # line break, so compare after canonical whitespace folding.
+        # --about remains a compact copyright/license convenience.
         about_text = " ".join(about.stdout.split())
         for marker in (
             "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.",
-            "Based on original work by Supratim Sanyal of SANYALnet Labs.",
             "Non-Commercial License",
         ):
             if about.returncode != 0 or marker not in about_text:
-                fail(f"{tool.name}: --about attribution mismatch for {marker!r}")
+                fail(f"{tool.name}: --about text mismatch for {marker!r}")
 
 
 def main() -> int:

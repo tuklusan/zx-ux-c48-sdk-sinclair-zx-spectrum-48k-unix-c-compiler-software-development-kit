@@ -184,9 +184,7 @@ int ai_generate(unsigned int seed)
 void ai_start(void)
 {
     puts("Welcome to SANYALnet Labs ZX-UX AI LM Chat.");
-    puts("Copyright (c) 2006 Supratim Sanyal");
-    puts("Based on original work by Supratim Sanyal of");
-    puts("SANYALnet Labs.");
+    puts("Copyright (c) 2026 Supratim Sanyal");
     puts("");
     puts("I am ailmzx48.");
     puts("I know a bit about the Sinclair ZX Spectrum -");

@@ -53,10 +53,9 @@ def main(argv: list[str] | None = None) -> int:
             f"%(prog)s {SDK_VERSION}\n"
             "ZX-UX C48 SDK\n"
             "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.\n"
-            "Based on original work by Supratim Sanyal of SANYALnet Labs.\n"
             "SANYALnet Labs Non-Commercial License; see the root LICENSE file."
         ),
-        help="show attribution and license information and exit",
+        help="show copyright and license information and exit",
     )
     ap.add_argument("source", type=Path)
     ap.add_argument("-o", "--output", type=Path)

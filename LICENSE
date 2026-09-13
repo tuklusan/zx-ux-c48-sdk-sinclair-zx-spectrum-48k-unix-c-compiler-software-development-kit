@@ -32,16 +32,10 @@ defined in Section 0 below) and subject to the following conditions:
    permission notice shall be included in all copies, substantial portions, or
    Derivative Works of the Software, regardless of the extent of modifications
    made. The required attribution text is: "Based on original work by Supratim
-   Sanyal of SANYALnet Labs." This attribution must appear:
-   a. In the source-level documentation of the copy or Derivative Work (e.g. a
-      README file or equivalent top-level notice); and
-   b. If the copy or Derivative Work presents any user-facing interface
-      (graphical or command-line) capable of displaying text to an end user,
-      in a location reasonably discoverable from that interface (e.g. an
-      "About," "Help," "Credits," or "--version"/"--about" output).
-   If the copy or Derivative Work has no user-facing interface at all (e.g. a
-   library or backend component with no direct UI), satisfying 1(a) alone is
-   sufficient.
+   Sanyal of SANYALnet Labs." This attribution must appear in source-level
+   documentation of the copy or Derivative Work (e.g. a README file or
+   equivalent top-level notice). It is not required to be displayed by a
+   graphical, command-line, terminal, or other user-facing interface.
 
 2. Non-Commercial Restriction. The Software and any Derivative Works may be
    used, modified, and distributed only for Non-Commercial purposes, as

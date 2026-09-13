@@ -47,11 +47,13 @@ would corrupt or semantically change the file:
 The exemption is fail-closed: a new artifact with an unknown suffix/name causes the gate
 to fail until it is explicitly classified as header-safe or format-exempt.
 
-## User-facing attribution
+## Attribution scope
 
-The root `LICENSE` also requires attribution to be reasonably discoverable from
-user-facing interfaces. Both `c48` and `c48run` therefore expose `--about`, and the gate
-checks that the CLI source contains the required attribution text.
+The root `LICENSE` requires the attribution in source-level documentation. It
+does not require the attribution text to be printed in graphical, terminal, or
+command-line user interfaces. `c48` and `c48run` retain `--about` as a compact
+copyright/license information command, but the gate does not require the
+source/document attribution sentence in that output.
 
 Run the gate directly with:
 
