@@ -1,0 +1,2 @@
+iteration=46
+purpose=stable-zxux-knowledge-checkpoint
