@@ -1,0 +1,96 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: Temporary C48 specification review probe
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/review-c48-spec.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact main tree
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract authoritative DOCX review excerpts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import re
+          import zipfile
+          import xml.etree.ElementTree as ET
+
+          path = Path('doc/C48 Language Specification Rev 0.11.docx')
+          raw = path.read_bytes()
+          with zipfile.ZipFile(path) as zf:
+              xml = zf.read('word/document.xml')
+          root = ET.fromstring(xml)
+          ns = {'w': 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+          paragraphs = []
+          for p in root.findall('.//w:p', ns):
+              text = ''.join(t.text or '' for t in p.findall('.//w:t', ns)).strip()
+              if text:
+                  paragraphs.append(text)
+
+          patterns = [
+              r'plain char', r'unsigned char', r'\blong\b', r'\bstruct\b',
+              r'\bunion\b', r'\bswitch\b', r'variadic', r'function pointer',
+              r'conditional operator', r'compound assignment', r'comma operator',
+              r'five-byte', r'5-byte', r'16-bit', r'64.character', r'line.*64',
+          ]
+          selected = []
+          seen = set()
+          for para in paragraphs:
+              low = para.lower()
+              if any(re.search(pat, low) for pat in patterns):
+                  if para not in seen:
+                      selected.append(para)
+                      seen.add(para)
+              if len(selected) >= 60:
+                  break
+
+          out = [
+              'Remove temporary C48 specification review probe',
+              '',
+              'Authoritative DOCX SHA-256: ' + hashlib.sha256(raw).hexdigest(),
+              'Authoritative DOCX selected review excerpts:',
+          ]
+          for i, para in enumerate(selected, 1):
+              clean = ' '.join(para.split())
+              if len(clean) > 700:
+                  clean = clean[:700] + ' ...'
+              out.append(f'[{i}] {clean}')
+          Path('/tmp/c48-review-message.txt').write_text('\n'.join(out) + '\n', encoding='utf-8')
+          PY
+
+      - name: Remove probe and record extracted review evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/review-c48-spec.yml
+          git commit -F /tmp/c48-review-message.txt
+          git push origin HEAD:main
