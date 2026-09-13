@@ -19,6 +19,7 @@ int ai_mseek(unsigned int pos);
 int ai_mread(unsigned char *p, unsigned int n);
 
 #include "aimod.h"
+#include "aicold.h"
 
 unsigned int ai_turns;
 unsigned int ai_otokens;
@@ -49,7 +50,6 @@ unsigned int ai_mrecords;
 unsigned int ai_mhits;
 unsigned int ai_mbytes;
 unsigned int ai_mreads;
-unsigned int ai_mtrusted;
 unsigned int ai_mtopic;
 unsigned int ai_fs1;
 unsigned int ai_fs2;
@@ -425,6 +425,12 @@ int ai_modelscan(unsigned int topic)
        ai_mhead[2]!='8'||ai_mhead[3]!='M')return -1;
     if(ai_mhead[4]!=2||ai_mhead[5]!=0||
        ai_mhead[6]!=40||ai_mhead[7]!=1)return -1;
+    i=0;
+    while(i<8){
+        if(ai_mhead[8+i]!=ai_cvid[i])return -1;
+        if(ai_mhead[16+i]!=ai_ciid[i])return -1;
+        i=i+1;
+    }
     ai_mtsalt=ai_getu16(ai_mhead,34);
     ai_hprep();
     i=36;
@@ -458,7 +464,7 @@ int ai_modelscan(unsigned int topic)
         if (ai_readfull(&ai_mstage[hlen],
                         acnt * 2) != 0) return -1;
         hlen = hlen + (acnt * 2);
-        if (!ai_mtrusted) ai_fdata(ai_mstage, hlen);
+        ai_fdata(ai_mstage, hlen);
         plen = rlen - hlen;
         if (plen == 0) return -1;
         code = ai_mstage[1];
@@ -525,7 +531,7 @@ if (topic == ai_tcnt) {
             take = plen - pos;
             if (take > 64) take = 64;
             if (ai_readfull(ai_mstage, take) != 0) return -1;
-            if (!ai_mtrusted) ai_fdata(ai_mstage, take);
+            ai_fdata(ai_mstage, take);
             if (slot == 1) {
                 ai_mcopy(&ai_win1[hlen + pos],
                          ai_mstage, take);
@@ -612,12 +618,9 @@ if (topic == ai_tcnt) {
         ai_mrecords = ai_mrecords + 1;
     }
     if (used != rbytes) return -1;
-    if (!ai_mtrusted) {
-        calc = ai_fs1 + (ai_fs2 * 256);
-        if (calc != ai_getu16(ai_mhead, 32)) return -1;
-        if (ai_mbytes != logical) return -1;
-        ai_mtrusted = 1;
-    }
+    calc = ai_fs1 + (ai_fs2 * 256);
+    if (calc != ai_getu16(ai_mhead, 32)) return -1;
+    if (ai_mbytes != logical) return -1;
     if (ai_w1score >= 0) {
         ai_mhits = 1;
         if (ai_w2score >= 0) ai_mhits = 2;
@@ -1088,7 +1091,6 @@ int main(void)
     ai_mhits = 0;
     ai_mbytes = 0;
     ai_mreads = 0;
-    ai_mtrusted = 0;
     ai_mtopic = ai_t_id;
     ai_l0head = 0;
     ai_l0bytes = 0;

@@ -32,7 +32,7 @@
     "ai_turns": 12,
     "ai_yields": 1
   },
-  "iteration": 9111,
+  "iteration": 9115,
   "request": {
     "expected_keywords": [
       "22528",
@@ -49,7 +49,7 @@
       "runtime"
     ],
     "final_expected_keyword": "runtime",
-    "iteration": 9111,
+    "iteration": 9115,
     "max_seconds": 1200,
     "min_keyword_ratio": 1.0,
     "min_semantic_uses": 10,
@@ -67,7 +67,7 @@
       "which publisher made spectrum game jetpac shoot em up",
       "what role does c48run have in the spectrum c48 sdk runtime"
     ],
-    "purpose": "Broad independent final regression suite B using a different cross-domain set of retained probes for memory mapping, BASIC behaviour, ULA sound, launch history, software culture, peripherals, and C48 SDK execution roles. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair.",
+    "purpose": "Broad independent final regression suite B using a different cross-domain set of retained probes for memory mapping, BASIC behaviour, ULA sound, launch history, software culture, peripherals, and C48 SDK execution roles. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair. SoP requalification after per-scan A48M integrity and identity repair.",
     "scenario": "final-regression-b-v1",
     "schema": 1
   },
@@ -124,8 +124,8 @@
       "literal_mode": "none",
       "turn": 1,
       "user": "where does spectrum colour attribute memory start",
-      "vm_steps": 900188,
-      "vm_steps_cumulative": 902288
+      "vm_steps": 899781,
+      "vm_steps_cumulative": 901894
     },
     {
       "alternate_hit": true,
@@ -177,8 +177,8 @@
       "literal_mode": "none",
       "turn": 2,
       "user": "what can spectrum basic clear change to preserve bytes for machine code",
-      "vm_steps": 828813,
-      "vm_steps_cumulative": 1731101
+      "vm_steps": 1040583,
+      "vm_steps_cumulative": 1942477
     },
     {
       "alternate_hit": true,
@@ -230,8 +230,8 @@
       "literal_mode": "none",
       "turn": 3,
       "user": "how does spectrum output sound through the internal speaker and mic",
-      "vm_steps": 832145,
-      "vm_steps_cumulative": 2563246
+      "vm_steps": 1043915,
+      "vm_steps_cumulative": 2986392
     },
     {
       "alternate_hit": true,
@@ -283,8 +283,8 @@
       "literal_mode": "none",
       "turn": 4,
       "user": "in spectrum history what was the higher launch price of the original spectrum",
-      "vm_steps": 801497,
-      "vm_steps_cumulative": 3364743
+      "vm_steps": 1013267,
+      "vm_steps_cumulative": 3999659
     },
     {
       "alternate_hit": true,
@@ -336,8 +336,8 @@
       "literal_mode": "none",
       "turn": 5,
       "user": "what sales milestone did spectrum game the hobbit adventure reach",
-      "vm_steps": 799899,
-      "vm_steps_cumulative": 4164642
+      "vm_steps": 1011669,
+      "vm_steps_cumulative": 5011328
     },
     {
       "alternate_hit": true,
@@ -389,8 +389,8 @@
       "literal_mode": "none",
       "turn": 6,
       "user": "what command is the compiler front end in the spectrum c48 sdk",
-      "vm_steps": 770374,
-      "vm_steps_cumulative": 4935016
+      "vm_steps": 982144,
+      "vm_steps_cumulative": 5993472
     },
     {
       "alternate_hit": true,
@@ -442,8 +442,8 @@
       "literal_mode": "none",
       "turn": 7,
       "user": "what resolution does the spectrum display use",
-      "vm_steps": 739196,
-      "vm_steps_cumulative": 5674212
+      "vm_steps": 950966,
+      "vm_steps_cumulative": 6944438
     },
     {
       "alternate_hit": true,
@@ -495,8 +495,8 @@
       "literal_mode": "none",
       "turn": 8,
       "user": "what does spectrum basic new do to the current program",
-      "vm_steps": 770885,
-      "vm_steps_cumulative": 6445097
+      "vm_steps": 982655,
+      "vm_steps_cumulative": 7927093
     },
     {
       "alternate_hit": true,
@@ -548,8 +548,8 @@
       "literal_mode": "none",
       "turn": 9,
       "user": "what keys do spectrum sinclair interface 2 joysticks appear as",
-      "vm_steps": 790887,
-      "vm_steps_cumulative": 7235984
+      "vm_steps": 1002657,
+      "vm_steps_cumulative": 8929750
     },
     {
       "alternate_hit": true,
@@ -601,8 +601,8 @@
       "literal_mode": "none",
       "turn": 10,
       "user": "in spectrum history what changed with the spectrum plus in 1984",
-      "vm_steps": 759866,
-      "vm_steps_cumulative": 7995850
+      "vm_steps": 971636,
+      "vm_steps_cumulative": 9901386
     },
     {
       "alternate_hit": true,
@@ -654,8 +654,8 @@
       "literal_mode": "none",
       "turn": 11,
       "user": "which publisher made spectrum game jetpac shoot em up",
-      "vm_steps": 756879,
-      "vm_steps_cumulative": 8752729
+      "vm_steps": 968649,
+      "vm_steps_cumulative": 10870035
     },
     {
       "alternate_hit": true,
@@ -707,8 +707,8 @@
       "literal_mode": "none",
       "turn": 12,
       "user": "what role does c48run have in the spectrum c48 sdk runtime",
-      "vm_steps": 768407,
-      "vm_steps_cumulative": 9521136
+      "vm_steps": 980177,
+      "vm_steps_cumulative": 11850212
     }
   ]
 }

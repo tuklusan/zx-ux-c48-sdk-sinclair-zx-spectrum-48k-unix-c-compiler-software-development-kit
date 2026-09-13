@@ -439,7 +439,7 @@ A diagnostic build may enable target L3 only with an explicit fixed logical/phys
 
 ### 8.3 Promotion and compaction
 
-A turn is transactional with respect to conversation memory for every recoverable failure. Classification/retrieval may read the session-literal table but may not allocate, reuse or invalidate a slot before commit. A new literal remains in current-turn scratch for the current answer; persistent session-literal allocation is needed only when an evicted L0 turn is reduced into L1/L2.
+A turn is transactional with respect to conversation memory for every recoverable failure. Classification/retrieval may read the session-literal table but may not allocate, reuse or invalidate a slot before the normal context commit succeeds. Ordinary new literals remain in current-turn scratch until an evicted L0 turn requires semantic persistence. The explicit name-memory command is the measured exception: after `ai_ctxpair()` succeeds for the complete name turn, `ai_namecommit()` may allocate/reuse the bounded session-literal slot and publish the semantic name relation. If the context commit fails, no literal generation, slot bytes, stale-reference invalidation, or name semantic state is changed.
 
 Candidate A performs these bounded steps:
 
@@ -621,6 +621,8 @@ ZX-UX v1 exposes RAM-object logical/storage lengths and seek offsets as u16 valu
 The container shall declare at least format version, feature flags, resident-vocabulary identity, a fixed-size hot/cold **interface identity**, record count, logical length and section lengths. The interface identity is generated from the canonical lexical-ID map, topic-ID map, semantic-symbol map, relation/record schemas and scoring-feature schema; target code compares the fixed bytes before accepting records. This prevents a cold object from a different build from being interpreted under merely similar vocabulary. Host provenance additionally records SHA-256 of the full interface description; the exact compact target identity width is frozen with A48M. Host tooling validates all sums/counts in widened arithmetic, rejects any stream whose mathematical layout exceeds the u16 target object/seek domain, and only then emits narrowed fields. Target validation uses subtraction/reordered comparisons so 16-bit wrap cannot turn an invalid layout into a valid one.
 
 The target model includes an incremental integrity check suitable for the Z80/C48 implementation. Before record scoring, the target validates the A48M header/version/declared lengths, requires actual object logical length == declared logical length, and checks resident-vocabulary plus hot/cold-interface identities. Every complete cold scan then validates section boundaries, exact declared record count, structural bounds and the requirement that the last declared section/record ends exactly at logical length while accumulating the integrity check over the canonical protected bytes. No selected cold record may reach response generation until the scan has reached the declared logical end and the integrity result matches. Thus the first question also performs full model validation without requiring an extra unbudgeted startup copy/scan; later scans retain the same fail-closed check unless a separately proved immutable-object optimization replaces it. Host release tooling also records SHA-256 for reproducibility. SHA-256 is not imposed on the target merely because the host can calculate it cheaply.
+
+Implementation closure note (Revision 0.26 SoP): the shipped target now compares the generated eight-byte resident-vocabulary and eight-byte hot/cold-interface identities against A48M header bytes 8..23 before record scoring on every turn. It also recomputes Fletcher-16 across the complete protected logical stream on every cold scan; no cached-trust bypass remains. `aicold.h` is regenerated from the same deterministic A48M build that emits `cold-seed.bin`, and the permanent compliance checker independently compares those target constants with the shipped container header.
 
 ### 9.5 Candidate variable-order language model
 
@@ -1360,16 +1362,19 @@ implementation and retained evidence. They are not open tuning placeholders:
 - literal-name turns use the same bounded output and L0/L1/L2 commit path as
   normal turns; literal generation/slot bytes and semantic name state are both
   published only after the context commit succeeds;
-- retained post-provenance-repair literal/context iteration 9109 is 70/70 with
+- retained post-cold-integrity-repair literal/context iteration 9113 is 70/70 with
   real compaction, L2 occupancy, semantic retrieval, stale-reference invalidation,
-  and successful newest-name recall under the current model identity;
-- retained post-provenance-repair final A/B/C iterations 9110/9111/9112 are each 12/12,
+  and successful newest-name recall under the current source/binary/model identities;
+- retained post-cold-integrity-repair final A/B/C iterations 9114/9115/9116 are each 12/12,
   clean-exit, zero-unexpected-literal-loss runs against one source, one rebuilt
   C48B1 binary, and one provenance-qualified cold-model identity;
 - provenance schema 3 gives every factual seed record a non-generated licensed
   or separately authorized authority and permanently rejects synthetic material
   as factual authority; corrected BASIC RUN and Hobbit sales claims retain the
   frozen 8,432-byte A48M envelope;
+- every cold scan rechecks A48M vocabulary/interface identities, structural bounds,
+  exact logical consumption, and Fletcher-16 integrity before a selected record can
+  reach response generation; the target has no cached model-trust bypass;
 - the repaired primary `ailmzx48.c` remains below the unchanged 32,768-byte
   compiler source-object ceiling; helper logic moved to ordinary shipped C48
   headers instead of weakening the compiler gate;

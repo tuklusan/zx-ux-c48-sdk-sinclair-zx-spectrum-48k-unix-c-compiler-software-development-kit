@@ -1,8 +1,8 @@
 {
   "cold_model_sha256": "5d0ad7ad82c5547f37714df1baa859510d199598e0b4a10e330393a288c70cd6",
-  "design_git_blob_sha1": "b99219d028a58e1996b80c02ab24fe3e1f750801",
+  "design_git_blob_sha1": "8d6c7a8d1b2f5d114dbc5432f6fb582f157a7175",
   "design_revision": "0.26-draft",
-  "design_sha256": "128bf43c1a3a7407c64d757eaaafa77772d34fad00af53960b4b685984f62b92",
+  "design_sha256": "9a453d9dac56c2ea32ef76407df459de600786075a61e23e122776ccc0ff0225",
   "full_native_release": {
     "latest_durable_evidence": "P1.26",
     "missing_native_evidence": [
@@ -20,8 +20,14 @@
     "upstream_repository": "tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project"
   },
   "schema": 1,
-  "sdk_c48b_sha256": "660ced3835b1f12e7be1e5cde947a94bd12b18f252bfac0f6c4e0dbe306d4ba6",
+  "sdk_c48b_sha256": "cfa214ef00a3b5091989c7fbb35000d6964abfe9730497d92faf64ac1b9643e0",
   "sdk_profile": {
+    "cold_scan_integrity": {
+      "checksum": "fletcher16-every-scan",
+      "identity_header": "aicold.h",
+      "interface_identity_checked": true,
+      "vocabulary_identity_checked": true
+    },
     "literal_context": {
       "context_compactions": 15,
       "final_keyword_hit": true,
@@ -61,5 +67,5 @@
     "status": "PASS",
     "zero_gap_passes": 3
   },
-  "source_sha256": "0a99c9287119760bad0a17f3128ed9cfccd8a7cd6a94472c9b53cc867abf8b7c"
+  "source_sha256": "71f54726d0051600e5b0d6b0bd1315ce2f15afe131d109370ea515ec06b458ca"
 }

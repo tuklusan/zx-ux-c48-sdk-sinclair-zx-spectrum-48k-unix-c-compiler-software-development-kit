@@ -18,6 +18,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[4]
 A = ROOT / "usr" / "src" / "ailmzx48"
@@ -52,12 +53,35 @@ def pass1() -> dict:
     ctx = (A / "aictx.h").read_text(encoding="utf-8")
     lit = (A / "ailit.h").read_text(encoding="utf-8")
     evict = (A / "aievict.h").read_text(encoding="utf-8")
+    cold_header = (A / "aicold.h").read_text(encoding="utf-8")
+    cold_bytes = (A / "model" / "cold-seed.bin").read_bytes()
     require("Revision: 0.26-draft" in design, "design revision mismatch")
     require("SDK implementation profile qualified" in design, "design status mismatch")
     require("BLOCKED_EXTERNAL" in design, "native blocker not explicit in design")
     require((A / "ailmzx48.c").stat().st_size <= 32768,
             "primary C48 source-object ceiling exceeded")
     require('#include "aievict.h"' in source, "eviction policy header not wired")
+    require('#include "aicold.h"' in source, "cold identity header not wired")
+    require("ai_mtrusted" not in source,
+            "cached model trust bypasses per-scan integrity")
+    require("ai_mhead[8+i]!=ai_cvid[i]" in source and
+            "ai_mhead[16+i]!=ai_ciid[i]" in source,
+            "target hot/cold identity comparison missing")
+    def target_id(name: str) -> bytes:
+        match = re.search(
+            rf"unsigned char {name}\[8\] = \{{([^}}]+)\}};",
+            cold_header, re.S
+        )
+        require(match is not None, f"generated identity array missing {name}")
+        values = [int(v.strip()) for v in match.group(1).split(",")
+                  if v.strip()]
+        require(len(values) == 8 and all(0 <= v <= 255 for v in values),
+                f"generated identity width/value mismatch {name}")
+        return bytes(values)
+    require(target_id("ai_cvid") == cold_bytes[8:16],
+            "target vocabulary identity differs from A48M header")
+    require(target_id("ai_ciid") == cold_bytes[16:24],
+            "target interface identity differs from A48M header")
     require("ai_litnext" not in source, "round-robin literal selector remains")
     require("rc = ai_ctxpair(ai_t_id);" in source,
             "name turns do not use normal context commit")
@@ -73,6 +97,10 @@ def pass1() -> dict:
     require("void ai_namecommit" in lit and
             "ai_litgen[slot] = gen;" in lit,
             "post-context literal commit implementation missing")
+    require("persistent session-literal allocation is needed only when an evicted L0 turn" not in design,
+            "stale literal-allocation rule remains in design")
+    require("The explicit name-memory command is the measured exception" in design,
+            "post-context name-literal design rule missing")
     require("int ai_ctxcheck" in ctx, "target context preflight missing")
     require("unsigned int ai_litpick" in lit, "literal victim policy missing")
     require("int ai_capref" in lit and "void ai_clrref" in lit,
@@ -238,6 +266,11 @@ def pass3() -> dict:
     native = status.get("full_native_release", {})
     require(sdk.get("status") == "PASS", "SDK profile status is not PASS")
     require(sdk.get("zero_gap_passes") == 3, "SDK zero-gap pass count")
+    integ = sdk.get("cold_scan_integrity", {})
+    require(integ.get("checksum") == "fletcher16-every-scan" and
+            integ.get("vocabulary_identity_checked") is True and
+            integ.get("interface_identity_checked") is True,
+            "cold-scan integrity status missing")
     require(native.get("status") == "BLOCKED_EXTERNAL",
             "native blocker status must remain explicit")
     require(native.get("upstream_repository") ==
@@ -269,6 +302,8 @@ def pass3() -> dict:
             "SDK certificate result missing")
     require("FULL_NATIVE_RELEASE: BLOCKED_EXTERNAL" in cert,
             "native certificate boundary missing")
+    require("Every cold scan recomputes Fletcher-16" in cert,
+            "cold-scan integrity certificate marker missing")
     verify = (ROOT / "compiler" / "verify_release.py").read_text(encoding="utf-8")
     require("check_ailmzx48_design" in verify,
             "release verifier does not invoke design compliance")

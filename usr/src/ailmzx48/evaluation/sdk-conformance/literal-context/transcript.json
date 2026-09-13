@@ -32,7 +32,7 @@
     "ai_turns": 70,
     "ai_yields": 1
   },
-  "iteration": 9109,
+  "iteration": 9113,
   "request": {
     "expected_keywords": [
       "alice",
@@ -107,7 +107,7 @@
       "ivy"
     ],
     "final_expected_keyword": "ivy",
-    "iteration": 9109,
+    "iteration": 9113,
     "max_seconds": 1200,
     "min_compactions": 1,
     "min_keyword_ratio": 1.0,
@@ -187,7 +187,7 @@
       "where in 48k memory does the screen bitmap live",
       "what is my name"
     ],
-    "purpose": "Post-repair SDK proof for deterministic literal-slot selection, stale-reference invalidation, bounded context compaction, and newest-name recovery. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair.",
+    "purpose": "Post-repair SDK proof for deterministic literal-slot selection, stale-reference invalidation, bounded context compaction, and newest-name recovery. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair. SoP requalification after per-scan A48M integrity and identity repair.",
     "scenario": "sdk-design-literal-context-v1",
     "schema": 1
   },
@@ -245,7 +245,7 @@
       "turn": 1,
       "user": "my name is Alice",
       "vm_steps": 58987,
-      "vm_steps_cumulative": 61087
+      "vm_steps_cumulative": 61100
     },
     {
       "alternate_hit": true,
@@ -298,7 +298,7 @@
       "turn": 2,
       "user": "my name is Bob",
       "vm_steps": 59119,
-      "vm_steps_cumulative": 120206
+      "vm_steps_cumulative": 120219
     },
     {
       "alternate_hit": true,
@@ -351,7 +351,7 @@
       "turn": 3,
       "user": "my name is Carol",
       "vm_steps": 59887,
-      "vm_steps_cumulative": 180093
+      "vm_steps_cumulative": 180106
     },
     {
       "alternate_hit": true,
@@ -404,7 +404,7 @@
       "turn": 4,
       "user": "my name is Dave",
       "vm_steps": 61180,
-      "vm_steps_cumulative": 241273
+      "vm_steps_cumulative": 241286
     },
     {
       "alternate_hit": true,
@@ -457,7 +457,7 @@
       "turn": 5,
       "user": "my name is Erin",
       "vm_steps": 61676,
-      "vm_steps_cumulative": 302949
+      "vm_steps_cumulative": 302962
     },
     {
       "alternate_hit": true,
@@ -510,7 +510,7 @@
       "turn": 6,
       "user": "my name is Frank",
       "vm_steps": 61975,
-      "vm_steps_cumulative": 364924
+      "vm_steps_cumulative": 364937
     },
     {
       "alternate_hit": true,
@@ -563,7 +563,7 @@
       "turn": 7,
       "user": "my name is Grace",
       "vm_steps": 63257,
-      "vm_steps_cumulative": 428181
+      "vm_steps_cumulative": 428194
     },
     {
       "alternate_hit": true,
@@ -616,7 +616,7 @@
       "turn": 8,
       "user": "my name is Heidi",
       "vm_steps": 64177,
-      "vm_steps_cumulative": 492358
+      "vm_steps_cumulative": 492371
     },
     {
       "alternate_hit": true,
@@ -669,7 +669,7 @@
       "turn": 9,
       "user": "my name is Ivy",
       "vm_steps": 92376,
-      "vm_steps_cumulative": 584734
+      "vm_steps_cumulative": 584747
     },
     {
       "alternate_hit": true,
@@ -721,8 +721,8 @@
       "literal_mode": "none",
       "turn": 10,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 916728,
-      "vm_steps_cumulative": 1501462
+      "vm_steps": 916321,
+      "vm_steps_cumulative": 1501068
     },
     {
       "alternate_hit": true,
@@ -774,8 +774,8 @@
       "literal_mode": "none",
       "turn": 11,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 714314,
-      "vm_steps_cumulative": 2215776
+      "vm_steps": 926084,
+      "vm_steps_cumulative": 2427152
     },
     {
       "alternate_hit": true,
@@ -827,8 +827,8 @@
       "literal_mode": "none",
       "turn": 12,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 714311,
-      "vm_steps_cumulative": 2930087
+      "vm_steps": 926081,
+      "vm_steps_cumulative": 3353233
     },
     {
       "alternate_hit": true,
@@ -880,8 +880,8 @@
       "literal_mode": "none",
       "turn": 13,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 714314,
-      "vm_steps_cumulative": 3644401
+      "vm_steps": 926084,
+      "vm_steps_cumulative": 4279317
     },
     {
       "alternate_hit": true,
@@ -933,8 +933,8 @@
       "literal_mode": "none",
       "turn": 14,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 714311,
-      "vm_steps_cumulative": 4358712
+      "vm_steps": 926081,
+      "vm_steps_cumulative": 5205398
     },
     {
       "alternate_hit": true,
@@ -986,8 +986,8 @@
       "literal_mode": "none",
       "turn": 15,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 714314,
-      "vm_steps_cumulative": 5073026
+      "vm_steps": 926084,
+      "vm_steps_cumulative": 6131482
     },
     {
       "alternate_hit": true,
@@ -1039,8 +1039,8 @@
       "literal_mode": "none",
       "turn": 16,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 714311,
-      "vm_steps_cumulative": 5787337
+      "vm_steps": 926081,
+      "vm_steps_cumulative": 7057563
     },
     {
       "alternate_hit": true,
@@ -1092,8 +1092,8 @@
       "literal_mode": "none",
       "turn": 17,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716060,
-      "vm_steps_cumulative": 6503397
+      "vm_steps": 927830,
+      "vm_steps_cumulative": 7985393
     },
     {
       "alternate_hit": true,
@@ -1145,8 +1145,8 @@
       "literal_mode": "none",
       "turn": 18,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716103,
-      "vm_steps_cumulative": 7219500
+      "vm_steps": 927873,
+      "vm_steps_cumulative": 8913266
     },
     {
       "alternate_hit": true,
@@ -1198,8 +1198,8 @@
       "literal_mode": "none",
       "turn": 19,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716152,
-      "vm_steps_cumulative": 7935652
+      "vm_steps": 927922,
+      "vm_steps_cumulative": 9841188
     },
     {
       "alternate_hit": true,
@@ -1251,8 +1251,8 @@
       "literal_mode": "none",
       "turn": 20,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716195,
-      "vm_steps_cumulative": 8651847
+      "vm_steps": 927965,
+      "vm_steps_cumulative": 10769153
     },
     {
       "alternate_hit": true,
@@ -1304,8 +1304,8 @@
       "literal_mode": "none",
       "turn": 21,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716244,
-      "vm_steps_cumulative": 9368091
+      "vm_steps": 928014,
+      "vm_steps_cumulative": 11697167
     },
     {
       "alternate_hit": true,
@@ -1357,8 +1357,8 @@
       "literal_mode": "none",
       "turn": 22,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716287,
-      "vm_steps_cumulative": 10084378
+      "vm_steps": 928057,
+      "vm_steps_cumulative": 12625224
     },
     {
       "alternate_hit": true,
@@ -1410,8 +1410,8 @@
       "literal_mode": "none",
       "turn": 23,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716326,
-      "vm_steps_cumulative": 10800704
+      "vm_steps": 928096,
+      "vm_steps_cumulative": 13553320
     },
     {
       "alternate_hit": true,
@@ -1463,8 +1463,8 @@
       "literal_mode": "none",
       "turn": 24,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716369,
-      "vm_steps_cumulative": 11517073
+      "vm_steps": 928139,
+      "vm_steps_cumulative": 14481459
     },
     {
       "alternate_hit": true,
@@ -1516,8 +1516,8 @@
       "literal_mode": "none",
       "turn": 25,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716418,
-      "vm_steps_cumulative": 12233491
+      "vm_steps": 928188,
+      "vm_steps_cumulative": 15409647
     },
     {
       "alternate_hit": true,
@@ -1569,8 +1569,8 @@
       "literal_mode": "none",
       "turn": 26,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716461,
-      "vm_steps_cumulative": 12949952
+      "vm_steps": 928231,
+      "vm_steps_cumulative": 16337878
     },
     {
       "alternate_hit": true,
@@ -1622,8 +1622,8 @@
       "literal_mode": "none",
       "turn": 27,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716510,
-      "vm_steps_cumulative": 13666462
+      "vm_steps": 928280,
+      "vm_steps_cumulative": 17266158
     },
     {
       "alternate_hit": true,
@@ -1675,8 +1675,8 @@
       "literal_mode": "none",
       "turn": 28,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716553,
-      "vm_steps_cumulative": 14383015
+      "vm_steps": 928323,
+      "vm_steps_cumulative": 18194481
     },
     {
       "alternate_hit": true,
@@ -1728,8 +1728,8 @@
       "literal_mode": "none",
       "turn": 29,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716602,
-      "vm_steps_cumulative": 15099617
+      "vm_steps": 928372,
+      "vm_steps_cumulative": 19122853
     },
     {
       "alternate_hit": true,
@@ -1781,8 +1781,8 @@
       "literal_mode": "none",
       "turn": 30,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716645,
-      "vm_steps_cumulative": 15816262
+      "vm_steps": 928415,
+      "vm_steps_cumulative": 20051268
     },
     {
       "alternate_hit": true,
@@ -1834,8 +1834,8 @@
       "literal_mode": "none",
       "turn": 31,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716694,
-      "vm_steps_cumulative": 16532956
+      "vm_steps": 928464,
+      "vm_steps_cumulative": 20979732
     },
     {
       "alternate_hit": true,
@@ -1887,8 +1887,8 @@
       "literal_mode": "none",
       "turn": 32,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716737,
-      "vm_steps_cumulative": 17249693
+      "vm_steps": 928507,
+      "vm_steps_cumulative": 21908239
     },
     {
       "alternate_hit": true,
@@ -1940,8 +1940,8 @@
       "literal_mode": "none",
       "turn": 33,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716786,
-      "vm_steps_cumulative": 17966479
+      "vm_steps": 928556,
+      "vm_steps_cumulative": 22836795
     },
     {
       "alternate_hit": true,
@@ -1993,8 +1993,8 @@
       "literal_mode": "none",
       "turn": 34,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716829,
-      "vm_steps_cumulative": 18683308
+      "vm_steps": 928599,
+      "vm_steps_cumulative": 23765394
     },
     {
       "alternate_hit": true,
@@ -2046,8 +2046,8 @@
       "literal_mode": "none",
       "turn": 35,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716878,
-      "vm_steps_cumulative": 19400186
+      "vm_steps": 928648,
+      "vm_steps_cumulative": 24694042
     },
     {
       "alternate_hit": true,
@@ -2099,8 +2099,8 @@
       "literal_mode": "none",
       "turn": 36,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716921,
-      "vm_steps_cumulative": 20117107
+      "vm_steps": 928691,
+      "vm_steps_cumulative": 25622733
     },
     {
       "alternate_hit": true,
@@ -2152,8 +2152,8 @@
       "literal_mode": "none",
       "turn": 37,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 716970,
-      "vm_steps_cumulative": 20834077
+      "vm_steps": 928740,
+      "vm_steps_cumulative": 26551473
     },
     {
       "alternate_hit": true,
@@ -2205,8 +2205,8 @@
       "literal_mode": "none",
       "turn": 38,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717013,
-      "vm_steps_cumulative": 21551090
+      "vm_steps": 928783,
+      "vm_steps_cumulative": 27480256
     },
     {
       "alternate_hit": true,
@@ -2258,8 +2258,8 @@
       "literal_mode": "none",
       "turn": 39,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717062,
-      "vm_steps_cumulative": 22268152
+      "vm_steps": 928832,
+      "vm_steps_cumulative": 28409088
     },
     {
       "alternate_hit": true,
@@ -2311,8 +2311,8 @@
       "literal_mode": "none",
       "turn": 40,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717105,
-      "vm_steps_cumulative": 22985257
+      "vm_steps": 928875,
+      "vm_steps_cumulative": 29337963
     },
     {
       "alternate_hit": true,
@@ -2364,8 +2364,8 @@
       "literal_mode": "none",
       "turn": 41,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717154,
-      "vm_steps_cumulative": 23702411
+      "vm_steps": 928924,
+      "vm_steps_cumulative": 30266887
     },
     {
       "alternate_hit": true,
@@ -2417,8 +2417,8 @@
       "literal_mode": "none",
       "turn": 42,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717197,
-      "vm_steps_cumulative": 24419608
+      "vm_steps": 928967,
+      "vm_steps_cumulative": 31195854
     },
     {
       "alternate_hit": true,
@@ -2470,8 +2470,8 @@
       "literal_mode": "none",
       "turn": 43,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717246,
-      "vm_steps_cumulative": 25136854
+      "vm_steps": 929016,
+      "vm_steps_cumulative": 32124870
     },
     {
       "alternate_hit": true,
@@ -2523,8 +2523,8 @@
       "literal_mode": "none",
       "turn": 44,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717289,
-      "vm_steps_cumulative": 25854143
+      "vm_steps": 929059,
+      "vm_steps_cumulative": 33053929
     },
     {
       "alternate_hit": true,
@@ -2576,8 +2576,8 @@
       "literal_mode": "none",
       "turn": 45,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717338,
-      "vm_steps_cumulative": 26571481
+      "vm_steps": 929108,
+      "vm_steps_cumulative": 33983037
     },
     {
       "alternate_hit": true,
@@ -2629,8 +2629,8 @@
       "literal_mode": "none",
       "turn": 46,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717381,
-      "vm_steps_cumulative": 27288862
+      "vm_steps": 929151,
+      "vm_steps_cumulative": 34912188
     },
     {
       "alternate_hit": true,
@@ -2682,8 +2682,8 @@
       "literal_mode": "none",
       "turn": 47,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717430,
-      "vm_steps_cumulative": 28006292
+      "vm_steps": 929200,
+      "vm_steps_cumulative": 35841388
     },
     {
       "alternate_hit": true,
@@ -2735,8 +2735,8 @@
       "literal_mode": "none",
       "turn": 48,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717473,
-      "vm_steps_cumulative": 28723765
+      "vm_steps": 929243,
+      "vm_steps_cumulative": 36770631
     },
     {
       "alternate_hit": true,
@@ -2788,8 +2788,8 @@
       "literal_mode": "none",
       "turn": 49,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717522,
-      "vm_steps_cumulative": 29441287
+      "vm_steps": 929292,
+      "vm_steps_cumulative": 37699923
     },
     {
       "alternate_hit": true,
@@ -2841,8 +2841,8 @@
       "literal_mode": "none",
       "turn": 50,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717565,
-      "vm_steps_cumulative": 30158852
+      "vm_steps": 929335,
+      "vm_steps_cumulative": 38629258
     },
     {
       "alternate_hit": true,
@@ -2894,8 +2894,8 @@
       "literal_mode": "none",
       "turn": 51,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717614,
-      "vm_steps_cumulative": 30876466
+      "vm_steps": 929384,
+      "vm_steps_cumulative": 39558642
     },
     {
       "alternate_hit": true,
@@ -2947,8 +2947,8 @@
       "literal_mode": "none",
       "turn": 52,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717657,
-      "vm_steps_cumulative": 31594123
+      "vm_steps": 929427,
+      "vm_steps_cumulative": 40488069
     },
     {
       "alternate_hit": true,
@@ -3000,8 +3000,8 @@
       "literal_mode": "none",
       "turn": 53,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717706,
-      "vm_steps_cumulative": 32311829
+      "vm_steps": 929476,
+      "vm_steps_cumulative": 41417545
     },
     {
       "alternate_hit": true,
@@ -3053,8 +3053,8 @@
       "literal_mode": "none",
       "turn": 54,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717749,
-      "vm_steps_cumulative": 33029578
+      "vm_steps": 929519,
+      "vm_steps_cumulative": 42347064
     },
     {
       "alternate_hit": true,
@@ -3106,8 +3106,8 @@
       "literal_mode": "none",
       "turn": 55,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 717798,
-      "vm_steps_cumulative": 33747376
+      "vm_steps": 929568,
+      "vm_steps_cumulative": 43276632
     },
     {
       "alternate_hit": true,
@@ -3159,8 +3159,8 @@
       "literal_mode": "none",
       "turn": 56,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 723624,
-      "vm_steps_cumulative": 34471000
+      "vm_steps": 935394,
+      "vm_steps_cumulative": 44212026
     },
     {
       "alternate_hit": true,
@@ -3212,8 +3212,8 @@
       "literal_mode": "none",
       "turn": 57,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 723093,
-      "vm_steps_cumulative": 35194093
+      "vm_steps": 934863,
+      "vm_steps_cumulative": 45146889
     },
     {
       "alternate_hit": true,
@@ -3265,8 +3265,8 @@
       "literal_mode": "none",
       "turn": 58,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 723090,
-      "vm_steps_cumulative": 35917183
+      "vm_steps": 934860,
+      "vm_steps_cumulative": 46081749
     },
     {
       "alternate_hit": true,
@@ -3318,8 +3318,8 @@
       "literal_mode": "none",
       "turn": 59,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 723093,
-      "vm_steps_cumulative": 36640276
+      "vm_steps": 934863,
+      "vm_steps_cumulative": 47016612
     },
     {
       "alternate_hit": true,
@@ -3371,8 +3371,8 @@
       "literal_mode": "none",
       "turn": 60,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 723090,
-      "vm_steps_cumulative": 37363366
+      "vm_steps": 934860,
+      "vm_steps_cumulative": 47951472
     },
     {
       "alternate_hit": true,
@@ -3424,8 +3424,8 @@
       "literal_mode": "none",
       "turn": 61,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 723093,
-      "vm_steps_cumulative": 38086459
+      "vm_steps": 934863,
+      "vm_steps_cumulative": 48886335
     },
     {
       "alternate_hit": true,
@@ -3477,8 +3477,8 @@
       "literal_mode": "none",
       "turn": 62,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 723090,
-      "vm_steps_cumulative": 38809549
+      "vm_steps": 934860,
+      "vm_steps_cumulative": 49821195
     },
     {
       "alternate_hit": true,
@@ -3530,8 +3530,8 @@
       "literal_mode": "none",
       "turn": 63,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 723093,
-      "vm_steps_cumulative": 39532642
+      "vm_steps": 934863,
+      "vm_steps_cumulative": 50756058
     },
     {
       "alternate_hit": true,
@@ -3583,8 +3583,8 @@
       "literal_mode": "none",
       "turn": 64,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 723803,
-      "vm_steps_cumulative": 40256445
+      "vm_steps": 935573,
+      "vm_steps_cumulative": 51691631
     },
     {
       "alternate_hit": true,
@@ -3636,8 +3636,8 @@
       "literal_mode": "none",
       "turn": 65,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 722995,
-      "vm_steps_cumulative": 40979440
+      "vm_steps": 934765,
+      "vm_steps_cumulative": 52626396
     },
     {
       "alternate_hit": true,
@@ -3689,8 +3689,8 @@
       "literal_mode": "none",
       "turn": 66,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 722992,
-      "vm_steps_cumulative": 41702432
+      "vm_steps": 934762,
+      "vm_steps_cumulative": 53561158
     },
     {
       "alternate_hit": true,
@@ -3742,8 +3742,8 @@
       "literal_mode": "none",
       "turn": 67,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 722995,
-      "vm_steps_cumulative": 42425427
+      "vm_steps": 934765,
+      "vm_steps_cumulative": 54495923
     },
     {
       "alternate_hit": true,
@@ -3795,8 +3795,8 @@
       "literal_mode": "none",
       "turn": 68,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 722992,
-      "vm_steps_cumulative": 43148419
+      "vm_steps": 934762,
+      "vm_steps_cumulative": 55430685
     },
     {
       "alternate_hit": true,
@@ -3848,8 +3848,8 @@
       "literal_mode": "none",
       "turn": 69,
       "user": "where in 48k memory does the screen bitmap live",
-      "vm_steps": 722995,
-      "vm_steps_cumulative": 43871414
+      "vm_steps": 934765,
+      "vm_steps_cumulative": 56365450
     },
     {
       "alternate_hit": true,
@@ -3902,7 +3902,7 @@
       "turn": 70,
       "user": "what is my name",
       "vm_steps": 81811,
-      "vm_steps_cumulative": 43953225
+      "vm_steps_cumulative": 56447261
     }
   ]
 }

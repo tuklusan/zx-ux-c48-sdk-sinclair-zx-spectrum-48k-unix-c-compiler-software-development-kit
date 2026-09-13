@@ -50,6 +50,7 @@ def main() -> int:
     model = root / "model" / "current-model.json"
     out_bin = root / "model" / "cold-seed.bin"
     out_meta = root / "model" / "cold-seed.json"
+    out_header = root / "aicold.h"
     report_path = HERE / "a48m-reference-report.json"
 
     data, meta = build_from_seed(corpus, model)
@@ -97,6 +98,28 @@ def main() -> int:
     out_meta.write_text(
         json.dumps(meta, indent=2, sort_keys=True) + "\n",
         encoding="utf-8",
+    )
+    vocab = list(data[8:16])
+    interface = list(data[16:24])
+    header = [
+        "// ============================================================",
+        "// Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.",
+        "// Proprietary rights reserved except as licensed in LICENSE.",
+        "//",
+        "// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.",
+        "// Attribution required: Based on original work by Supratim",
+        "// Sanyal of SANYALnet Labs. See root LICENSE for full terms.",
+        "// Generated hot/cold A48M identity constants.",
+        "// ============================================================",
+        "unsigned char ai_cvid[8] = {",
+        "    " + ", ".join(str(v) for v in vocab),
+        "};",
+        "unsigned char ai_ciid[8] = {",
+        "    " + ", ".join(str(v) for v in interface),
+        "};",
+    ]
+    out_header.write_text(
+        "\n".join(header) + "\n", encoding="ascii", newline="\n"
     )
     report = {
         "schema": 1,

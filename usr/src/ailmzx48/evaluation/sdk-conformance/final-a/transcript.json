@@ -32,7 +32,7 @@
     "ai_turns": 12,
     "ai_yields": 1
   },
-  "iteration": 9110,
+  "iteration": 9114,
   "request": {
     "expected_keywords": [
       "16384",
@@ -49,7 +49,7 @@
       "usr bin"
     ],
     "final_expected_keyword": "usr bin",
-    "iteration": 9110,
+    "iteration": 9114,
     "max_seconds": 1200,
     "min_keyword_ratio": 1.0,
     "min_semantic_uses": 10,
@@ -67,7 +67,7 @@
       "who created spectrum game manic miner",
       "where do sources under usr src compile by default in the spectrum c48 sdk"
     ],
-    "purpose": "Broad independent final regression suite A across Spectrum hardware, BASIC/ROM, I/O, chronology, games, and repository-grounded ZX-UX SDK knowledge, rerun unchanged after strengthening natural launch-cost cold-record evidence exposed by this suite. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair.",
+    "purpose": "Broad independent final regression suite A across Spectrum hardware, BASIC/ROM, I/O, chronology, games, and repository-grounded ZX-UX SDK knowledge, rerun unchanged after strengthening natural launch-cost cold-record evidence exposed by this suite. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair. SoP requalification after per-scan A48M integrity and identity repair.",
     "scenario": "final-regression-a-v1",
     "schema": 1
   },
@@ -124,8 +124,8 @@
       "literal_mode": "none",
       "turn": 1,
       "user": "what address does the spectrum screen bitmap start at",
-      "vm_steps": 923402,
-      "vm_steps_cumulative": 925502
+      "vm_steps": 922995,
+      "vm_steps_cumulative": 925108
     },
     {
       "alternate_hit": true,
@@ -177,8 +177,8 @@
       "literal_mode": "none",
       "turn": 2,
       "user": "what does spectrum basic peek do with a byte address",
-      "vm_steps": 772276,
-      "vm_steps_cumulative": 1697778
+      "vm_steps": 984046,
+      "vm_steps_cumulative": 1909154
     },
     {
       "alternate_hit": true,
@@ -230,8 +230,8 @@
       "literal_mode": "none",
       "turn": 3,
       "user": "which bit does the spectrum ula use for the ear cassette input signal",
-      "vm_steps": 807114,
-      "vm_steps_cumulative": 2504892
+      "vm_steps": 1018884,
+      "vm_steps_cumulative": 2928038
     },
     {
       "alternate_hit": true,
@@ -283,8 +283,8 @@
       "literal_mode": "none",
       "turn": 4,
       "user": "in spectrum history when did the zx spectrum launch and what did the 16k version cost",
-      "vm_steps": 852262,
-      "vm_steps_cumulative": 3357154
+      "vm_steps": 1064032,
+      "vm_steps_cumulative": 3992070
     },
     {
       "alternate_hit": true,
@@ -336,8 +336,8 @@
       "literal_mode": "none",
       "turn": 5,
       "user": "what company published spectrum game the hobbit adventure",
-      "vm_steps": 762856,
-      "vm_steps_cumulative": 4120010
+      "vm_steps": 974626,
+      "vm_steps_cumulative": 4966696
     },
     {
       "alternate_hit": true,
@@ -389,8 +389,8 @@
       "literal_mode": "none",
       "turn": 6,
       "user": "what is the portable host role of the spectrum c48 sdk compared with future native zx ux cc",
-      "vm_steps": 930633,
-      "vm_steps_cumulative": 5050643
+      "vm_steps": 1142403,
+      "vm_steps_cumulative": 6109099
     },
     {
       "alternate_hit": true,
@@ -442,8 +442,8 @@
       "literal_mode": "none",
       "turn": 7,
       "user": "how does the spectrum keyboard matrix work",
-      "vm_steps": 725607,
-      "vm_steps_cumulative": 5776250
+      "vm_steps": 937377,
+      "vm_steps_cumulative": 7046476
     },
     {
       "alternate_hit": true,
@@ -495,8 +495,8 @@
       "literal_mode": "none",
       "turn": 8,
       "user": "what does spectrum basic randomize usr call",
-      "vm_steps": 725801,
-      "vm_steps_cumulative": 6502051
+      "vm_steps": 937571,
+      "vm_steps_cumulative": 7984047
     },
     {
       "alternate_hit": true,
@@ -548,8 +548,8 @@
       "literal_mode": "none",
       "turn": 9,
       "user": "how is a kempston joystick read on the spectrum",
-      "vm_steps": 767635,
-      "vm_steps_cumulative": 7269686
+      "vm_steps": 979405,
+      "vm_steps_cumulative": 8963452
     },
     {
       "alternate_hit": true,
@@ -601,8 +601,8 @@
       "literal_mode": "none",
       "turn": 10,
       "user": "in spectrum history who acquired the spectrum computer rights in 1986",
-      "vm_steps": 759567,
-      "vm_steps_cumulative": 8029253
+      "vm_steps": 971337,
+      "vm_steps_cumulative": 9934789
     },
     {
       "alternate_hit": true,
@@ -654,8 +654,8 @@
       "literal_mode": "none",
       "turn": 11,
       "user": "who created spectrum game manic miner",
-      "vm_steps": 684030,
-      "vm_steps_cumulative": 8713283
+      "vm_steps": 895800,
+      "vm_steps_cumulative": 10830589
     },
     {
       "alternate_hit": true,
@@ -707,8 +707,8 @@
       "literal_mode": "none",
       "turn": 12,
       "user": "where do sources under usr src compile by default in the spectrum c48 sdk",
-      "vm_steps": 865933,
-      "vm_steps_cumulative": 9579216
+      "vm_steps": 1077703,
+      "vm_steps_cumulative": 11908292
     }
   ]
 }

@@ -32,7 +32,7 @@
     "ai_turns": 12,
     "ai_yields": 1
   },
-  "iteration": 9112,
+  "iteration": 9116,
   "request": {
     "expected_keywords": [
       "23552",
@@ -49,7 +49,7 @@
       "6912"
     ],
     "final_expected_keyword": "6912",
-    "iteration": 9112,
+    "iteration": 9116,
     "max_seconds": 1200,
     "min_keyword_ratio": 1.0,
     "min_semantic_uses": 10,
@@ -67,7 +67,7 @@
       "is c48b1 the same as zx ux obj1 mex1 or z80 machine code in the spectrum c48 sdk",
       "what exact screen state can c48run headless mode dump in the spectrum c48 sdk"
     ],
-    "purpose": "Broad independent final regression suite C using a third non-overlapping cross-domain set of retained probes for memory mapping, BASIC storage and ordering, peripherals, Spectrum chronology, software culture, and C48 SDK representation and headless execution. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair.",
+    "purpose": "Broad independent final regression suite C using a third non-overlapping cross-domain set of retained probes for memory mapping, BASIC storage and ordering, peripherals, Spectrum chronology, software culture, and C48 SDK representation and headless execution. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair. SoP requalification after per-scan A48M integrity and identity repair.",
     "scenario": "final-regression-c-v1",
     "schema": 1
   },
@@ -124,8 +124,8 @@
       "literal_mode": "none",
       "turn": 1,
       "user": "what memory address do spectrum system variables begin at",
-      "vm_steps": 922920,
-      "vm_steps_cumulative": 925020
+      "vm_steps": 922513,
+      "vm_steps_cumulative": 924626
     },
     {
       "alternate_hit": true,
@@ -177,8 +177,8 @@
       "literal_mode": "none",
       "turn": 2,
       "user": "how do spectrum basic save and load normally store programs",
-      "vm_steps": 774548,
-      "vm_steps_cumulative": 1699568
+      "vm_steps": 986318,
+      "vm_steps_cumulative": 1910944
     },
     {
       "alternate_hit": true,
@@ -230,8 +230,8 @@
       "literal_mode": "none",
       "turn": 3,
       "user": "what rear edge connector does a spectrum kempston interface use",
-      "vm_steps": 789154,
-      "vm_steps_cumulative": 2488722
+      "vm_steps": 1000924,
+      "vm_steps_cumulative": 2911868
     },
     {
       "alternate_hit": true,
@@ -283,8 +283,8 @@
       "literal_mode": "none",
       "turn": 4,
       "user": "in spectrum history who helped develop the spectrum 128",
-      "vm_steps": 779566,
-      "vm_steps_cumulative": 3268288
+      "vm_steps": 991336,
+      "vm_steps_cumulative": 3903204
     },
     {
       "alternate_hit": true,
@@ -336,8 +336,8 @@
       "literal_mode": "none",
       "turn": 5,
       "user": "who is associated with spectrum game ant attack from quicksilva",
-      "vm_steps": 783291,
-      "vm_steps_cumulative": 4051579
+      "vm_steps": 995061,
+      "vm_steps_cumulative": 4898265
     },
     {
       "alternate_hit": true,
@@ -389,8 +389,8 @@
       "literal_mode": "none",
       "turn": 6,
       "user": "how many bytes do c48 int values and pointers use in the spectrum c48 sdk",
-      "vm_steps": 853401,
-      "vm_steps_cumulative": 4904980
+      "vm_steps": 1065171,
+      "vm_steps_cumulative": 5963436
     },
     {
       "alternate_hit": true,
@@ -442,8 +442,8 @@
       "literal_mode": "none",
       "turn": 7,
       "user": "what addresses does 48k spectrum ram occupy",
-      "vm_steps": 712328,
-      "vm_steps_cumulative": 5617308
+      "vm_steps": 924098,
+      "vm_steps_cumulative": 6887534
     },
     {
       "alternate_hit": true,
@@ -495,8 +495,8 @@
       "literal_mode": "none",
       "turn": 8,
       "user": "what does spectrum basic run do to variables before program execution",
-      "vm_steps": 809885,
-      "vm_steps_cumulative": 6427193
+      "vm_steps": 1021655,
+      "vm_steps_cumulative": 7909189
     },
     {
       "alternate_hit": true,
@@ -548,8 +548,8 @@
       "literal_mode": "none",
       "turn": 9,
       "user": "in spectrum history what disk drive did the spectrum plus 3 use in 1987",
-      "vm_steps": 827259,
-      "vm_steps_cumulative": 7254452
+      "vm_steps": 1039029,
+      "vm_steps_cumulative": 8948218
     },
     {
       "alternate_hit": true,
@@ -601,8 +601,8 @@
       "literal_mode": "none",
       "turn": 10,
       "user": "who is associated with spectrum game head over heels",
-      "vm_steps": 782195,
-      "vm_steps_cumulative": 8036647
+      "vm_steps": 993965,
+      "vm_steps_cumulative": 9942183
     },
     {
       "alternate_hit": true,
@@ -654,8 +654,8 @@
       "literal_mode": "none",
       "turn": 11,
       "user": "is c48b1 the same as zx ux obj1 mex1 or z80 machine code in the spectrum c48 sdk",
-      "vm_steps": 895478,
-      "vm_steps_cumulative": 8932125
+      "vm_steps": 1107248,
+      "vm_steps_cumulative": 11049431
     },
     {
       "alternate_hit": true,
@@ -707,8 +707,8 @@
       "literal_mode": "none",
       "turn": 12,
       "user": "what exact screen state can c48run headless mode dump in the spectrum c48 sdk",
-      "vm_steps": 849510,
-      "vm_steps_cumulative": 9781635
+      "vm_steps": 1061280,
+      "vm_steps_cumulative": 12110711
     }
   ]
 }
