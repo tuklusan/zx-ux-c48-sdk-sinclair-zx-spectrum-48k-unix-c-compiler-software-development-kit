@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "iteration": 45,
+  "scenario": "knowledge-deepening-software-games-v1",
+  "purpose": "Qualify broader Spectrum software, game, creator, publisher, and software-culture knowledge while retaining earlier Manic Miner and Knight Lore facts.",
+  "max_seconds": 1200,
+  "prompts": [
+    "what company published spectrum game the hobbit adventure",
+    "what sales milestone did spectrum game the hobbit adventure reach",
+    "which publisher made spectrum game jetpac shoot em up",
+    "who is associated with spectrum game ant attack from quicksilva",
+    "which publisher released spectrum game skool daze",
+    "who is associated with spectrum game head over heels",
+    "who is associated with spectrum game saboteur by durell",
+    "who created spectrum game manic miner",
+    "what visual style does spectrum game knight lore use"
+  ],
+  "expected_keywords": [
+    "melbourne",
+    "million",
+    "ultimate",
+    "sandy",
+    "microsphere",
+    "ritman",
+    "clive",
+    "matthew smith",
+    "isometric"
+  ],
+  "min_keyword_ratio": 1.0
+}
