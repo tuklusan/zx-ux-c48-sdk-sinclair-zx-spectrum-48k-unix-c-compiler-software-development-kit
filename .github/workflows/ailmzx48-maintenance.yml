@@ -95,16 +95,15 @@ jobs:
           s = p.read_text(encoding="utf-8")
           start = s.index("int ai_vhas(unsigned int id)\n{")
           end = s.index("\n}\n", start) + 3
-          repl = '''int ai_vhas(unsigned int id)\n{\n    unsigned int i;\n    unsigned int j;\n    unsigned int off;\n    unsigned int len;\n    unsigned int h;\n    int ok;\n    if (id >= 224) {\n        i = 0;\n        while (ai_in[i] != 0) {\n            while (ai_in[i] != 0 && !ai_wordchar(ai_in[i])) i = i + 1;\n            if (ai_in[i] == 0) break;\n            h = 216 + ai_mtsalt;\n            while (ai_in[i] != 0 && ai_wordchar(ai_in[i])) {\n                h = (h * 33) ^ ai_lower(ai_in[i]);\n                i = i + 1;\n            }\n            if (224 + (h % 3872) == id) return 1;\n        }\n        return 0;\n    }\n    if (id == 0 || id >= ai_vcnt) return 0;\n    off = ai_voff[id]; len = ai_vlen[id];\n    if (len == 0) return 0;\n    i = 0;\n    while (ai_in[i] != 0) {\n        if (i != 0 && ai_wordchar(ai_in[i - 1])) { i = i + 1; continue; }\n        j = 0; ok = 1;\n        while (j < len) {\n            if (ai_in[i + j] == 0 || ai_lower(ai_in[i + j]) != ai_vblob[off + j]) { ok = 0; break; }\n            j = j + 1;\n        }\n        if (ok && !ai_wordchar(ai_in[i + len])) return 1;\n        i = i + 1;\n    }\n    return 0;\n}\n'''
+          repl = '''unsigned int ai_mtsalt;\n\nint ai_vhas(unsigned int id)\n{\n    unsigned int i;\n    unsigned int h;\n    i = 0;\n    while (ai_in[i] != 0) {\n        while (ai_in[i] != 0 && !ai_wordchar(ai_in[i])) i = i + 1;\n        if (ai_in[i] == 0) break;\n        h = 216 + ai_mtsalt;\n        while (ai_in[i] != 0 && ai_wordchar(ai_in[i])) {\n            h = (h * 33) ^ ai_lower(ai_in[i]);\n            i = i + 1;\n        }\n        if (224 + (h % 3872) == id) return 1;\n    }\n    return 0;\n}\n'''
           p.write_text(s[:start] + repl + s[end:], encoding="utf-8")
 
           p = Path("usr/src/ailmzx48/ailmzx48.c")
           s = p.read_text(encoding="utf-8")
-          s = s.replace("unsigned int ai_mtrusted;\nunsigned int ai_fs1;", "unsigned int ai_mtrusted;\nunsigned int ai_mtsalt;\nunsigned int ai_fs1;", 1)
-          s = s.replace("    if (ai_mhead[4] != 1) return -1;", "    if (ai_mhead[4] != 2) return -1;", 1)
-          s = s.replace("    i = 34;\n    while (i < 40) {", "    ai_mtsalt = ai_getu16(ai_mhead, 34);\n    i = 36;\n    while (i < 40) {", 1)
-          s = s.replace("    ai_mtrusted = 0;\n    ai_l0head = 0;", "    ai_mtrusted = 0;\n    ai_mtsalt = 0;\n    ai_l0head = 0;", 1)
-          p.write_text(s, encoding="utf-8")
+          old = '''    if (ai_mhead[0] != 'A') return -1;\n    if (ai_mhead[1] != '4') return -1;\n    if (ai_mhead[2] != '8') return -1;\n    if (ai_mhead[3] != 'M') return -1;\n    if (ai_mhead[4] != 1) return -1;\n    if (ai_mhead[5] != 0) return -1;\n    if (ai_mhead[6] != 40) return -1;\n    if (ai_mhead[7] != 1) return -1;\n    i = 34;\n    while (i < 40) {\n        if (ai_mhead[i] != 0) return -1;\n        i = i + 1;\n    }\n'''
+          new = '''    if(ai_mhead[0]!='A'||ai_mhead[1]!='4'||ai_mhead[2]!='8'||ai_mhead[3]!='M')return -1;\n    if(ai_mhead[4]!=2||ai_mhead[5]!=0||ai_mhead[6]!=40||ai_mhead[7]!=1)return -1;\n    ai_mtsalt=ai_getu16(ai_mhead,34);\n    i=36;\n    while(i<40){if(ai_mhead[i]!=0)return -1;i=i+1;}\n'''
+          if old not in s: raise SystemExit("runtime header anchor missing")
+          p.write_text(s.replace(old, new, 1), encoding="utf-8")
 
           p = Path("usr/src/ailmzx48/evaluation/test_a48m_reference.py")
           s = p.read_text(encoding="utf-8")
@@ -132,6 +131,9 @@ jobs:
             --out-json usr/src/ailmzx48/model/current-model.json \
             --out-h usr/src/ailmzx48/aimod.h \
             --iteration 44
+          printf 'AILMZX48_SOURCE_BYTES main=%s match=%s limit=32768\n' \
+            "$(wc -c < usr/src/ailmzx48/ailmzx48.c)" \
+            "$(wc -c < usr/src/ailmzx48/aimatch.h)"
 
       - name: Test ailmzx48 context reference
         run: python -B usr/src/ailmzx48/evaluation/test_context_reference.py
