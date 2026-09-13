@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.8-draft
+Revision: 0.9-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48`
 
@@ -188,7 +188,7 @@ The working architecture is instead a host-trained, target-inferred sparse stati
 
 This is still a language model: probabilities/weights over token continuations are learned from a corpus and used locally at inference time. The surrounding agent controller supplies conversation state, memory retrieval, topic steering, factual anchoring, uncertainty/fallback behavior, and anti-repetition controls.
 
-The exact release model family is not frozen by this revision. Revision 0.3 introduced concrete **Candidate A**; Revision 0.8 retains it as a corrected benchmark baseline so implementation and measurements can begin without pretending the representation is already optimal. Candidate A is not a promise that no better representation will replace it.
+The exact release model family is not frozen by this revision. Revision 0.3 introduced concrete **Candidate A**; Revision 0.9 retains it as a corrected benchmark baseline so implementation and measurements can begin without pretending the representation is already optimal. Candidate A is not a promise that no better representation will replace it.
 
 ### 6.1 No remote inference dependency
 
@@ -515,7 +515,9 @@ The hot plane is ordinary executable image/static data and therefore directly ad
 
 Spectrum-domain knowledge is stored as one or a very small number of external model objects. In Candidate A, **external means a separate resident ZX-UX RAM object during conversation**, not a magic tape-backed random-access file. An eligible resident object may be ZXP1 PACKED when the measured physical saving justifies the 272-byte read-state cost and decompression latency.
 
-The baseline cold plane is scanned forward exactly once per user turn. With one persistent handle, the scanner seeks to logical offset zero at the start of the next turn; on a PACKED object REV12 therefore resets the decoder and the subsequent scan decodes forward again. The scanner issues bounded logical reads no larger than 64 bytes and places `yield()`/kernel boundaries at measured chunk or record intervals rather than asking one syscall to decompress the entire model.
+The baseline cold plane is scanned forward exactly once per user turn. At model-open time the program obtains the object's actual logical length through the canonical object metadata/stat path and requires it to equal the A48M declared logical length before any record can be accepted. With one persistent handle, the scanner seeks to logical offset zero at the start of the next turn; on a PACKED object REV12 therefore resets the decoder and the subsequent scan decodes forward again.
+
+The scanner requests logical chunks no larger than 64 bytes but never assumes one `read` returns the whole request. It uses `read_full` where the exact remaining byte count is known, or an equivalent bounded loop that accepts legal positive short reads and treats zero/premature EOF before the declared end as model corruption. It never reads past the declared/actual equal logical length. `yield()`/kernel boundaries occur at measured chunk or record intervals rather than asking one syscall to decompress the entire model.
 
 Each record header is scored as it streams past. Candidate A retains **at most two complete winning cold records**, each at most 192 logical bytes, in the two fixed winner slots inside retrieval scratch. A later better match replaces the lower-ranked slot deterministically. Irrelevant payload is validated/read and discarded; no backwards probe is needed to recover a winner.
 
@@ -545,11 +547,11 @@ pair anchor[anchor_count]:
 
 The 192-byte maximum is chosen because two complete winners must coexist inside the 512-byte retrieval scratch with bounded streaming/parser state. `entity_a`/`entity_b` use the Section-7.1 semantic-reference namespace: zero is absent and any nonzero cold-model entity must be a persistent 1..0x7FFF symbol. Each trigger is a canonical lexical ID 0..4095 and must be target-recognizable through the resident lexicon.
 
-An anchor pair identifies an exact byte span within the encoded payload. Anchor spans may cover one or more complete lexical/control/literal encodings, have nonzero length, may not overlap, and must begin/end on token boundaries. Candidate A permits at most two spans; factual record types admitted for factual-answer use must carry at least one. The anchor plan does **not** copy those bytes: it stores only bounded `(winner_slot, payload_offset, encoded_length, progress)` descriptors inside generation/scoring state. The two complete winner slots remain live until response generation finishes, and required anchor bytes are copied directly from the referenced winner into the response buffer. This preserves anchors without inventing an unbudgeted duplicate buffer.
+An anchor pair identifies an exact byte span within the encoded payload. Anchor spans may cover one or more complete lexical or literal encodings, have nonzero length, may not overlap, and must begin/end on token boundaries. BOS, EOS, newline and every other control byte are forbidden **inside anchor spans**: anchors represent factual content, not sentence/turn framing. Candidate A permits at most two spans; factual record types admitted for factual-answer use must carry at least one. The anchor plan does **not** copy those bytes: it stores only bounded `(winner_slot, payload_offset, encoded_length, progress)` descriptors inside generation/scoring state. The two complete winner slots remain live until response generation finishes, and required anchor bytes are copied directly from the referenced winner into the response buffer. This preserves anchors without inventing an unbudgeted duplicate buffer.
 
 Cold payloads use the same canonical lexical/literal encodings as conversation text. Candidate-A payload controls are limited to BOS, EOS and newline; user-turn, assistant-turn, turn-end, `0x00`, reserved wire controls and unknown escapes are forbidden inside a knowledge-record payload.
 
-Host tooling rejects records shorter than the header implied by their counts, over 192 logical bytes, with trigger_count above four, anchor_count above two, unknown record types, invalid semantic refs, triggers above 4095, forbidden/reserved payload controls, malformed literal escapes, anchor spans outside the payload or off token boundaries, overlapping anchors, or payload parsing that does not consume exactly the declared record. Payload-only wording need not consume resident dictionary bytes.
+Host tooling rejects records shorter than the header implied by their counts, over 192 logical bytes, with trigger_count above four, anchor_count above two, unknown record types, invalid semantic refs, triggers above 4095, forbidden/reserved payload controls, malformed literal escapes, anchor spans outside the payload or off token boundaries, control bytes inside anchors, overlapping anchors, or payload parsing that does not consume exactly the declared record. Payload-only wording need not consume resident dictionary bytes.
 
 Record types are expected to distinguish factual statement, biographical fact, game/software fact, hardware/architecture fact, chronology fact, comparison relation, and conversational/domain phrase material. Exact numeric IDs are not frozen until corpus construction begins.
 
@@ -561,7 +563,7 @@ ZX-UX v1 exposes RAM-object logical/storage lengths and seek offsets as u16 valu
 
 The container shall declare at least format version, feature flags, resident-vocabulary identity, a fixed-size hot/cold **interface identity**, record count, logical length and section lengths. The interface identity is generated from the canonical lexical-ID map, semantic-symbol map, relation/record schemas and scoring-feature schema; target code compares the fixed bytes before accepting records. This prevents a cold object from a different build from being interpreted under merely similar vocabulary. Host provenance additionally records SHA-256 of the full interface description; the exact compact target identity width is frozen with A48M. Host tooling validates all sums/counts in widened arithmetic, rejects any stream whose mathematical layout exceeds the u16 target object/seek domain, and only then emits narrowed fields. Target validation uses subtraction/reordered comparisons so 16-bit wrap cannot turn an invalid layout into a valid one.
 
-The target model includes an incremental integrity check suitable for the Z80/C48 implementation. Before record scoring, the target validates the A48M header/version/declared lengths plus resident-vocabulary and hot/cold-interface identities. Every complete cold scan then validates structural bounds and accumulates the integrity check while bytes are already streaming. No selected cold record may reach response generation until the scan has reached the declared logical end and the integrity result matches. Thus the first question also performs full model validation without requiring an extra unbudgeted startup copy/scan; later scans retain the same fail-closed check unless a separately proved immutable-object optimization replaces it. Host release tooling also records SHA-256 for reproducibility. SHA-256 is not imposed on the target merely because the host can calculate it cheaply.
+The target model includes an incremental integrity check suitable for the Z80/C48 implementation. Before record scoring, the target validates the A48M header/version/declared lengths, requires actual object logical length == declared logical length, and checks resident-vocabulary plus hot/cold-interface identities. Every complete cold scan then validates section boundaries, exact declared record count, structural bounds and the requirement that the last declared section/record ends exactly at logical length while accumulating the integrity check over the canonical protected bytes. No selected cold record may reach response generation until the scan has reached the declared logical end and the integrity result matches. Thus the first question also performs full model validation without requiring an extra unbudgeted startup copy/scan; later scans retain the same fail-closed check unless a separately proved immutable-object optimization replaces it. Host release tooling also records SHA-256 for reproducibility. SHA-256 is not imposed on the target merely because the host can calculate it cheaply.
 
 ### 9.5 Candidate variable-order language model
 
@@ -751,7 +753,7 @@ The current SDK already gives the project a useful base:
 
 Forensic Review Pass 1 also found an important current-SDK limitation: the host VM builtin surface does **not** yet expose the ZX-UX `open`/`read`/`seek`/`close` object-I/O path needed by Candidate A's external cold model. Therefore a host conversation that only embeds the cold model in Python or directly pokes VM memory is not an end-to-end test of the target storage interface.
 
-Before external-model SDK conversations count as target-interface regressions, the SDK/harness must gain a reviewed, tested read-only object-I/O adapter that lets the same C48 source call the canonical interfaces against registered model fixture bytes. It must fail with target-like bounds/errors and must not become a hidden alternate inference path. A RAW fixture adapter can validate parser/retriever logic; claims about ZXP1 decoder state, packed seek cost, allocator placement or cassette behavior still require their native/architecture-specific tests.
+Before external-model SDK conversations count as target-interface regressions, the SDK/harness must gain a reviewed, tested read-only object-I/O adapter that lets the same C48 source call the canonical interfaces against registered model fixture bytes. It must fail with target-like bounds/errors, support deterministic positive short-read injection and premature-EOF/error cases, expose the fixture's actual logical length to the C48 path, and must not become a hidden alternate inference path. A RAW fixture adapter can validate parser/retriever logic; claims about ZXP1 decoder state, packed seek cost, allocator placement or cassette behavior still require their native/architecture-specific tests.
 
 The other missing feature is exact logical terminal-stream capture. The baseline harness adds that **outside the C48 program semantics** rather than making the target program print test protocol noise.
 
@@ -1078,7 +1080,7 @@ Implementation begins only after enough of this design is frozen to prevent inco
 9. minimal C48 `ailmzx48` program that prints startup text, reads bounded input and handles `q`;
 10. target tokenizer/detokenizer, 4,336-byte workspace and session-literal logic;
 11. target L0/L1/L2 compaction/retrieval with counters, guards and loss instrumentation;
-12. cold model reader/sequential scorer using bounded reads/yields and at most two winners;
+12. cold model reader/sequential scorer using bounded short-read-safe reads/yields, exact object-vs-header length/count validation and at most two winners;
 13. hot LM lookup/generator and factual-anchor controller;
 14. anti-repetition, uncertainty and response-mode integration;
 15. SDK active conversation harness with traced output, input-request framing, object fixture and global telemetry;
@@ -1092,7 +1094,7 @@ Each phase preserves a working, release-verifiable repository state on `main`. N
 
 ## 20. Candidate-A implementation interfaces
 
-Revision 0.8 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
+Revision 0.9 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
 
 ```text
 ai_readline()     bounded byte-aware tty line input
@@ -1180,7 +1182,7 @@ Before the model format is declared final, the project must answer with retained
 6. How often are session literals/L2 facts evicted and how does that affect old-name/correction recall?
 7. What resident recognition/presentation vocabulary minimizes total lexicon + hot-LM + cold-literal cost while still covering every retrieval trigger?
 8. What variable-order pruning/fanout budget gives the best fluency per resident byte and per target lookup cost?
-9. How large is each cold knowledge object logically and physically after ZXP1 packing, within the u16 object limit, and do mismatched hot/cold interface identities fail before record use?
+9. How large is each cold knowledge object logically and physically after ZXP1 packing, within the u16 object limit, and do object/header length mismatches, short/premature reads and mismatched hot/cold interface identities fail before record use?
 10. How long does one complete cold scan take in SDK work units, Fuse/cycle evidence and a real 48K run?
 11. Is one full scan per turn acceptable, or does RAW indexing, topic sharding or a resident cache win after all byte/decoder/fragmentation costs are counted?
 12. Does the SDK object-I/O adapter produce the same logical parser/retrieval results as the native RAW path, without being misrepresented as PACKED/cassette certification?
@@ -1193,7 +1195,7 @@ Before the model format is declared final, the project must answer with retained
 
 The final design replaces these questions with measured answers.
 
-## 23. Open design questions after Revision 0.8
+## 23. Open design questions after Revision 0.9
 
 The following remain deliberately open until measurement resolves them:
 
