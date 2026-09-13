@@ -1,0 +1,16 @@
+{
+  "accepted_turns": 13,
+  "alternate_hits": 13,
+  "alternate_ratio": 1.0,
+  "alternate_total": 13,
+  "beep_calls": 14,
+  "clean_exit": true,
+  "context_hits": 13,
+  "context_ratio": 1.0,
+  "context_total": 13,
+  "iteration": 5,
+  "keyword_hits": 13,
+  "keyword_ratio": 1.0,
+  "keyword_total": 13,
+  "turns": 13
+}
