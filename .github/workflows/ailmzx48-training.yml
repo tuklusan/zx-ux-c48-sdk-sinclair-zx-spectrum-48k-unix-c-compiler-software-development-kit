@@ -1,0 +1,97 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: ailmzx48 training iteration
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "usr/src/ailmzx48/training/requests/iter-*.json"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ailmzx48-training-main
+  cancel-in-progress: false
+
+jobs:
+  iterate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Select pending iteration request
+        id: req
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("usr/src/ailmzx48")
+          reqs = sorted((root / "training/requests").glob("iter-*.json"))
+          pending = []
+          for p in reqs:
+              n = int(json.loads(p.read_text())["iteration"])
+              out = root / "conversations" / f"iter-{n:04d}"
+              if not out.exists():
+                  pending.append((n, p))
+          if not pending:
+              raise SystemExit("no pending ailmzx48 iteration request")
+          n, p = pending[0]
+          import os
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"request={p}\n")
+              f.write(f"iteration={n}\n")
+          PY
+
+      - name: Run bounded training/evaluation session
+        run: >-
+          python -B usr/src/ailmzx48/tooling/run_iteration.py
+          --request "${{ steps.req.outputs.request }}"
+          --max-seconds 600
+
+      - name: Regenerate release manifest
+        run: python -B usr/src/ailmzx48/tooling/update_manifest.py
+
+      - name: Verify complete repository
+        run: |
+          python -B compiler/verify_release.py
+          git diff --check
+
+      - name: Commit iteration model and conversation evidence
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No iteration output changes to commit"
+            exit 0
+          fi
+          git commit -m \
+            "ailmzx48: retain iteration ${{ steps.req.outputs.iteration }}"
+          git push origin HEAD:main
