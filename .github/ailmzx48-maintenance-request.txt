@@ -1,2 +1,2 @@
 iteration=42
-purpose=trusted-cold-scan-fast-path
+purpose=trusted-cold-scan-checksum-cache
