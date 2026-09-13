@@ -48,24 +48,6 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Repair staged canonical-wire patch
-        shell: bash
-        run: |
-          python -B usr/src/ailmzx48/tooling/fix_context_wire_patch.py
-          git rm usr/src/ailmzx48/tooling/fix_context_wire_patch.py
-
-      - name: Apply staged canonical-context wire slice
-        shell: bash
-        run: |
-          python -B usr/src/ailmzx48/tooling/upgrade_context_wire.py
-          git rm -f usr/src/ailmzx48/tooling/upgrade_context_wire.py
-
-      - name: Split canonical-wire source object
-        shell: bash
-        run: |
-          python -B usr/src/ailmzx48/tooling/split_context_wire.py
-          git rm usr/src/ailmzx48/tooling/split_context_wire.py
-
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
