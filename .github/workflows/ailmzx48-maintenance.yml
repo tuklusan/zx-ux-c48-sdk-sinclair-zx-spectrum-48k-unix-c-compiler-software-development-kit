@@ -48,48 +48,44 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Apply bounded topic routing patch
+      - name: Add bitmap specificity trigger
         shell: bash
         run: |
           python - <<'PY'
+          import json
           from pathlib import Path
 
-          src = Path("usr/src/ailmzx48/ailmzx48.c")
-          text = src.read_text(encoding="utf-8")
-          pairs = [
-              ('    if (ai_has("memory")) return ai_t_mem;\n',
-               '    if (ai_has("memory") || ai_has("bitmap"))\n'
-               '        return ai_t_mem;\n'),
-              ('    if (ai_has("game")) return ai_t_games;\n',
-               '    if (ai_has("game") || ai_has("miner"))\n'
-               '        return ai_t_games;\n'
-               '    if (ai_has("lore")) return ai_t_games;\n'),
-              ('    if (ai_has("1982")) return ai_t_hist;\n'
-               '    if (ai_has("history")) return ai_t_hist;\n',
-               '    if (ai_has("1982") || ai_has("history"))\n'
-               '        return ai_t_hist;\n'
-               '    if (ai_has("before")) return ai_t_hist;\n'),
-          ]
-          for old, new in pairs:
-              if text.count(old) != 1:
-                  raise SystemExit("routing patch preimage mismatch")
-              text = text.replace(old, new)
-          src.write_text(text, encoding="utf-8")
-
-          hdr = Path("usr/src/ailmzx48/aimatch.h")
-          text = hdr.read_text(encoding="utf-8")
-          old = '''\nunsigned int ai_routepick(void)\n{\n    if (ai_has("bitmap")) return ai_t_mem;\n    if (ai_has("manic miner")) return ai_t_games;\n    if (ai_has("knight lore")) return ai_t_games;\n    if (ai_has("jet set willy")) return ai_t_games;\n    if (ai_has("came before")) return ai_t_hist;\n    return ai_pick();\n}\n\n#define ai_pick ai_routepick\n'''
-          if text.count(old) != 1:
-              raise SystemExit("routing shim preimage mismatch")
-          text = text.replace(old, "\n").rstrip("\n") + "\n"
-          hdr.write_text(text, encoding="utf-8")
+          path = Path("usr/src/ailmzx48/training/seed_corpus.json")
+          doc = json.loads(path.read_text(encoding="utf-8"))
+          target = "the display bitmap uses 6144 bytes and the colour attribute area uses 768 bytes"
+          matches = [r for r in doc["records"] if r.get("text") == target]
+          if len(matches) != 1:
+              raise SystemExit("bitmap fact preimage mismatch")
+          triggers = matches[0].get("triggers", [])
+          if triggers == ["bitmap", "6144", "bytes"]:
+              triggers.append("display")
+          elif triggers != ["bitmap", "6144", "bytes", "display"]:
+              raise SystemExit("unexpected bitmap trigger set")
+          path.write_text(
+              json.dumps(doc, indent=2) + "\n",
+              encoding="utf-8",
+              newline="\n",
+          )
           PY
+
+      - name: Rebuild starter model artifacts
+        run: >-
+          python -B usr/src/ailmzx48/tooling/build_starter_model.py
+          --corpus usr/src/ailmzx48/training/seed_corpus.json
+          --out-json usr/src/ailmzx48/model/current-model.json
+          --out-h usr/src/ailmzx48/aimod.h
+          --iteration 38
 
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
 
-      - name: Test ailmzx48 A48M reference
+      - name: Test and rebuild ailmzx48 A48M reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
 
@@ -98,40 +94,6 @@ jobs:
           python -B compiler/c48.py
           usr/src/ailmzx48/ailmzx48.c
           -o usr/bin/ailmzx48/ailmzx48.c48b
-
-      - name: Regenerate deterministic demo corpus
-        shell: bash
-        run: |
-          python -B - <<'PY'
-          import json
-          import sys
-
-          sys.path.insert(0, "compiler")
-          import verify_graphics_demos as v
-
-          expect = v.load_expect()
-          for name, exp in expect["demos"].items():
-              data = v.compile_bytes(name)
-              (v.BIN / f"{name}.c48b").write_bytes(data)
-              first = v.run_demo(name, 1)
-              screen = v.run_demo(name, int(exp["frames"]))
-              png = v.png_bytes(screen.render_rgb())
-              (v.IMG / f"{name}.png").write_bytes(png)
-              lit, attrs = v.screen_metrics(screen)
-              exp["source_sha256"] = v.sha(v.SRC / f"{name}.c")
-              exp["binary_sha256"] = v.sha_bytes(data)
-              exp["first_screen_sha256"] = v.sha_bytes(first.bytes())
-              exp["screen_sha256"] = v.sha_bytes(screen.bytes())
-              exp["png_sha256"] = v.sha_bytes(png)
-              exp["lit_pixels"] = lit
-              exp["attribute_values"] = attrs
-          v.EXPECT_PATH.write_text(
-              json.dumps(expect, indent=2) + "\n",
-              encoding="ascii",
-              newline="\n",
-          )
-          PY
-          python -B compiler/verify_graphics_demos.py --static
 
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
@@ -145,9 +107,29 @@ jobs:
       - name: Commit and push maintenance checkpoint
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "ailmzx48: improve bounded topic routing"
-          git push origin HEAD:main
+          git commit -m "ailmzx48: improve bitmap fact specificity"
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "Concurrent change conflicts with bitmap specificity patch" >&2
+              exit 1
+            fi
+            python -B usr/src/ailmzx48/tooling/update_manifest.py
+            git add MANIFEST.sha256
+            git commit --amend --no-edit
+            python -B compiler/verify_release.py
+            git diff --check
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "main moved during push attempt $attempt; retrying" >&2
+            sleep 2
+          done
+          echo "Could not fast-forward main after five races" >&2
+          exit 1
