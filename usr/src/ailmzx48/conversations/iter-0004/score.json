@@ -1,0 +1,13 @@
+{
+  "accepted_turns": 14,
+  "beep_calls": 15,
+  "clean_exit": true,
+  "context_hits": 14,
+  "context_ratio": 1.0,
+  "context_total": 14,
+  "iteration": 4,
+  "keyword_hits": 14,
+  "keyword_ratio": 1.0,
+  "keyword_total": 14,
+  "turns": 14
+}
