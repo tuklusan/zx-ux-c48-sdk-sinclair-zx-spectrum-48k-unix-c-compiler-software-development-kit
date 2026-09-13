@@ -107,6 +107,7 @@ def main() -> int:
         "short_read_calls": parsed["read_calls"],
         "max_read_request": parsed["max_read_request"],
         "max_record_bytes": 192,
+        "trigger_salt": parsed["trigger_salt"],
         "tests": [
             "deterministic-seed-build",
             "positive-short-read-full-parse",
@@ -117,6 +118,7 @@ def main() -> int:
             "oversize-record-length-rejection",
             "factual-anchor-presence",
             "exact-record-count-and-section-end",
+            "collision-free-salted-trigger-id-space",
         ],
     }
     report_path.write_text(

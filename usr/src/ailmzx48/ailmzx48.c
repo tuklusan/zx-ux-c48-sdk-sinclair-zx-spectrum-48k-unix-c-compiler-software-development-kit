@@ -479,19 +479,13 @@ int ai_modelscan(unsigned int topic)
     if (actual < 40) return -1;
     if (ai_mseek(0) != 0) return -1;
     if (ai_readfull(ai_mhead, 40) != 0) return -1;
-    if (ai_mhead[0] != 'A') return -1;
-    if (ai_mhead[1] != '4') return -1;
-    if (ai_mhead[2] != '8') return -1;
-    if (ai_mhead[3] != 'M') return -1;
-    if (ai_mhead[4] != 1) return -1;
-    if (ai_mhead[5] != 0) return -1;
-    if (ai_mhead[6] != 40) return -1;
-    if (ai_mhead[7] != 1) return -1;
-    i = 34;
-    while (i < 40) {
-        if (ai_mhead[i] != 0) return -1;
-        i = i + 1;
-    }
+    if(ai_mhead[0]!='A'||ai_mhead[1]!='4'||
+       ai_mhead[2]!='8'||ai_mhead[3]!='M')return -1;
+    if(ai_mhead[4]!=2||ai_mhead[5]!=0||
+       ai_mhead[6]!=40||ai_mhead[7]!=1)return -1;
+    ai_mtsalt=ai_getu16(ai_mhead,34);
+    i=36;
+    while(i<40){if(ai_mhead[i]!=0)return -1;i=i+1;}
     rcount = ai_getu16(ai_mhead, 24);
     if (ai_getu16(ai_mhead, 26) != 40) return -1;
     rbytes = ai_getu16(ai_mhead, 28);

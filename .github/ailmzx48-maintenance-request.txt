@@ -1,3 +1,0 @@
-iteration=44
-purpose=history-models-knowledge-deepening
-retry=salted-trigger-id-v2-source-contract

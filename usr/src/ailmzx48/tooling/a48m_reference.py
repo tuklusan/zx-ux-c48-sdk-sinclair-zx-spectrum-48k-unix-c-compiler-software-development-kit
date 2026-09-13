@@ -20,7 +20,9 @@ from pathlib import Path
 import re
 
 MAGIC = b"A48M"
-VERSION = 1
+VERSION = 2
+TRIGGER_BASE = 224
+TRIGGER_SLOTS = 4096 - TRIGGER_BASE
 HEADER_LEN = 40
 CHECKSUM_ALG = 1
 MAX_RECORD = 192
@@ -83,6 +85,35 @@ def identity(value: object) -> bytes:
         value, sort_keys=True, separators=(",", ":")
     ).encode("ascii")
     return hashlib.sha256(raw).digest()[:8]
+
+
+def trigger_id(word: str, salt: int) -> int:
+    h = (216 + salt) & 0xFFFF
+    for value in word.encode("ascii"):
+        h = ((h * 33) ^ value) & 0xFFFF
+    return TRIGGER_BASE + (h % TRIGGER_SLOTS)
+
+
+def choose_trigger_salt(words: list[str]) -> int:
+    clean = []
+    for raw in words:
+        word = str(raw).lower()
+        if TOKEN_RE.findall(word) != [word]:
+            raise A48MError("trigger must be one normalized token: " + repr(raw))
+        if word not in clean:
+            clean.append(word)
+    for salt in range(65536):
+        seen = {}
+        ok = True
+        for word in clean:
+            tid = trigger_id(word, salt)
+            if tid in seen and seen[tid] != word:
+                ok = False
+                break
+            seen[tid] = word
+        if ok:
+            return salt
+    raise A48MError("no collision-free trigger hash salt")
 
 
 def encode_literal_payload(text: str) -> tuple[bytes, tuple[int, int]]:
@@ -215,7 +246,7 @@ def encode_record(
         raw.extend((offset, length))
     raw.extend(payload)
     if len(raw) > MAX_RECORD:
-        raise A48MError("record exceeds Candidate-A maximum")
+        raise A48MError("record exceeds Candidate-A maximum: " + str(len(raw)) + " bytes")
     raw[0] = len(raw)
     return bytes(raw)
 
@@ -314,7 +345,8 @@ class ShortReader:
 
 
 def build_container(
-    records: list[bytes], vocab_id: bytes, interface_id: bytes
+    records: list[bytes], vocab_id: bytes, interface_id: bytes,
+    trigger_salt: int,
 ) -> bytes:
     if len(vocab_id) != 8 or len(interface_id) != 8:
         raise A48MError("identity width must be eight bytes")
@@ -334,7 +366,8 @@ def build_container(
     header.extend(u16(len(records_blob)))
     header.extend(u16(logical_length))
     header.extend(b"\x00\x00")
-    header.extend(b"\x00" * 6)
+    header.extend(u16(trigger_salt))
+    header.extend(b"\x00" * 4)
     if len(header) != HEADER_LEN:
         raise AssertionError("header size construction error")
     data = bytes(header) + records_blob
@@ -357,8 +390,9 @@ def parse_container(
         raise A48MError("unsupported flags/header length")
     if header[7] != CHECKSUM_ALG:
         raise A48MError("unsupported integrity algorithm")
-    if any(header[34:40]):
+    if any(header[36:40]):
         raise A48MError("nonzero reserved header bytes")
+    trigger_salt = get_u16(header, 34)
     record_count = get_u16(header, 24)
     records_offset = get_u16(header, 26)
     records_length = get_u16(header, 28)
@@ -404,6 +438,7 @@ def parse_container(
         "record_count": record_count,
         "logical_length": logical_length,
         "checksum": checksum,
+        "trigger_salt": trigger_salt,
         "read_calls": reader.calls,
         "max_read_request": reader.max_requested,
         "records": records,
@@ -417,10 +452,14 @@ def build_from_seed(
     model = json.loads(model_path.read_text(encoding="utf-8"))
     topics = list(model["topics"])
     topic_map = {name: index for index, name in enumerate(topics)}
-    vocab_map = {
-        word: index for index, word in enumerate(model["vocab"])
-    }
     vocab_id = identity(model["vocab"])
+    all_trigger_words = []
+    for item in corpus["records"]:
+        if item.get("kind") == "fact-user":
+            for word in item.get("triggers", []):
+                if word not in all_trigger_words:
+                    all_trigger_words.append(word)
+    trigger_salt = choose_trigger_salt(all_trigger_words)
     interface_desc = {
         "wire": "candidate-a-v1",
         "vocab": model["vocab"],
@@ -429,6 +468,7 @@ def build_from_seed(
         "record_types": RECORD_TYPES,
         "record_schema": "a48m-record-v1",
         "scoring": "topic-match-plus-importance-v1",
+        "trigger_scheme": "salted-wordhash16-band-v1",
     }
     interface_id = identity(interface_desc)
     records: list[bytes] = []
@@ -447,10 +487,11 @@ def build_from_seed(
         if len(trigger_words) > 4:
             raise A48MError("seed fact has too many triggers")
         trigger_ids = []
-        for word in trigger_words:
-            if word not in vocab_map or vocab_map[word] == 0:
-                raise A48MError("seed trigger missing from vocab: " + word)
-            trigger_ids.append(vocab_map[word])
+        for raw in trigger_words:
+            word = str(raw).lower()
+            if TOKEN_RE.findall(word) != [word]:
+                raise A48MError("invalid seed trigger: " + repr(raw))
+            trigger_ids.append(trigger_id(word, trigger_salt))
         records.append(
             encode_record(
                 record_type,
@@ -462,16 +503,17 @@ def build_from_seed(
         )
     if not records:
         raise A48MError("seed corpus produced no factual records")
-    data = build_container(records, vocab_id, interface_id)
+    data = build_container(records, vocab_id, interface_id, trigger_salt)
     meta = {
         "schema": 1,
-        "format": "A48M Candidate-A prototype v1",
+        "format": "A48M Candidate-A prototype v2",
         "record_count": len(records),
         "logical_length": len(data),
         "sha256": hashlib.sha256(data).hexdigest(),
         "fletcher16": get_u16(data, 32),
         "vocab_id_hex": vocab_id.hex(),
         "interface_id_hex": interface_id.hex(),
+        "trigger_salt": trigger_salt,
         "interface_sha256": hashlib.sha256(
             json.dumps(
                 interface_desc,

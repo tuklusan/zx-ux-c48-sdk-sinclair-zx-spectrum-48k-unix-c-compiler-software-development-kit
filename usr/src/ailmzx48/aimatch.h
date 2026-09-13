@@ -36,38 +36,23 @@ int ai_wordchar(int c)
     return 0;
 }
 
+unsigned int ai_mtsalt;
+
 int ai_vhas(unsigned int id)
 {
     unsigned int i;
-    unsigned int j;
-    unsigned int off;
-    unsigned int len;
-    int ok;
-    if (id == 0 || id >= ai_vcnt) return 0;
-    off = ai_voff[id];
-    len = ai_vlen[id];
-    if (len == 0) return 0;
+    unsigned int h;
     i = 0;
     while (ai_in[i] != 0) {
-        if (i != 0 && ai_wordchar(ai_in[i - 1])) {
+        while (ai_in[i] != 0 &&
+               !ai_wordchar(ai_in[i])) i = i + 1;
+        if (ai_in[i] == 0) break;
+        h = 216 + ai_mtsalt;
+        while (ai_in[i] != 0 && ai_wordchar(ai_in[i])) {
+            h = (h * 33) ^ ai_lower(ai_in[i]);
             i = i + 1;
-            continue;
         }
-        j = 0;
-        ok = 1;
-        while (j < len) {
-            if (ai_in[i + j] == 0) {
-                ok = 0;
-                break;
-            }
-            if (ai_lower(ai_in[i + j]) != ai_vblob[off + j]) {
-                ok = 0;
-                break;
-            }
-            j = j + 1;
-        }
-        if (ok && !ai_wordchar(ai_in[i + len])) return 1;
-        i = i + 1;
+        if (224 + (h % 3872) == id) return 1;
     }
     return 0;
 }

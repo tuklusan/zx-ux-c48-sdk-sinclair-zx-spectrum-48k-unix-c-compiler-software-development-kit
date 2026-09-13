@@ -142,18 +142,9 @@ def build(
     for seq in all_seqs:
         freq.update(seq)
     seed_words = tuple(SEED_WORD[t] for t in TOPICS)
-    required = []
-    for word in seed_words + tuple(trigger_words):
-        if word not in required:
-            required.append(word)
+    required = list(seed_words)
     if len(required) > MAX_VOCAB - 1:
-        raise ValueError(
-            "seed words and retrieval triggers exceed model vocabulary: "
-            + str(len(required))
-            + " required, "
-            + str(MAX_VOCAB - 1)
-            + " available"
-        )
+        raise ValueError("topic seed words exceed model vocabulary")
     ordered = sorted(
         freq,
         key=lambda w: (-freq[w], w),
