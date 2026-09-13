@@ -119,6 +119,7 @@ int ai_wirewrite(char *s, unsigned int speaker)
     unsigned int id;
     unsigned int j;
     unsigned int code;
+    ai_error = 0;
     if (speaker == 0) {
         ai_ringput(3);
         ai_lmput(4101);
@@ -175,4 +176,3 @@ int ai_wirewrite(char *s, unsigned int speaker)
     ai_lmput(4103);
     return 0;
 }
-
