@@ -1,0 +1,115 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: ailmzx48 SoP scan snapshot
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-sop-snapshot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact main bytes
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Build immutable scan surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf sop-scan-surface
+          mkdir -p sop-scan-surface
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+          import shutil
+          import subprocess
+
+          root = Path('.')
+          out = Path('sop-scan-surface')
+          tracked = subprocess.check_output(['git','ls-files','-z']).split(b'\0')
+          selected = []
+          for raw in tracked:
+              if not raw:
+                  continue
+              rel = raw.decode('utf-8', 'surrogateescape')
+              p = Path(rel)
+              keep = False
+              if rel == 'usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md':
+                  keep = True
+              elif p.parent == Path('usr/src/ailmzx48') and p.suffix in {'.c', '.h'}:
+                  keep = True
+              elif rel.startswith('usr/src/ailmzx48/model/'):
+                  keep = True
+              elif rel == 'usr/bin/ailmzx48/ailmzx48.c48b':
+                  keep = True
+              elif rel in {
+                  'usr/src/ailmzx48/evaluation/DESIGN-COMPLIANCE-STATUS.json',
+                  'usr/src/ailmzx48/evaluation/DESIGN-REVIEW-CERTIFICATE.md',
+                  'usr/src/ailmzx48/evaluation/check_design_compliance.py',
+                  'usr/src/ailmzx48/evaluation/context-reference-report.json',
+                  'usr/src/ailmzx48/evaluation/a48m-reference-report.json',
+                  'usr/src/ailmzx48/training/provenance.json',
+                  'usr/src/ailmzx48/training/record-lineage.json',
+                  'usr/src/ailmzx48/training/seed_corpus.json',
+                  'usr/src/ailmzx48/training/goal-status.json',
+              }:
+                  keep = True
+              if keep:
+                  selected.append(rel)
+
+          rows = []
+          surface = hashlib.sha256()
+          for rel in sorted(selected):
+              src = root / rel
+              data = src.read_bytes()
+              dst = out / rel
+              dst.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copyfile(src, dst)
+              digest = hashlib.sha256(data).hexdigest()
+              rows.append({'path': rel, 'bytes': len(data), 'sha256': digest})
+              surface.update(rel.encode('utf-8'))
+              surface.update(b'\0')
+              surface.update(len(data).to_bytes(8, 'big'))
+              surface.update(data)
+          meta = {
+              'schema': 1,
+              'source_commit': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
+              'surface_sha256': surface.hexdigest(),
+              'file_count': len(rows),
+              'files': rows,
+          }
+          (out / 'SOP-SCAN-SURFACE.json').write_text(
+              json.dumps(meta, indent=2, sort_keys=True) + '\n',
+              encoding='ascii', newline='\n'
+          )
+          print(json.dumps(meta, sort_keys=True))
+          PY
+
+      - name: Upload frozen on-disk scan surface
+        uses: actions/upload-artifact@v4
+        with:
+          name: ailmzx48-sop-scan-${{ github.sha }}
+          path: sop-scan-surface
+          if-no-files-found: error
+          retention-days: 30
