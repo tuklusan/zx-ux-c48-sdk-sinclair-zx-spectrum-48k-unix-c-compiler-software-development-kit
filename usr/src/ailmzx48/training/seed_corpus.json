@@ -5,108 +5,129 @@
     {
       "kind": "fact-user",
       "split": "train",
-      "text": "spectrum is a home computer from 1982"
+      "text": "spectrum is a home computer from 1982",
+      "topic": "spectrum"
     },
     {
       "kind": "fact-user",
       "split": "train",
-      "text": "spectrum is a home computer from 1982 with 48k memory"
+      "text": "spectrum is a home computer from 1982 with 48k memory",
+      "topic": "spectrum"
     },
     {
       "kind": "fact-user",
       "split": "train",
-      "text": "spectrum has 48k memory"
+      "text": "spectrum has 48k memory",
+      "topic": "spectrum"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "spectrum is a home computer from 1982 with a lively personality"
+      "text": "spectrum is a home computer from 1982 with a lively personality",
+      "topic": "spectrum"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "memory matters because every byte deserves care"
+      "text": "memory matters because every byte deserves care",
+      "topic": "memory"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "memory pressure rewards careful software design"
+      "text": "memory pressure rewards careful software design",
+      "topic": "memory"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "i am local language model made for conversation"
+      "text": "i am local language model made for conversation",
+      "topic": "identity"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "i am local language model made for this machine"
+      "text": "i am local language model made for this machine",
+      "topic": "identity"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "i am local language model made for small computers"
+      "text": "i am local language model made for small computers",
+      "topic": "identity"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "i can chat locally without a network"
+      "text": "i can chat locally without a network",
+      "topic": "local"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "small models need careful planning and honest uncertainty"
+      "text": "small models need careful planning and honest uncertainty",
+      "topic": "identity"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "i am ailmzx48 a local language model"
+      "text": "i am ailmzx48 a local language model",
+      "topic": "identity"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "i am ailmzx48 a local language model"
+      "text": "i am ailmzx48 a local language model",
+      "topic": "identity"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "i am ailmzx48 a local language model"
+      "text": "i am ailmzx48 a local language model",
+      "topic": "identity"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "i am ailmzx48 a local language model"
+      "text": "i am ailmzx48 a local language model",
+      "topic": "identity"
     },
     {
       "kind": "fact-user",
       "split": "train",
-      "text": "history of spectrum starts in 1982"
+      "text": "history of spectrum starts in 1982",
+      "topic": "history"
     },
     {
       "kind": "fact-user",
       "split": "train",
-      "text": "history remembers spectrum arriving in 1982"
+      "text": "history remembers spectrum arriving in 1982",
+      "topic": "history"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "local chat runs without a network"
+      "text": "local chat runs without a network",
+      "topic": "local"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "local conversation runs without a network"
+      "text": "local conversation runs without a network",
+      "topic": "local"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "games are part of spectrum culture"
+      "text": "games are part of spectrum culture",
+      "topic": "games"
     },
     {
       "kind": "style-synthetic",
       "split": "train",
-      "text": "games gave spectrum much of its character"
+      "text": "games gave spectrum much of its character",
+      "topic": "games"
     }
   ],
-  "schema": 1
+  "schema": 2
 }

@@ -94,17 +94,17 @@ int ai_isq(void)
 
 unsigned int ai_pick(void)
 {
-    if (ai_has("memory")) return ai_s_mem;
-    if (ai_has("48k")) return ai_s_mem;
-    if (ai_has("game")) return ai_s_games;
-    if (ai_has("network")) return ai_s_local;
-    if (ai_has("local")) return ai_s_local;
-    if (ai_has("chat")) return ai_s_local;
-    if (ai_has("1982")) return ai_s_hist;
-    if (ai_has("history")) return ai_s_hist;
-    if (ai_has("spectrum")) return ai_s_spec;
-    if (ai_has("computer")) return ai_s_spec;
-    return ai_s_chat;
+    if (ai_has("memory")) return ai_t_mem;
+    if (ai_has("48k")) return ai_t_mem;
+    if (ai_has("game")) return ai_t_games;
+    if (ai_has("network")) return ai_t_local;
+    if (ai_has("local")) return ai_t_local;
+    if (ai_has("chat")) return ai_t_local;
+    if (ai_has("1982")) return ai_t_hist;
+    if (ai_has("history")) return ai_t_hist;
+    if (ai_has("spectrum")) return ai_t_spec;
+    if (ai_has("computer")) return ai_t_spec;
+    return ai_t_id;
 }
 
 int ai_addtok(unsigned int id)
@@ -130,24 +130,30 @@ int ai_addtok(unsigned int id)
     return 1;
 }
 
-int ai_generate(unsigned int seed)
+int ai_generate(unsigned int topic)
 {
     unsigned int cur;
     unsigned int next;
     unsigned int steps;
     unsigned int limit;
+    unsigned int base;
     unsigned int i;
     ai_olen = 0;
     ai_otokens = 0;
     ai_error = 0;
+    if (topic >= ai_tcnt) {
+        ai_error = 3;
+        return -1;
+    }
     i = 0;
     while (i < 96) {
         ai_seen[i] = 0;
         i = i + 1;
     }
-    cur = seed;
+    base = topic * ai_vcnt;
+    cur = ai_tseed[topic];
     limit = 10;
-    if (seed == ai_s_mem) limit = 8;
+    if (topic == ai_t_mem) limit = 8;
     steps = 0;
     while (cur != 0 && steps < limit) {
         if (ai_seen[cur] != 0) break;
@@ -157,15 +163,10 @@ int ai_generate(unsigned int seed)
             break;
         }
         ai_otokens = ai_otokens + 1;
-        next = ai_n1[cur];
+        next = ai_n1[base + cur];
         if (next != 0 && ai_seen[next] != 0) {
-            if (ai_n2[cur] != 0) {
-                if (ai_seen[ai_n2[cur]] == 0) {
-                    next = ai_n2[cur];
-                } else {
-                    next = 0;
-                }
-            } else {
+            next = ai_n2[base + cur];
+            if (next != 0 && ai_seen[next] != 0) {
                 next = 0;
             }
         }
@@ -203,7 +204,7 @@ void ai_start(void)
 int main(void)
 {
     int rc;
-    unsigned int seed;
+    unsigned int topic;
     ai_turns = 0;
     ai_beeps = 0;
     ai_drop_lf = 0;
@@ -220,8 +221,8 @@ int main(void)
             continue;
         }
         if (ai_isq()) break;
-        seed = ai_pick();
-        ai_generate(seed);
+        topic = ai_pick();
+        ai_generate(topic);
         puts(ai_out);
         if (ai_turns != 65535) ai_turns = ai_turns + 1;
         ai_yields = 0;
