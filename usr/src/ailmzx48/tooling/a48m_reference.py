@@ -417,6 +417,9 @@ def build_from_seed(
     model = json.loads(model_path.read_text(encoding="utf-8"))
     topics = list(model["topics"])
     topic_map = {name: index for index, name in enumerate(topics)}
+    vocab_map = {
+        word: index for index, word in enumerate(model["vocab"])
+    }
     vocab_id = identity(model["vocab"])
     interface_desc = {
         "wire": "candidate-a-v1",
@@ -440,12 +443,21 @@ def build_from_seed(
             if topic == "history"
             else RECORD_TYPES["fact"]
         )
+        trigger_words = item.get("triggers", [])
+        if len(trigger_words) > 4:
+            raise A48MError("seed fact has too many triggers")
+        trigger_ids = []
+        for word in trigger_words:
+            if word not in vocab_map or vocab_map[word] == 0:
+                raise A48MError("seed trigger missing from vocab: " + word)
+            trigger_ids.append(vocab_map[word])
         records.append(
             encode_record(
                 record_type,
                 topic_map[topic],
                 item["text"],
                 200,
+                tuple(trigger_ids),
             )
         )
     if not records:

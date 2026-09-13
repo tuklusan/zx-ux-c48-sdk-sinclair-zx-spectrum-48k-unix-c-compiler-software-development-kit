@@ -60,6 +60,8 @@ def main() -> int:
     assert parsed["logical_length"] == len(data)
     assert parsed["read_calls"] > 1
     assert all(record["anchors"] for record in parsed["records"])
+    assert any(record["triggers"] for record in parsed["records"])
+    assert any(len(record["triggers"]) >= 2 for record in parsed["records"])
 
     expect_fail(
         lambda: parse_container(ShortReader(data[:-1], (5,)), len(data))

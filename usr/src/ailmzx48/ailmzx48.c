@@ -426,24 +426,7 @@ void ai_fhead(void)
     }
 }
 
-int ai_readfull(unsigned char *p, unsigned int n)
-{
-    unsigned int done;
-    unsigned int ask;
-    int got;
-    done = 0;
-    while (done < n) {
-        ask = n - done;
-        if (ask > 64) ask = 64;
-        got = ai_mread(&p[done], ask);
-        ai_mreads = ai_mreads + 1;
-        if (got <= 0) return -1;
-        if ((unsigned int)got > ask) return -1;
-        done = done + (unsigned int)got;
-        ai_mbytes = ai_mbytes + (unsigned int)got;
-    }
-    return 0;
-}
+#include "aimatch.h"
 
 int ai_modelscan(unsigned int topic)
 {
@@ -475,6 +458,7 @@ int ai_modelscan(unsigned int topic)
     unsigned int at;
     unsigned int code;
     unsigned int tid;
+    unsigned int thits;
     unsigned int calc;
     int score;
     int slot;
@@ -541,10 +525,12 @@ int ai_modelscan(unsigned int topic)
         rtopic = ai_getu16(ai_mstage, 2);
         if (ai_getu16(ai_mstage, 4) > 32767) return -1;
         if (ai_getu16(ai_mstage, 6) > 32767) return -1;
+        thits = 0;
         i = 0;
         while (i < tcnt) {
             tid = ai_getu16(ai_mstage, 10 + (i * 2));
             if (tid > 4095) return -1;
+            if (ai_vhas(tid)) thits = thits + 1;
             i = i + 1;
         }
         a1s = 0;
@@ -564,7 +550,10 @@ int ai_modelscan(unsigned int topic)
             if (a1s < a2e && a2s < a1e) return -1;
         }
         score = -1;
-        if (rtopic == topic) score = ai_mstage[8];
+        if (rtopic == topic) {
+            score = (int)ai_mstage[8];
+            score = score + (int)(thits * 16);
+        }
         slot = 0;
         if (score > ai_w1score) {
             if (ai_w1score >= 0) {

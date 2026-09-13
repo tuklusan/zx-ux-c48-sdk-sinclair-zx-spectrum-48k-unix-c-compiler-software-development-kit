@@ -2,54 +2,301 @@
   "name": "ailmzx48 enriched synthetic seed",
   "policy": "Original project-specific seed text generated at the user's direction. No ZX-UX SDK or upstream project prose/source is copied into this corpus.",
   "records": [
-    {"kind":"fact-user","split":"train","text":"i am ailmzx48 a local conversational language model for the 48k sinclair zx spectrum","topic":"identity"},
-    {"kind":"fact-user","split":"train","text":"spectrum is a 1982 home computer by sinclair research using a z80a processor with 16k rom and 16k or 48k ram","topic":"spectrum"},
-    {"kind":"fact-user","split":"train","text":"spectrum history begins in 1982 after the zx81 and later includes plus and 128k models","topic":"history"},
-    {"kind":"fact-user","split":"train","text":"48k spectrum memory combines 16k rom and 48k ram in the z80 64k address space","topic":"memory"},
-    {"kind":"fact-user","split":"train","text":"ailmzx48 runs locally on the machine and does not require a network service for conversation","topic":"local"},
-    {"kind":"fact-user","split":"train","text":"classic spectrum games include manic miner jet set willy and knight lore","topic":"games"},
-
-    {"kind":"fact-user","split":"train","text":"the original spectrum was sold with either 16k or 48k ram","topic":"spectrum"},
-    {"kind":"fact-user","split":"train","text":"the spectrum display is 256 by 192 pixels with colour attributes arranged in 8 by 8 character cells","topic":"spectrum"},
-    {"kind":"fact-user","split":"train","text":"the original spectrum uses a rubber keyboard and cassette tape for common program storage","topic":"spectrum"},
-    {"kind":"fact-user","split":"train","text":"the spectrum ula handles video timing memory contention and much of the machine interface logic","topic":"spectrum"},
-    {"kind":"fact-user","split":"train","text":"sinclair basic is stored in the spectrum 16k rom","topic":"spectrum"},
-
-    {"kind":"fact-user","split":"train","text":"the spectrum followed the zx81 in the sinclair home computer line","topic":"history"},
-    {"kind":"fact-user","split":"train","text":"the spectrum plus appeared after the original rubber keyboard model","topic":"history"},
-    {"kind":"fact-user","split":"train","text":"later spectrum models expanded memory beyond the original 48k configuration","topic":"history"},
-    {"kind":"fact-user","split":"train","text":"the spectrum became an important british home computer for games programming and education","topic":"history"},
-
-    {"kind":"fact-user","split":"train","text":"the 48k spectrum screen area occupies 6912 bytes including bitmap and colour attribute data","topic":"memory"},
-    {"kind":"fact-user","split":"train","text":"the display bitmap uses 6144 bytes and the colour attribute area uses 768 bytes","topic":"memory"},
-    {"kind":"fact-user","split":"train","text":"careful memory use matters because code graphics data stack and runtime state must share limited ram","topic":"memory"},
-    {"kind":"fact-user","split":"train","text":"bounded buffers and fixed tables help software remain predictable on a 48k machine","topic":"memory"},
-
-    {"kind":"fact-user","split":"train","text":"local conversation keeps model execution on the spectrum side of the zx ux environment","topic":"local"},
-    {"kind":"fact-user","split":"train","text":"offline chat avoids dependence on a remote language model service","topic":"local"},
-    {"kind":"fact-user","split":"train","text":"bounded local inference trades model size for predictable memory and execution cost","topic":"local"},
-
-    {"kind":"fact-user","split":"train","text":"manic miner is a platform game associated with matthew smith and the spectrum","topic":"games"},
-    {"kind":"fact-user","split":"train","text":"jet set willy followed manic miner and became another well known spectrum platform game","topic":"games"},
-    {"kind":"fact-user","split":"train","text":"knight lore is known for an isometric presentation that influenced later home computer games","topic":"games"},
-    {"kind":"fact-user","split":"train","text":"games helped define the spectrum software scene and encouraged bedroom programming","topic":"games"},
-
-    {"kind":"style-synthetic","split":"train","text":"i am ailmzx48 a local language model made for conversation","topic":"identity"},
-    {"kind":"style-synthetic","split":"train","text":"i am ailmzx48 and i answer with small clear replies","topic":"identity"},
-    {"kind":"style-synthetic","split":"train","text":"i am local and careful about what i know","topic":"identity"},
-    {"kind":"style-synthetic","split":"train","text":"small models should prefer clear useful answers over confident guessing","topic":"identity"},
-    {"kind":"style-synthetic","split":"train","text":"spectrum hardware rewards simple explanations and precise facts","topic":"spectrum"},
-    {"kind":"style-synthetic","split":"train","text":"spectrum is a compact home computer with a memorable design","topic":"spectrum"},
-    {"kind":"style-synthetic","split":"train","text":"history is easiest to follow when dates and model changes stay clear","topic":"history"},
-    {"kind":"style-synthetic","split":"train","text":"spectrum history starts in 1982 and grows through later models","topic":"history"},
-    {"kind":"style-synthetic","split":"train","text":"memory matters because every byte deserves care","topic":"memory"},
-    {"kind":"style-synthetic","split":"train","text":"memory pressure rewards careful software design","topic":"memory"},
-    {"kind":"style-synthetic","split":"train","text":"48k memory feels generous only until code data and graphics all need space","topic":"memory"},
-    {"kind":"style-synthetic","split":"train","text":"local chat runs without a network","topic":"local"},
-    {"kind":"style-synthetic","split":"train","text":"local conversation keeps the machine self contained","topic":"local"},
-    {"kind":"style-synthetic","split":"train","text":"games are part of spectrum culture","topic":"games"},
-    {"kind":"style-synthetic","split":"train","text":"games gave spectrum much of its character","topic":"games"},
-    {"kind":"style-synthetic","split":"train","text":"classic games show how much personality can fit in a small computer","topic":"games"}
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "i am ailmzx48 a local conversational language model for the 48k sinclair zx spectrum",
+      "topic": "identity"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "spectrum is a 1982 home computer by sinclair research using a z80a processor with 16k rom and 16k or 48k ram",
+      "topic": "spectrum"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "spectrum history begins in 1982 after the zx81 and later includes plus and 128k models",
+      "topic": "history"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "48k spectrum memory combines 16k rom and 48k ram in the z80 64k address space",
+      "topic": "memory"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "ailmzx48 runs locally on the machine and does not require a network service for conversation",
+      "topic": "local"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "classic spectrum games include manic miner jet set willy and knight lore",
+      "topic": "games"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "the original spectrum was sold with either 16k or 48k ram",
+      "topic": "spectrum"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "the spectrum display is 256 by 192 pixels with colour attributes arranged in 8 by 8 character cells",
+      "topic": "spectrum",
+      "triggers": [
+        "display",
+        "256",
+        "192",
+        "colour"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "the original spectrum uses a rubber keyboard and cassette tape for common program storage",
+      "topic": "spectrum",
+      "triggers": [
+        "rubber",
+        "keyboard"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "the spectrum ula handles video timing memory contention and much of the machine interface logic",
+      "topic": "spectrum"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "sinclair basic is stored in the spectrum 16k rom",
+      "topic": "spectrum",
+      "triggers": [
+        "rom",
+        "16k"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "the spectrum followed the zx81 in the sinclair home computer line",
+      "topic": "history",
+      "triggers": [
+        "zx81"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "the spectrum plus appeared after the original rubber keyboard model",
+      "topic": "history"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "later spectrum models expanded memory beyond the original 48k configuration",
+      "topic": "history"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "the spectrum became an important british home computer for games programming and education",
+      "topic": "history"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "the 48k spectrum screen area occupies 6912 bytes including bitmap and colour attribute data",
+      "topic": "memory",
+      "triggers": [
+        "6912",
+        "bytes",
+        "display"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "the display bitmap uses 6144 bytes and the colour attribute area uses 768 bytes",
+      "topic": "memory",
+      "triggers": [
+        "bitmap",
+        "6144",
+        "bytes"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "careful memory use matters because code graphics data stack and runtime state must share limited ram",
+      "topic": "memory"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "bounded buffers and fixed tables help software remain predictable on a 48k machine",
+      "topic": "memory"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "local conversation keeps model execution on the spectrum side of the zx ux environment",
+      "topic": "local"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "offline chat avoids dependence on a remote language model service",
+      "topic": "local",
+      "triggers": [
+        "network",
+        "service"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "bounded local inference trades model size for predictable memory and execution cost",
+      "topic": "local"
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "manic miner is a platform game associated with matthew smith and the spectrum",
+      "topic": "games",
+      "triggers": [
+        "manic",
+        "miner"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "jet set willy followed manic miner and became another well known spectrum platform game",
+      "topic": "games",
+      "triggers": [
+        "jet",
+        "willy"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "knight lore is known for an isometric presentation that influenced later home computer games",
+      "topic": "games",
+      "triggers": [
+        "knight",
+        "lore"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "text": "games helped define the spectrum software scene and encouraged bedroom programming",
+      "topic": "games"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i am ailmzx48 a local language model made for conversation",
+      "topic": "identity"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i am ailmzx48 and i answer with small clear replies",
+      "topic": "identity"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "i am local and careful about what i know",
+      "topic": "identity"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "small models should prefer clear useful answers over confident guessing",
+      "topic": "identity"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "spectrum hardware rewards simple explanations and precise facts",
+      "topic": "spectrum"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "spectrum is a compact home computer with a memorable design",
+      "topic": "spectrum"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "history is easiest to follow when dates and model changes stay clear",
+      "topic": "history"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "spectrum history starts in 1982 and grows through later models",
+      "topic": "history"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "memory matters because every byte deserves care",
+      "topic": "memory"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "memory pressure rewards careful software design",
+      "topic": "memory"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "48k memory feels generous only until code data and graphics all need space",
+      "topic": "memory"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "local chat runs without a network",
+      "topic": "local"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "local conversation keeps the machine self contained",
+      "topic": "local"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "games are part of spectrum culture",
+      "topic": "games"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "games gave spectrum much of its character",
+      "topic": "games"
+    },
+    {
+      "kind": "style-synthetic",
+      "split": "train",
+      "text": "classic games show how much personality can fit in a small computer",
+      "topic": "games"
+    }
   ],
   "schema": 2
 }
