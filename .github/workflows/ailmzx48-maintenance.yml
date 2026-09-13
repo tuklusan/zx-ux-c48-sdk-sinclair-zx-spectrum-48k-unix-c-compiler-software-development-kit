@@ -48,38 +48,6 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Deepen ZX-UX C48 SDK knowledge
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          p = Path("usr/src/ailmzx48/training/seed_corpus.json")
-          doc = json.loads(p.read_text(encoding="utf-8"))
-          additions = [
-            {"kind":"fact-user","split":"train","topic":"spectrum","text":"the c48 sdk is the portable host side development kit for spectrum c48 programs while future native zx ux cc remains separate","triggers":["sdk","portable","host","native"]},
-            {"kind":"fact-user","split":"train","topic":"spectrum","text":"c48 is the command line compiler front end in the spectrum c48 sdk","triggers":["c48","compiler","front","end"]},
-            {"kind":"fact-user","split":"train","topic":"spectrum","text":"c48run is the portable host runtime and virtual machine for c48 programs","triggers":["c48run","runtime","virtual","machine"]},
-            {"kind":"fact-user","split":"train","topic":"spectrum","text":"c48 int and unsigned int values use two bytes and c48 pointers are also two bytes","triggers":["int","pointer","two","bytes"]},
-            {"kind":"fact-user","split":"train","topic":"spectrum","text":"c48 uses a 16 bit logical address space of 64 kibibytes","triggers":["logical","address","64","space"]},
-            {"kind":"fact-user","split":"train","topic":"spectrum","text":"c48 float storage uses five byte spectrum style representation","triggers":["float","five","byte","storage"]},
-            {"kind":"fact-user","split":"train","topic":"spectrum","text":"c48b1 is a deterministic sdk host executable and is not zx ux obj1 mex1 or z80 machine code","triggers":["c48b1","obj1","mex1","z80"]},
-            {"kind":"fact-user","split":"train","topic":"spectrum","text":"c48 sources under usr src compile by default to the matching relative path under usr bin","triggers":["usr","src","bin","path"]},
-            {"kind":"fact-user","split":"train","topic":"spectrum","text":"the c48 sdk software text mode is 64 columns by 24 rows using a four by eight font","triggers":["text","64","24","font"]},
-            {"kind":"fact-user","split":"train","topic":"spectrum","text":"c48run headless mode can dump the exact deterministic 6912 byte spectrum screen state","triggers":["headless","dump","6912","screen"]}
-          ]
-          existing = {r["text"] for r in doc["records"]}
-          for r in additions:
-              if r["text"] not in existing:
-                  doc["records"].append(r)
-          p.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
-          PY
-          python -B usr/src/ailmzx48/tooling/build_starter_model.py \
-            --corpus usr/src/ailmzx48/training/seed_corpus.json \
-            --out-json usr/src/ailmzx48/model/current-model.json \
-            --out-h usr/src/ailmzx48/aimod.h \
-            --iteration 46
-
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
