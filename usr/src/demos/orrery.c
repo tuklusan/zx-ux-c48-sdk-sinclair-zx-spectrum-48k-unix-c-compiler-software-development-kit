@@ -116,7 +116,7 @@ int main(int argc, char **argv)
     paper(0);
     cls();
     draw_labels();
-    n = d_frames(argc, argv, 16);
+    n = d_frames(argc, argv, 240);
     for (f = 0; f < n; f++) {
         scene(f);
         yield();

@@ -111,9 +111,10 @@ int main(int argc, char **argv)
     paper(0);
     cls();
     draw_labels();
-    n = d_frames(argc, argv, 10);
+    n = d_frames(argc, argv, 48);
     for (f = 0; f < n; f++) {
         scene(f);
+        if (f + 1 < n) d_scene_break();
         yield();
     }
     return 0;

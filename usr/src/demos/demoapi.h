@@ -26,6 +26,7 @@ int udg_draw(int slot, int row, int col);
 int udg_draw_2x2(int base, int row, int col);
 int yield(void);
 int sleep(unsigned int ticks);
+int beep(float duration, float pitch);
 
 int d_tab[65] = {
     0, 3, 6, 9, 13, 16, 19, 22, 25, 28, 31, 34, 37,
@@ -94,6 +95,26 @@ int d_frames(int argc, char **argv, int defv)
     if (n < 1) n = 1;
     if (n > 240) n = 240;
     return n;
+}
+
+void d_scene_break(void)
+{
+    int rc;
+    rc = beep(0.25, 0.0);
+    if (rc != 0) return;
+    rc = beep(0.25, 4.0);
+    if (rc != 0) return;
+    rc = beep(0.25, 7.0);
+    if (rc != 0) return;
+    rc = beep(0.25, 12.0);
+    if (rc != 0) return;
+    rc = beep(0.25, 9.0);
+    if (rc != 0) return;
+    rc = beep(0.25, 7.0);
+    if (rc != 0) return;
+    rc = beep(0.25, 4.0);
+    if (rc != 0) return;
+    beep(0.25, 0.0);
 }
 
 int d_px(int x, int z)
