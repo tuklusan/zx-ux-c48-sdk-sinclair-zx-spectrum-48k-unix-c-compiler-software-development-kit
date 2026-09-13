@@ -71,15 +71,3 @@ int ai_vhas(unsigned int id)
     }
     return 0;
 }
-
-unsigned int ai_routepick(void)
-{
-    if (ai_has("bitmap")) return ai_t_mem;
-    if (ai_has("manic miner")) return ai_t_games;
-    if (ai_has("knight lore")) return ai_t_games;
-    if (ai_has("jet set willy")) return ai_t_games;
-    if (ai_has("came before")) return ai_t_hist;
-    return ai_pick();
-}
-
-#define ai_pick ai_routepick

@@ -265,14 +265,18 @@ void ai_histpush(unsigned int topic)
 
 unsigned int ai_pick(void)
 {
-    if (ai_has("memory")) return ai_t_mem;
+    if (ai_has("memory") || ai_has("bitmap"))
+        return ai_t_mem;
     if (ai_has("48k")) return ai_t_mem;
-    if (ai_has("game")) return ai_t_games;
+    if (ai_has("game") || ai_has("miner"))
+        return ai_t_games;
+    if (ai_has("lore")) return ai_t_games;
     if (ai_has("network")) return ai_t_local;
     if (ai_has("local")) return ai_t_local;
     if (ai_has("chat")) return ai_t_local;
-    if (ai_has("1982")) return ai_t_hist;
-    if (ai_has("history")) return ai_t_hist;
+    if (ai_has("1982") || ai_has("history"))
+        return ai_t_hist;
+    if (ai_has("before")) return ai_t_hist;
     if (ai_has("spectrum")) return ai_t_spec;
     if (ai_has("computer")) return ai_t_spec;
     if (ai_hcount != 0 && ai_has("go back")) {

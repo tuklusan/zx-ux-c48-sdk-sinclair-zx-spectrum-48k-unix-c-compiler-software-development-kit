@@ -8,13 +8,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "f5cef024b7972fcda374c1acbe8ac1dea00b827cdd18bd2774d20aa5d61f51b7",
-      "binary_sha256": "94c2cd67cfc9bab8246af7f14a3a9df0573edc6e93cd81321bb24b1c8360dee2",
-      "first_screen_sha256": "6eafe6a61be0f53d03eb35822c73c95c5fdddc1dbf328882f357c3430db10a41",
-      "screen_sha256": "8ebd9a4857da07130addf1f10dc82f59e05266f62d1cc0b7bc517fd9fbe28b03",
-      "png_sha256": "ebaf07e75e09ae9eaee6314356809d603782b436d341a68e22e82000da527177",
-      "lit_pixels": 4579,
-      "attribute_values": 1
+      "source_sha256": "b5ae7205859824afe4bc38f03ecee28df10b5210b5c1e907cb8aeae55579b2ca",
+      "binary_sha256": "c58a6b4289c2d8eb2712d5e00939c7968dcc3451e1c7d0f94357d7cb75aea65b",
+      "first_screen_sha256": "d010f32625b091e046979e39b1531e43fb3f31c102a2e51addbe8fea56146193",
+      "screen_sha256": "7ca0f38320842e6617fc4bca0b5367de6c6c09ce9db364df285e5ecee0f2b114",
+      "png_sha256": "34e8924d83aa2582bf54472f08dc7f62d7832ec1d6fc7f5ec0a91fea85c3ed8a",
+      "lit_pixels": 3971,
+      "attribute_values": 3
     },
     "tunnel": {
       "title": "Infinity Tunnel",
@@ -22,13 +22,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 8,
-      "source_sha256": "dc293aa9baa132e95c8ed7495e697d18e17eaae39ff474de9ad0c35546c562d5",
-      "binary_sha256": "2b83ef034b3ad0c2d7b055256fe4c073ed2c8706d9889eb63e84ff9e608eaf72",
-      "first_screen_sha256": "e365bf861f43efa505d48db6eb2b0f9551596299f2bb12171edb26364d760c06",
-      "screen_sha256": "5e6478e3b11f01b1bf269f2be02b80c0f4173d75aef3ba3a9ab00416d30416f6",
-      "png_sha256": "0846a3d05d947222102877272c10558f4fa5a8a61761bcda43bb2b236322fa8d",
-      "lit_pixels": 2340,
-      "attribute_values": 11
+      "source_sha256": "97d7202bf0159d3c4b8c98e2a204d84be4d8565550f3ce8703097f1e566072ef",
+      "binary_sha256": "900185e088123e8a2c08b4ebb41a617966023cc77514cfb51b95c6aae0971ff1",
+      "first_screen_sha256": "83535d44cd9aa051dec84b4e3c44b583fdda6313d5943d30298953968b5cef1f",
+      "screen_sha256": "55754a6de39e83b8893b82241d5df23fb4cb91a303e0fdbe9075979f74db056d",
+      "png_sha256": "3450e4098d912b97df75008c43c1bb909dde3d77849c466b85b60dbfae76bc6f",
+      "lit_pixels": 2336,
+      "attribute_values": 12
     },
     "city": {
       "title": "Vector Metropolis",
@@ -36,13 +36,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "622b99b8de994a5cb2febc79431995c735627c275e4608b3e6d2dd7687a13e97",
-      "binary_sha256": "dbdde411d509e2a901089eb56582902551981c12ed93f5cbbd737e326e670ae4",
-      "first_screen_sha256": "c702bb98ff22685bed4ec1111b3c7993bf3a84ca6bf512cd93b52caa36017c65",
-      "screen_sha256": "10abf8f6284f54fe2d6f754ed13dfebb21b0353e8f8a0cedf2331d0a420b6951",
+      "source_sha256": "9b8a18b3c40c78c174dd2cbb7d0937af79345200d53ed97c206219d23a855de5",
+      "binary_sha256": "0d589588a19acc93cd6864057ef209fa1224bb4350ff354a113f621dc037ebd0",
+      "first_screen_sha256": "59f9466d310d515100e85ee8ceec6f7f2f3b4971a01e51a65df23cc28168b567",
+      "screen_sha256": "32c6d34d94ae2f13d7ce3ece61abf675be9ac66cabeaa001303509749c956205",
       "png_sha256": "41649818fa9e3369da96e5104962a995080f4f49bf3d2d037e07b408fd21c08b",
       "lit_pixels": 3777,
-      "attribute_values": 9
+      "attribute_values": 11
     },
     "terrain": {
       "title": "Mountain Flight",
@@ -50,13 +50,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "92b80d90ff0728ac5b5a2e310bccb097169d0aae0e6507784c2c251b0e39f99b",
-      "binary_sha256": "3c19c8d53b5a903f6a2f9b36648cffc5b012614a7e71daf61c0599c63d553157",
-      "first_screen_sha256": "a93fb149b2d3a83281318cb05c3e74e346591cf182b30160dbccd9ec77f628b8",
-      "screen_sha256": "e76667568c20440611e1795755cbae01d2dabe9495d3a865ef23780394146067",
-      "png_sha256": "322eec3cfd26fc63e55365915431b0f34055abfcf0c58b3597f6f73e3c323e1d",
-      "lit_pixels": 2847,
-      "attribute_values": 10
+      "source_sha256": "92c3fb70884eeadcfe5450d2d9087e79a15aeaa18ccbfe397f3fef840fc32094",
+      "binary_sha256": "c66896fac6fe0f6ae8aa995fd69cd97de466d75441bd76a902055abff13a484c",
+      "first_screen_sha256": "3dd00c0689b6c33b02a9dbde538dda960c4eb018d4451b7f124f03570d24d9f9",
+      "screen_sha256": "bfa49fba750283e51f909d60d2a4e90f21e9b61e539eecc62e4bd1be6a2981c9",
+      "png_sha256": "5f7a6fec8d34b346e754943fc2bff5c244f7fe3ad39faf7c5d671e0aaff90636",
+      "lit_pixels": 2802,
+      "attribute_values": 13
     },
     "ocean": {
       "title": "Ocean Grid",
@@ -64,13 +64,13 @@
       "architecture": "arm64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "b3518a676675ffa37043b53abb0bf20c489eeece314236a780b7455076c95de4",
-      "binary_sha256": "84d40dd8fdeb61072cd800d4850692f23ddb2c42e531dbf53b29505eb3e0d2b6",
-      "first_screen_sha256": "c5108eff521c7abc7d1e8b8ade017e42e92e6509f497c93d69e3057dd98ab9ee",
-      "screen_sha256": "a3a0f98644861f97fc2861f5e05c06e0291aba0dc587b145e45e25fc344d58e2",
-      "png_sha256": "7e4a02b360488ab571f403133136ce4544b6ebae70bbe5a3ac1302d3da2ce07f",
+      "source_sha256": "e5c934fcac83eb8be251a0a85d7c543a4f206021c99cc132cfee746c67d63ee8",
+      "binary_sha256": "19e7d8404d8c30b48ea19d019f1ed3d129e59e881414f5bd09e97743c81bb71e",
+      "first_screen_sha256": "9eaa6de1c218e0149d6b16f98d69e4bcc9accc310def58fc81f9455fad66fcb8",
+      "screen_sha256": "360785c6471434838fe82311e988f05ed0a622a1b87c50c2e2f949520de35dba",
+      "png_sha256": "7327d26b55529a8fead03ae4a9404dee67c5622a956113a12f6a70fea212d430",
       "lit_pixels": 2326,
-      "attribute_values": 5
+      "attribute_values": 7
     },
     "torus": {
       "title": "Torus Reactor",
@@ -78,13 +78,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "be114ce63abedd9bb9b974de1131fe66149f1ba4f8499db3d89a1e7de67af8d3",
-      "binary_sha256": "9b4100dc2e995c1b627d7a1c7494167e7d4d3302754b236ffae22323a6c5f7a4",
-      "first_screen_sha256": "953a4c966fb9254dce3c62eaa0e27ebeaa3366b0c3216f2eeff51b2410d9835d",
-      "screen_sha256": "42c423ff25d0aed5fbe94b7e12dc8d16b21c8ff79f823a70a24f0b18921e12b9",
-      "png_sha256": "5758d9c6d99ead841d0833e789595b7ff21364aa0d84821c89d0a3351ab5c74c",
-      "lit_pixels": 4601,
-      "attribute_values": 9
+      "source_sha256": "55e3e2a4c2053750d1a60203de1c510cb7d1bb69c1531cfcff02c6fb37c4cf83",
+      "binary_sha256": "fa3ee4acbccee9d8832c938a057c12934908a77ba9a3f3ff7f5f427aba23ec89",
+      "first_screen_sha256": "4838b4525208979423bd6dbf94349a6ff47e4f26671f76eafe08e5164d7a54c1",
+      "screen_sha256": "5451aa7cbecf70720c75c56297dcb5b69ef7eed47f747c26b968c774a386821b",
+      "png_sha256": "f592ac55986a3c210c6a7f92b0a3f4218e47db122ff62022e5436f55976aab7e",
+      "lit_pixels": 4597,
+      "attribute_values": 10
     },
     "mobius": {
       "title": "Mobius Flight",
@@ -92,13 +92,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "45eb4fdd0e16f44763743a2aae92feab0cc72569f76c3a108e775cdf80c6f48c",
-      "binary_sha256": "659264a51508a67cf31266fe6ad947a5f9e50f209456c03d23528d40e77c801b",
-      "first_screen_sha256": "d39de4df986c43252e86ed8bbb1a95d17a68cafa9599543d51f0268a18a3c38d",
-      "screen_sha256": "44517a4d10925a6ef034bba3265323024997f48efa37b547854fc85e6a3d4a13",
-      "png_sha256": "1e10be6f7fb1fdf31c615a2ab652baf7d8fab8ca9fdce188395df333df3a058e",
-      "lit_pixels": 1993,
-      "attribute_values": 6
+      "source_sha256": "e7d1707c6caad8c5debd85b144eaeec21fb08542d7c251561869551ccc19c8a5",
+      "binary_sha256": "11d0b77a942d6cdefaf228f4de57293c80db2bf6b993dc2bc48e9ee10b7b19d9",
+      "first_screen_sha256": "e7539e10f786a10a57819e73e9d2adb606fb128523f5e104aed22739af999dce",
+      "screen_sha256": "ee385cf970315d90e1331ae53d8f6dec53f87b4d03aae23773d85f511b5d23ab",
+      "png_sha256": "0ae6f014423d50d0eb90e9572543bbd331e551d0a6f01e47f605cf1aa93b960d",
+      "lit_pixels": 1895,
+      "attribute_values": 8
     },
     "morph3d": {
       "title": "Polyhedron Morph",
@@ -106,13 +106,13 @@
       "architecture": "arm64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "de5e073ee7194a6fe2dd9c10f24361acdb0abb5b7f46387dfac32c77fb7ac862",
-      "binary_sha256": "4d2ef452fb6d47db1916f1435a3aa8e0f8719d1ff749ec12751eb63ccb2d1700",
-      "first_screen_sha256": "3118a342db85323f4e993474f73a0070452c5b38b691dc86d9ce259c86815bb8",
-      "screen_sha256": "76fa34514fffa5c2016e74b4a0373db84ec993560e890c02cc30a66c1535eab1",
-      "png_sha256": "f66ce5bf511e5a75cfd738ca6d7655ff8f4807f3bd5080b82585f32188786da7",
-      "lit_pixels": 2955,
-      "attribute_values": 3
+      "source_sha256": "446f01806b3147a6b864b4baeec74a534eea2932a1bb2b68e022f2e5a8f802d5",
+      "binary_sha256": "886c9196c6a251be2d21d5c6fcf3c1ed2d00dcf184cf77399e453daa8ee23a08",
+      "first_screen_sha256": "5f4c63c3a17ac9e8179ad2455ca1adccddca0bbd25b74f59f283546ec55afd26",
+      "screen_sha256": "e16fa2c7c0dccdfffbe51778964fa49a48f6c43ee9d90b3ef93ce946fdd56f06",
+      "png_sha256": "4009117afe56df2aa203a2edbc6af33dc52955498c194ad4ece3d4ebac653833",
+      "lit_pixels": 2942,
+      "attribute_values": 5
     },
     "warp": {
       "title": "Warp Drive",
@@ -120,13 +120,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 8,
-      "source_sha256": "6c284db3c813e5232bc6ea6ad4fdfd91f791d2ccd69c910041ae625fde99e1eb",
-      "binary_sha256": "35edd9d2e7d66d60fc192607db9f898c94e564476ad7068313b258a75696784e",
-      "first_screen_sha256": "6165eacd7000747e3dc0e3543d3e5b2389f9593a343d1886f1ad177e8a924955",
-      "screen_sha256": "b3cea7c89c60a4b4595262c4fe9e34bf1b128e5d2f1c9f2299ae739a83c40761",
+      "source_sha256": "4fccbfbb59247dfbd0ebdd23d473e959493074202755a5d4c7d7e81323a4c4dc",
+      "binary_sha256": "0745fef61ab8ea550f2aaa3fe4e6760a5850ca071e774b81294a9bec9d6a01b3",
+      "first_screen_sha256": "2f0a258407a3b18805fcaaf00ff758402d64eb2b7595936b0ccb70082bf63a97",
+      "screen_sha256": "eab4fe393ab5b9cf4bbb9a0b2dfa10ae7706c3722be399afccc4dcbd7f161b69",
       "png_sha256": "d3ec6aaba34f92b1e7be99c49ea588e12aa29ef12e92786815e264663d1458bd",
       "lit_pixels": 310,
-      "attribute_values": 11
+      "attribute_values": 12
     },
     "galaxy": {
       "title": "Spiral Galaxy",
@@ -134,13 +134,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 6,
-      "source_sha256": "abcdbecd66f7ef310d0350e34f00d67ad0af9fe2e31354bc1d647c634f8f9887",
-      "binary_sha256": "a9155ee8bba76612a12d2fa430c14bac002599663381c7ec37b06d9ee455fe02",
-      "first_screen_sha256": "35a156f691af9a4b0494168e57e876bf5d5ab176687bb196a1f461f64c1f8d0c",
-      "screen_sha256": "d9a45583b0c666bad355959f50b48099b6440dec7a9d40b7b946e7d64df99d69",
-      "png_sha256": "90c2bf295c9041492d19970946ea086beeb06737a8c823e0d956c05a65a7c307",
-      "lit_pixels": 767,
-      "attribute_values": 14
+      "source_sha256": "022bd23f00ecd76ef7fbebcab166a61c2668504673e163990082f60743be4651",
+      "binary_sha256": "fa5e7f50f77a7a3c613e8afaf4ff6abc4e66acb9c5860ffc109fed9bfbf53777",
+      "first_screen_sha256": "c1e3bf6cfeaaf4531dbaedc877e7cdbde343de214810b23991d91acdd7e047ee",
+      "screen_sha256": "37877502da9944e03e059625ed40c03295afefe20fc916963ea3d86b694ab138",
+      "png_sha256": "4942542b9cb31c18e5f910a433288743473620cf2b5223071ae012eb7a0e7756",
+      "lit_pixels": 763,
+      "attribute_values": 15
     },
     "orrery": {
       "title": "Clockwork Orrery",
@@ -148,13 +148,13 @@
       "architecture": "arm64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "abf35896465f3ecca1b31690273ecbb8f8d78d761718a5327832e2013d7c4b11",
-      "binary_sha256": "552b9aa8dc466fa2f416a92c56edebf6f33808d931108029ad20643e35c1bfe1",
-      "first_screen_sha256": "a583453a8f32ae74c5b6c64c8d82086449199375eab4fbb6974db1d6d021c93b",
-      "screen_sha256": "090018ef62f52617128fcff36a41a9b11e77047a9394e3a253045d2394eadbde",
-      "png_sha256": "a4c5e39c59486e8b5e195bb59e8919d967ba957958c3cb9ac715304ec322cfd9",
-      "lit_pixels": 1667,
-      "attribute_values": 6
+      "source_sha256": "c4f6c2fd68fbd2beb0b335f7c42007eac3323f6100fc77fef7bd87bfc2baa4be",
+      "binary_sha256": "79687ddb188d28d91f74c25475cbea0867788a31e973257a2ab80f12daa24ca4",
+      "first_screen_sha256": "1c17f5ff8825c986614f0cd8e858e39f939447428f28edd14b7a12ab20ded575",
+      "screen_sha256": "8c426c6d7d9e5d35c12016b4f81368bf253ee0b4a027d5387ef91988a2adf5ba",
+      "png_sha256": "b64c3cffb6877bb374eab399a5a12066346a9fd1309264650da87cc1ebeab7cb",
+      "lit_pixels": 1669,
+      "attribute_values": 8
     },
     "firework": {
       "title": "Firework Night",
@@ -162,13 +162,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 8,
-      "source_sha256": "c83b3a2f69d2ba17f1f30c5e5e9f1648b94ee16d3e837e3d611f01ccee27fb30",
-      "binary_sha256": "5da4ca55ae2da1b9c66c728b7e72de175182ad8bbd5fbbe5cc0cdeee7354c58c",
-      "first_screen_sha256": "9520b3d5719f649a4f29886c6b62090ace755ceb9acf417fdc7ad6b44aa9182d",
-      "screen_sha256": "348994aba4a02c3f8a85aefbe3f9abbd987fe07981e9c3439e0a51914c4521af",
+      "source_sha256": "22effddfdd4341ab27bc6c7bbafc3be4793c310bc6ef913af0826e81da8211d6",
+      "binary_sha256": "507660b009bc85cef69a636fa2d380c98c2f36a5f3726aa5f791219e1c2cfac5",
+      "first_screen_sha256": "76ac5b9d61fc58ba206f1622ada5ec1a027235a067ac8db435c410d3f58a5de6",
+      "screen_sha256": "df4870d251ba27d2ca27052d460ea66befa6ed98bc04b00c305ab5dfa82d4f2e",
       "png_sha256": "7fcef0ecaf58d7ff36454bed5734693a9f4d10d620decbd8fd3cceff007cc62c",
       "lit_pixels": 1367,
-      "attribute_values": 5
+      "attribute_values": 7
     },
     "sprites": {
       "title": "Sprite Storm",
@@ -176,13 +176,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 6,
-      "source_sha256": "e375df113a8e584349ec9539bcaaca1067cea1245b8706fbfedfaa9795f9f401",
-      "binary_sha256": "88ff3b68c43a97321fa3799d29a01920acc3b83845d949ba7688ba1f2be22e4f",
-      "first_screen_sha256": "e9921de521f8fd4e54dbb65ca2e953422e376bd78abb8fa172b181b786132720",
-      "screen_sha256": "08ca35aa0f716537bd2dc4c9769dbb3693d5e6701153bcfa597f3721e80cb833",
-      "png_sha256": "8a1000a3c9a55708bce26fd0275cdf286cd959be857d905567e1a64cf31408b6",
+      "source_sha256": "32ab43c399a86a5223a1aceeea80471176c5e3f1de83fb9e7a80d9106d1595e5",
+      "binary_sha256": "c1cd4b1de0c23c24eb92bbaea67459c9e5951ac4d241a0a7f978a76c4d0ff99c",
+      "first_screen_sha256": "a85a7dc74b16ec13f186a82335f4d3e10104308ae4d1b05a4ed619324ef071ca",
+      "screen_sha256": "acaf49311c3a75ba53ca464efbd2c3862083fffcd76ab527699a90d3b09ce863",
+      "png_sha256": "aefb1eafe71b8dc32a4498cfb5872dd3ab09c62d4b2ef711ff6ea6eb20680a2c",
       "lit_pixels": 958,
-      "attribute_values": 5
+      "attribute_values": 7
     },
     "spriteanim": {
       "title": "UDG Walker",
@@ -190,13 +190,13 @@
       "architecture": "x64",
       "frames": 12,
       "stress_frames": 36,
-      "source_sha256": "40627fe89a0e91d187010153e6a354cdb84a4883a9130ad2fd164331958d8b9c",
-      "binary_sha256": "9da3e6a753d7fd45641defa70572fb50874b72d96a1caf78fcd7a2e609b24895",
-      "first_screen_sha256": "1419f8327436a5267198f324230597061a1a1b7f45aefd01d9608775fe65c03e",
-      "screen_sha256": "b0251b0204c0d94bc62d809cac83679ae421f10c31ce3aaac9ca0395dc5d7cd6",
-      "png_sha256": "2b93687de59b4a3582cb42df3227e4ac9e0cb4fc48a573273999bfa2ea6afd86",
+      "source_sha256": "df10ef4085c8417506ba1d7e5ad66eb31cab7e226425ece0b625a4d20aa1b526",
+      "binary_sha256": "9e842c7a8e0ab710329141aa1fde8ebb18d8af7dace4c9aa0dbb4a3181ba6a53",
+      "first_screen_sha256": "971a7f8124990bed08cecbd288549f1da0f1ee7ef2b2f1a67207aec5790a9adb",
+      "screen_sha256": "2424d4883e66d272328ce86f827bd3437a3a0d0941cb99fd1e96c4e4c216ee8c",
+      "png_sha256": "34aa4f2a8a82fedb3cb6debaa5bcfda3ba10f36c92e8ebe83d812e6ee58a2ce8",
       "lit_pixels": 641,
-      "attribute_values": 4
+      "attribute_values": 5
     },
     "plasma": {
       "title": "Spectrum Plasma",
@@ -204,12 +204,12 @@
       "architecture": "arm64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "e3af3018ab668716e0bd6a35d8f4b5c14c277e261569c22f27063b63e575c8a9",
-      "binary_sha256": "5a3e94725703fd189ab6cdf7857508955bc13c08c0f4ae82a3ca4c121bb22d4e",
-      "first_screen_sha256": "f64045bccf10cf905ab9173bd514f4b1db01337325a2dde7f0ee711ac69b6e9d",
-      "screen_sha256": "a6e31b888866d0fccd206d1d49caee14102578d913b896a05d1905460bda2a45",
-      "png_sha256": "11a47262836eaf8d09425c493662859855ca9d323fd9f4d742a80035c6e9bf48",
-      "lit_pixels": 26082,
+      "source_sha256": "b881d04ed6373ce1011af6118107b611b567ba471d151ea5c77a415829b9dfac",
+      "binary_sha256": "c6d8f903dd18e4039dc3fe61ede1473089aeea43b944fefd195902041aca7280",
+      "first_screen_sha256": "bddd90af5c9df1b1b77439aad479d1d97b59b18bc5faa0dc7659bccfecfb9684",
+      "screen_sha256": "62d5d3fcaa63d5972d2382b2b1940d88978757580a6825e87a22f5e279cb5baf",
+      "png_sha256": "97656d080074c8c2d2e82c6a85d9b5b4b7c74eae3c7e8297580a2bdfe25b034a",
+      "lit_pixels": 24450,
       "attribute_values": 32
     },
     "kaleido": {
@@ -218,13 +218,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "17317a9432a8d7894a3167ee5fdfcf0024e036cc3a4f34cb7edf1c9565d5cdfd",
-      "binary_sha256": "e33aa6f8f81346686a849fb4f14a8dcf8573d7bb692562cb75ce58086438c892",
-      "first_screen_sha256": "754096a6a64583a1da91de5e0f3de62955fe3718f53a79060fb0f6144f35b7ff",
-      "screen_sha256": "0a16564d4e2809877d0eea3e516176787d98058bc885bdbad608d7323511e33d",
-      "png_sha256": "2ea15a0091c6d08c5c16cf0136a306affe3202294edcd214520affc3a10796b6",
-      "lit_pixels": 3188,
-      "attribute_values": 13
+      "source_sha256": "4bcc49f55181aa99570c9fcab92fe49fb6deff802a2ad4f433ba106d02813ed6",
+      "binary_sha256": "759eea52f230200e15dae9c9a02a2e31ea112aa7c691240d213398675668434b",
+      "first_screen_sha256": "8cbe791e1f2690c7b5395e3f58efe8abf544b759dcbc9e5b9baab26f7890d449",
+      "screen_sha256": "dc54a52f5f83f732c32cb6e645197a6de3bfad1fe7b28bcdab87a63fff129949",
+      "png_sha256": "c98cea1cc99e8b980e20a46dbf737c02d4af313e41f8ac7dc6485be7aad22077",
+      "lit_pixels": 3249,
+      "attribute_values": 15
     },
     "moire": {
       "title": "Moire Engine",
@@ -232,13 +232,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "a5bd718969d767780e094c7692b59aefc26994e343d13974fe780698376737d2",
-      "binary_sha256": "c8ec44bbcdb25b7d8e72830255ad0ccd9bada8e5d46f43a0c76a613b76a71e5e",
-      "first_screen_sha256": "b972bfae648cdd086b7631fdec94231827bf275bc77f969abea2eef8d7d504c2",
-      "screen_sha256": "4d1ad0231e6bb89044a569ca4b17efb6e355f35c5ca898d28296361575e09f5f",
-      "png_sha256": "ba6af075ccab645eb7b9e8387c0ee6551b64c2e0076e009ee754aaefd104592c",
-      "lit_pixels": 6510,
-      "attribute_values": 11
+      "source_sha256": "e3a8a5ed4740ca70e507e9187fa81ceb4ebb541efc173fa4fe23415f89ce67dc",
+      "binary_sha256": "70c7bb9c3bef656e969a14784ea9268c0433560d732082862ceb2611a47d617a",
+      "first_screen_sha256": "bdd86848d22b8db13015759711bd1ebc259b1e1f8874655a0e01c7a4b2540ff3",
+      "screen_sha256": "86a349b984e2f3987c9270eca0be5c8480c046bdcf1f11bf2d4c60b7fdfbd84f",
+      "png_sha256": "69094e9ff77780bd15f6c67e62e0a0938947273d66770292cc0fc3c990144729",
+      "lit_pixels": 6523,
+      "attribute_values": 9
     },
     "mandel": {
       "title": "Mandelbrot Dive",
@@ -246,13 +246,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 3,
-      "source_sha256": "01b564a34ba5d9468501d140ea98db9702f59bc6c87b461b145b56ff66009ad9",
-      "binary_sha256": "a4ea4fe899fca1d4ac99e2689f58410ba61d3fe65cc830ac156bede12cf6f279",
-      "first_screen_sha256": "4e77690178262c90ebfe0ac217e2dd5400e06184e0ffb37800a162dd9c09f26b",
-      "screen_sha256": "ab3257ba0727fcfbb279e93c82a2776c0f8e453f7221dc133965de633a53756a",
-      "png_sha256": "658d32faf47f230fa2498a420e2f9a653464b18df09230f17c1e7f4dcd9b0f5a",
-      "lit_pixels": 3963,
-      "attribute_values": 13
+      "source_sha256": "c66fa9dba0377fe7ba4f3c7df1f480b43beee22abd707617a55e741a395653e6",
+      "binary_sha256": "c2e455569718049bbf1c14e607aeea3eeaee1c73e26690a7b00f0fb80981dc87",
+      "first_screen_sha256": "46782a5036073010c4e61d71f2101681469d71805654f04d5cdb51a8ea70b45b",
+      "screen_sha256": "35e169169ec15be3ff6efad0452f61e211d160c23b007d07a3583401156bd2fa",
+      "png_sha256": "d3b8ab32af849cd51b79a45a32c8c5b53a2fd317f7734dd891426cf451beb3b6",
+      "lit_pixels": 4075,
+      "attribute_values": 14
     },
     "julia": {
       "title": "Julia Ballet",
@@ -260,13 +260,13 @@
       "architecture": "x64",
       "frames": 2,
       "stress_frames": 3,
-      "source_sha256": "f42f7ef354450744b82bc1bfe6cafb06ef382213242194ee9fa66090861c407c",
-      "binary_sha256": "dd41cf1e5a2e0ffb259210f3d302ac022e96aeba7db1b8e31aeacae921017655",
-      "first_screen_sha256": "23a909f12fc5441a94ca5a4e6a9896051523fcdf6a18f96db023f4727bff6358",
-      "screen_sha256": "744328a8dd219e5cb85b6077f02e475f12d5a544095c6a8940b2643696006645",
-      "png_sha256": "2f2a2471b2041efc62b0277a021d915f811731a50310f36dc3023978cf8b308f",
-      "lit_pixels": 3757,
-      "attribute_values": 12
+      "source_sha256": "10289a8e299990c5f907cf8572a668e14fae440b326a79d56b71c03b9c90b350",
+      "binary_sha256": "f47c74a0ff23d3e1d2515dbb9ec1ec26d8d23747562f3364a5c03b507044312c",
+      "first_screen_sha256": "c908b56d0de87eb036ab1d6f8b4f40062c2a424438b8e7e9fbef6476822e675f",
+      "screen_sha256": "e45dfa204f0d6bda04cf536906bcc448e6c6d75857841a85db9b00046c705743",
+      "png_sha256": "dc0a931053b525b5aba6f1127d90993315647d17e5c0c189ce4590502107bae2",
+      "lit_pixels": 3891,
+      "attribute_values": 13
     },
     "forest": {
       "title": "Fractal Forest",
@@ -274,13 +274,13 @@
       "architecture": "arm64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "1706292648877bef44b0a19e793e30584fa8a8770266ecdcbc55f327e9de0309",
-      "binary_sha256": "1ee5da0fbcbf4c3531dfc1aecf2eb5a7d3a15c70c151fc36cfae32f94c3253af",
-      "first_screen_sha256": "37a70698ed3f431f6019f7a3843e6f243804668597300bc9999204eb9706827a",
-      "screen_sha256": "28484488e22b5a6cd90fc340091a36fc77000469d3252830b26f68ea8608a83d",
-      "png_sha256": "86fc51ae094f70017fdab1d2f4ea8896b1bc0d8e5a985c5065aaf87882cdcf2d",
+      "source_sha256": "9113bf156f364318eb66a4b12979556624af6ed5c8e9e6ddcce3bd89246daecd",
+      "binary_sha256": "2c20e6f8c3e6f37d49525850294b4bbe0d666db0a0728c692b73c8a47de2b87b",
+      "first_screen_sha256": "5bed9de5049c54d21743e100914f61e193e0d551d7ad3262b558bb785b18e09a",
+      "screen_sha256": "bc69f4818d8981d1d382e5a180660da7a70f46634a74eed4a248797a0a9b7c51",
+      "png_sha256": "6e0abb95422b75a6b45bd3af575545e1ea525536626deea3551dccb9e5a96ce9",
       "lit_pixels": 3785,
-      "attribute_values": 8
+      "attribute_values": 11
     },
     "raymaze": {
       "title": "Raycast Labyrinth",
@@ -288,13 +288,13 @@
       "architecture": "arm64",
       "frames": 2,
       "stress_frames": 4,
-      "source_sha256": "16a906e75e0872870a7c6751c8602b9ab57d57eda4b76bcbb38e9a8fb87bca03",
-      "binary_sha256": "874d62e7e242c188499b9e9de49dc6a7397015146203579e9f1955891960b94d",
-      "first_screen_sha256": "598ba675a1cd4ec6d8e5807b2b8034019a6704c953b6970fae81438a3ebec66f",
-      "screen_sha256": "b56c332e829deea66a87a76459670917785a41676d1ec8bda516ffa119342c08",
+      "source_sha256": "e0bb2e2c33084e5cf35b629b9fadd44fcbdc6cfcdffc93f6ed6a24252beabaf2",
+      "binary_sha256": "dc2335cb98fedd4a9f3b3df8ed26ef43de02bbbf3331e34ae748346a2e9ae6a2",
+      "first_screen_sha256": "e36d985a30fb5d66696c5b66b596fb3b5851b7780bf406f0c72a9bf34b001666",
+      "screen_sha256": "3b3a40675f8d5cc3dca77a29e707ed0875d1235082735aaf8c497900dd63a8c6",
       "png_sha256": "0b4e7cb3afa038ff39a6bf738ec27dcd3d83bd17fa57d52ce1843452351f6eea",
       "lit_pixels": 11981,
-      "attribute_values": 4
+      "attribute_values": 6
     }
   }
 }
