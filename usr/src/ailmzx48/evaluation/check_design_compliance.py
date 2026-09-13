@@ -53,15 +53,18 @@ def pass1() -> dict:
     ctx = (A / "aictx.h").read_text(encoding="utf-8")
     lit = (A / "ailit.h").read_text(encoding="utf-8")
     evict = (A / "aievict.h").read_text(encoding="utf-8")
+    gen = (A / "aigen.h").read_text(encoding="utf-8")
+    match = (A / "aimatch.h").read_text(encoding="utf-8")
     cold_header = (A / "aicold.h").read_text(encoding="utf-8")
     cold_bytes = (A / "model" / "cold-seed.bin").read_bytes()
-    require("Revision: 0.26-draft" in design, "design revision mismatch")
+    require("Revision: 0.27-draft" in design, "design revision mismatch")
     require("SDK implementation profile qualified" in design, "design status mismatch")
     require("BLOCKED_EXTERNAL" in design, "native blocker not explicit in design")
     require((A / "ailmzx48.c").stat().st_size <= 32768,
             "primary C48 source-object ceiling exceeded")
     require('#include "aievict.h"' in source, "eviction policy header not wired")
     require('#include "aicold.h"' in source, "cold identity header not wired")
+    require('#include "aigen.h"' in source, "variable-order LM header not wired")
     require("ai_mtrusted" not in source,
             "cached model trust bypasses per-scan integrity")
     require("ai_mhead[8+i]!=ai_cvid[i]" in source and
@@ -85,8 +88,12 @@ def pass1() -> dict:
     require("ai_litnext" not in source, "round-robin literal selector remains")
     require("rc = ai_ctxpair(ai_t_id);" in source,
             "name turns do not use normal context commit")
-    require("if (stored && rc >= 0) ai_namecommit();" in source,
+    require("if (stored) ai_namecommit();" in source,
             "name literal state is not commit-gated")
+    require(source.count("if (ai_ctxready() < 0)") >= 3,
+            "pre-output context preflight is not universal")
+    require("puts(ai_out)" not in lit,
+            "name response helper prints before preflight")
     set_start = source.index("int ai_setname(void)")
     set_end = source.index("void ai_nameack(void);", set_start)
     set_body = source[set_start:set_end]
@@ -102,11 +109,54 @@ def pass1() -> dict:
     require("The explicit name-memory command is the measured exception" in design,
             "post-context name-literal design rule missing")
     require("int ai_ctxcheck" in ctx, "target context preflight missing")
+    require("int ai_ctxready" in ctx,
+            "pre-output context readiness check missing")
+    require("unsigned int ai_trifind" in gen and
+            "unsigned int ai_unext" in gen and
+            "unsigned int ai_next" in gen,
+            "variable-order LM lookup/fallback missing")
+    require("ai_triuse = ai_triuse + 1" in gen,
+            "trigram-use instrumentation missing")
+    require("unsigned int ai_hfind" in match and
+            "int ai_hsame" in match,
+            "exact trigger spelling verification missing")
+    require("if ((rn & 7) == 0)" in source and
+            "ai_yields = ai_yields + 1" in source,
+            "bounded model-scan yield cadence missing")
+    require("topic = ai_t_unknown;" in source,
+            "generic unknown routing missing")
     require("unsigned int ai_litpick" in lit, "literal victim policy missing")
     require("int ai_capref" in lit and "void ai_clrref" in lit,
             "schema-aware literal invalidation missing")
     require("unsigned int ai_protect" in evict and "unsigned int ai_victim" in evict,
             "protection-aware semantic eviction missing")
+    model = load(A / "model" / "current-model.json")
+    require(model.get("schema") == 3, "hot-model schema mismatch")
+    topics = model.get("topics")
+    require(isinstance(topics, list) and topics and
+            topics[0] == "unknown" and len(topics) == 7,
+            "generic topic map mismatch")
+    tri = model.get("trigram_contexts")
+    require(isinstance(tri, list) and 1 <= len(tri) <= 64,
+            "bounded trigram plane missing")
+    require(len(model.get("unigram_fallback", [])) == 12,
+            "unigram fallback bound mismatch")
+    words = model.get("trigger_words")
+    require(isinstance(words, list) and len(words) > 100 and
+            len(words) == len(set(words)),
+            "resident exact trigger lexicon missing")
+    salt = cold_bytes[34] + (cold_bytes[35] * 256)
+    require(model.get("trigger_salt") == salt,
+            "hot/cold trigger salt mismatch")
+    parts = load(A / "training" / "evaluation-partitions.json")
+    require(parts.get("schema") == 1,
+            "evaluation partition schema mismatch")
+    require(parts.get("blind_candidate", {}).get("status") ==
+            "RESERVED_UNSCORED_NOT_USED_FOR_TUNING",
+            "blind candidate is not explicitly unscored")
+    require("No blind score" in
+            parts.get("blind_candidate", {}).get("claim", ""),
+            "blind nonclaim missing")
     cref = load(A / "evaluation" / "context-reference-report.json")
     require(cref.get("status") == "PASS", "context reference not PASS")
     require(cref.get("l0_bytes") == 896 and cref.get("l0_descriptors") == 32,
@@ -120,10 +170,13 @@ def pass1() -> dict:
             "context stress does not exceed arena-sized source history")
     a48m = load(A / "evaluation" / "a48m-reference-report.json")
     require(a48m.get("status") == "PASS", "A48M reference not PASS")
-    require(a48m.get("logical_length") == 8432, "A48M logical length mismatch")
+    require(a48m.get("logical_length") == 8458, "A48M logical length mismatch")
     require(a48m.get("record_count") == 69, "A48M record count mismatch")
     require(a48m.get("max_read_request") == 64, "A48M read bound mismatch")
     require(a48m.get("max_record_bytes") == 192, "A48M record bound mismatch")
+    require("predicate-anchor-not-full-sentence" in
+            a48m.get("tests", []),
+            "predicate-anchor reference test missing")
     goal = load(A / "training" / "goal-status.json")
     require(goal.get("goals_achieved") is True and goal.get("status") == "GOALS_ACHIEVED",
             "retained training goal no longer achieved")
@@ -148,12 +201,22 @@ def pass2() -> dict:
         require(score.get("literal_reference_losses") == 0,
                 f"{name}: literal losses")
         require(score.get("turns") == 12, f"{name}: turn count")
+        require(score.get("trigram_uses", 0) > 0,
+                f"{name}: trigram generation absent")
+        require(score.get("cooperative_yields", 0) >= 24,
+                f"{name}: cooperative scan yields absent")
         require(run.get("source_sha256") == source_hash,
                 f"{name}: source identity mismatch")
         require(run.get("c48b_sha256") == binary_hash,
                 f"{name}: binary identity mismatch")
         require(run.get("cold_model_sha256") == cold_hash,
                 f"{name}: cold-model identity mismatch")
+    expected_iters = {"final-a": 9118, "final-b": 9119,
+                      "final-c": 9120}
+    for name, iteration in expected_iters.items():
+        run = load(base / name / "run.json")
+        require(run.get("iteration") == iteration,
+                f"{name}: architecture iteration mismatch")
     score = load(base / "literal-context" / "score.json")
     run = load(base / "literal-context" / "run.json")
     require(score.get("keyword_ratio") == 1.0, "literal-context: keyword ratio")
@@ -173,6 +236,36 @@ def pass2() -> dict:
             "literal-context: binary identity mismatch")
     require(run.get("cold_model_sha256") == cold_hash,
             "literal-context: cold-model identity mismatch")
+    require(run.get("iteration") == 9117,
+            "literal-context: architecture iteration mismatch")
+    require(score.get("trigram_uses", 0) > 0,
+            "literal-context: trigram use absent")
+    require(score.get("cooperative_yields", 0) >= 100,
+            "literal-context: cooperative yields absent")
+
+    route_score = load(base / "architecture-routing" / "score.json")
+    route_run = load(base / "architecture-routing" / "run.json")
+    route_tx = load(base / "architecture-routing" / "transcript.json")
+    require(route_score.get("keyword_ratio") == 1.0 and
+            route_score.get("turns") == 2,
+            "architecture-routing: score mismatch")
+    require(route_score.get("trigram_uses", 0) >= 2 and
+            route_score.get("cooperative_yields", 0) >= 18,
+            "architecture-routing: LM/yield evidence missing")
+    require(route_run.get("iteration") == 9121,
+            "architecture-routing: iteration mismatch")
+    require(route_run.get("source_sha256") == source_hash and
+            route_run.get("c48b_sha256") == binary_hash and
+            route_run.get("cold_model_sha256") == cold_hash,
+            "architecture-routing: identity mismatch")
+    turns = route_tx.get("turns", [])
+    require(len(turns) == 2,
+            "architecture-routing: transcript turn count")
+    second = turns[1].get("diag", {})
+    require(second.get("ai_semuse") == 0 and
+            second.get("ai_mhits") == 0 and
+            second.get("ai_lasttop") == 0,
+            "hash-collision unknown route was not rejected")
 
     corpus = load(A / "training" / "seed_corpus.json")
     provenance = load(A / "training" / "provenance.json")
@@ -251,6 +344,12 @@ def pass2() -> dict:
                     f"style record source role mismatch {index}")
         seen.add(index)
     require(seen == set(range(len(records))), "lineage exact coverage mismatch")
+    parts = load(A / "training" / "evaluation-partitions.json")
+    reg = parts.get("regression", {}).get("request_sha256", {})
+    for name in ("literal-context", "final-a", "final-b",
+                 "final-c"):
+        require(reg.get(name) == sha(base / name / "request.json"),
+                f"evaluation partition request hash {name}")
     return {
         "pass": 2,
         "scope": "implementation-to-retained-evidence-and-lineage",
@@ -271,6 +370,16 @@ def pass3() -> dict:
             integ.get("vocabulary_identity_checked") is True and
             integ.get("interface_identity_checked") is True,
             "cold-scan integrity status missing")
+    arch = sdk.get("model_architecture", {})
+    require(arch.get("schema") == 3 and
+            arch.get("max_order") == 3 and
+            arch.get("trigram_contexts") == 64 and
+            arch.get("exact_trigger_spelling") is True and
+            arch.get("generic_unknown_topic") == 0,
+            "model architecture status missing")
+    require(sdk.get("evaluation_partitioning", {}).get("blind_status") ==
+            "RESERVED_UNSCORED_NOT_USED_FOR_TUNING",
+            "evaluation partition status missing")
     require(native.get("status") == "BLOCKED_EXTERNAL",
             "native blocker status must remain explicit")
     require(native.get("upstream_repository") ==
@@ -304,6 +413,10 @@ def pass3() -> dict:
             "native certificate boundary missing")
     require("Every cold scan recomputes Fletcher-16" in cert,
             "cold-scan integrity certificate marker missing")
+    require("variable-order LM" in cert and
+            "exact trigger spelling" in cert and
+            "blind candidate remains reserved and unscored" in cert,
+            "architecture certificate markers missing")
     verify = (ROOT / "compiler" / "verify_release.py").read_text(encoding="utf-8")
     require("check_ailmzx48_design" in verify,
             "release verifier does not invoke design compliance")

@@ -61,6 +61,11 @@ def main() -> int:
     assert parsed["logical_length"] == len(data)
     assert parsed["read_calls"] > 1
     assert all(record["anchors"] for record in parsed["records"])
+    assert all(1 <= len(record["anchors"]) <= 2
+               for record in parsed["records"])
+    assert all(sum(length for _, length in record["anchors"])
+               < len(record["payload"]) - 2
+               for record in parsed["records"])
     assert any(record["triggers"] for record in parsed["records"])
     assert any(len(record["triggers"]) >= 2 for record in parsed["records"])
 
@@ -140,6 +145,7 @@ def main() -> int:
             "reserved-header-byte-rejection",
             "oversize-record-length-rejection",
             "factual-anchor-presence",
+            "predicate-anchor-not-full-sentence",
             "exact-record-count-and-section-end",
             "collision-free-salted-trigger-id-space",
         ],

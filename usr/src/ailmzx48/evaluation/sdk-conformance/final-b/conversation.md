@@ -14,7 +14,7 @@ patent, trademark, and governing-law provisions.
 ============================================================================
 -->
 
-# ailmzx48 iter-9115 conversation
+# ailmzx48 iter-9119 conversation
 
 ## Startup
 
@@ -38,7 +38,7 @@ Enter q at any time to quit.
 User: where does spectrum colour attribute memory start
 
 ```text
-The spectrum colour attribute memory occupies addresses 22528 through 23295.
+Memory code graphics colour attribute memory occupies addresses 22528 through 23295.
 > 
 ```
 
@@ -47,7 +47,7 @@ The spectrum colour attribute memory occupies addresses 22528 through 23295.
 User: what can spectrum basic clear change to preserve bytes for machine code
 
 ```text
-Spectrum basic clear with a numeric address can change ramtop so bytes above the new ramtop can be preserved for machine code.
+Spectrum basic the clear with a numeric address can change ramtop so bytes above the new ramtop can be preserved for machine code.
 > 
 ```
 
@@ -56,7 +56,7 @@ Spectrum basic clear with a numeric address can change ramtop so bytes above the
 User: how does spectrum output sound through the internal speaker and mic
 
 ```text
-Writing spectrum ula port 254 bit 4 drives the ear output and internal speaker while bit 3 drives the mic output.
+Spectrum basic the ula port 254 bit 4 drives the ear output and internal speaker while bit 3 drives the mic output.
 > 
 ```
 
@@ -65,7 +65,7 @@ Writing spectrum ula port 254 bit 4 drives the ear output and internal speaker w
 User: in spectrum history what was the higher launch price of the original spectrum
 
 ```text
-Zx spectrum launched 23 april 1982 at 125 pounds for 16k and 175 pounds for 48k.
+History in 1982 launched 23 april 1982 at 125 pounds for 16k and 175 pounds for 48k.
 > 
 ```
 
@@ -74,7 +74,7 @@ Zx spectrum launched 23 april 1982 at 125 pounds for 16k and 175 pounds for 48k.
 User: what sales milestone did spectrum game the hobbit adventure reach
 
 ```text
-The hobbit was a 1982 melbourne house text adventure for zx spectrum and sold over 500000 units in europe.
+Games spectrum much was a 1982 melbourne house text adventure for zx spectrum and sold over 500000 units in europe.
 > 
 ```
 
@@ -83,7 +83,7 @@ The hobbit was a 1982 melbourne house text adventure for zx spectrum and sold ov
 User: what command is the compiler front end in the spectrum c48 sdk
 
 ```text
-C48 is the command line compiler front end in the spectrum c48 sdk.
+Spectrum basic the c48 the command line compiler front end in the spectrum c48 sdk.
 > 
 ```
 
@@ -92,7 +92,7 @@ C48 is the command line compiler front end in the spectrum c48 sdk.
 User: what resolution does the spectrum display use
 
 ```text
-The spectrum display is 256 by 192 pixels with colour attributes arranged in 8 by 8 character cells.
+Spectrum basic the display is 256 by 192 pixels with colour attributes arranged in 8 by 8 character cells.
 > 
 ```
 
@@ -101,7 +101,7 @@ The spectrum display is 256 by 192 pixels with colour attributes arranged in 8 b
 User: what does spectrum basic new do to the current program
 
 ```text
-Spectrum basic new deletes the current basic program and variables before starting the basic system anew.
+Spectrum basic the new deletes the current basic program and variables before starting the basic system anew.
 > 
 ```
 
@@ -110,7 +110,7 @@ Spectrum basic new deletes the current basic program and variables before starti
 User: what keys do spectrum sinclair interface 2 joysticks appear as
 
 ```text
-Sinclair interface 2 joysticks appear as spectrum number keys 1 through 5 and 6 through 0.
+Spectrum basic the 2 joysticks appear as spectrum number keys 1 through 5 and 6 through 0.
 > 
 ```
 
@@ -119,7 +119,7 @@ Sinclair interface 2 joysticks appear as spectrum number keys 1 through 5 and 6 
 User: in spectrum history what changed with the spectrum plus in 1984
 
 ```text
-Spectrum plus arrived in 1984 with ql style keyboard reset button and 48k ram.
+History in 1982 arrived in 1984 with ql style keyboard reset button and 48k ram.
 > 
 ```
 
@@ -128,7 +128,7 @@ Spectrum plus arrived in 1984 with ql style keyboard reset button and 48k ram.
 User: which publisher made spectrum game jetpac shoot em up
 
 ```text
-Jetpac was a 1983 ultimate play the game shoot em up for the 16k spectrum.
+Games spectrum much jetpac a 1983 ultimate play the game shoot em up for the 16k spectrum.
 > 
 ```
 
@@ -137,6 +137,6 @@ Jetpac was a 1983 ultimate play the game shoot em up for the 16k spectrum.
 User: what role does c48run have in the spectrum c48 sdk runtime
 
 ```text
-C48run is the portable host runtime and virtual machine for c48 programs.
+Spectrum basic the c48run the portable host runtime and virtual machine for c48 programs.
 > 
 ```

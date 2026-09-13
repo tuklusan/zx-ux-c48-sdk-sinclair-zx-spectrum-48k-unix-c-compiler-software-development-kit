@@ -166,7 +166,8 @@ class Feeder:
                      "ai_compact", "ai_l2evict",
                      "ai_l1drop", "ai_litloss",
                      "ai_encfail", "ai_semuse",
-                     "ai_lmcount", "ai_l0wire"):
+                     "ai_triuse", "ai_lmcount",
+                     "ai_l0wire"):
             lv = self.vm.global_lvalues.get(name)
             if lv is not None:
                 out[name] = int(self.vm._load(lv).data)
@@ -496,6 +497,12 @@ def main() -> int:
     litloss_total = sum(
         turn["diag"].get("ai_litloss", 0) for turn in turns
     )
+    triuse_total = sum(
+        turn["diag"].get("ai_triuse", 0) for turn in turns
+    )
+    yield_total = sum(
+        turn["diag"].get("ai_yields", 0) for turn in turns
+    )
     max_l0bytes = max(
         (turn["diag"].get("ai_l0bytes", 0) for turn in turns),
         default=0,
@@ -536,6 +543,10 @@ def main() -> int:
         raise RuntimeError("literal invalidation gate failed")
     if max_lmcount < int(req.get("min_lmcount", 0)):
         raise RuntimeError("decoded LM-context gate failed")
+    if triuse_total < int(req.get("min_trigram_uses", 0)):
+        raise RuntimeError("trigram-use gate failed")
+    if yield_total < int(req.get("min_cooperative_yields", 0)):
+        raise RuntimeError("cooperative-yield gate failed")
     final_keyword = req.get("final_expected_keyword")
     final_keyword_hit = True
     if final_keyword is not None:
@@ -612,6 +623,8 @@ def main() -> int:
         "context_l2_evictions": l2evict_total,
         "semantic_retrieval_uses": semuse_total,
         "literal_reference_losses": litloss_total,
+        "trigram_uses": triuse_total,
+        "cooperative_yields": yield_total,
         "max_l0bytes": max_l0bytes,
         "max_l1count": max_l1count,
         "max_l2count": max_l2count,
@@ -658,6 +671,8 @@ def main() -> int:
         "context_l2_evictions": l2evict_total,
         "semantic_retrieval_uses": semuse_total,
         "literal_reference_losses": litloss_total,
+        "trigram_uses": triuse_total,
+        "cooperative_yields": yield_total,
         "max_l0bytes": max_l0bytes,
         "max_l1count": max_l1count,
         "max_l2count": max_l2count,

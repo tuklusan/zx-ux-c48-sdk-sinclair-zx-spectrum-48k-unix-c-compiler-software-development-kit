@@ -31,3 +31,9 @@ prose/source remain excluded unless separately authorized; design authority is
 not silently treated as corpus permission.  `goal-status.json` remains historical
 convergence evidence; later release repairs are requalified against the current
 source/binary/model identities in `evaluation/sdk-conformance/`.
+
+`evaluation-partitions.json` makes the evidence split explicit.  Training,
+active nonblind development probes and inspected deterministic regressions are
+separate from the reserved blind-candidate set.  The blind candidate is
+unscored and is not used for tuning; the SDK profile therefore makes no blind
+generalization claim.

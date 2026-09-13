@@ -1,0 +1,43 @@
+{
+  "blind_candidate": {
+    "claim": "No blind score or blind-generalization claim exists until a fresh reserved set is run without tuning against its outcomes.",
+    "prompt_sha256": [
+      "f6601ed8ad536687196fb7a602abbf0f8997b37b212fa0b5dd7e453c4ff5da6f",
+      "49ebdea47861dfb9e83fa77254c4abf2fc2439416dd736cd4baef129347c4aeb",
+      "8f51bbcbe9afa30f4b4ac43ebfdd950ba4ff8552efeee2b48b9c5be747504c8f"
+    ],
+    "prompts": [
+      "compare the original spectrum keyboard with the spectrum plus without guessing details not in the model",
+      "explain why a 48k program has to budget graphics code data and stack carefully",
+      "name one way cassette storage shaped spectrum use and say when you are uncertain"
+    ],
+    "status": "RESERVED_UNSCORED_NOT_USED_FOR_TUNING"
+  },
+  "development": {
+    "prompt_sha256": [
+      "64cc6b71c7175403b4c8bb36d3c793581a95ca9df6ce6989f0b64e300e7bd1cf",
+      "9e989626acbd9920f1c56c26bd7724635d2de74166f2a53cf361a3db76b234e6"
+    ],
+    "prompts": [
+      "tell me something brief about a spectrum tape loading ritual",
+      "what should a small local model do when it does not know a fact"
+    ],
+    "status": "ACTIVE_NONBLIND"
+  },
+  "policy": "Training, development, deterministic regression and blind-candidate material are explicitly separated. Blind candidates are reserved and unscored; no blind-generalization claim is made by the SDK profile.",
+  "regression": {
+    "request_sha256": {
+      "final-a": "dfd5d07e2b9185107adf63170c1df01ee2e4bb9331eabbdb43f08466c59f3db5",
+      "final-b": "8ea96c912da85c0d90f5a70492944be30bb2d6a44fdad28a7c23ead53a8d460b",
+      "final-c": "570b12fd11c93a083e87c9b53a5476d84c3cd05c276175ea99cb8f5298e8beed",
+      "literal-context": "1fc741fcfe356e2216a5ca87335f4730f4ce0915818fb81ca43fd0adadbfe073"
+    },
+    "status": "INSPECTED_DETERMINISTIC"
+  },
+  "schema": 1,
+  "train": {
+    "corpus": "seed_corpus.json",
+    "corpus_sha256": "bfec469ecc696c7d0b1b745fbc16cc5a46d31466a8219f2038430afda59470b5",
+    "record_count": 85
+  }
+}

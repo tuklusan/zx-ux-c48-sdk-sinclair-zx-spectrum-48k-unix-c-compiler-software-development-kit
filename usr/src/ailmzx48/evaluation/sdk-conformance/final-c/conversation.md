@@ -14,7 +14,7 @@ patent, trademark, and governing-law provisions.
 ============================================================================
 -->
 
-# ailmzx48 iter-9116 conversation
+# ailmzx48 iter-9120 conversation
 
 ## Startup
 
@@ -38,7 +38,7 @@ Enter q at any time to quit.
 User: what memory address do spectrum system variables begin at
 
 ```text
-The 48k spectrum system variables begin at address 23552 decimal.
+Memory code graphics spectrum system variables begin at address 23552 decimal.
 > 
 ```
 
@@ -47,7 +47,7 @@ The 48k spectrum system variables begin at address 23552 decimal.
 User: how do spectrum basic save and load normally store programs
 
 ```text
-Spectrum basic save and load store and retrieve programs using cassette tape on the original machine.
+Spectrum basic the save and load store and retrieve programs using cassette tape on the original machine.
 > 
 ```
 
@@ -56,7 +56,7 @@ Spectrum basic save and load store and retrieve programs using cassette tape on 
 User: what rear edge connector does a spectrum kempston interface use
 
 ```text
-The kempston joystick interface plugs into the spectrum rear edge expansion connector.
+Spectrum basic the joystick interface plugs into the spectrum rear edge expansion connector.
 > 
 ```
 
@@ -65,7 +65,7 @@ The kempston joystick interface plugs into the spectrum rear edge expansion conn
 User: in spectrum history who helped develop the spectrum 128
 
 ```text
-Spectrum 128 reached britain in january 1986 with 128k ram and three channel ay sound after spanish investronica development.
+History in 1982 reached britain in january 1986 with 128k ram and three channel ay sound after spanish investronica development.
 > 
 ```
 
@@ -74,7 +74,7 @@ Spectrum 128 reached britain in january 1986 with 128k ram and three channel ay 
 User: who is associated with spectrum game ant attack from quicksilva
 
 ```text
-Ant attack was a 1983 quicksilva game associated with sandy white and used isometric 3d graphics.
+Games spectrum much ant was a 1983 quicksilva game associated with sandy white and used isometric 3d graphics.
 > 
 ```
 
@@ -83,7 +83,7 @@ Ant attack was a 1983 quicksilva game associated with sandy white and used isome
 User: how many bytes do c48 int values and pointers use in the spectrum c48 sdk
 
 ```text
-C48 int and unsigned int values use two bytes and c48 pointers are also two bytes.
+Spectrum basic the and unsigned int values use two bytes and c48 pointers are also two bytes.
 > 
 ```
 
@@ -92,7 +92,7 @@ C48 int and unsigned int values use two bytes and c48 pointers are also two byte
 User: what addresses does 48k spectrum ram occupy
 
 ```text
-The 48k spectrum rom occupies addresses 0 through 16383 and ram occupies 16384 through 65535.
+Memory code graphics spectrum rom occupies addresses 0 through 16383 and ram occupies 16384 through 65535.
 > 
 ```
 
@@ -101,7 +101,7 @@ The 48k spectrum rom occupies addresses 0 through 16383 and ram occupies 16384 t
 User: what does spectrum basic run do to variables before program execution
 
 ```text
-Spectrum basic run clears variables and starts program execution from the first line or a specified line.
+Spectrum basic the run clears variables and starts program execution from the first line or a specified line.
 > 
 ```
 
@@ -110,7 +110,7 @@ Spectrum basic run clears variables and starts program execution from the first 
 User: in spectrum history what disk drive did the spectrum plus 3 use in 1987
 
 ```text
-Spectrum plus 3 arrived in 1987 with a built in three inch floppy disk drive.
+History in 1982 3 arrived in 1987 with a built in three inch floppy disk drive.
 > 
 ```
 
@@ -119,7 +119,7 @@ Spectrum plus 3 arrived in 1987 with a built in three inch floppy disk drive.
 User: who is associated with spectrum game head over heels
 
 ```text
-Head over heels was a 1987 ocean game associated with jon ritman and bernie drummond using isometric 3d graphics.
+Games spectrum much head heels was a 1987 ocean game associated with jon ritman and bernie drummond using isometric 3d graphics.
 > 
 ```
 
@@ -128,7 +128,7 @@ Head over heels was a 1987 ocean game associated with jon ritman and bernie drum
 User: is c48b1 the same as zx ux obj1 mex1 or z80 machine code in the spectrum c48 sdk
 
 ```text
-C48b1 is a deterministic sdk host executable and is not zx ux obj1 mex1 or z80 machine code.
+Spectrum basic the c48b1 a deterministic sdk host executable and is not zx ux obj1 mex1 or z80 machine code.
 > 
 ```
 
@@ -137,6 +137,6 @@ C48b1 is a deterministic sdk host executable and is not zx ux obj1 mex1 or z80 m
 User: what exact screen state can c48run headless mode dump in the spectrum c48 sdk
 
 ```text
-C48run headless mode can dump the exact deterministic 6912 byte spectrum screen state.
+Spectrum basic the mode can dump the exact deterministic 6912 byte spectrum screen state.
 > 
 ```

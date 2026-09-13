@@ -14,7 +14,7 @@ patent, trademark, and governing-law provisions.
 ============================================================================
 -->
 
-# ailmzx48 iter-9113 conversation
+# ailmzx48 iter-9117 conversation
 
 ## Startup
 
@@ -119,7 +119,7 @@ I will remember Ivy.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -128,7 +128,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -137,7 +137,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -146,7 +146,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -155,7 +155,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -164,7 +164,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -173,7 +173,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -182,7 +182,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -191,7 +191,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -200,7 +200,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -209,7 +209,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -218,7 +218,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -227,7 +227,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -236,7 +236,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -245,7 +245,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -254,7 +254,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -263,7 +263,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -272,7 +272,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -281,7 +281,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -290,7 +290,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -299,7 +299,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -308,7 +308,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -317,7 +317,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -326,7 +326,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -335,7 +335,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -344,7 +344,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -353,7 +353,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -362,7 +362,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -371,7 +371,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -380,7 +380,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -389,7 +389,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -398,7 +398,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -407,7 +407,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -416,7 +416,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -425,7 +425,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -434,7 +434,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -443,7 +443,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -452,7 +452,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -461,7 +461,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -470,7 +470,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -479,7 +479,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -488,7 +488,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -497,7 +497,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -506,7 +506,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -515,7 +515,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -524,7 +524,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -533,7 +533,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -542,7 +542,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -551,7 +551,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -560,7 +560,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -569,7 +569,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -578,7 +578,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -587,7 +587,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -596,7 +596,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -605,7 +605,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -614,7 +614,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -623,7 +623,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -632,7 +632,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -641,7 +641,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -650,7 +650,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: where in 48k memory does the screen bitmap live
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 

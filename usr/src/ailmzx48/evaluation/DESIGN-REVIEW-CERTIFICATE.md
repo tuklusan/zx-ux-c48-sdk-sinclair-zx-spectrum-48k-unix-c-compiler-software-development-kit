@@ -16,17 +16,17 @@ patent, trademark, and governing-law provisions.
 # ailmzx48 Design Compliance Certificate
 
 This certificate supersedes the historical Revision-0.11 design-only review
-certificate for the current Revision-0.26 SDK implementation profile.  It does
+certificate for the current Revision-0.27 SDK implementation profile.  It does
 not erase that historical evidence; it makes the current scope explicit.
 
 ## Reviewed identities
 
-- detailed-design revision: `0.26-draft`
-- detailed-design Git blob: `8d6c7a8d1b2f5d114dbc5432f6fb582f157a7175`
-- detailed-design SHA-256: `9a453d9dac56c2ea32ef76407df459de600786075a61e23e122776ccc0ff0225`
-- repaired C48 source SHA-256: `71f54726d0051600e5b0d6b0bd1315ce2f15afe131d109370ea515ec06b458ca`
-- SDK C48B1 artifact SHA-256: `cfa214ef00a3b5091989c7fbb35000d6964abfe9730497d92faf64ac1b9643e0`
-- cold A48M SHA-256: `5d0ad7ad82c5547f37714df1baa859510d199598e0b4a10e330393a288c70cd6`
+- detailed-design revision: `0.27-draft`
+- detailed-design Git blob: `93335d286b87a5538f27de2d043a71f0add04980`
+- detailed-design SHA-256: `1412cde257bb5026eee313aadc6830fbf6a50195b89983fa6c791671100f6f04`
+- repaired C48 source SHA-256: `660d517059644b04a3e6507d45d28aed7603cdfd5e0ab5adc136bd121cc3c3b7`
+- SDK C48B1 artifact SHA-256: `560414b6a1e8dd2f388adbff6887508b855d6e91649c08bcc525447910fc9584`
+- cold A48M SHA-256: `3dda3f6633cd8731e158970bf0658cd9126496e9d7c30ff14ab4cbcae25611ea`
 - upstream ZX-UX main inspected read-only: `8c8f918743897b352513b0545ff77487682c088f`
 - latest inspected upstream durable certification item: `P1.26`
 - certified source named by P1.26: `cb8e4ea0b68df693e5d4133fc906ed46234427b6`
@@ -47,6 +47,8 @@ SDK release verifier and `git diff --check`.  A failure prevents the certificate
 from being committed.
 
 Every cold scan recomputes Fletcher-16 and rejects vocabulary/interface identity mismatch before record use.
+
+The schema-3 hot plane is a bounded variable-order LM with a 12-token unigram fallback, topic-conditioned bigrams and 64 sorted sparse trigram contexts. Cold retrieval requires exact trigger spelling after salted-ID lookup, factual answers combine learned lead wording with immutable subject/predicate anchors, topic 0 is generic/unknown, and cold scans yield after each eight records. The blind candidate remains reserved and unscored; no blind-generalization result is claimed.
 
 ## Native release boundary
 

@@ -202,3 +202,12 @@ int ai_ctxcheck(unsigned int un, unsigned int an)
     }
     return 0;
 }
+int ai_ctxready(void)
+{
+    unsigned int un;
+    unsigned int an;
+    un = ai_encsize(ai_in);
+    an = ai_encsize(ai_out);
+    if (un == 65535 || an == 65535) return -1;
+    return ai_ctxcheck(un, an);
+}

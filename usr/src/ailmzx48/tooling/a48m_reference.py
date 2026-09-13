@@ -116,13 +116,17 @@ def choose_trigger_salt(words: list[str]) -> int:
     raise A48MError("no collision-free trigger hash salt")
 
 
-def encode_literal_payload(text: str) -> tuple[bytes, tuple[int, int]]:
+def encode_literal_payload(
+    text: str, anchor_words: tuple[str, ...] = ()
+) -> tuple[bytes, list[tuple[int, int]]]:
     words = TOKEN_RE.findall(text)
     if not words:
         raise A48MError("empty cold-record payload")
     payload = bytearray((0x01,))
-    anchor_start = len(payload)
+    starts: list[int] = []
+    ends: list[int] = []
     for word in words:
+        starts.append(len(payload))
         raw = word.encode("ascii")
         if word.isdigit():
             if len(raw) > 15:
@@ -133,12 +137,16 @@ def encode_literal_payload(text: str) -> tuple[bytes, tuple[int, int]]:
                 raise A48MError("word literal exceeds F1 bound")
             payload.extend((0xF1, len(raw)))
         payload.extend(raw)
-    anchor_len = len(payload) - anchor_start
+        ends.append(len(payload))
+    first = 2 if len(words) > 3 else max(0, len(words) - 2)
+    anchors: list[tuple[int, int]] = []
+    if words[0].lower() in set(anchor_words) and first > 0:
+        anchors.append((starts[0], ends[0] - starts[0]))
+    anchors.append((starts[first], ends[-1] - starts[first]))
     payload.append(0x02)
-    if anchor_len > 255:
-        raise A48MError("single anchor exceeds u8 length")
-    return bytes(payload), (anchor_start, anchor_len)
-
+    if any(length < 1 or length > 255 for _, length in anchors):
+        raise A48MError("predicate anchor outside u8 length")
+    return bytes(payload), anchors
 
 def token_spans(payload: bytes) -> list[tuple[int, int, bool]]:
     spans: list[tuple[int, int, bool]] = []
@@ -215,6 +223,7 @@ def encode_record(
     triggers: tuple[int, ...] = (),
     entity_a: int = 0,
     entity_b: int = 0,
+    anchor_words: tuple[str, ...] = (),
 ) -> bytes:
     if record_type not in RECORD_TYPES.values():
         raise A48MError("unknown record type")
@@ -230,8 +239,10 @@ def encode_record(
     for trigger in triggers:
         if trigger < 0 or trigger > 4095:
             raise A48MError("trigger outside lexical id space")
-    payload, anchor = encode_literal_payload(text)
-    anchors = [anchor] if record_type in FACT_TYPES else []
+    payload, fact_anchors = encode_literal_payload(
+        text, anchor_words
+    )
+    anchors = fact_anchors if record_type in FACT_TYPES else []
     validate_anchors(payload, anchors)
     raw = bytearray((0, record_type))
     raw.extend(u16(topic_id))
@@ -460,6 +471,10 @@ def build_from_seed(
                 if word not in all_trigger_words:
                     all_trigger_words.append(word)
     trigger_salt = choose_trigger_salt(all_trigger_words)
+    if model.get("trigger_salt") != trigger_salt:
+        raise A48MError("hot/cold trigger salt mismatch")
+    if sorted(model.get("trigger_words", [])) != sorted(all_trigger_words):
+        raise A48MError("hot/cold trigger lexicon mismatch")
     interface_desc = {
         "wire": "candidate-a-v1",
         "vocab": model["vocab"],
@@ -468,7 +483,9 @@ def build_from_seed(
         "record_types": RECORD_TYPES,
         "record_schema": "a48m-record-v1",
         "scoring": "topic-match-plus-importance-v1",
-        "trigger_scheme": "salted-wordhash16-band-v1",
+        "trigger_scheme": "salted-wordhash16-exact-v2",
+        "trigger_lexicon": sorted(all_trigger_words),
+        "lm_schema": model.get("schema"),
     }
     interface_id = identity(interface_desc)
     records: list[bytes] = []
@@ -499,6 +516,9 @@ def build_from_seed(
                 item["text"],
                 200,
                 tuple(trigger_ids),
+                anchor_words=tuple(
+                    str(word).lower() for word in trigger_words
+                ),
             )
         )
     if not records:

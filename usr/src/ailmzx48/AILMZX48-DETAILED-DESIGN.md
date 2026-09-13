@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: SDK implementation profile qualified; full native-release profile blocked on upstream ZX-UX implementation
-Revision: 0.26-draft
+Revision: 0.27-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48/ailmzx48.c48b`
 
@@ -242,6 +242,35 @@ physical-cassette execution path required by Sections 18, 19 and 22.  Those
 native-only obligations therefore remain explicitly `BLOCKED_EXTERNAL`; they
 are neither silently waived nor counted as SDK zero-gap evidence.
 
+Implementation measurement note (Revision 0.27): the SoP design/code/model
+scan closed the remaining SDK architecture gaps rather than relabeling them as
+acceptable shortcuts.  The generated hot model is schema 3 with topic 0
+reserved for generic/unknown, a 12-token unigram fallback, topic-conditioned
+bigram continuations, and a sorted bounded plane of 64 sparse trigram
+contexts.  `aigen.h` performs bounded binary trigram lookup and records actual
+order-three use.  Cold retrieval still uses collision-free salted IDs, but the
+target now keeps the admitted trigger spellings resident and accepts a trigger
+hit only after exact case-folded spelling verification; an arbitrary word that
+merely hashes to the same ID cannot select a fact.
+
+A48M factual records now mark an immutable factual-predicate span rather than
+marking the complete stored sentence as the anchor.  `ai_coldans()` generates
+a short learned lead through the variable-order LM and then copies the required
+predicate anchor unchanged.  The controller routes a no-match input to the
+generic topic instead of silently turning it into an identity answer.  Every
+normal response is completely built and `ai_ctxready()` performs the bounded
+no-mutation context preflight before `puts()` makes the answer visible; the
+subsequent fixed-memory commit replays the same bounds.  A long cold scan calls
+`yield()` after each eight records, with `ai_yields` retaining the measured
+per-attempt count instead of being reset after the scan.
+
+`training/evaluation-partitions.json` makes the evidence boundary explicit:
+training data, active nonblind development probes, inspected deterministic
+regressions, and a reserved unscored blind-candidate set are separate.  The
+SDK profile makes no blind-generalization claim.  Fresh architecture
+requalification uses literal/context iteration 9117, final A/B/C iterations
+9118/9119/9120, and the dedicated hash-collision/unknown-routing iteration
+9121.
 
 ### 6.1 No remote inference dependency
 
@@ -1339,39 +1368,51 @@ be rendered or summarized as a PASS in the second.
 
 ## 23. Resolved SDK parameters and remaining native questions
 
-Revision 0.26 closes the SDK-side design questions that are now fixed by
+Revision 0.27 closes the SDK-side design questions that are now fixed by
 implementation and retained evidence. They are not open tuning placeholders:
 
-- the resident canonical vocabulary is 96 entries; alias retrieval uses
-  collision-free salted trigger IDs in 224..4095 with accepted salt 23;
-- A48M v2 is 8,432 logical bytes with 69 records, a 192-byte maximum record,
+- the resident canonical vocabulary is 96 entries; schema-3 hot inference
+  uses topic 0 as generic/unknown, a 12-token unigram fallback, topic-conditioned
+  bigrams, and 64 sorted sparse trigram contexts; alias retrieval uses
+  collision-free salted trigger IDs in 224..4095 with accepted salt 23 plus
+  exact resident trigger-spelling verification before a hash hit is admitted;
+- A48M v2 is 8,458 logical bytes with 69 records, a 192-byte maximum record,
   a 64-byte maximum read request, and cold-model SHA-256
-  `5d0ad7ad82c5547f37714df1baa859510d199598e0b4a10e330393a288c70cd6`;
+  `3dda3f6633cd8731e158970bf0658cd9126496e9d7c30ff14ab4cbcae25611ea`;
 - fixed context bounds are L0=896 bytes/32 descriptors, L1=48 capsules,
   L2=24 capsules, eight generation-checked literal slots in 272 bytes, and a
   96-token decoded LM window;
 - the reference stress run covers 500 dialogue pairs, 444 L1-to-L2
   compactions, 376 L2 evictions, and 51,000 raw source-dialogue bytes without
   relaxing those fixed capacities;
-- target context commit uses no-mutation preflight before age, eviction, or
-  write mutation; semantic eviction orders retention protection before
-  importance and age;
+- target output/context commit uses `ai_ctxready()` no-mutation preflight
+  before visible output and before age, eviction, or write mutation; semantic
+  eviction orders retention protection before importance and age;
 - literal storage reuses an exact spelling, prefers an unreferenced slot, and
   otherwise chooses the least-protected, least-important, oldest referenced
   slot with explicit stale-reference invalidation;
 - literal-name turns use the same bounded output and L0/L1/L2 commit path as
   normal turns; literal generation/slot bytes and semantic name state are both
   published only after the context commit succeeds;
-- retained post-cold-integrity-repair literal/context iteration 9113 is 70/70 with
-  real compaction, L2 occupancy, semantic retrieval, stale-reference invalidation,
-  and successful newest-name recall under the current source/binary/model identities;
-- retained post-cold-integrity-repair final A/B/C iterations 9114/9115/9116 are each 12/12,
-  clean-exit, zero-unexpected-literal-loss runs against one source, one rebuilt
-  C48B1 binary, and one provenance-qualified cold-model identity;
+- retained post-architecture-repair literal/context iteration 9117 is 70/70
+  with real compaction, L2 occupancy, semantic retrieval, stale-reference
+  invalidation, trigram use, cooperative scan yields, and newest-name recall;
+- retained post-architecture-repair final A/B/C iterations 9118/9119/9120 are
+  each 12/12 clean-exit, zero-unexpected-literal-loss runs against one source,
+  one rebuilt C48B1 binary, and one provenance-qualified cold-model identity;
+- retained architecture-routing iteration 9121 proves learned trigram wording,
+  bounded cold-scan yields, generic topic-0 fallback, and rejection of `ah` as
+  a deliberate hash collision with admitted trigger `jetpac`;
+- factual A48M anchors cover selected predicate spans rather than complete
+  stored sentences; normal cold answers generate learned lead wording before
+  copying the selected factual span unchanged;
+- the evaluation partition manifest separates train, active nonblind
+  development and inspected deterministic regression evidence while keeping
+  the blind candidate explicitly reserved/unscored; no blind score is claimed;
 - provenance schema 3 gives every factual seed record a non-generated licensed
   or separately authorized authority and permanently rejects synthetic material
-  as factual authority; corrected BASIC RUN and Hobbit sales claims retain the
-  frozen 8,432-byte A48M envelope;
+  as factual authority; corrected BASIC RUN and Hobbit sales claims remain within the
+  measured 8,458-byte A48M envelope;
 - every cold scan rechecks A48M vocabulary/interface identities, structural bounds,
   exact logical consumption, and Fletcher-16 integrity before a selected record can
   reach response generation; the target has no cached model-trust bypass;

@@ -14,7 +14,7 @@ patent, trademark, and governing-law provisions.
 ============================================================================
 -->
 
-# ailmzx48 iter-9114 conversation
+# ailmzx48 iter-9118 conversation
 
 ## Startup
 
@@ -38,7 +38,7 @@ Enter q at any time to quit.
 User: what address does the spectrum screen bitmap start at
 
 ```text
-The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Memory code graphics spectrum screen bitmap occupies addresses 16384 through 22527.
 > 
 ```
 
@@ -47,7 +47,7 @@ The 48k spectrum screen bitmap occupies addresses 16384 through 22527.
 User: what does spectrum basic peek do with a byte address
 
 ```text
-Spectrum basic peek reads the value of a byte at an address and poke writes a value to a byte at an address.
+Spectrum basic the peek reads the value of a byte at an address and poke writes a value to a byte at an address.
 > 
 ```
 
@@ -56,7 +56,7 @@ Spectrum basic peek reads the value of a byte at an address and poke writes a va
 User: which bit does the spectrum ula use for the ear cassette input signal
 
 ```text
-Reading spectrum ula port 254 uses bit 6 for the ear cassette input signal.
+Spectrum basic the ula port 254 uses bit 6 for the ear cassette input signal.
 > 
 ```
 
@@ -65,7 +65,7 @@ Reading spectrum ula port 254 uses bit 6 for the ear cassette input signal.
 User: in spectrum history when did the zx spectrum launch and what did the 16k version cost
 
 ```text
-Zx spectrum launched 23 april 1982 at 125 pounds for 16k and 175 pounds for 48k.
+History in 1982 launched 23 april 1982 at 125 pounds for 16k and 175 pounds for 48k.
 > 
 ```
 
@@ -74,7 +74,7 @@ Zx spectrum launched 23 april 1982 at 125 pounds for 16k and 175 pounds for 48k.
 User: what company published spectrum game the hobbit adventure
 
 ```text
-The hobbit was a 1982 melbourne house text adventure for zx spectrum and sold over 500000 units in europe.
+Games spectrum much was a 1982 melbourne house text adventure for zx spectrum and sold over 500000 units in europe.
 > 
 ```
 
@@ -83,7 +83,7 @@ The hobbit was a 1982 melbourne house text adventure for zx spectrum and sold ov
 User: what is the portable host role of the spectrum c48 sdk compared with future native zx ux cc
 
 ```text
-The c48 sdk is the portable host side development kit for spectrum c48 programs while future native zx ux cc remains separate.
+Spectrum basic the sdk is the portable host side development kit for spectrum c48 programs while future native zx ux cc remains separate.
 > 
 ```
 
@@ -92,7 +92,7 @@ The c48 sdk is the portable host side development kit for spectrum c48 programs 
 User: how does the spectrum keyboard matrix work
 
 ```text
-The spectrum keyboard is an eight by five matrix read through the ula by selecting keyboard rows.
+Spectrum basic the keyboard is an eight by five matrix read through the ula by selecting keyboard rows.
 > 
 ```
 
@@ -101,7 +101,7 @@ The spectrum keyboard is an eight by five matrix read through the ula by selecti
 User: what does spectrum basic randomize usr call
 
 ```text
-Spectrum basic randomize usr followed by an address calls a machine code routine at that address.
+Spectrum basic the randomize usr followed by an address calls a machine code routine at that address.
 > 
 ```
 
@@ -110,7 +110,7 @@ Spectrum basic randomize usr followed by an address calls a machine code routine
 User: how is a kempston joystick read on the spectrum
 
 ```text
-A kempston joystick interface is read at io port 31 and uses active high direction and fire bits.
+Spectrum basic the joystick interface is read at io port 31 and uses active high direction and fire bits.
 > 
 ```
 
@@ -119,7 +119,7 @@ A kempston joystick interface is read at io port 31 and uses active high directi
 User: in spectrum history who acquired the spectrum computer rights in 1986
 
 ```text
-Amstrad acquired spectrum computer rights in april 1986 and continued the line.
+History in 1982 amstrad spectrum computer rights in april 1986 and continued the line.
 > 
 ```
 
@@ -128,7 +128,7 @@ Amstrad acquired spectrum computer rights in april 1986 and continued the line.
 User: who created spectrum game manic miner
 
 ```text
-Manic miner is a platform game associated with matthew smith and the spectrum.
+Games spectrum much manic is a platform game associated with matthew smith and the spectrum.
 > 
 ```
 
@@ -137,6 +137,6 @@ Manic miner is a platform game associated with matthew smith and the spectrum.
 User: where do sources under usr src compile by default in the spectrum c48 sdk
 
 ```text
-C48 sources under usr src compile by default to the matching relative path under usr bin.
+Spectrum basic the under usr src compile by default to the matching relative path under usr bin.
 > 
 ```

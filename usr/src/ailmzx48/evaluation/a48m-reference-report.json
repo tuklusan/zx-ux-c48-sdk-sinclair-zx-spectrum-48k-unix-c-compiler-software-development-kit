@@ -1,11 +1,11 @@
 {
-  "logical_length": 8432,
+  "logical_length": 8458,
   "max_read_request": 64,
   "max_record_bytes": 192,
   "record_count": 69,
   "schema": 1,
-  "sha256": "5d0ad7ad82c5547f37714df1baa859510d199598e0b4a10e330393a288c70cd6",
-  "short_read_calls": 742,
+  "sha256": "3dda3f6633cd8731e158970bf0658cd9126496e9d7c30ff14ab4cbcae25611ea",
+  "short_read_calls": 748,
   "status": "PASS",
   "tests": [
     "deterministic-seed-build",
@@ -16,6 +16,7 @@
     "reserved-header-byte-rejection",
     "oversize-record-length-rejection",
     "factual-anchor-presence",
+    "predicate-anchor-not-full-sentence",
     "exact-record-count-and-section-end",
     "collision-free-salted-trigger-id-space"
   ],

@@ -1,8 +1,8 @@
 {
-  "cold_model_sha256": "5d0ad7ad82c5547f37714df1baa859510d199598e0b4a10e330393a288c70cd6",
-  "design_git_blob_sha1": "8d6c7a8d1b2f5d114dbc5432f6fb582f157a7175",
-  "design_revision": "0.26-draft",
-  "design_sha256": "9a453d9dac56c2ea32ef76407df459de600786075a61e23e122776ccc0ff0225",
+  "cold_model_sha256": "3dda3f6633cd8731e158970bf0658cd9126496e9d7c30ff14ab4cbcae25611ea",
+  "design_git_blob_sha1": "93335d286b87a5538f27de2d043a71f0add04980",
+  "design_revision": "0.27-draft",
+  "design_sha256": "1412cde257bb5026eee313aadc6830fbf6a50195b89983fa6c791671100f6f04",
   "full_native_release": {
     "latest_durable_evidence": "P1.26",
     "missing_native_evidence": [
@@ -20,41 +20,72 @@
     "upstream_repository": "tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project"
   },
   "schema": 1,
-  "sdk_c48b_sha256": "cfa214ef00a3b5091989c7fbb35000d6964abfe9730497d92faf64ac1b9643e0",
+  "sdk_c48b_sha256": "560414b6a1e8dd2f388adbff6887508b855d6e91649c08bcc525447910fc9584",
   "sdk_profile": {
+    "architecture_routing": {
+      "cooperative_yields": 18,
+      "keyword_ratio": 1.0,
+      "semantic_retrieval_uses": 1,
+      "trigram_uses": 4,
+      "turns": 2
+    },
     "cold_scan_integrity": {
       "checksum": "fletcher16-every-scan",
       "identity_header": "aicold.h",
       "interface_identity_checked": true,
       "vocabulary_identity_checked": true
     },
+    "evaluation_partitioning": {
+      "blind_generalization_claimed": false,
+      "blind_status": "RESERVED_UNSCORED_NOT_USED_FOR_TUNING",
+      "manifest": "training/evaluation-partitions.json"
+    },
     "literal_context": {
       "context_compactions": 15,
+      "cooperative_yields": 550,
       "final_keyword_hit": true,
       "keyword_ratio": 1.0,
       "literal_reference_losses": 1,
       "max_l2count": 2,
       "max_lmcount": 96,
       "semantic_retrieval_uses": 61,
+      "trigram_uses": 60,
       "turns": 70
+    },
+    "model_architecture": {
+      "exact_trigger_spelling": true,
+      "factual_anchor_policy": "subject-when-trigger-plus-predicate",
+      "generic_unknown_topic": 0,
+      "max_order": 3,
+      "scan_yield_records": 8,
+      "schema": 3,
+      "topic_count": 7,
+      "trigram_contexts": 64,
+      "unigram_fallback": 12
     },
     "post_repair_final_regressions": {
       "final-a": {
         "clean_exit": true,
+        "cooperative_yields": 108,
         "keyword_ratio": 1.0,
         "literal_reference_losses": 0,
+        "trigram_uses": 21,
         "turns": 12
       },
       "final-b": {
         "clean_exit": true,
+        "cooperative_yields": 108,
         "keyword_ratio": 1.0,
         "literal_reference_losses": 0,
+        "trigram_uses": 21,
         "turns": 12
       },
       "final-c": {
         "clean_exit": true,
+        "cooperative_yields": 108,
         "keyword_ratio": 1.0,
         "literal_reference_losses": 0,
+        "trigram_uses": 20,
         "turns": 12
       }
     },
@@ -67,5 +98,5 @@
     "status": "PASS",
     "zero_gap_passes": 3
   },
-  "source_sha256": "71f54726d0051600e5b0d6b0bd1315ce2f15afe131d109370ea515ec06b458ca"
+  "source_sha256": "660d517059644b04a3e6507d45d28aed7603cdfd5e0ab5adc136bd121cc3c3b7"
 }

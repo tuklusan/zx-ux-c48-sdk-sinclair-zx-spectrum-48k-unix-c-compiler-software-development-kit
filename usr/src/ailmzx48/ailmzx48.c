@@ -79,6 +79,7 @@ unsigned int ai_l1drop;
 unsigned int ai_litloss;
 unsigned int ai_encfail;
 unsigned int ai_semuse;
+unsigned int ai_triuse;
 unsigned int ai_lmring[96];
 unsigned int ai_lmhead;
 unsigned int ai_lmcount;
@@ -266,68 +267,7 @@ int ai_addtok(unsigned int id)
     return 1;
 }
 
-int ai_generate(unsigned int topic, unsigned int alt)
-{
-    unsigned int cur;
-    unsigned int next;
-    unsigned int steps;
-    unsigned int limit;
-    unsigned int base;
-    unsigned int i;
-    ai_olen = 0;
-    ai_otokens = 0;
-    ai_error = 0;
-    if (topic >= ai_tcnt) {
-        ai_error = 3;
-        return -1;
-    }
-    i = 0;
-    while (i < 96) {
-        ai_seen[i] = 0;
-        i = i + 1;
-    }
-    base = topic * ai_vcnt;
-    cur = ai_tseed[topic];
-    limit = 10;
-    if (topic == ai_t_mem) limit = 8;
-    steps = 0;
-    while (cur != 0 && steps < limit) {
-        if (ai_seen[cur] != 0) break;
-        ai_seen[cur] = 1;
-        if (!ai_addtok(cur)) {
-            ai_error = 2;
-            break;
-        }
-        ai_otokens = ai_otokens + 1;
-        if (steps == 0 && alt) {
-            next = ai_n2[base + cur];
-            if (next == 0) next = ai_n1[base + cur];
-            if (next != ai_n1[base + cur]) ai_altuse = 1;
-        } else {
-            next = ai_n1[base + cur];
-        }
-        if (next != 0 && ai_seen[next] != 0) {
-            next = ai_n2[base + cur];
-            if (next != 0 && ai_seen[next] != 0) {
-                next = 0;
-            }
-        }
-        cur = next;
-        steps = steps + 1;
-    }
-    if (ai_olen < 254) {
-        ai_out[ai_olen] = '.';
-        ai_olen = ai_olen + 1;
-    }
-    ai_out[ai_olen] = 0;
-    if (ai_olen != 0) {
-        if (ai_out[0] >= 'a' && ai_out[0] <= 'z') {
-            ai_out[0] = ai_out[0] - 32;
-        }
-    }
-    return 0;
-}
-
+#include "aigen.h"
 
 void ai_mcopy(unsigned char *dst, unsigned char *src,
               unsigned int n)
@@ -616,6 +556,12 @@ if (topic == ai_tcnt) {
         used = used + rlen;
         rn = rn + 1;
         ai_mrecords = ai_mrecords + 1;
+        if ((rn & 7) == 0) {
+            yield();
+            if (ai_yields != 65535) {
+                ai_yields = ai_yields + 1;
+            }
+        }
     }
     if (used != rbytes) return -1;
     calc = ai_fs1 + (ai_fs2 * 256);
@@ -658,6 +604,7 @@ int ai_coldans(void)
     unsigned int code;
     unsigned int n;
     unsigned int id;
+    unsigned int a;
     if (ai_w1len < 11) return 0;
     tcnt = ai_win1[9];
     apos = 10 + (tcnt * 2);
@@ -666,34 +613,40 @@ int ai_coldans(void)
     if (acnt == 0 || acnt > 2) return 0;
     pbase = apos + 1 + (acnt * 2);
     if (pbase >= ai_w1len) return 0;
-    pos = pbase + ai_win1[apos + 1];
-    end = pos + ai_win1[apos + 2];
-    if (end > ai_w1len || end <= pos) return 0;
-    ai_olen = 0;
-    ai_otokens = 0;
-    while (pos < end) {
-        code = ai_win1[pos];
-        pos = pos + 1;
-        if (code >= 16 && code <= 239) {
-            id = code - 16;
-            if (!ai_addtok(id)) return 0;
-        } else if (code == 240) {
-            if (pos + 2 > end) return 0;
-            id = ai_getu16(ai_win1, pos);
-            pos = pos + 2;
-            if (!ai_addtok(id)) return 0;
-        } else if (code == 241 || code == 242 ||
-                   code == 243) {
-            if (pos >= end) return 0;
-            n = ai_win1[pos];
+    if (!ai_lmlead(ai_mtopic)) {
+        ai_olen = 0;
+        ai_otokens = 0;
+    }
+    a = 0;
+    while (a < acnt) {
+        pos = pbase + ai_win1[apos + 1 + (a * 2)];
+        end = pos + ai_win1[apos + 2 + (a * 2)];
+        if (end > ai_w1len || end <= pos) return 0;
+        while (pos < end) {
+            code = ai_win1[pos];
             pos = pos + 1;
-            if (pos + n > end) return 0;
-            if (!ai_addlit(&ai_win1[pos], n)) return 0;
-            pos = pos + n;
-        } else {
-            return 0;
+            if (code >= 16 && code <= 239) {
+                id = code - 16;
+                if (!ai_addtok(id)) return 0;
+            } else if (code == 240) {
+                if (pos + 2 > end) return 0;
+                id = ai_getu16(ai_win1, pos);
+                pos = pos + 2;
+                if (!ai_addtok(id)) return 0;
+            } else if (code == 241 || code == 242 ||
+                       code == 243) {
+                if (pos >= end) return 0;
+                n = ai_win1[pos];
+                pos = pos + 1;
+                if (pos + n > end) return 0;
+                if (!ai_addlit(&ai_win1[pos], n)) return 0;
+                pos = pos + n;
+            } else {
+                return 0;
+            }
+            ai_otokens = ai_otokens + 1;
         }
-        ai_otokens = ai_otokens + 1;
+        a = a + 1;
     }
     if (ai_olen >= 254) return 0;
     ai_out[ai_olen] = '.';
@@ -704,7 +657,6 @@ int ai_coldans(void)
     }
     return 1;
 }
-
 
 unsigned int ai_strlen(char *s)
 {
@@ -1075,7 +1027,7 @@ int main(void)
     int stored;
     ai_turns = 0;
     ai_beeps = 0;
-    ai_lasttop = ai_t_id;
+    ai_lasttop = ai_t_unknown;
     ai_ctxuse = 0;
     ai_havectx = 0;
     ai_altuse = 0;
@@ -1091,7 +1043,7 @@ int main(void)
     ai_mhits = 0;
     ai_mbytes = 0;
     ai_mreads = 0;
-    ai_mtopic = ai_t_id;
+    ai_mtopic = ai_t_unknown;
     ai_l0head = 0;
     ai_l0bytes = 0;
     ai_l0count = 0;
@@ -1103,6 +1055,8 @@ int main(void)
     ai_litloss = 0;
     ai_encfail = 0;
     ai_semuse = 0;
+    ai_triuse = 0;
+    ai_yields = 0;
     ai_lmhead = 0;
     ai_lmcount = 0;
     ai_l0wire = 1;
@@ -1135,10 +1089,12 @@ int main(void)
         ai_litloss = 0;
         ai_encfail = 0;
         ai_semuse = 0;
+        ai_triuse = 0;
+        ai_yields = 0;
+        ai_error = 0;
         namecmd = ai_namecmd();
         if (namecmd != 0) {
             ai_otokens = 0;
-            ai_error = 0;
             stored = 0;
             if (namecmd == 1) {
                 if (ai_setname()) {
@@ -1146,18 +1102,27 @@ int main(void)
                     stored = 1;
                 } else {
                     ai_settext("I could not store that name.");
-                    puts(ai_out);
                 }
             } else {
                 ai_nameans();
             }
-            rc = ai_ctxpair(ai_t_id);
-            if (rc < 0 && ai_error == 0) ai_error = 5;
-            if (stored && rc >= 0) ai_namecommit();
-            if (ai_turns != 65535) {
-                ai_turns = ai_turns + 1;
+            if (ai_ctxready() < 0) {
+                ai_error = 5;
+                puts("Context rejected.");
+                yield();
+                ai_yields = ai_yields + 1;
+                continue;
             }
-            ai_yields = 0;
+            puts(ai_out);
+            rc = ai_ctxpair(ai_t_id);
+            if (rc < 0) {
+                ai_error = 5;
+            } else {
+                if (stored) ai_namecommit();
+                if (ai_turns != 65535) {
+                    ai_turns = ai_turns + 1;
+                }
+            }
             yield();
             ai_yields = ai_yields + 1;
             continue;
@@ -1166,13 +1131,20 @@ int main(void)
             topic = ai_lasttop;
             ai_ctxuse = 1;
             ai_settext("I will remember this topic.");
+            if (ai_ctxready() < 0) {
+                ai_error = 5;
+                puts("Context rejected.");
+                yield();
+                ai_yields = ai_yields + 1;
+                continue;
+            }
             puts(ai_out);
             rc = ai_ctxpair(topic);
-            if (rc < 0) ai_error = 5;
-            if (ai_turns != 65535) {
+            if (rc < 0) {
+                ai_error = 5;
+            } else if (ai_turns != 65535) {
                 ai_turns = ai_turns + 1;
             }
-            ai_yields = 0;
             yield();
             ai_yields = ai_yields + 1;
             continue;
@@ -1189,55 +1161,59 @@ int main(void)
             topic = ai_pick();
         }
         rc = ai_modelscan(topic);
-if (topic == ai_tcnt) {
-    if (rc > 0) {
-        topic = ai_mtopic;
-        ai_semuse = 1;
-    } else if (rc == 0) {
-        topic = ai_t_id;
-        rc = ai_modelscan(topic);
-    } else {
-        topic = ai_t_id;
-    }
-}
-alt = 0;
-if (ai_havectx && topic == ai_lasttop) {
-    if (ai_altstate == 0) {
-        ai_altstate = 1;
-        alt = 1;
-    } else {
-        ai_altstate = 0;
-    }
-} else {
-    ai_altstate = 0;
-}
+        if (topic == ai_tcnt) {
+            if (rc > 0) {
+                topic = ai_mtopic;
+                ai_semuse = 1;
+            } else {
+                topic = ai_t_unknown;
+            }
+        }
+        alt = 0;
+        if (ai_havectx && topic == ai_lasttop) {
+            if (ai_altstate == 0) {
+                ai_altstate = 1;
+                alt = 1;
+            } else {
+                ai_altstate = 0;
+            }
+        } else {
+            ai_altstate = 0;
+        }
         if (rc < 0) {
             ai_error = 4;
             ai_settext("Model data unavailable.");
-            puts(ai_out);
         } else if (rc > 0 && ai_coldans()) {
-            puts(ai_out);
         } else {
             ai_generate(topic, alt);
-            puts(ai_out);
         }
+        if (ai_ctxready() < 0) {
+            ai_error = 5;
+            puts("Context rejected.");
+            yield();
+            ai_yields = ai_yields + 1;
+            continue;
+        }
+        puts(ai_out);
         rc = ai_ctxpair(topic);
-        if (rc < 0 && ai_error == 0) ai_error = 5;
+        if (rc < 0) {
+            ai_error = 5;
+            yield();
+            ai_yields = ai_yields + 1;
+            continue;
+        }
         if (ai_histuse) {
             if (ai_hcount != 0) {
                 ai_hcount = ai_hcount - 1;
             }
-        } else {
-            if (!ai_ctxuse && ai_havectx) {
-                if (topic != ai_lasttop) {
-                    ai_histpush(ai_lasttop);
-                }
+        } else if (!ai_ctxuse && ai_havectx) {
+            if (topic != ai_lasttop) {
+                ai_histpush(ai_lasttop);
             }
         }
         ai_lasttop = topic;
         ai_havectx = 1;
         if (ai_turns != 65535) ai_turns = ai_turns + 1;
-        ai_yields = 0;
         yield();
         ai_yields = ai_yields + 1;
     }

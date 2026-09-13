@@ -316,7 +316,6 @@ void ai_nameack(void)
     pos = ai_find("my name is ");
     if (pos < 0) {
         ai_settext("I could not store that name.");
-        puts(ai_out);
         return;
     }
     start = pos + 11;
@@ -326,7 +325,6 @@ void ai_nameack(void)
     }
     if (n == 0 || n > 31 || n > 254 - ai_olen) {
         ai_settext("I could not store that name.");
-        puts(ai_out);
         return;
     }
     i = 0;
@@ -340,7 +338,6 @@ void ai_nameack(void)
         ai_olen = ai_olen + 1;
     }
     ai_out[ai_olen] = 0;
-    puts(ai_out);
 }
 
 void ai_nameans(void)
@@ -349,7 +346,6 @@ void ai_nameans(void)
     ref = ai_namefind();
     if (ref == 0) {
         ai_settext("I do not have your name yet.");
-        puts(ai_out);
         return;
     }
     ai_lituse = 1;
@@ -358,7 +354,6 @@ void ai_nameans(void)
     if (!ai_catref(ref) || !ai_catraw(".")) {
         ai_settext("I could not recover your name.");
     }
-    puts(ai_out);
 }
 
 void ai_namesuper(void)
