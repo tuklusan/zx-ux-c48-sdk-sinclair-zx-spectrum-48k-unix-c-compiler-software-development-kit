@@ -56,6 +56,12 @@ jobs:
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
 
+      - name: Compile ailmzx48 SDK artifact
+        run: >-
+          python -B compiler/c48.py
+          usr/src/ailmzx48/ailmzx48.c
+          -o usr/bin/ailmzx48/ailmzx48.c48b
+
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
 
