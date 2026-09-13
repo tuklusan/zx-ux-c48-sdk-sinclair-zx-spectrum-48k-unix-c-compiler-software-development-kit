@@ -11,6 +11,31 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 7, "SPECTRUM PLASMA / ATTRIBUTES");
+    print_at(22, 0, "MATH: v=sin(13x+9f)+");
+    print_at(23, 0, "sin(17y-6f)+sin(9(x+y)+4f)");
+}
+
 unsigned char p0[8] = {
     255,255,255,255,255,255,255,255
 };
@@ -39,8 +64,9 @@ void scene(int f)
     int v;
     int c;
     int s;
-    cls();
-    for (y = 2; y < 24; y++) {
+    paper(0);
+    clear_demo_rows(2, 21);
+    for (y = 2; y < 22; y++) {
         for (x = 0; x < 32; x++) {
             v = d_sin(x * 13 + f * 9);
             v = v + d_sin(y * 17 - f * 6);
@@ -53,12 +79,6 @@ void scene(int f)
             udg_draw(s, y, x);
         }
     }
-    paper(0);
-    ink(7);
-    bright(1);
-    print_at(0, 7, "SPECTRUM PLASMA / ATTRIBUTES");
-    print_at(23, 0,
-    "MATH: v=sin(13x+9f)+sin(17y-6f)+sin(9(x+y)+4f)");
 }
 
 int main(int argc, char **argv)
@@ -66,6 +86,9 @@ int main(int argc, char **argv)
     int f;
     int n;
     setup();
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 4);
     for (f = 0; f < n; f++) {
         scene(f);

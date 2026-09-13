@@ -11,6 +11,30 @@
 // ============================================================
 #include "demoapi.h"
 
+void clear_demo_rows(int first, int last)
+{
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 8, "24X21 / 3X3 UDG WALKER");
+    print_at(22, 10, "THREE ORIGINAL ANIMATION FRAMES");
+}
+
 unsigned char robot_tiles[216] = {
     0,0,0,0,0,0,0,3,28,8,255,128,
     162,128,255,255,0,0,128,128,128,128,128,224,
@@ -55,11 +79,8 @@ void robot_scene(int f)
 {
     int i;
     int col;
-    cls();
     paper(0);
-    ink(7);
-    bright(1);
-    print_at(0, 8, "24X21 / 3X3 UDG WALKER");
+    clear_demo_rows(1, 21);
     bright(0);
     ink(1);
     for (i = 0; i < 28; i++)
@@ -68,9 +89,6 @@ void robot_scene(int f)
     ink(6);
     bright(1);
     robot_draw(f % 3, 9, col);
-    ink(7);
-    bright(0);
-    print_at(22, 10, "THREE ORIGINAL ANIMATION FRAMES");
 }
 
 int main(int argc, char **argv)
@@ -78,6 +96,9 @@ int main(int argc, char **argv)
     int f;
     int n;
     robot_setup();
+    paper(0);
+    cls();
+    draw_labels();
     n = d_frames(argc, argv, 36);
     for (f = 0; f < n; f++) {
         robot_scene(f);

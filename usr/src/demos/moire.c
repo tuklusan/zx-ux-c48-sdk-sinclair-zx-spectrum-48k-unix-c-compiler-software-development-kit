@@ -11,41 +11,76 @@
 // ============================================================
 #include "demoapi.h"
 
-void scene(int f)
+void clear_demo_rows(int first, int last)
 {
-    int r;
-    int x1;
-    int y1;
-    int x2;
-    int y2;
-    cls();
-    paper(0);
-    over(1);
-    x1 = 96 + d_sin(f * 7) / 5;
-    y1 = 96 + d_cos(f * 5) / 8;
-    x2 = 160 + d_cos(f * 6) / 5;
-    y2 = 96 + d_sin(f * 4) / 8;
-    for (r = 8; r <= 80; r = r + 6) {
-        ink(1 + ((r >> 2) % 7));
-        bright(r & 8);
-        circle(x1, y1, r);
-        ink(1 + (((r >> 2) + 3) % 7));
-        circle(x2, y2, r);
-    }
+    int row;
+    ink(0);
+    bright(0);
     over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
     ink(7);
     bright(1);
-    draw(x1, y1, x2, y2);
-    print_at(0, 7, "MOIRE ENGINE / XOR INTERFERENCE");
-    print_at(23, 0,
-    "MATH: XOR circles C1(r),C2(r); centers move by sin/cos");
+    over(0);
+    inverse(0);
+    print_at(0, 7, "JULIA BALLET / MOVING CONSTANT");
+    print_at(22, 0, "MATH: z=z*z+c");
+    print_at(23, 0, "c=(-22+sin(9f)/12,cos(7f)/9)");
+}
+
+void scene(int f)
+{
+    int x;
+    int y;
+    int i;
+    int cr;
+    int ci;
+    int zx;
+    int zy;
+    int xx;
+    int py;
+    paper(0);
+    clear_demo_rows(1, 21);
+    cr = -22 + d_sin(f * 9) / 12;
+    ci = d_cos(f * 7) / 9;
+    for (y = 0; y < 48; y++) {
+        py = 16 + y * 167 / 47;
+        for (x = 0; x < 64; x++) {
+            zx = (x - 32) * 3;
+            zy = (y - 24) * 3;
+            for (i = 0; i < 12; i++) {
+                if (d_abs(zx) > 64) break;
+                if (d_abs(zy) > 64) break;
+                if (zx * zx + zy * zy > 4096) break;
+                xx = (zx * zx - zy * zy) / 32 + cr;
+                zy = 2 * zx * zy / 32 + ci;
+                zx = xx;
+            }
+            ink((i + f) & 7);
+            bright(i > 6);
+            plot(x * 4, py);
+            if (i > 8) plot(x * 4 + 1, py);
+        }
+        if ((y & 7) == 0) yield();
+    }
 }
 
 int main(int argc, char **argv)
 {
     int f;
     int n;
-    n = d_frames(argc, argv, 10);
+    paper(0);
+    cls();
+    draw_labels();
+    n = d_frames(argc, argv, 4);
     for (f = 0; f < n; f++) {
         scene(f);
         yield();

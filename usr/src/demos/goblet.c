@@ -11,66 +11,84 @@
 // ============================================================
 #include "demoapi.h"
 
-int gr[10] = {18, 28, 36, 40, 36, 16, 7, 7, 28, 32};
-int gy[10] = {58, 48, 34, 16, 0, -20, -42, -58, -66, -70};
-
-void gpt(int p, int a, int f, int *x, int *y, int *z)
+void clear_demo_rows(int first, int last)
 {
-    int u;
-    int v;
-    int w;
-    u = gr[p] * d_cos(a) / 128;
-    v = gy[p];
-    w = gr[p] * d_sin(a) / 128;
-    d_rot3(u, v, w, 10 + f * 2, f * 5, f, x, y, z);
-    *x = *x * 2;
+    int row;
+    ink(0);
+    bright(0);
+    over(0);
+    inverse(0);
+    for (row = first; row <= last; row++) {
+        print_at(row, 0, "                                ");
+        print_at(row, 32, "                                ");
+    }
+}
+
+void draw_labels(void)
+{
+    paper(0);
+    ink(7);
+    bright(1);
+    over(0);
+    inverse(0);
+    print_at(0, 7, "KALEIDOSCOPE / EIGHTFOLD LINES");
+    print_at(22, 0, "MATH: reflect across x,y,x=y");
+    print_at(23, 0, "each line becomes eight copies");
+}
+
+void ray8(int x, int y, int u, int v)
+{
+    draw(128 + x, 100 + y, 128 + u, 100 + v);
+    draw(128 - x, 100 + y, 128 - u, 100 + v);
+    draw(128 + x, 100 - y, 128 + u, 100 - v);
+    draw(128 - x, 100 - y, 128 - u, 100 - v);
+    draw(128 + y, 100 + x, 128 + v, 100 + u);
+    draw(128 - y, 100 + x, 128 - v, 100 + u);
+    draw(128 + y, 100 - x, 128 + v, 100 - u);
+    draw(128 - y, 100 - x, 128 - v, 100 - u);
 }
 
 void scene(int f)
 {
-    int p;
-    int j;
-    int a1;
-    int a2;
+    int i;
+    int a;
+    int b;
+    int r1;
+    int r2;
     int x1;
     int y1;
-    int z1;
     int x2;
     int y2;
-    int z2;
-    cls();
     paper(0);
-    border(3 + (f & 1) * 4);
+    clear_demo_rows(1, 21);
+    over(1);
+    for (i = 0; i < 22; i++) {
+        r1 = 12 + i * 3;
+        r2 = r1 + 8;
+        a = i * 17 + f * 7;
+        b = a + 11 + (f & 7);
+        x1 = d_cos(a) * r1 / 128;
+        y1 = d_sin(a) * r1 / 128;
+        x2 = d_cos(b) * r2 / 128;
+        y2 = d_sin(b) * r2 / 128;
+        ink(1 + (i % 7));
+        bright(i & 1);
+        ray8(x1, y1, x2, y2);
+    }
+    over(0);
     ink(7);
     bright(1);
-    for (p = 0; p < 10; p++) {
-        for (j = 0; j < 12; j++) {
-            a1 = j * 21;
-            if (j == 11) a2 = 0;
-            else a2 = (j + 1) * 21;
-            gpt(p, a1, f, &x1, &y1, &z1);
-            gpt(p, a2, f, &x2, &y2, &z2);
-            d_line3(x1, y1, z1, x2, y2, z2);
-        }
-    }
-    for (p = 0; p < 9; p++) {
-        for (j = 0; j < 12; j++) {
-            a1 = j * 21;
-            gpt(p, a1, f, &x1, &y1, &z1);
-            gpt(p + 1, a1, f, &x2, &y2, &z2);
-            d_line3(x1, y1, z1, x2, y2, z2);
-        }
-    }
-    print_at(0, 2, "CRYSTAL GOBLET / 3D WIREFRAME");
-    print_at(23, 0,
-    "MATH: p=(r(profile)*cos a,y(profile),r(profile)*sin a)");
+    circle(128, 100, 14 + (f & 7));
 }
 
 int main(int argc, char **argv)
 {
     int f;
     int n;
-    n = d_frames(argc, argv, 10);
+    paper(0);
+    cls();
+    draw_labels();
+    n = d_frames(argc, argv, 12);
     for (f = 0; f < n; f++) {
         scene(f);
         yield();
