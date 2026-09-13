@@ -48,66 +48,13 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Add byte-scaled budget and failure telemetry
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          path = Path("usr/src/ailmzx48/tooling/run_iteration.py")
-          text = path.read_text(encoding="utf-8")
-          replacements = [
-              (
-                  '    per_turn_step_budget = 100000 + cold_record_count * 8000\n'
-                  '    max_steps = 2000000 + len(prompts) * per_turn_step_budget\n',
-                  '    cold_model_bytes = len(COLD.read_bytes())\n'
-                  '    if cold_model_bytes < 40 or cold_model_bytes > 65535:\n'
-                  '        raise RuntimeError("invalid cold model byte length")\n'
-                  '    per_turn_step_budget = 200000 + cold_model_bytes * 120\n'
-                  '    max_steps = 2000000 + len(prompts) * per_turn_step_budget\n',
-              ),
-              (
-                  '    try:\n        status = vm.run()\n    finally:\n',
-                  '    try:\n'
-                  '        status = vm.run()\n'
-                  '    except Exception:\n'
-                  '        failure = {\n'
-                  '            "vm_steps": vm.steps,\n'
-                  '            "vm_step_limit": max_steps,\n'
-                  '            "conversation_boundaries": len(feeder.events),\n'
-                  '            "cold_record_count": cold_record_count,\n'
-                  '            "cold_model_bytes": cold_model_bytes,\n'
-                  '            "cold_model_read_calls": vm.model_calls,\n'
-                  '            "cold_model_bytes_read": vm.model_bytes,\n'
-                  '            "cold_model_seek_calls": vm.model_seeks,\n'
-                  '        }\n'
-                  '        sys.stderr.write("AILMZX48_VM_FAILURE "\n'
-                  '                         + json.dumps(failure, sort_keys=True)\n'
-                  '                         + "\\n")\n'
-                  '        raise\n'
-                  '    finally:\n',
-              ),
-              (
-                  '        "per_turn_step_budget": per_turn_step_budget,\n'
-                  '        "cold_record_count": cold_record_count,\n',
-                  '        "per_turn_step_budget": per_turn_step_budget,\n'
-                  '        "cold_record_count": cold_record_count,\n'
-                  '        "cold_model_budget_bytes": cold_model_bytes,\n',
-              ),
-          ]
-          for old, new in replacements:
-              count = text.count(old)
-              if count != 1:
-                  raise SystemExit(f"expected one patch target, found {count}: {old!r}")
-              text = text.replace(old, new)
-          path.write_text(text, encoding="utf-8")
-          compile(text, str(path), "exec")
-          PY
-
       - name: Test ailmzx48 context reference
-        run: python -B usr/src/ailmzx48/evaluation/test_context_reference.py
+        run: >-
+          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
 
       - name: Test ailmzx48 A48M reference
-        run: python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+        run: >-
+          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
 
       - name: Compile ailmzx48 SDK artifact
         run: >-
@@ -124,19 +71,12 @@ jobs:
           python -B compiler/verify_release.py
           git diff --check
 
-      - name: Commit and push evaluator diagnostics
+      - name: Commit and push maintenance checkpoint
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "ailmzx48: scale evaluator budget with cold bytes"
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then exit 0; fi
-            git fetch origin main
-            git rebase origin/main
-            python -B compiler/verify_release.py
-            git diff --check
-          done
-          exit 1
+          git commit -m "Complete ailmzx48 maintenance checkpoint"
+          git push origin HEAD:main
