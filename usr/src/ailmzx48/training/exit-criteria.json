@@ -1,0 +1,95 @@
+{
+  "schema": 1,
+  "goal": "ailmzx48 iterative knowledge, retrieval, conversation, capacity, and release-readiness program",
+  "completion_token": "GOALS_ACHIEVED",
+  "pending_token": "GOALS_PENDING",
+  "policy": "The iterative program is complete only when every required qualification scenario has retained evidence satisfying its hard gates, the final stability tail is green, and no training request remains pending. Iteration count alone never completes the program.",
+  "global_gates": {
+    "min_keyword_ratio": 1.0,
+    "require_clean_exit": true,
+    "max_vm_step_utilization": 0.85,
+    "max_literal_reference_losses": 0
+  },
+  "required_qualification_scenarios": [
+    {
+      "scenario": "knowledge-deepening-spectrum-hardware-v1",
+      "goal": "Spectrum hardware and memory-map factual coverage",
+      "min_turns": 9
+    },
+    {
+      "scenario": "knowledge-deepening-rom-basic-v1",
+      "goal": "ROM, Sinclair BASIC, system software, and machine-behaviour factual coverage",
+      "min_turns": 8
+    },
+    {
+      "scenario": "knowledge-deepening-io-peripherals-v1",
+      "goal": "Keyboard, cassette, expansion, ULA I/O, sound, and peripheral factual coverage",
+      "min_turns": 8
+    },
+    {
+      "scenario": "knowledge-deepening-history-models-v1",
+      "goal": "Sinclair and Spectrum chronology, models, and historical factual coverage",
+      "min_turns": 8
+    },
+    {
+      "scenario": "knowledge-deepening-software-games-v1",
+      "goal": "Notable Spectrum software, games, creators, and software-culture factual coverage",
+      "min_turns": 8
+    },
+    {
+      "scenario": "knowledge-deepening-zxux-v1",
+      "goal": "ZX-UX and SDK-specific knowledge grounded in this repository",
+      "min_turns": 8
+    },
+    {
+      "scenario": "retrieval-model-evidence-mixed-topic-v1",
+      "goal": "Generic model-evidence routing across mixed topics without question-specific routing hacks",
+      "min_turns": 10
+    },
+    {
+      "scenario": "retrieval-model-evidence-same-topic-v1",
+      "goal": "Discrimination among nearby records inside one topic",
+      "min_turns": 10
+    },
+    {
+      "scenario": "retrieval-paraphrase-ambiguity-v1",
+      "goal": "Robust retrieval under paraphrase, shared nouns, and ambiguous wording",
+      "min_turns": 10
+    },
+    {
+      "scenario": "conversation-context-regression-v1",
+      "goal": "Bounded multi-turn context, history, literal preservation, compaction, and reference behaviour",
+      "min_turns": 12
+    },
+    {
+      "scenario": "capacity-headroom-v1",
+      "goal": "Measured bounded execution and storage headroom under the enlarged retained corpus",
+      "min_turns": 12
+    },
+    {
+      "scenario": "final-regression-a-v1",
+      "goal": "Broad independent final regression suite A",
+      "min_turns": 12
+    },
+    {
+      "scenario": "final-regression-b-v1",
+      "goal": "Broad independent final regression suite B",
+      "min_turns": 12
+    },
+    {
+      "scenario": "final-regression-c-v1",
+      "goal": "Broad independent final regression suite C",
+      "min_turns": 12
+    }
+  ],
+  "final_stability_tail": {
+    "required_scenarios": [
+      "final-regression-a-v1",
+      "final-regression-b-v1",
+      "final-regression-c-v1"
+    ],
+    "require_consecutive_iteration_numbers": true
+  },
+  "require_no_pending_requests": true,
+  "operator_rule": "When the user says continue, inspect training/goal-status.json or run evaluation/check_exit_criteria.py. If status is GOALS_ACHIEVED, report goals achieved and do not invent another iteration. If status is GOALS_PENDING, pursue the first unmet criterion or a prerequisite needed to make that criterion meaningful; do not weaken any exit gate to finish sooner."
+}
