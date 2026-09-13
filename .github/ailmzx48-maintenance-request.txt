@@ -1,1 +1,0 @@
-Refresh manifest and verify restored A48M maintenance workflow after C48 cold integration.
