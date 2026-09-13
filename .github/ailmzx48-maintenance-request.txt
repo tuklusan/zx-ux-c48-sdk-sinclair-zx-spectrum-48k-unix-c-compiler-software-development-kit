@@ -1,0 +1,1 @@
+Apply and verify repeated-pattern support for long ailmzx48 sessions.
