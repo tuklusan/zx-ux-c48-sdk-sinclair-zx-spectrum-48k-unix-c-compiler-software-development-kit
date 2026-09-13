@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "iteration": 47,
+  "scenario": "retrieval-model-evidence-mixed-topic-v1",
+  "purpose": "Qualify generic cold-model evidence routing across mixed-topic prompts after removing hand-written noun routing. Distractor topic words must lose to stronger record-trigger evidence without weakening the evaluation gate.",
+  "max_seconds": 1200,
+  "prompts": [
+    "for the 48k memory machine which company acquired spectrum computer rights in 1986",
+    "in spectrum history which platform game is associated with matthew smith and manic miner",
+    "for a game question how many bytes does the display bitmap use",
+    "while thinking about memory which 1983 ultimate shoot em up ran on the 16k spectrum",
+    "in computer history what is c48b1 compared with obj1 mex1 and z80 machine code",
+    "for local network chat which spectrum port controls the border and carries the beeper signal",
+    "in spectrum computer history who is associated with skool daze from microsphere",
+    "in game history what storage medium did the original spectrum use with the ear and mic connections",
+    "while discussing memory and bitmap what were the launch prices for the 16k and 48k spectrum",
+    "in game history what role does c48run have as a portable runtime virtual machine"
+  ],
+  "expected_keywords": [
+    "amstrad",
+    "matthew smith",
+    "6144",
+    "jetpac",
+    "deterministic",
+    "254",
+    "david reidy",
+    "ear",
+    "125",
+    "virtual machine"
+  ],
+  "min_keyword_ratio": 1.0
+}
