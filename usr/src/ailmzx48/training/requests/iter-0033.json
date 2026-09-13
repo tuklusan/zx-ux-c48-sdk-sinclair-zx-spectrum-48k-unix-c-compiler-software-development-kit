@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "iteration": 33,
+  "scenario": "trigger-retrieval-display-fact-v1",
+  "purpose": "Prove that trigger-aware cold retrieval can select a non-primary same-topic Spectrum fact on the actual C48 target rather than always returning the first Spectrum record.",
+  "max_seconds": 1200,
+  "prompts": [
+    "what is the spectrum display 256 by 192"
+  ],
+  "expected_keywords": ["256"],
+  "final_expected_keyword": "256"
+}
