@@ -1,0 +1,51 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+# ============================================================================
+name: ailmzx48 SoP architecture snapshot
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-sop-architecture-snapshot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Build repair snapshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/ailmzx48-architecture
+          mkdir -p /tmp/ailmzx48-architecture
+          cp -a usr/src/ailmzx48 /tmp/ailmzx48-architecture/
+          mkdir -p /tmp/ailmzx48-architecture/usr/bin
+          cp -a usr/bin/ailmzx48 /tmp/ailmzx48-architecture/usr/bin/
+          cp -a compiler /tmp/ailmzx48-architecture/
+          cp MANIFEST.sha256 LICENSE /tmp/ailmzx48-architecture/
+          git rev-parse HEAD > /tmp/ailmzx48-architecture/SOURCE-COMMIT.txt
+
+      - name: Upload repair snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: ailmzx48-sop-architecture-${{ github.sha }}
+          path: /tmp/ailmzx48-architecture
+          if-no-files-found: error
+          retention-days: 7
