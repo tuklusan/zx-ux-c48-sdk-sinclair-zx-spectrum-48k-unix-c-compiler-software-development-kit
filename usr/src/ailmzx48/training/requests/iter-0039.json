@@ -1,8 +1,8 @@
 {
   "schema": 1,
   "iteration": 39,
-  "scenario": "mixed-same-topic-discrimination-v2",
-  "purpose": "Require trigger-aware retrieval to discriminate among competing Spectrum, memory, history, and games facts while enforcing a perfect keyword ratio before retention, with retrieval-state diagnostics on every miss.",
+  "scenario": "mixed-same-topic-discrimination-v3",
+  "purpose": "Prove the bounded routing shim restores mixed-session retrieval across Spectrum, memory, history, and games facts while the perfect keyword-ratio gate remains enforced.",
   "max_seconds": 1200,
   "prompts": [
     "what resolution does the spectrum display use",
