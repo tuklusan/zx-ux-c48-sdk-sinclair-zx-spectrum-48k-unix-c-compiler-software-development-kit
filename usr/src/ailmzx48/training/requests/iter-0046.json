@@ -2,7 +2,7 @@
   "schema": 1,
   "iteration": 46,
   "scenario": "knowledge-deepening-zxux-v1",
-  "purpose": "Qualify repository-grounded knowledge of the portable ZX-UX C48 SDK architecture, data model, executable format, source layout, text mode, and deterministic headless screen workflow without adding new hand-written routing nouns.",
+  "purpose": "Qualify repository-grounded ZX-UX C48 SDK knowledge after improving text-mode retrieval discrimination, without changing the 100 percent gate or adding new hand-written routing nouns.",
   "max_seconds": 1200,
   "prompts": [
     "what is the portable host role of the spectrum c48 sdk compared with future native zx ux cc",
