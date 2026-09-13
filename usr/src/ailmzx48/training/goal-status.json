@@ -15,7 +15,7 @@
     ]
   },
   "goals_achieved": false,
-  "next_action": "Pursue unmet scenario retrieval-model-evidence-same-topic-v1.",
+  "next_action": "Pursue unmet scenario retrieval-paraphrase-ambiguity-v1.",
   "no_pending_requests_satisfied": true,
   "pending_iterations": [],
   "qualification_scenarios": [
@@ -139,10 +139,20 @@
       "scenario": "retrieval-model-evidence-mixed-topic-v1"
     },
     {
+      "evidence": {
+        "clean_exit": true,
+        "iteration": 48,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 10,
+        "vm_step_limit": 14118400,
+        "vm_step_utilization": 0.5860644265639166,
+        "vm_steps": 8274292
+      },
       "goal": "Discrimination among nearby records inside one topic",
+      "iteration": 48,
       "min_turns": 10,
-      "reason": "no retained request/evidence for this scenario",
-      "satisfied": false,
+      "satisfied": true,
       "scenario": "retrieval-model-evidence-same-topic-v1"
     },
     {
@@ -191,7 +201,6 @@
   "schema": 1,
   "status": "GOALS_PENDING",
   "unmet_scenarios": [
-    "retrieval-model-evidence-same-topic-v1",
     "retrieval-paraphrase-ambiguity-v1",
     "conversation-context-regression-v1",
     "capacity-headroom-v1",
