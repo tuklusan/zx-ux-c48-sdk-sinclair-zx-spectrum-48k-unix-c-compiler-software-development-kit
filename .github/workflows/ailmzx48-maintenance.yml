@@ -48,45 +48,87 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Deepen Spectrum history and model chronology
+      - name: Migrate trigger IDs and deepen Spectrum history
         shell: bash
         run: |
           python - <<'PY'
-          import json
           from pathlib import Path
+          import json
+
+          p = Path("usr/src/ailmzx48/tooling/build_starter_model.py")
+          s = p.read_text(encoding="utf-8")
+          old = '''    required = []\n    for word in seed_words + tuple(trigger_words):\n        if word not in required:\n            required.append(word)\n    if len(required) > MAX_VOCAB - 1:\n        raise ValueError(\n            "seed words and retrieval triggers exceed model vocabulary: "\n            + str(len(required))\n            + " required, "\n            + str(MAX_VOCAB - 1)\n            + " available"\n        )\n'''
+          new = '''    required = list(seed_words)\n    if len(required) > MAX_VOCAB - 1:\n        raise ValueError("topic seed words exceed model vocabulary")\n'''
+          if old not in s:
+              raise SystemExit("starter vocabulary anchor missing")
+          p.write_text(s.replace(old, new, 1), encoding="utf-8")
+
+          p = Path("usr/src/ailmzx48/tooling/a48m_reference.py")
+          s = p.read_text(encoding="utf-8")
+          s = s.replace("VERSION = 1\n", "VERSION = 2\nTRIGGER_BASE = 224\nTRIGGER_SLOTS = 4096 - TRIGGER_BASE\n", 1)
+          anchor = '''def encode_literal_payload(text: str) -> tuple[bytes, tuple[int, int]]:\n'''
+          helper = '''def trigger_id(word: str, salt: int) -> int:\n    h = (216 + salt) & 0xFFFF\n    for value in word.encode("ascii"):\n        h = ((h * 33) ^ value) & 0xFFFF\n    return TRIGGER_BASE + (h % TRIGGER_SLOTS)\n\n\ndef choose_trigger_salt(words: list[str]) -> int:\n    clean = []\n    for raw in words:\n        word = str(raw).lower()\n        if TOKEN_RE.findall(word) != [word]:\n            raise A48MError("trigger must be one normalized token: " + repr(raw))\n        if word not in clean:\n            clean.append(word)\n    for salt in range(65536):\n        seen: dict[int, str] = {}\n        ok = True\n        for word in clean:\n            tid = trigger_id(word, salt)\n            if tid in seen and seen[tid] != word:\n                ok = False\n                break\n            seen[tid] = word\n        if ok:\n            return salt\n    raise A48MError("no collision-free trigger hash salt")\n\n\n'''
+          if anchor not in s:
+              raise SystemExit("a48m helper anchor missing")
+          s = s.replace(anchor, helper + anchor, 1)
+          old = '''def build_container(\n    records: list[bytes], vocab_id: bytes, interface_id: bytes\n) -> bytes:\n'''
+          new = '''def build_container(\n    records: list[bytes], vocab_id: bytes, interface_id: bytes,\n    trigger_salt: int,\n) -> bytes:\n'''
+          if old not in s:
+              raise SystemExit("container signature anchor missing")
+          s = s.replace(old, new, 1)
+          old = '''    header.extend(b"\\x00\\x00")\n    header.extend(b"\\x00" * 6)\n'''
+          new = '''    header.extend(b"\\x00\\x00")\n    header.extend(u16(trigger_salt))\n    header.extend(b"\\x00" * 4)\n'''
+          if old not in s:
+              raise SystemExit("container header anchor missing")
+          s = s.replace(old, new, 1)
+          s = s.replace('    if any(header[34:40]):\n        raise A48MError("nonzero reserved header bytes")\n', '    if any(header[36:40]):\n        raise A48MError("nonzero reserved header bytes")\n    trigger_salt = get_u16(header, 34)\n', 1)
+          s = s.replace('        "checksum": checksum,\n', '        "checksum": checksum,\n        "trigger_salt": trigger_salt,\n', 1)
+          old = '''    vocab_map = {\n        word: index for index, word in enumerate(model["vocab"])\n    }\n    vocab_id = identity(model["vocab"])\n'''
+          new = '''    vocab_id = identity(model["vocab"])\n    all_trigger_words = []\n    for item in corpus["records"]:\n        if item.get("kind") == "fact-user":\n            for word in item.get("triggers", []):\n                if word not in all_trigger_words:\n                    all_trigger_words.append(word)\n    trigger_salt = choose_trigger_salt(all_trigger_words)\n'''
+          if old not in s:
+              raise SystemExit("seed vocab-map anchor missing")
+          s = s.replace(old, new, 1)
+          s = s.replace('        "scoring": "topic-match-plus-importance-v1",\n', '        "scoring": "topic-match-plus-importance-v1",\n        "trigger_scheme": "salted-wordhash16-band-v1",\n', 1)
+          old = '''        trigger_ids = []\n        for word in trigger_words:\n            if word not in vocab_map or vocab_map[word] == 0:\n                raise A48MError("seed trigger missing from vocab: " + word)\n            trigger_ids.append(vocab_map[word])\n'''
+          new = '''        trigger_ids = []\n        for raw in trigger_words:\n            word = str(raw).lower()\n            if TOKEN_RE.findall(word) != [word]:\n                raise A48MError("invalid seed trigger: " + repr(raw))\n            trigger_ids.append(trigger_id(word, trigger_salt))\n'''
+          if old not in s:
+              raise SystemExit("seed trigger anchor missing")
+          s = s.replace(old, new, 1)
+          s = s.replace('    data = build_container(records, vocab_id, interface_id)\n', '    data = build_container(records, vocab_id, interface_id, trigger_salt)\n', 1)
+          s = s.replace('        "format": "A48M Candidate-A prototype v1",\n', '        "format": "A48M Candidate-A prototype v2",\n', 1)
+          s = s.replace('        "interface_id_hex": interface_id.hex(),\n', '        "interface_id_hex": interface_id.hex(),\n        "trigger_salt": trigger_salt,\n', 1)
+          p.write_text(s, encoding="utf-8")
+
+          p = Path("usr/src/ailmzx48/aimatch.h")
+          s = p.read_text(encoding="utf-8")
+          start = s.index("int ai_vhas(unsigned int id)\n{")
+          end = s.index("\n}\n", start) + 3
+          repl = '''int ai_vhas(unsigned int id)\n{\n    unsigned int i;\n    unsigned int j;\n    unsigned int off;\n    unsigned int len;\n    unsigned int h;\n    int ok;\n    if (id >= 224) {\n        i = 0;\n        while (ai_in[i] != 0) {\n            while (ai_in[i] != 0 && !ai_wordchar(ai_in[i])) i = i + 1;\n            if (ai_in[i] == 0) break;\n            h = 216 + ai_mtsalt;\n            while (ai_in[i] != 0 && ai_wordchar(ai_in[i])) {\n                h = (h * 33) ^ ai_lower(ai_in[i]);\n                i = i + 1;\n            }\n            if (224 + (h % 3872) == id) return 1;\n        }\n        return 0;\n    }\n    if (id == 0 || id >= ai_vcnt) return 0;\n    off = ai_voff[id];\n    len = ai_vlen[id];\n    if (len == 0) return 0;\n    i = 0;\n    while (ai_in[i] != 0) {\n        if (i != 0 && ai_wordchar(ai_in[i - 1])) { i = i + 1; continue; }\n        j = 0; ok = 1;\n        while (j < len) {\n            if (ai_in[i + j] == 0 || ai_lower(ai_in[i + j]) != ai_vblob[off + j]) { ok = 0; break; }\n            j = j + 1;\n        }\n        if (ok && !ai_wordchar(ai_in[i + len])) return 1;\n        i = i + 1;\n    }\n    return 0;\n}\n'''
+          p.write_text(s[:start] + repl + s[end:], encoding="utf-8")
+
+          p = Path("usr/src/ailmzx48/ailmzx48.c")
+          s = p.read_text(encoding="utf-8")
+          s = s.replace("unsigned int ai_mtrusted;\nunsigned int ai_fs1;", "unsigned int ai_mtrusted;\nunsigned int ai_mtsalt;\nunsigned int ai_fs1;", 1)
+          s = s.replace("    if (ai_mhead[4] != 1) return -1;", "    if (ai_mhead[4] != 2) return -1;", 1)
+          s = s.replace("    i = 34;\n    while (i < 40) {", "    ai_mtsalt = ai_getu16(ai_mhead, 34);\n    i = 36;\n    while (i < 40) {", 1)
+          s = s.replace("    ai_mtrusted = 0;\n    ai_l0head = 0;", "    ai_mtrusted = 0;\n    ai_mtsalt = 0;\n    ai_l0head = 0;", 1)
+          p.write_text(s, encoding="utf-8")
+
+          p = Path("usr/src/ailmzx48/evaluation/test_a48m_reference.py")
+          s = p.read_text(encoding="utf-8")
+          s = s.replace('        "max_record_bytes": 192,\n', '        "max_record_bytes": 192,\n        "trigger_salt": parsed["trigger_salt"],\n', 1)
+          s = s.replace('            "exact-record-count-and-section-end",\n', '            "exact-record-count-and-section-end",\n            "collision-free-salted-trigger-id-space",\n', 1)
+          p.write_text(s, encoding="utf-8")
+
           p = Path("usr/src/ailmzx48/training/seed_corpus.json")
           doc = json.loads(p.read_text(encoding="utf-8"))
           additions = [
-              {
-                  "kind": "fact-user", "split": "train", "topic": "history",
-                  "text": "the zx spectrum launched in britain on 23 april 1982 at 125 pounds for the 16k model and 175 pounds for the 48k model",
-                  "triggers": ["launch", "125", "175", "april"],
-              },
-              {
-                  "kind": "fact-user", "split": "train", "topic": "history",
-                  "text": "the spectrum plus arrived in 1984 with a ql style hard keyboard and a reset button while retaining 48k ram",
-                  "triggers": ["1984", "reset", "ql"],
-              },
-              {
-                  "kind": "fact-user", "split": "train", "topic": "history",
-                  "text": "the spectrum 128 was developed with spanish distributor investronica and reached the united kingdom in january 1986 with 128k ram and three channel ay sound",
-                  "triggers": ["128", "investronica", "january", "ay"],
-              },
-              {
-                  "kind": "fact-user", "split": "train", "topic": "history",
-                  "text": "amstrad acquired the rights to the spectrum computer range in april 1986 and continued the line with new models",
-                  "triggers": ["amstrad", "acquired", "rights", "1986"],
-              },
-              {
-                  "kind": "fact-user", "split": "train", "topic": "history",
-                  "text": "the spectrum plus 2 appeared in 1986 as the first amstrad spectrum and included a built in cassette deck",
-                  "triggers": ["cassette", "built", "amstrad", "1986"],
-              },
-              {
-                  "kind": "fact-user", "split": "train", "topic": "history",
-                  "text": "the spectrum plus 3 appeared in 1987 with a built in three inch floppy disk drive",
-                  "triggers": ["1987", "floppy", "disk", "three"],
-              },
+              {"kind":"fact-user","split":"train","topic":"history","text":"the zx spectrum launched in britain on 23 april 1982 at 125 pounds for the 16k model and 175 pounds for the 48k model","triggers":["launch","125","175","april"]},
+              {"kind":"fact-user","split":"train","topic":"history","text":"the spectrum plus arrived in 1984 with a ql style hard keyboard and a reset button while retaining 48k ram","triggers":["1984","reset","ql"]},
+              {"kind":"fact-user","split":"train","topic":"history","text":"the spectrum 128 was developed with spanish distributor investronica and reached the united kingdom in january 1986 with 128k ram and three channel ay sound","triggers":["128","investronica","january","ay"]},
+              {"kind":"fact-user","split":"train","topic":"history","text":"amstrad acquired the rights to the spectrum computer range in april 1986 and continued the line with new models","triggers":["amstrad","acquired","rights","1986"]},
+              {"kind":"fact-user","split":"train","topic":"history","text":"the spectrum plus 2 appeared in 1986 as the first amstrad spectrum and included a built in cassette deck","triggers":["cassette","built","amstrad","1986"]},
+              {"kind":"fact-user","split":"train","topic":"history","text":"the spectrum plus 3 appeared in 1987 with a built in three inch floppy disk drive","triggers":["1987","floppy","disk","three"]},
           ]
           existing = {r["text"] for r in doc["records"]}
           for record in additions:
@@ -101,12 +143,10 @@ jobs:
             --iteration 44
 
       - name: Test ailmzx48 context reference
-        run: >-
-          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
+        run: python -B usr/src/ailmzx48/evaluation/test_context_reference.py
 
       - name: Test ailmzx48 A48M reference
-        run: >-
-          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+        run: python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
 
       - name: Compile ailmzx48 SDK artifact
         run: >-
