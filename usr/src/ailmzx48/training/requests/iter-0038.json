@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "iteration": 38,
+  "scenario": "trigger-retrieval-knight-lore-v1",
+  "purpose": "Prove trigger-aware cold retrieval can select the Knight Lore secondary games fact and surface its distinguishing presentation style.",
+  "max_seconds": 1200,
+  "prompts": [
+    "in spectrum games what is knight lore known for"
+  ],
+  "expected_keywords": ["isometric"],
+  "final_expected_keyword": "isometric"
+}
