@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: One-shot ailmzx48 20-minute session policy
+name: One-shot ailmzx48 timing finalize
 
 "on":
   push:
@@ -23,7 +23,7 @@ permissions:
   contents: write
 
 jobs:
-  policy:
+  finalize:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -38,19 +38,19 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Apply exact timing policy
+      - name: Apply non-workflow timing corrections
         shell: bash
         env:
-          PATCH_B64: "eNqtVd9v2zYQfudfcdVLbUCWf6QrCg9+CBCvC7YWw5KHoihgU+LJ4kqRAkk5doP+7ztSsuO0XoAu1YMgkcfvvrv77lhaU0PDfaVkDrJujPXwF/0yJrAEi43iBa6MxkEwSsEokYLGu+GcAT0NLKJ53B3GJY87T6tNZpGLVfgboC6MkHqzSFpfjt4knWFhWh0sg0kWfwaE3u3Jst9+sYBp5yo8lkuHcLN3HuvlTvpBmdwHz1/ngLsGC48CiCvU3BdEdmM83EccMrgn8Bf2a++8ye6s9Njxiwz6WAeHCFOYDlP4njo7TUrESrKN9FWbj++M/Vwqc+fGXKr6y+7Vm5EnyprOZ/taJWlnHrMkazStH9VStx7dHGaTT/pJg4vOYPhz/HfPaFTz3chhYbRw8HryDYdzRtPZ5L+JtM6OnS2O7sfeGEXex7bVK0q35V4anTX73svL8OJNxoVYcbtpayQRJI8cJin4fYMLqX0KpEneKr8gpsNP+uXzQEIkHcrPCCUmTMlaBklT0QbkfnAxISm5jD5XPROSVEf+h4/1dGPmBTq50XTie5qX13+++/iBKn+1vKXv5RV93Fy/fZ/VInkUZoeRQvI3bqWjWOYwyaYXI2F56ZNv11/162dS1QN14STJcot2D1ILuZWi5QreSv97m48q40J7HojCQZlj3HLVxmzCPyaHijvg9LaCzSa9/ONG3xEZXBZebqnJjUAFeSuVGFOSyK3rUEIbgCQUIWRY4ErtWU5jQJB/b4B7Ous8TCfQdxfRBV8h5NwhFRnh0EkpKORbYhnmi5IFlSnQYKWxwK2XJS88lJJcyC/ReQrrd5fvr39b3txmruKzX16v0whdtkrBzdUfNFMJkqYY8ZWlRJuyNbUvCFmW1GpFhcVnOlKYOmiCawFN6yoKOiw1CkMOj/ILUWoTDrvGOJ4rZCRPjRac5x7nZOn6PBUEJQUt0kzbBdaPUkbF0K6wsqH+IASo0XMy5iwQcIWxGO6CcDlQ5HWcsdybWhYnXCL1xlCPRdp1SynOsY+EaDNvNkipsKEG65qqv6b9MmBzUMTMnoDluJHUAowE9cPK4p0+zgiMOXSuz9sZQcweBDGYptRvcGi/DG6phnQZKOOCGross4NeHTaciOMR9FQSUNFFaI2pfz2vMWiJFXB2cU7t4IheJ56HbjhEQTWlQkva6/3hUZQupUbdoMZI64wmQ5Wf1GUo4llphuJ2RR0HaUYUi45G6tMqZQ8qhWerlJ2qFJ6tUnZUKfxvlQ7Zv6l8HQk="
+          PATCH_B64: "eNqtVN9v2zYQfudfcdVLbUCS7SQrggx+CBCvC7YWw5KHohhgU+LJ5sofAkk5doP+7ztScuKuRoEu04MgkcfvvvvuOzbOamh52ChZgdStdQH+oF/GBDbgsFW8xqU1OIpBOVglcjD4ML5iQE8L8xSedsdpKeAu0GpbOuRiGf9GaGorpFnPsy40xWXWB9a2MzEyhpTpZ0To/Z5shu1Xc5j1qeLjuPQId3sfUC92Moya7DFm/nIFuGuxDiiAuILmoSayaxvgMeFQwCOBv3JfhuRt+eBkwJ5fYjDUOjpUmMNsnMO31NmxKAkr67ybeFdPuFT68+7ichKsVXRo4jqzpCyOB2lN2e6zPB14HV+8LbkQS+7WnUaqPSsKzXeFx9oa4bMcwr7FuTQhB2oF71SYv5lOx3+Z1y8DmZ0dUMb/QylZfCmpZeyklmZE6UfnU1LQl/S5HJiQkj35Hz420M0iXYFerg2d+Jbm9e3v7z5+uLgsbhb39L24oY+727fvSy2yr8rsMXLI/sSt9FTLFUzL2XkhHG9C9u/1i2H9hFQDUF9Oli226PYgjZBbKTqu4K0Mv3ZVsbE+uvJAFAJ52ERBcctVl9SEv20FG+6B09sJdjYtSJIuYNoIUqPtQgnXdZBb8rYVqKDqpBITEonS+h7lwbpPIAlFCBkXuFJ7VpH7BeUPFnigsz7AbAo9vCe6EDYIFfdITcYE0ShL3lfIt8QyjpWSNbUp0mCNdcBdkA2vAzSSUsjPKXkOq3fX729/Wdzdl37Dz356s8oTdNMpBXc3v9FVQpA0vMRXNhJdzlZrghWyaaAo6g3Wn+hIbXX0BDcC2s5vqOi41CqMGj7ZL1ZpbDzsW+t5pZCRPQ068IEHvKJIP+hUE5QUtEijvIusv5KMmmF87WRL80EIoDFwCuYsEvC1dRivwHgnUuU6XS08WC3rIy6JemtpxhJt3ZHEFQ6VEG0W7BpJChd7sNLU/RXtNxGbgyJm7giswrWkEWBkqB92Fu/9ccJgzKP3g24nDHH2bIjRLKd5g8P4lXBPPaQ7UFkf3dCrzA5+9dhyIo5PoMeWgA3d/85a/fNpj0FHrICz81NuB0/0evM8T8OhCuopNVrS3pAPn0zpcxrUNRpMtE54Mnb5u76MTTxpzdjcvqmTaM2E4tDTlfp9l7Jnl8KLXcqOXQovdil7cin8Z5eO2T/XEc+o"
         run: |
           python - <<'PY'
           import base64, os, zlib
           from pathlib import Path
           data = zlib.decompress(base64.b64decode(os.environ["PATCH_B64"]))
-          Path(".github/ailmzx48_timing_patch.py").write_bytes(data)
+          Path(".github/ailmzx48_timing_finalize.py").write_bytes(data)
           PY
-          python -B .github/ailmzx48_timing_patch.py
-          rm -f .github/ailmzx48_timing_patch.py
+          python -B .github/ailmzx48_timing_finalize.py
+          rm -f .github/ailmzx48_timing_finalize.py
 
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
@@ -62,10 +62,10 @@ jobs:
           git diff --check
           grep -q 'Revision: 0.14-draft' \
             usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md
-          grep -q -- '--max-seconds 1200' \
-            .github/workflows/ailmzx48-training.yml
-          grep -q 'timeout-minutes: 30' \
-            .github/workflows/ailmzx48-training.yml
+          grep -q 'default=1200' \
+            usr/src/ailmzx48/tooling/run_iteration.py
+          grep -q '1200)' \
+            usr/src/ailmzx48/tooling/run_iteration.py
 
       - name: Commit and push timing policy
         shell: bash
@@ -74,5 +74,10 @@ jobs:
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Allow 20-minute ailmzx48 training sessions"
+          git restore --staged .github/workflows/ailmzx48-bootstrap-retry.yml || true
+          git restore .github/workflows/ailmzx48-bootstrap-retry.yml || true
+          git add MANIFEST.sha256 \
+            usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md \
+            usr/src/ailmzx48/tooling/run_iteration.py
+          git commit -m "Finalize 20-minute ailmzx48 session policy"
           git push origin HEAD:main
