@@ -1,2 +1,0 @@
-iteration=44
-purpose=validate-stable-query-trigger-cache
