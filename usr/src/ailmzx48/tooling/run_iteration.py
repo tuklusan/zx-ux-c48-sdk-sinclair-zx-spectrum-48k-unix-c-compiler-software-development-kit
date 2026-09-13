@@ -98,7 +98,8 @@ class Feeder:
             return {}
         out = {}
         for name in ("ai_turns", "ai_otokens", "ai_yields",
-                     "ai_error", "ai_beeps"):
+                     "ai_error", "ai_beeps", "ai_ctxuse",
+                     "ai_lasttop", "ai_havectx"):
             lv = self.vm.global_lvalues.get(name)
             if lv is not None:
                 out[name] = int(self.vm._load(lv).data)
@@ -220,6 +221,18 @@ def main() -> int:
     for expected in expectations:
         if expected is not None and not isinstance(expected, str):
             raise RuntimeError("expected keyword must be string or null")
+    ctx_expect = req.get("expected_context")
+    if ctx_expect is None:
+        ctx_expect = [None] * len(prompts)
+    if not isinstance(ctx_expect, list):
+        raise RuntimeError("expected_context must be a list")
+    if len(ctx_expect) != len(prompts):
+        raise RuntimeError("expected_context length must match prompts")
+    for expected in ctx_expect:
+        if expected is not None and not isinstance(expected, bool):
+            raise RuntimeError("expected context must be bool or null")
+    context_hits = 0
+    context_total = 0
     for i, prompt in enumerate(prompts):
         event = feeder.events[i + 1]
         reply = derived_reply(event["text"])
@@ -227,6 +240,13 @@ def main() -> int:
         hit = expected is None or expected in reply.lower()
         if hit:
             keyword_hits += 1
+        want_ctx = ctx_expect[i]
+        used_ctx = event["diag"].get("ai_ctxuse") == 1
+        ctx_hit = want_ctx is None or used_ctx == want_ctx
+        if want_ctx is not None:
+            context_total += 1
+            if ctx_hit:
+                context_hits += 1
         turns.append({
             "turn": i + 1,
             "user": prompt,
@@ -235,6 +255,9 @@ def main() -> int:
             "diag": event["diag"],
             "expected_keyword": expected,
             "keyword_hit": hit,
+            "expected_context": want_ctx,
+            "context_used": used_ctx,
+            "context_hit": ctx_hit,
         })
     transcript = {
         "schema": 1,
@@ -266,6 +289,12 @@ def main() -> int:
         "keyword_hits": keyword_hits,
         "keyword_total": len(turns),
         "keyword_ratio": keyword_hits / len(turns),
+        "context_hits": context_hits,
+        "context_total": context_total,
+        "context_ratio": (
+            context_hits / context_total
+            if context_total else 1.0
+        ),
         "clean_exit": status == 0,
         "beep_calls": feeder.diag().get("ai_beeps"),
         "accepted_turns": feeder.diag().get("ai_turns"),

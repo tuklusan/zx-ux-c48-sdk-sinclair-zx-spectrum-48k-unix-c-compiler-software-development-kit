@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.15-draft
+Revision: 0.16-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48/ailmzx48.c48b`
 
@@ -192,6 +192,8 @@ This is still a language model: probabilities/weights over token continuations a
 The exact release model family is not frozen by this revision. Revision 0.3 introduced concrete **Candidate A**; Revision 0.11 retains it as a corrected benchmark baseline so implementation and measurements can begin without pretending the representation is already optimal. Candidate A is not a promise that no better representation will replace it.
 
 Implementation measurement note (Revision 0.15): the first two bootstrap iterations used one global learned first-order transition graph. Iteration 2 showed cross-topic sentence splicing when shared lexical tokens connected otherwise unrelated training records. The bootstrap implementation therefore moves to topic-conditioned learned transition tables selected by the controller. This remains a measured prototype, not a freeze of the release model family; it is also closer to the architecture above, where topic/intent constraints condition language-model continuation scoring.
+
+Implementation measurement note (Revision 0.16): iteration 3 reached 12/12 keyword expectations on regression and fresh paraphrase prompts with coherent topic-conditioned replies. The next bootstrap measurement therefore adds one bounded previous-response topic register solely to test immediate follow-up continuity. Explicit topic cues always win; only the fixed phrases `tell me more`, `what about that`, and `same topic` may inherit the preceding response topic. `ai_ctxuse` records use per accepted turn. This three-word state is not claimed as Candidate-A L0/L1/L2 implementation and contributes no large-context evidence; it is a controller prototype used to establish harness semantics before the fixed context engine is implemented.
 
 ### 6.1 No remote inference dependency
 

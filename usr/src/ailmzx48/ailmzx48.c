@@ -22,6 +22,9 @@ unsigned int ai_otokens;
 unsigned int ai_yields;
 unsigned int ai_error;
 unsigned int ai_beeps;
+unsigned int ai_lasttop;
+unsigned int ai_ctxuse;
+unsigned int ai_havectx;
 char ai_in[192];
 char ai_out[256];
 int ai_drop_lf;
@@ -104,6 +107,20 @@ unsigned int ai_pick(void)
     if (ai_has("history")) return ai_t_hist;
     if (ai_has("spectrum")) return ai_t_spec;
     if (ai_has("computer")) return ai_t_spec;
+    if (ai_havectx) {
+        if (ai_has("tell me more")) {
+            ai_ctxuse = 1;
+            return ai_lasttop;
+        }
+        if (ai_has("what about that")) {
+            ai_ctxuse = 1;
+            return ai_lasttop;
+        }
+        if (ai_has("same topic")) {
+            ai_ctxuse = 1;
+            return ai_lasttop;
+        }
+    }
     return ai_t_id;
 }
 
@@ -207,6 +224,9 @@ int main(void)
     unsigned int topic;
     ai_turns = 0;
     ai_beeps = 0;
+    ai_lasttop = ai_t_id;
+    ai_ctxuse = 0;
+    ai_havectx = 0;
     ai_drop_lf = 0;
     ai_start();
     while (1) {
@@ -221,9 +241,12 @@ int main(void)
             continue;
         }
         if (ai_isq()) break;
+        ai_ctxuse = 0;
         topic = ai_pick();
         ai_generate(topic);
         puts(ai_out);
+        ai_lasttop = topic;
+        ai_havectx = 1;
         if (ai_turns != 65535) ai_turns = ai_turns + 1;
         ai_yields = 0;
         yield();
