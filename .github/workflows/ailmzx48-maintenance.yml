@@ -81,7 +81,8 @@ jobs:
           old = '''\nunsigned int ai_routepick(void)\n{\n    if (ai_has("bitmap")) return ai_t_mem;\n    if (ai_has("manic miner")) return ai_t_games;\n    if (ai_has("knight lore")) return ai_t_games;\n    if (ai_has("jet set willy")) return ai_t_games;\n    if (ai_has("came before")) return ai_t_hist;\n    return ai_pick();\n}\n\n#define ai_pick ai_routepick\n'''
           if text.count(old) != 1:
               raise SystemExit("routing shim preimage mismatch")
-          hdr.write_text(text.replace(old, "\n"), encoding="utf-8")
+          text = text.replace(old, "\n").rstrip("\n") + "\n"
+          hdr.write_text(text, encoding="utf-8")
           PY
 
       - name: Test ailmzx48 context reference
