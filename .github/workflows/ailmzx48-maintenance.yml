@@ -48,39 +48,13 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Deepen Spectrum software and games knowledge
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          p = Path("usr/src/ailmzx48/training/seed_corpus.json")
-          doc = json.loads(p.read_text(encoding="utf-8"))
-          additions = [
-            {"kind":"fact-user","split":"train","topic":"games","text":"the hobbit was a 1982 melbourne house text adventure and the first spectrum game to sell a million copies","triggers":["hobbit","melbourne","million","adventure"]},
-            {"kind":"fact-user","split":"train","topic":"games","text":"jetpac was a 1983 ultimate play the game shoot em up for the 16k spectrum","triggers":["jetpac","ultimate","shoot","16k"]},
-            {"kind":"fact-user","split":"train","topic":"games","text":"ant attack was a 1983 quicksilva game associated with sandy white and used isometric 3d graphics","triggers":["ant","attack","sandy","quicksilva"]},
-            {"kind":"fact-user","split":"train","topic":"games","text":"skool daze was a 1984 microsphere game associated with david reidy","triggers":["skool","daze","microsphere","reidy"]},
-            {"kind":"fact-user","split":"train","topic":"games","text":"head over heels was a 1987 ocean game associated with jon ritman and bernie drummond using isometric 3d graphics","triggers":["head","heels","ritman","drummond"]},
-            {"kind":"fact-user","split":"train","topic":"games","text":"saboteur was a 1985 durell software game associated with clive townsend","triggers":["saboteur","durell","clive","townsend"]}
-          ]
-          existing = {r["text"] for r in doc["records"]}
-          for r in additions:
-              if r["text"] not in existing:
-                  doc["records"].append(r)
-          p.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
-          PY
-          python -B usr/src/ailmzx48/tooling/build_starter_model.py \
-            --corpus usr/src/ailmzx48/training/seed_corpus.json \
-            --out-json usr/src/ailmzx48/model/current-model.json \
-            --out-h usr/src/ailmzx48/aimod.h \
-            --iteration 45
-
       - name: Test ailmzx48 context reference
-        run: python -B usr/src/ailmzx48/evaluation/test_context_reference.py
+        run: >-
+          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
 
       - name: Test ailmzx48 A48M reference
-        run: python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+        run: >-
+          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
 
       - name: Compile ailmzx48 SDK artifact
         run: >-
