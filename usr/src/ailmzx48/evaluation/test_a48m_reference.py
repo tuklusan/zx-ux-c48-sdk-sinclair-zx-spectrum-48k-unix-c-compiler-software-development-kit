@@ -1,0 +1,129 @@
+#!/usr/bin/env python3
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+from __future__ import annotations
+
+import hashlib
+import json
+from pathlib import Path
+import sys
+
+HERE = Path(__file__).resolve().parent
+TOOL = HERE.parent / "tooling"
+if str(TOOL) not in sys.path:
+    sys.path.insert(0, str(TOOL))
+
+from a48m_reference import (
+    A48MError,
+    HEADER_LEN,
+    ShortReader,
+    build_from_seed,
+    fletcher16,
+    parse_container,
+    protected_bytes,
+    u16,
+)
+
+
+def expect_fail(fn) -> None:
+    try:
+        fn()
+    except A48MError:
+        return
+    raise AssertionError("expected A48M validation failure")
+
+
+def main() -> int:
+    root = HERE.parent
+    corpus = root / "training" / "seed_corpus.json"
+    model = root / "model" / "current-model.json"
+    out_bin = root / "model" / "cold-seed.bin"
+    out_meta = root / "model" / "cold-seed.json"
+    report_path = HERE / "a48m-reference-report.json"
+
+    data, meta = build_from_seed(corpus, model)
+    parsed = parse_container(
+        ShortReader(data, (1, 7, 3, 64, 2, 11)), len(data)
+    )
+    assert parsed["record_count"] == meta["record_count"]
+    assert parsed["logical_length"] == len(data)
+    assert parsed["read_calls"] > 1
+    assert all(record["anchors"] for record in parsed["records"])
+
+    expect_fail(
+        lambda: parse_container(ShortReader(data[:-1], (5,)), len(data))
+    )
+    expect_fail(
+        lambda: parse_container(ShortReader(data, (5,)), len(data) - 1)
+    )
+    corrupt = bytearray(data)
+    corrupt[-1] ^= 1
+    expect_fail(
+        lambda: parse_container(ShortReader(bytes(corrupt), (13,)), len(data))
+    )
+    bad_reserved = bytearray(data)
+    bad_reserved[39] = 1
+    expect_fail(
+        lambda: parse_container(
+            ShortReader(bytes(bad_reserved), (17,)), len(data)
+        )
+    )
+    bad_length = bytearray(data)
+    bad_length[HEADER_LEN] = 193
+    bad_length[32:34] = b"\x00\x00"
+    bad_length[32:34] = u16(
+        fletcher16(protected_bytes(bytes(bad_length)))
+    )
+    expect_fail(
+        lambda: parse_container(
+            ShortReader(bytes(bad_length), (19,)), len(data)
+        )
+    )
+
+    out_bin.write_bytes(data)
+    out_meta.write_text(
+        json.dumps(meta, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    report = {
+        "schema": 1,
+        "status": "PASS",
+        "logical_length": len(data),
+        "record_count": parsed["record_count"],
+        "sha256": hashlib.sha256(data).hexdigest(),
+        "short_read_calls": parsed["read_calls"],
+        "max_read_request": parsed["max_read_request"],
+        "max_record_bytes": 192,
+        "tests": [
+            "deterministic-seed-build",
+            "positive-short-read-full-parse",
+            "premature-eof-rejection",
+            "actual-length-mismatch-rejection",
+            "integrity-corruption-rejection",
+            "reserved-header-byte-rejection",
+            "oversize-record-length-rejection",
+            "factual-anchor-presence",
+            "exact-record-count-and-section-end",
+        ],
+    }
+    report_path.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
+    print(json.dumps(report, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
