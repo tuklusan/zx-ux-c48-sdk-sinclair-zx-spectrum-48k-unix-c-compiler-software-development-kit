@@ -48,32 +48,6 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Avoid repeated immutable-model checksum work
-        shell: bash
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          p = Path("usr/src/ailmzx48/ailmzx48.c")
-          s = p.read_text(encoding="utf-8")
-          reps = [
-              ("unsigned int ai_mreads;\nunsigned int ai_fs1;",
-               "unsigned int ai_mreads;\nunsigned int ai_mtrusted;\nunsigned int ai_fs1;"),
-              ("        ai_fdata(ai_mstage, hlen);",
-               "        if (!ai_mtrusted) ai_fdata(ai_mstage, hlen);"),
-              ("            ai_fdata(ai_mstage, take);",
-               "            if (!ai_mtrusted) ai_fdata(ai_mstage, take);"),
-              ("    calc = ai_fs1 + (ai_fs2 * 256);\n    if (calc != ai_getu16(ai_mhead, 32)) return -1;\n    if (ai_mbytes != logical) return -1;",
-               "    if (!ai_mtrusted) {\n        calc = ai_fs1 + (ai_fs2 * 256);\n        if (calc != ai_getu16(ai_mhead, 32)) return -1;\n        if (ai_mbytes != logical) return -1;\n        ai_mtrusted = 1;\n    }"),
-              ("    ai_mreads = 0;\n    ai_l0head = 0;",
-               "    ai_mreads = 0;\n    ai_mtrusted = 0;\n    ai_l0head = 0;"),
-          ]
-          for old, new in reps:
-              if old not in s:
-                  raise SystemExit("patch anchor missing: " + old[:40])
-              s = s.replace(old, new, 1)
-          p.write_text(s, encoding="utf-8")
-          PY
-
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
