@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "iteration": 27,
-  "scenario": "knowledge-hardware-enrichment-v1",
+  "scenario": "knowledge-hardware-enrichment-v2",
   "purpose": "Verify the enriched resident knowledge corpus on the actual C48 target with a hard final-keyword gate for the Spectrum hardware fact while also exercising the other routed domains.",
   "max_seconds": 1200,
   "prompts": [
