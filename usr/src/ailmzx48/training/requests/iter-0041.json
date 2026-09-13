@@ -2,7 +2,7 @@
   "schema": 1,
   "iteration": 41,
   "scenario": "knowledge-deepening-rom-basic-v1",
-  "purpose": "Qualify deeper Sinclair BASIC, ROM, system-software, and machine-behaviour knowledge with exact retrieval gates while retaining prior Spectrum facts.",
+  "purpose": "Qualify deeper Sinclair BASIC, ROM, system-software, and machine-behaviour knowledge with exact retrieval gates after trigger refinement while retaining prior Spectrum facts.",
   "max_seconds": 1200,
   "prompts": [
     "where does the spectrum keep basic programs and variables",
