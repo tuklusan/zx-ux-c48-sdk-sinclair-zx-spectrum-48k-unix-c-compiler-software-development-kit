@@ -26,10 +26,10 @@ jobs:
   correct:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out current and parent commits
+      - name: Check out patch ancestry
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 3
           lfs: true
 
       - name: Recover and run reviewed patch script
@@ -41,7 +41,7 @@ jobs:
           import subprocess
           rel = '.github/workflows/review-ailmzx48-pass1.yml'
           old = subprocess.check_output(
-              ['git', 'show', f'HEAD^:{rel}'], text=True
+              ['git', 'show', f'HEAD^^:{rel}'], text=True
           )
           start_marker = "          python - <<'PY'\n"
           end_marker = "\n          PY\n\n      - name: Remove workflow"
@@ -58,6 +58,35 @@ jobs:
           compile(script, '/tmp/review-pass1.py', 'exec')
           PY
           python /tmp/review-pass1.py
+
+      - name: Normalize reviewed Markdown tail
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md')
+          text = path.read_text(encoding='utf-8')
+          text = text.replace(
+              'Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline  \nRevision: 0.4-draft  \n',
+              'Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline\nRevision: 0.4-draft\n',
+              1,
+          )
+          marker = '## 24. Revision and durability discipline\n'
+          pos = text.index(marker)
+          tail = '''## 24. Revision and durability discipline
+
+This file is the canonical evolving `ailmzx48` design record within the SDK repository. Each coherent design stage is committed directly to `main`. Conversation text is not an authority when it conflicts with the repository copy.
+
+Before each substantive edit, the latest repository copy shall be read. Canonical ZX-UX/C48 documents shall be rechecked whenever a design statement depends on their contracts. If a later canonical revision changes a relevant contract, this document must be reconciled explicitly rather than carrying an accidental stale assumption forward.
+
+Because this SDK release gate covers repository bytes, a design edit is not complete merely when this Markdown file changes. The exact edited tree must regenerate `MANIFEST.sha256`, pass `python -B compiler/verify_release.py`, and preserve every existing license/header/source-line/deterministic verification rule. A failing gate is investigated and corrected; the gate is not relaxed for design convenience.
+
+An ephemeral local or runner copy is never considered a durable checkpoint. A design step is complete only after the updated canonical file and matching manifest have been pushed to `main`, read back from GitHub, and their new blob/commit identities recorded.
+'''
+          text = text[:pos] + tail
+          path.write_text(text, encoding='utf-8', newline='\n')
+          PY
 
       - name: Remove helper workflow and regenerate manifest
         shell: bash
