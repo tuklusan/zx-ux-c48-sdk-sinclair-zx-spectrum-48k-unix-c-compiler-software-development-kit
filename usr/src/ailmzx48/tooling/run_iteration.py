@@ -161,7 +161,11 @@ class Feeder:
                      "ai_hcount", "ai_litset",
                      "ai_lituse", "ai_mrecords",
                      "ai_mhits", "ai_mbytes",
-                     "ai_mreads"):
+                     "ai_mreads", "ai_l0bytes",
+                     "ai_l1count", "ai_l2count",
+                     "ai_compact", "ai_l2evict",
+                     "ai_l1drop", "ai_litloss",
+                     "ai_encfail", "ai_semuse"):
             lv = self.vm.global_lvalues.get(name)
             if lv is not None:
                 out[name] = int(self.vm._load(lv).data)
@@ -421,6 +425,46 @@ def main() -> int:
             "literal_mode": used_lit,
             "literal_hit": lit_hit,
         })
+    dialogue_bytes = sum(
+        len(turn["user"].encode("ascii"))
+        + len(turn["assistant"].encode("ascii"))
+        for turn in turns
+    )
+    compact_total = sum(
+        turn["diag"].get("ai_compact", 0) for turn in turns
+    )
+    l2evict_total = sum(
+        turn["diag"].get("ai_l2evict", 0) for turn in turns
+    )
+    semuse_total = sum(
+        turn["diag"].get("ai_semuse", 0) for turn in turns
+    )
+    max_l0bytes = max(
+        (turn["diag"].get("ai_l0bytes", 0) for turn in turns),
+        default=0,
+    )
+    max_l1count = max(
+        (turn["diag"].get("ai_l1count", 0) for turn in turns),
+        default=0,
+    )
+    max_l2count = max(
+        (turn["diag"].get("ai_l2count", 0) for turn in turns),
+        default=0,
+    )
+    if max_l0bytes > 896:
+        raise RuntimeError("target L0 exceeded 896 bytes")
+    if max_l1count > 48:
+        raise RuntimeError("target L1 exceeded 48 capsules")
+    if max_l2count > 24:
+        raise RuntimeError("target L2 exceeded 24 capsules")
+    if dialogue_bytes < int(req.get("min_dialogue_bytes", 0)):
+        raise RuntimeError("dialogue byte endurance gate failed")
+    if compact_total < int(req.get("min_compactions", 0)):
+        raise RuntimeError("context compaction gate failed")
+    if max_l2count < int(req.get("min_l2_count", 0)):
+        raise RuntimeError("L2 occupancy gate failed")
+    if semuse_total < int(req.get("min_semantic_uses", 0)):
+        raise RuntimeError("semantic retrieval gate failed")
     transcript = {
         "schema": 1,
         "iteration": iteration,
@@ -481,6 +525,13 @@ def main() -> int:
         "clean_exit": status == 0,
         "beep_calls": feeder.diag().get("ai_beeps"),
         "accepted_turns": feeder.diag().get("ai_turns"),
+        "dialogue_source_bytes": dialogue_bytes,
+        "context_compactions": compact_total,
+        "context_l2_evictions": l2evict_total,
+        "semantic_retrieval_uses": semuse_total,
+        "max_l0bytes": max_l0bytes,
+        "max_l1count": max_l1count,
+        "max_l2count": max_l2count,
     }
     (out_dir / "score.json").write_text(
         json.dumps(score, indent=2, sort_keys=True) + "\n",
@@ -503,6 +554,13 @@ def main() -> int:
         "cold_model_bytes_read": vm.model_bytes,
         "cold_model_seek_calls": vm.model_seeks,
         "cold_model_max_request": vm.model_max_request,
+        "dialogue_source_bytes": dialogue_bytes,
+        "context_compactions": compact_total,
+        "context_l2_evictions": l2evict_total,
+        "semantic_retrieval_uses": semuse_total,
+        "max_l0bytes": max_l0bytes,
+        "max_l1count": max_l1count,
+        "max_l2count": max_l2count,
     }
     (out_dir / "run.json").write_text(
         json.dumps(run_meta, indent=2, sort_keys=True) + "\n",

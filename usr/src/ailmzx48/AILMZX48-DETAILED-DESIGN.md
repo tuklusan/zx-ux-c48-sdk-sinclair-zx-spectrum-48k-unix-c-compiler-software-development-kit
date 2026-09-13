@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.20-draft
+Revision: 0.21-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48/ailmzx48.c48b`
 
@@ -200,6 +200,8 @@ Implementation measurement note (Revision 0.17): iteration 4 reached 14/14 answe
 Implementation measurement note (Revision 0.18): iteration 5 validated deterministic learned secondary continuations without breaking immediate topic context. The next bounded prototype adds a six-entry recent-distinct-topic history so explicit `go back` requests can recover prior topics across intervening topic changes. This is instrumentation for conversational-history behavior only; it is not the final L0/L1/L2 representation and makes no expanded context-window claim until the designed compressor is implemented and stress-tested.
 
 Implementation measurement note (Revision 0.19): iteration 6 validated bounded recovery of earlier topics across intervening topic changes. The next prototype allocates the full designed 272-byte session-literal storage as parallel C48 arrays (eight generation values, eight lengths, and 8 x 31 presentation bytes) while initially using slot 0 only for an exact user-name literal. Generation advances in the designed 1..4095 range on correction. This slice tests exact literal retention/correction; semantic refs, eight-slot eviction and L1/L2 invalidation remain future work.
+
+Implementation measurement note (Revision 0.21): the target C48 program now contains the first fixed-size semantic-context slice rather than relying only on the six-topic controller history. It allocates the 896-byte L0 ring, exact 128-byte 32-entry descriptor directory, 48 x 16-byte L1 capsules, and 24 x 16-byte L2 capsules as fixed arrays, ages capsules saturating at 255, promotes evicted L0 user turns into L1, and compacts L1 victims into mergeable L2 summaries. An explicit `remember this topic` controller operation is retained as a high-importance semantic capsule and `return to the remembered topic` retrieves it after L0 eviction. This slice deliberately stores normalized printable turn bytes in L0 rather than the final Section-7 token wire and currently commits ordinary model-answer turns rather than every controller-only turn. It is therefore a target-resident compaction/retrieval prototype, not yet a claim that Candidate-A canonical tokenization or the complete 4,336-byte workspace is implemented. The runner records L0/L1/L2 occupancy, per-turn compaction/eviction counters and semantic-retrieval use so a >32-KiB source-equivalent actual SDK conversation can prove bounded distant semantic recall before the final tokenizer wire replaces the temporary L0 byte representation.
 
 ### 6.1 No remote inference dependency
 

@@ -58,6 +58,24 @@ unsigned char ai_win1[192];
 unsigned char ai_win2[192];
 unsigned char ai_mstage[64];
 
+unsigned char ai_l0ring[896];
+unsigned int ai_l0start[32];
+unsigned char ai_l0len[32];
+unsigned char ai_l0meta[32];
+unsigned int ai_l0head;
+unsigned int ai_l0bytes;
+unsigned int ai_l0count;
+unsigned char ai_l1[768];
+unsigned char ai_l2[384];
+unsigned int ai_l1count;
+unsigned int ai_l2count;
+unsigned int ai_compact;
+unsigned int ai_l2evict;
+unsigned int ai_l1drop;
+unsigned int ai_litloss;
+unsigned int ai_encfail;
+unsigned int ai_semuse;
+
 int ai_lower(int c)
 {
     if (c >= 65 && c <= 90) return c + 32;
@@ -731,6 +749,377 @@ int ai_coldans(void)
     return 1;
 }
 
+
+unsigned int ai_strlen(char *s)
+{
+    unsigned int n;
+    n = 0;
+    while (s[n] != 0) n = n + 1;
+    return n;
+}
+
+unsigned char ai_l0char(unsigned int d, unsigned int n)
+{
+    unsigned int p;
+    p = ai_l0start[d] + n;
+    p = p % 896;
+    return ai_l0ring[p];
+}
+
+int ai_l0has(unsigned int d, char *s)
+{
+    unsigned int i;
+    unsigned int j;
+    unsigned int sl;
+    int ok;
+    sl = ai_strlen(s);
+    if (sl == 0 || sl > ai_l0len[d]) return 0;
+    i = 0;
+    while (i + sl <= ai_l0len[d]) {
+        j = 0;
+        ok = 1;
+        while (j < sl) {
+            if (ai_lower(ai_l0char(d, i + j)) != s[j]) {
+                ok = 0;
+                break;
+            }
+            j = j + 1;
+        }
+        if (ok) return 1;
+        i = i + 1;
+    }
+    return 0;
+}
+
+unsigned int ai_capoff(unsigned int n)
+{
+    return n * 16;
+}
+
+unsigned int ai_capget(unsigned char *p, unsigned int n)
+{
+    return p[n] + ((unsigned int)p[n + 1] * 256);
+}
+
+void ai_capset(unsigned char *p, unsigned int topic,
+               unsigned int rel, unsigned int imp,
+               unsigned int age)
+{
+    unsigned int i;
+    i = 0;
+    while (i < 16) {
+        p[i] = 0;
+        i = i + 1;
+    }
+    p[1] = rel;
+    p[2] = topic & 255;
+    p[3] = topic / 256;
+    p[14] = imp;
+    p[15] = age;
+}
+
+void ai_capage(void)
+{
+    unsigned int i;
+    unsigned int o;
+    i = 0;
+    while (i < 48) {
+        o = ai_capoff(i);
+        if (ai_l1[o + 1] != 0 && ai_l1[o + 15] < 255) {
+            ai_l1[o + 15] = ai_l1[o + 15] + 1;
+        }
+        i = i + 1;
+    }
+    i = 0;
+    while (i < 24) {
+        o = ai_capoff(i);
+        if (ai_l2[o + 1] != 0 && ai_l2[o + 15] < 255) {
+            ai_l2[o + 15] = ai_l2[o + 15] + 1;
+        }
+        i = i + 1;
+    }
+}
+
+unsigned int ai_victim(unsigned char *p, unsigned int count)
+{
+    unsigned int i;
+    unsigned int o;
+    unsigned int best;
+    unsigned int bimp;
+    unsigned int bage;
+    unsigned int imp;
+    unsigned int age;
+    best = 0;
+    bimp = 256;
+    bage = 0;
+    i = 0;
+    while (i < count) {
+        o = ai_capoff(i);
+        if (p[o + 1] != 0) {
+            imp = p[o + 14];
+            age = p[o + 15];
+            if (imp < bimp) {
+                best = i;
+                bimp = imp;
+                bage = age;
+            } else if (imp == bimp && age > bage) {
+                best = i;
+                bage = age;
+            }
+        }
+        i = i + 1;
+    }
+    return best;
+}
+
+void ai_l2merge(unsigned char *src)
+{
+    unsigned int i;
+    unsigned int o;
+    unsigned int rel;
+    unsigned int topic;
+    unsigned int imp;
+    unsigned int age;
+    unsigned int victim;
+    rel = src[1];
+    topic = ai_capget(src, 2);
+    imp = src[14];
+    age = src[15];
+    i = 0;
+    while (i < 24) {
+        o = ai_capoff(i);
+        if (ai_l2[o + 1] == rel) {
+            if (ai_capget(ai_l2, o + 2) == topic) {
+                if (imp > ai_l2[o + 14]) {
+                    ai_l2[o + 14] = imp;
+                }
+                if (age < ai_l2[o + 15]) {
+                    ai_l2[o + 15] = age;
+                }
+                return;
+            }
+        }
+        i = i + 1;
+    }
+    i = 0;
+    while (i < 24) {
+        o = ai_capoff(i);
+        if (ai_l2[o + 1] == 0) {
+            ai_mcopy(&ai_l2[o], src, 16);
+            ai_l2count = ai_l2count + 1;
+            return;
+        }
+        i = i + 1;
+    }
+    victim = ai_victim(ai_l2, 24);
+    o = ai_capoff(victim);
+    ai_mcopy(&ai_l2[o], src, 16);
+    ai_l2evict = ai_l2evict + 1;
+}
+
+void ai_l1add(unsigned int topic, unsigned int rel,
+              unsigned int imp, unsigned int age)
+{
+    unsigned int i;
+    unsigned int o;
+    unsigned int victim;
+    i = 0;
+    while (i < 48) {
+        o = ai_capoff(i);
+        if (ai_l1[o + 1] == 0) {
+            ai_capset(&ai_l1[o], topic, rel, imp, age);
+            ai_l1count = ai_l1count + 1;
+            return;
+        }
+        i = i + 1;
+    }
+    victim = ai_victim(ai_l1, 48);
+    o = ai_capoff(victim);
+    ai_l2merge(&ai_l1[o]);
+    ai_compact = ai_compact + 1;
+    ai_capset(&ai_l1[o], topic, rel, imp, age);
+}
+
+void ai_descshift(void)
+{
+    unsigned int i;
+    i = 2;
+    while (i < ai_l0count) {
+        ai_l0start[i - 2] = ai_l0start[i];
+        ai_l0len[i - 2] = ai_l0len[i];
+        ai_l0meta[i - 2] = ai_l0meta[i];
+        i = i + 1;
+    }
+    ai_l0count = ai_l0count - 2;
+}
+
+void ai_promote(void)
+{
+    unsigned int topic;
+    unsigned int rel;
+    unsigned int imp;
+    topic = (ai_l0meta[0] / 2) & 7;
+    rel = 2;
+    imp = 32;
+    if (ai_l0has(0, "remember this topic")) {
+        rel = 1;
+        imp = 255;
+    }
+    ai_l1add(topic, rel, imp, 1);
+}
+
+int ai_ctxevict(void)
+{
+    unsigned int n;
+    if (ai_l0count < 2) return -1;
+    ai_promote();
+    n = ai_l0len[0] + ai_l0len[1];
+    if (n > ai_l0bytes) return -1;
+    ai_l0bytes = ai_l0bytes - n;
+    ai_descshift();
+    return 0;
+}
+
+int ai_ctxwrite(char *s, unsigned int speaker,
+                unsigned int topic)
+{
+    unsigned int n;
+    unsigned int i;
+    unsigned int p;
+    n = ai_strlen(s);
+    if (n == 0 || n > 255) return -1;
+    if (ai_l0count >= 32) return -1;
+    ai_l0start[ai_l0count] = ai_l0head;
+    ai_l0len[ai_l0count] = n;
+    ai_l0meta[ai_l0count] = speaker + (topic * 2);
+    i = 0;
+    while (i < n) {
+        p = (ai_l0head + i) % 896;
+        ai_l0ring[p] = s[i];
+        i = i + 1;
+    }
+    ai_l0head = (ai_l0head + n) % 896;
+    ai_l0bytes = ai_l0bytes + n;
+    ai_l0count = ai_l0count + 1;
+    return 0;
+}
+
+int ai_ctxpair(unsigned int topic)
+{
+    unsigned int un;
+    unsigned int an;
+    unsigned int need;
+    un = ai_strlen(ai_in);
+    an = ai_strlen(ai_out);
+    if (un == 0 || an == 0) {
+        ai_encfail = ai_encfail + 1;
+        return -1;
+    }
+    need = un + an;
+    if (need > 896) {
+        ai_encfail = ai_encfail + 1;
+        return -1;
+    }
+    ai_capage();
+    while (ai_l0bytes + need > 896 ||
+           ai_l0count + 2 > 32) {
+        if (ai_ctxevict() != 0) {
+            ai_encfail = ai_encfail + 1;
+            return -1;
+        }
+    }
+    if (ai_ctxwrite(ai_in, 0, topic) != 0) {
+        ai_encfail = ai_encfail + 1;
+        return -1;
+    }
+    if (ai_ctxwrite(ai_out, 1, topic) != 0) {
+        ai_encfail = ai_encfail + 1;
+        return -1;
+    }
+    return 0;
+}
+
+int ai_pinreq(void)
+{
+    if (ai_has("remember this topic")) return 1;
+    if (ai_has("remember that topic")) return 1;
+    return 0;
+}
+
+int ai_recallreq(void)
+{
+    if (ai_has("topic i asked you to remember")) return 1;
+    if (ai_has("return to the remembered topic")) return 1;
+    return 0;
+}
+
+unsigned int ai_semrecall(void)
+{
+    unsigned int i;
+    unsigned int o;
+    unsigned int best;
+    unsigned int bimp;
+    unsigned int bage;
+    unsigned int imp;
+    unsigned int age;
+    unsigned int topic;
+    i = ai_l0count;
+    while (i >= 2) {
+        i = i - 2;
+        if (ai_l0has(i, "remember this topic")) {
+            return (ai_l0meta[i] / 2) & 7;
+        }
+    }
+    best = 65535;
+    bimp = 0;
+    bage = 255;
+    i = 0;
+    while (i < 48) {
+        o = ai_capoff(i);
+        if (ai_l1[o + 1] == 1) {
+            imp = ai_l1[o + 14];
+            age = ai_l1[o + 15];
+            if (best == 65535 || imp > bimp ||
+                (imp == bimp && age < bage)) {
+                best = ai_capget(ai_l1, o + 2);
+                bimp = imp;
+                bage = age;
+            }
+        }
+        i = i + 1;
+    }
+    i = 0;
+    while (i < 24) {
+        o = ai_capoff(i);
+        if (ai_l2[o + 1] == 1) {
+            imp = ai_l2[o + 14];
+            age = ai_l2[o + 15];
+            if (best == 65535 || imp > bimp ||
+                (imp == bimp && age < bage)) {
+                topic = ai_capget(ai_l2, o + 2);
+                best = topic;
+                bimp = imp;
+                bage = age;
+            }
+        }
+        i = i + 1;
+    }
+    return best;
+}
+
+void ai_settext(char *s)
+{
+    unsigned int i;
+    i = 0;
+    while (s[i] != 0 && i < 255) {
+        ai_out[i] = s[i];
+        i = i + 1;
+    }
+    ai_out[i] = 0;
+    ai_olen = i;
+    ai_otokens = 0;
+}
+
 void ai_start(void)
 {
     puts("Welcome to SANYALnet Labs ZX-UX AI LM Chat.");
@@ -768,6 +1157,17 @@ int main(void)
     ai_mhits = 0;
     ai_mbytes = 0;
     ai_mreads = 0;
+    ai_l0head = 0;
+    ai_l0bytes = 0;
+    ai_l0count = 0;
+    ai_l1count = 0;
+    ai_l2count = 0;
+    ai_compact = 0;
+    ai_l2evict = 0;
+    ai_l1drop = 0;
+    ai_litloss = 0;
+    ai_encfail = 0;
+    ai_semuse = 0;
     ai_start();
     while (1) {
         ai_beeps = ai_beeps + 1;
@@ -791,6 +1191,12 @@ int main(void)
         ai_histuse = 0;
         ai_litset = 0;
         ai_lituse = 0;
+        ai_compact = 0;
+        ai_l2evict = 0;
+        ai_l1drop = 0;
+        ai_litloss = 0;
+        ai_encfail = 0;
+        ai_semuse = 0;
         namecmd = ai_namecmd();
         if (namecmd != 0) {
             ai_otokens = 0;
@@ -812,7 +1218,32 @@ int main(void)
             ai_yields = ai_yields + 1;
             continue;
         }
-        topic = ai_pick();
+        if (ai_pinreq() && ai_havectx) {
+            topic = ai_lasttop;
+            ai_ctxuse = 1;
+            ai_settext("I will remember this topic.");
+            puts(ai_out);
+            rc = ai_ctxpair(topic);
+            if (rc < 0) ai_error = 5;
+            if (ai_turns != 65535) {
+                ai_turns = ai_turns + 1;
+            }
+            ai_yields = 0;
+            yield();
+            ai_yields = ai_yields + 1;
+            continue;
+        }
+        if (ai_recallreq()) {
+            topic = ai_semrecall();
+            if (topic != 65535) {
+                ai_ctxuse = 1;
+                ai_semuse = 1;
+            } else {
+                topic = ai_pick();
+            }
+        } else {
+            topic = ai_pick();
+        }
         alt = 0;
         if (ai_havectx && topic == ai_lasttop) {
             if (ai_altstate == 0) {
@@ -827,13 +1258,16 @@ int main(void)
         rc = ai_modelscan(topic);
         if (rc < 0) {
             ai_error = 4;
-            puts("Model data unavailable.");
+            ai_settext("Model data unavailable.");
+            puts(ai_out);
         } else if (rc > 0 && ai_coldans()) {
             puts(ai_out);
         } else {
             ai_generate(topic, alt);
             puts(ai_out);
         }
+        rc = ai_ctxpair(topic);
+        if (rc < 0 && ai_error == 0) ai_error = 5;
         if (ai_histuse) {
             if (ai_hcount != 0) {
                 ai_hcount = ai_hcount - 1;
