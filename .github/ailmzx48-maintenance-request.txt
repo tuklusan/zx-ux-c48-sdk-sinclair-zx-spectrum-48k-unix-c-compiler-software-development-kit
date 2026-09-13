@@ -1,0 +1,2 @@
+iteration=44
+purpose=validate-stable-a48m-v2-history-checkpoint
