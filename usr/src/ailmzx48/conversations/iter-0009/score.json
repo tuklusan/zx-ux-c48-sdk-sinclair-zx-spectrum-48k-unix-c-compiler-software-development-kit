@@ -1,0 +1,22 @@
+{
+  "accepted_turns": 500,
+  "alternate_hits": 0,
+  "alternate_ratio": 1.0,
+  "alternate_total": 0,
+  "beep_calls": 501,
+  "clean_exit": true,
+  "context_hits": 0,
+  "context_ratio": 1.0,
+  "context_total": 0,
+  "history_hits": 0,
+  "history_ratio": 1.0,
+  "history_total": 0,
+  "iteration": 9,
+  "keyword_hits": 0,
+  "keyword_ratio": 1.0,
+  "keyword_total": 0,
+  "literal_hits": 0,
+  "literal_ratio": 1.0,
+  "literal_total": 0,
+  "turns": 500
+}
