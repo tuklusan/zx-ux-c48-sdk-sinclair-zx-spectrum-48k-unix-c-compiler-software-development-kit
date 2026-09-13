@@ -98,6 +98,40 @@ jobs:
           usr/src/ailmzx48/ailmzx48.c
           -o usr/bin/ailmzx48/ailmzx48.c48b
 
+      - name: Regenerate deterministic demo corpus
+        shell: bash
+        run: |
+          python -B - <<'PY'
+          import json
+          import sys
+
+          sys.path.insert(0, "compiler")
+          import verify_graphics_demos as v
+
+          expect = v.load_expect()
+          for name, exp in expect["demos"].items():
+              data = v.compile_bytes(name)
+              (v.BIN / f"{name}.c48b").write_bytes(data)
+              first = v.run_demo(name, 1)
+              screen = v.run_demo(name, int(exp["frames"]))
+              png = v.png_bytes(screen.render_rgb())
+              (v.IMG / f"{name}.png").write_bytes(png)
+              lit, attrs = v.screen_metrics(screen)
+              exp["source_sha256"] = v.sha(v.SRC / f"{name}.c")
+              exp["binary_sha256"] = v.sha_bytes(data)
+              exp["first_screen_sha256"] = v.sha_bytes(first.bytes())
+              exp["screen_sha256"] = v.sha_bytes(screen.bytes())
+              exp["png_sha256"] = v.sha_bytes(png)
+              exp["lit_pixels"] = lit
+              exp["attribute_values"] = attrs
+          v.EXPECT_PATH.write_text(
+              json.dumps(expect, indent=2) + "\n",
+              encoding="ascii",
+              newline="\n",
+          )
+          PY
+          python -B compiler/verify_graphics_demos.py --static
+
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
 
