@@ -15,7 +15,7 @@
     ]
   },
   "goals_achieved": false,
-  "next_action": "Pursue unmet scenario knowledge-deepening-io-peripherals-v1.",
+  "next_action": "Pursue unmet scenario knowledge-deepening-history-models-v1.",
   "no_pending_requests_satisfied": true,
   "pending_iterations": [],
   "qualification_scenarios": [
@@ -54,10 +54,20 @@
       "scenario": "knowledge-deepening-rom-basic-v1"
     },
     {
+      "evidence": {
+        "clean_exit": true,
+        "iteration": 43,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 8,
+        "vm_step_limit": 9097920,
+        "vm_step_utilization": 0.8328148631775175,
+        "vm_steps": 7576883
+      },
       "goal": "Keyboard, cassette, expansion, ULA I/O, sound, and peripheral factual coverage",
+      "iteration": 43,
       "min_turns": 8,
-      "reason": "no retained request/evidence for this scenario",
-      "satisfied": false,
+      "satisfied": true,
       "scenario": "knowledge-deepening-io-peripherals-v1"
     },
     {
@@ -141,7 +151,6 @@
   "schema": 1,
   "status": "GOALS_PENDING",
   "unmet_scenarios": [
-    "knowledge-deepening-io-peripherals-v1",
     "knowledge-deepening-history-models-v1",
     "knowledge-deepening-software-games-v1",
     "knowledge-deepening-zxux-v1",
