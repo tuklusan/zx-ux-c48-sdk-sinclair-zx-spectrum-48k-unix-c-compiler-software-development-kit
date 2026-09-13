@@ -61,8 +61,18 @@ def pass1() -> dict:
     require("ai_litnext" not in source, "round-robin literal selector remains")
     require("rc = ai_ctxpair(ai_t_id);" in source,
             "name turns do not use normal context commit")
-    require("if (stored && rc >= 0) ai_namesem();" in source,
-            "name semantic state is not commit-gated")
+    require("if (stored && rc >= 0) ai_namecommit();" in source,
+            "name literal state is not commit-gated")
+    set_start = source.index("int ai_setname(void)")
+    set_end = source.index("void ai_nameack(void);", set_start)
+    set_body = source[set_start:set_end]
+    require("ai_litgen[" not in set_body and
+            "ai_litlen[" not in set_body and
+            "ai_litbuf[" not in set_body,
+            "name validation mutates session-literal storage")
+    require("void ai_namecommit" in lit and
+            "ai_litgen[slot] = gen;" in lit,
+            "post-context literal commit implementation missing")
     require("int ai_ctxcheck" in ctx, "target context preflight missing")
     require("unsigned int ai_litpick" in lit, "literal victim policy missing")
     require("int ai_capref" in lit and "void ai_clrref" in lit,

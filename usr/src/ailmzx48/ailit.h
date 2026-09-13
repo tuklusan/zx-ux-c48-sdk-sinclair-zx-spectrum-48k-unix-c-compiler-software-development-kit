@@ -264,12 +264,82 @@ int ai_catref(unsigned int ref)
     return 1;
 }
 
+void ai_namecommit(void)
+{
+    int pos;
+    unsigned int start;
+    unsigned int n;
+    unsigned int i;
+    unsigned int gen;
+    unsigned int slot;
+    unsigned int off;
+    pos = ai_find("my name is ");
+    if (pos < 0) return;
+    start = pos + 11;
+    n = 0;
+    while (ai_in[start + n] != 0 && n < 32) {
+        n = n + 1;
+    }
+    if (n == 0 || n > 31) return;
+    slot = ai_litpick(ai_in, start, n);
+    if (slot >= 8) {
+        slot = slot - 8;
+        ai_litold = 0;
+        ai_litcur = ai_slotref(slot);
+        ai_litset = 1;
+        ai_namesem();
+        return;
+    }
+    ai_litold = ai_slotref(slot);
+    gen = ai_litgen[slot] + 1;
+    if (gen == 0 || gen > 4095) gen = 1;
+    ai_litgen[slot] = gen;
+    ai_litlen[slot] = n;
+    off = slot * 31;
+    i = 0;
+    while (i < n) {
+        ai_litbuf[off + i] = ai_in[start + i];
+        i = i + 1;
+    }
+    ai_litcur = ai_slotref(slot);
+    ai_litset = 1;
+    ai_namesem();
+}
+
 void ai_nameack(void)
 {
+    int pos;
+    unsigned int start;
+    unsigned int n;
+    unsigned int i;
     ai_settext("I will remember ");
-    if (!ai_catref(ai_litcur) || !ai_catraw(".")) {
+    pos = ai_find("my name is ");
+    if (pos < 0) {
         ai_settext("I could not store that name.");
+        puts(ai_out);
+        return;
     }
+    start = pos + 11;
+    n = 0;
+    while (ai_in[start + n] != 0 && n < 32) {
+        n = n + 1;
+    }
+    if (n == 0 || n > 31 || n > 254 - ai_olen) {
+        ai_settext("I could not store that name.");
+        puts(ai_out);
+        return;
+    }
+    i = 0;
+    while (i < n) {
+        ai_out[ai_olen] = ai_in[start + i];
+        ai_olen = ai_olen + 1;
+        i = i + 1;
+    }
+    if (ai_olen < 255) {
+        ai_out[ai_olen] = '.';
+        ai_olen = ai_olen + 1;
+    }
+    ai_out[ai_olen] = 0;
     puts(ai_out);
 }
 

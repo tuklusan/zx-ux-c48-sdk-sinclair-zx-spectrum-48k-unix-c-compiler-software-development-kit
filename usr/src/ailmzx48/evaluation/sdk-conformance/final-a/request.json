@@ -1,23 +1,4 @@
 {
-  "schema": 1,
-  "iteration": 9102,
-  "scenario": "final-regression-a-v1",
-  "purpose": "Broad independent final regression suite A across Spectrum hardware, BASIC/ROM, I/O, chronology, games, and repository-grounded ZX-UX SDK knowledge, rerun unchanged after strengthening natural launch-cost cold-record evidence exposed by this suite. Post-design-gap-repair SDK requalification.",
-  "max_seconds": 1200,
-  "prompts": [
-    "what address does the spectrum screen bitmap start at",
-    "what does spectrum basic peek do with a byte address",
-    "which bit does the spectrum ula use for the ear cassette input signal",
-    "in spectrum history when did the zx spectrum launch and what did the 16k version cost",
-    "what company published spectrum game the hobbit adventure",
-    "what is the portable host role of the spectrum c48 sdk compared with future native zx ux cc",
-    "how does the spectrum keyboard matrix work",
-    "what does spectrum basic randomize usr call",
-    "how is a kempston joystick read on the spectrum",
-    "in spectrum history who acquired the spectrum computer rights in 1986",
-    "who created spectrum game manic miner",
-    "where do sources under usr src compile by default in the spectrum c48 sdk"
-  ],
   "expected_keywords": [
     "16384",
     "reads",
@@ -32,7 +13,26 @@
     "matthew smith",
     "usr bin"
   ],
+  "final_expected_keyword": "usr bin",
+  "iteration": 9106,
+  "max_seconds": 1200,
   "min_keyword_ratio": 1.0,
   "min_semantic_uses": 10,
-  "final_expected_keyword": "usr bin"
+  "prompts": [
+    "what address does the spectrum screen bitmap start at",
+    "what does spectrum basic peek do with a byte address",
+    "which bit does the spectrum ula use for the ear cassette input signal",
+    "in spectrum history when did the zx spectrum launch and what did the 16k version cost",
+    "what company published spectrum game the hobbit adventure",
+    "what is the portable host role of the spectrum c48 sdk compared with future native zx ux cc",
+    "how does the spectrum keyboard matrix work",
+    "what does spectrum basic randomize usr call",
+    "how is a kempston joystick read on the spectrum",
+    "in spectrum history who acquired the spectrum computer rights in 1986",
+    "who created spectrum game manic miner",
+    "where do sources under usr src compile by default in the spectrum c48 sdk"
+  ],
+  "purpose": "Broad independent final regression suite A across Spectrum hardware, BASIC/ROM, I/O, chronology, games, and repository-grounded ZX-UX SDK knowledge, rerun unchanged after strengthening natural launch-cost cold-record evidence exposed by this suite. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair.",
+  "scenario": "final-regression-a-v1",
+  "schema": 1
 }

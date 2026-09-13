@@ -1358,11 +1358,12 @@ implementation and retained evidence. They are not open tuning placeholders:
   otherwise chooses the least-protected, least-important, oldest referenced
   slot with explicit stale-reference invalidation;
 - literal-name turns use the same bounded output and L0/L1/L2 commit path as
-  normal turns, and semantic name state is published only after commit success;
-- retained post-repair literal/context iteration 9101 is 70/70 with 15
-  compactions, L2 occupancy 2, 61 semantic retrieval uses, exactly one expected
-  stale-reference invalidation, and successful newest-name recall;
-- retained post-repair final A/B/C iterations 9102/9103/9104 are each 12/12,
+  normal turns; literal generation/slot bytes and semantic name state are both
+  published only after the context commit succeeds;
+- retained post-transaction-repair literal/context iteration 9105 is 70/70 with
+  real compaction, L2 occupancy, semantic retrieval, stale-reference invalidation,
+  and successful newest-name recall under the repaired source identity;
+- retained post-transaction-repair final A/B/C iterations 9106/9107/9108 are each 12/12,
   clean-exit, zero-unexpected-literal-loss runs against one repaired source,
   one rebuilt C48B1 binary, and one unchanged cold-model identity;
 - the repaired primary `ailmzx48.c` remains below the unchanged 32,768-byte

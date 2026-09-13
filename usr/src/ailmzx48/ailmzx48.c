@@ -174,6 +174,7 @@ unsigned int ai_litpick(char *s, unsigned int start,
                         unsigned int n);
 int ai_refvalid(unsigned int ref);
 void ai_namesem(void);
+void ai_namecommit(void);
 void ai_settext(char *s);
 
 int ai_namecmd(void)
@@ -189,10 +190,6 @@ int ai_setname(void)
     int pos;
     unsigned int start;
     unsigned int n;
-    unsigned int i;
-    unsigned int gen;
-    unsigned int slot;
-    unsigned int off;
     pos = ai_find("my name is ");
     if (pos < 0) return 0;
     start = pos + 11;
@@ -201,27 +198,6 @@ int ai_setname(void)
         n = n + 1;
     }
     if (n == 0 || n > 31) return 0;
-    slot = ai_litpick(ai_in, start, n);
-    if (slot >= 8) {
-        slot = slot - 8;
-        ai_litold = 0;
-        ai_litcur = ai_slotref(slot);
-        ai_litset = 1;
-        return 1;
-    }
-    ai_litold = ai_slotref(slot);
-    gen = ai_litgen[slot] + 1;
-    if (gen == 0 || gen > 4095) gen = 1;
-    ai_litgen[slot] = gen;
-    ai_litlen[slot] = n;
-    off = slot * 31;
-    i = 0;
-    while (i < n) {
-        ai_litbuf[off + i] = ai_in[start + i];
-        i = i + 1;
-    }
-    ai_litcur = ai_slotref(slot);
-    ai_litset = 1;
     return 1;
 }
 
@@ -1175,7 +1151,7 @@ int main(void)
             }
             rc = ai_ctxpair(ai_t_id);
             if (rc < 0 && ai_error == 0) ai_error = 5;
-            if (stored && rc >= 0) ai_namesem();
+            if (stored && rc >= 0) ai_namecommit();
             if (ai_turns != 65535) {
                 ai_turns = ai_turns + 1;
             }

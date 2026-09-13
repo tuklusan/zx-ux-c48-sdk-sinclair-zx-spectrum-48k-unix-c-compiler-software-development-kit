@@ -32,7 +32,7 @@
     "ai_turns": 12,
     "ai_yields": 1
   },
-  "iteration": 9102,
+  "iteration": 9106,
   "request": {
     "expected_keywords": [
       "16384",
@@ -49,7 +49,7 @@
       "usr bin"
     ],
     "final_expected_keyword": "usr bin",
-    "iteration": 9102,
+    "iteration": 9106,
     "max_seconds": 1200,
     "min_keyword_ratio": 1.0,
     "min_semantic_uses": 10,
@@ -67,7 +67,7 @@
       "who created spectrum game manic miner",
       "where do sources under usr src compile by default in the spectrum c48 sdk"
     ],
-    "purpose": "Broad independent final regression suite A across Spectrum hardware, BASIC/ROM, I/O, chronology, games, and repository-grounded ZX-UX SDK knowledge, rerun unchanged after strengthening natural launch-cost cold-record evidence exposed by this suite. Post-design-gap-repair SDK requalification.",
+    "purpose": "Broad independent final regression suite A across Spectrum hardware, BASIC/ROM, I/O, chronology, games, and repository-grounded ZX-UX SDK knowledge, rerun unchanged after strengthening natural launch-cost cold-record evidence exposed by this suite. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair.",
     "scenario": "final-regression-a-v1",
     "schema": 1
   },

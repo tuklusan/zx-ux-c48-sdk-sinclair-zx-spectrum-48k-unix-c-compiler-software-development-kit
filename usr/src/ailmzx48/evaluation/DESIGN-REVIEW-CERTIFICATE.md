@@ -22,10 +22,10 @@ not erase that historical evidence; it makes the current scope explicit.
 ## Reviewed identities
 
 - detailed-design revision: `0.26-draft`
-- detailed-design Git blob: `b3d1c576dcb89b171b82e49b7241b166e5c9d39d`
-- detailed-design SHA-256: `517ceb1f098c9f8fc0451fa171e805ad6604370c25afe10a484cfdcb4808ebf5`
-- repaired C48 source SHA-256: `d8def7e22c53657bab1fa66b85bdd1f3be4a04ada54579d488301e7014227693`
-- SDK C48B1 artifact SHA-256: `d6a1b234877e8592c53db17018e59e64c4bf7055d5b682f35b7b24302bfe73da`
+- detailed-design Git blob: `f826c56c7507e3ce6207c00c4461af6738f140fd`
+- detailed-design SHA-256: `0d804bc183c81f801d2a99f93e18ce6c71238430ee339aed78f25fcc965ad4c3`
+- repaired C48 source SHA-256: `0a99c9287119760bad0a17f3128ed9cfccd8a7cd6a94472c9b53cc867abf8b7c`
+- SDK C48B1 artifact SHA-256: `6c3dd416e482bd8d7d8698bd30d06dce93326c67417700cecb9d721fddbeb518`
 - cold A48M SHA-256: `e2df4c13bc0b98999cec1e155bf0c7100d6ffd01965e6d2a4d05071c4da888db`
 - upstream ZX-UX main inspected read-only: `8c8f918743897b352513b0545ff77487682c088f`
 - latest inspected upstream durable certification item: `P1.26`
