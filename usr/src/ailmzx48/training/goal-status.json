@@ -16,8 +16,10 @@
   },
   "goals_achieved": false,
   "next_action": "Pursue unmet scenario knowledge-deepening-history-models-v1.",
-  "no_pending_requests_satisfied": true,
-  "pending_iterations": [],
+  "no_pending_requests_satisfied": false,
+  "pending_iterations": [
+    44
+  ],
   "qualification_scenarios": [
     {
       "evidence": {
@@ -71,9 +73,16 @@
       "scenario": "knowledge-deepening-io-peripherals-v1"
     },
     {
+      "candidate_failures": [
+        {
+          "failures": [
+            "retained score evidence is missing"
+          ],
+          "iteration": 44
+        }
+      ],
       "goal": "Sinclair and Spectrum chronology, models, and historical factual coverage",
       "min_turns": 8,
-      "reason": "no retained request/evidence for this scenario",
       "satisfied": false,
       "scenario": "knowledge-deepening-history-models-v1"
     },

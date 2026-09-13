@@ -38,10 +38,50 @@ int ai_wordchar(int c)
 
 unsigned int ai_mtsalt;
 
+void ai_hprep(void)
+{
+    unsigned int i;
+    unsigned int n;
+    unsigned int h;
+    unsigned int v;
+    i = 0;
+    n = 0;
+    while (ai_in[i] != 0) {
+        while (ai_in[i] != 0 &&
+               !ai_wordchar(ai_in[i])) i = i + 1;
+        if (ai_in[i] == 0) break;
+        h = 216 + ai_mtsalt;
+        while (ai_in[i] != 0 && ai_wordchar(ai_in[i])) {
+            h = (h * 33) ^ ai_lower(ai_in[i]);
+            i = i + 1;
+        }
+        if (n >= 48) {
+            ai_mhits = 49;
+            return;
+        }
+        v = 224 + (h % 3872);
+        ai_seen[n * 2] = v & 255;
+        ai_seen[(n * 2) + 1] = v / 256;
+        n = n + 1;
+    }
+    ai_mhits = n;
+}
+
 int ai_vhas(unsigned int id)
 {
     unsigned int i;
     unsigned int h;
+    unsigned int v;
+    if (ai_mhits <= 48) {
+        i = 0;
+        while (i < ai_mhits) {
+            v = ai_seen[i * 2];
+            v = v + ((unsigned int)ai_seen[(i * 2) + 1] * 256);
+            if (v == id) return 1;
+            i = i + 1;
+        }
+        return 0;
+    }
     i = 0;
     while (ai_in[i] != 0) {
         while (ai_in[i] != 0 &&

@@ -484,6 +484,7 @@ int ai_modelscan(unsigned int topic)
     if(ai_mhead[4]!=2||ai_mhead[5]!=0||
        ai_mhead[6]!=40||ai_mhead[7]!=1)return -1;
     ai_mtsalt=ai_getu16(ai_mhead,34);
+    ai_hprep();
     i=36;
     while(i<40){if(ai_mhead[i]!=0)return -1;i=i+1;}
     rcount = ai_getu16(ai_mhead, 24);
