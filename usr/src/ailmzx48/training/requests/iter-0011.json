@@ -1,0 +1,31 @@
+{
+  "schema": 1,
+  "iteration": 11,
+  "scenario": "target-context-500-turn-v1",
+  "purpose": "Run 500 accepted turns through the actual C48 program, exceed 32 KiB of source-equivalent dialogue, force repeated fixed-size L0/L1/L2 compaction, and recover a deliberately pinned memory topic after hundreds of intervening turns.",
+  "max_seconds": 1200,
+  "prompt_plan": {
+    "prefix": [
+      "what about 48k memory",
+      "remember this topic"
+    ],
+    "cycle": [
+      "please tell me something about the spectrum home computer again",
+      "please tell me something about spectrum games and its culture again",
+      "can you chat locally without a network on this small computer",
+      "please tell me again what happened in spectrum history in 1982",
+      "who are you as a local language model on this small computer"
+    ],
+    "cycle_count": 99,
+    "suffix": [
+      "please tell me something about the spectrum home computer again",
+      "please tell me something about spectrum games and its culture again",
+      "return to the topic i asked you to remember"
+    ]
+  },
+  "min_dialogue_bytes": 32769,
+  "min_compactions": 100,
+  "min_l2_count": 1,
+  "min_semantic_uses": 1,
+  "final_expected_keyword": "memory"
+}
