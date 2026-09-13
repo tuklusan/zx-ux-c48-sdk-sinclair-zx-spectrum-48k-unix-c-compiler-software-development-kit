@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "iteration": 20,
+  "scenario": "target-mixed-state-500-turn-soak-v1",
+  "purpose": "Run a holistic 500-turn target soak that combines generation-referenced name memory, semantic recall, six-topic traffic, bounded topic history, follow-up context, valid 15-digit F2 literals, rejected 16-digit F2 literals, and rejected 32-character F1 spans. The run must preserve fixed Candidate-A memory bounds and recover a topic pinned before the mixed pressure.",
+  "max_seconds": 1200,
+  "prompt_plan": {
+    "prefix": [
+      "what about 48k memory",
+      "remember this topic",
+      "my name is Alice",
+      "what is my name",
+      "please tell me something about the spectrum home computer again"
+    ],
+    "cycle": [
+      "my name is Zelda",
+      "what is my name",
+      "please tell me something about the spectrum home computer again",
+      "please tell me something about spectrum games and its culture again",
+      "can you chat locally without a network on this small computer",
+      "please tell me again what happened in spectrum history in 1982",
+      "1234567890123456",
+      "123456789012345",
+      "go back",
+      "tell me more"
+    ],
+    "cycle_count": 49,
+    "suffix": [
+      "my name is Zelda",
+      "what is my name",
+      "abcdefghijklmnopqrstuvwxyzabcdef",
+      "please tell me something about the spectrum home computer again",
+      "return to the topic i asked you to remember"
+    ]
+  },
+  "min_dialogue_bytes": 32769,
+  "min_compactions": 100,
+  "min_l2_count": 1,
+  "min_semantic_uses": 50,
+  "min_lmcount": 96,
+  "final_expected_keyword": "memory"
+}
