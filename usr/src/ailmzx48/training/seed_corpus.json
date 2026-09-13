@@ -544,7 +544,7 @@
       "text": "zx spectrum launched 23 april 1982 at 125 pounds for 16k and 175 pounds for 48k",
       "triggers": [
         "launch",
-        "125",
+        "cost",
         "175",
         "prices"
       ]
