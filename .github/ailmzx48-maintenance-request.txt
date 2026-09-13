@@ -1,0 +1,2 @@
+iteration=41
+purpose=deepen-rom-basic-seed
