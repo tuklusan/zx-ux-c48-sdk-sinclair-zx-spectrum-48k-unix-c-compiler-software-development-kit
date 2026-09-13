@@ -156,7 +156,7 @@ jobs:
           assert model['topics'][0] == 'unknown', model['topics']
           assert len(model['trigram_contexts']) == 64
           assert len(model['unigram_fallback']) == 12
-          assert len(model['trigger_spellings']) == 158
+          assert len(model['trigger_words']) == 158
           PY
 
       - name: Requalify architecture repair
