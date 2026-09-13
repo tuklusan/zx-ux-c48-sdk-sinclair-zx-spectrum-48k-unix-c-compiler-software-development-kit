@@ -153,7 +153,7 @@ jobs:
           model = json.loads((a / 'model/current-model.json').read_text())
           assert model['schema'] == 3, model.get('schema')
           assert len(model['topics']) == 7, model['topics']
-          assert model['topics'][0] == 'generic', model['topics']
+          assert model['topics'][0] == 'unknown', model['topics']
           assert len(model['trigram_contexts']) == 64
           assert len(model['unigram_fallback']) == 12
           assert len(model['trigger_spellings']) == 158
