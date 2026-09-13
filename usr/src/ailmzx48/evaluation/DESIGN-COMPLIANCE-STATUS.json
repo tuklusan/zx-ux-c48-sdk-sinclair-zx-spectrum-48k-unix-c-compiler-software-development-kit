@@ -1,8 +1,8 @@
 {
   "cold_model_sha256": "e2df4c13bc0b98999cec1e155bf0c7100d6ffd01965e6d2a4d05071c4da888db",
-  "design_git_blob_sha1": "0495fe985874ee287383ad9b3e0719ea3c690495",
+  "design_git_blob_sha1": "b3d1c576dcb89b171b82e49b7241b166e5c9d39d",
   "design_revision": "0.26-draft",
-  "design_sha256": "7a31b658488d2009b01e13f96cb41f4248a52d1047e92d02dd54edecc5208ca7",
+  "design_sha256": "517ceb1f098c9f8fc0451fa171e805ad6604370c25afe10a484cfdcb4808ebf5",
   "full_native_release": {
     "latest_durable_evidence": "P1.26",
     "missing_native_evidence": [

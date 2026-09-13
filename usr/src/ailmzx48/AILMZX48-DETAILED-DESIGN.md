@@ -234,9 +234,10 @@ at the end of Revision 0.25 for the implemented SDK profile.
 
 The SDK profile is not a substitute for native certification.  As of this
 revision the read-only upstream ZX-UX repository main identity checked for the
-native dependency is `cb8e4ea0b68df693e5d4133fc906ed46234427b6`; its latest
-inspected durable certification item is Phase-1 `P1.25`.  That upstream state
-does not yet provide the native C48/OBJ1/MEX1 build, allocator/stack/Fuse, and
+native dependency is `8c8f918743897b352513b0545ff77487682c088f`.  Its latest
+inspected durable certification item is Phase-1 `P1.26`, which certifies source
+commit `cb8e4ea0b68df693e5d4133fc906ed46234427b6`.  That upstream state still
+does not provide the native C48/OBJ1/MEX1 build, allocator/stack/Fuse, and
 physical-cassette execution path required by Sections 18, 19 and 22.  Those
 native-only obligations therefore remain explicitly `BLOCKED_EXTERNAL`; they
 are neither silently waived nor counted as SDK zero-gap evidence.
