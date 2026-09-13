@@ -110,8 +110,14 @@ jobs:
           usr/src/ailmzx48/ailmzx48.c
           -o usr/bin/ailmzx48/ailmzx48.c48b
 
-      - name: Syntax-check iteration runner
-        run: python -m py_compile usr/src/ailmzx48/tooling/run_iteration.py
+      - name: Syntax-check iteration runner without cache artifacts
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path("usr/src/ailmzx48/tooling/run_iteration.py")
+          compile(path.read_text(encoding="utf-8"), str(path), "exec")
+          PY
 
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
