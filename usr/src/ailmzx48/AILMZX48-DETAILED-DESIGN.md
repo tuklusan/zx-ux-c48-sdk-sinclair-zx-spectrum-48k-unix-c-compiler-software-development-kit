@@ -1321,41 +1321,77 @@ extent maps, RAW/PACKED native object placement, cycle/Fuse latency, native tty
 and syscall equivalence, native compiler/linker lifetime, cassette save/load
 ordering, physical 48K coexistence/headroom, and the Section-18.4 eleven-step
 real-machine proof.  The upstream dependency is currently only at Phase-1
-durable certification (`P1.25` at the inspected upstream main identity above),
-so fabricating answers for those questions would violate the accuracy-first
-rule.  Full native-release compliance becomes eligible for its own three-pass
-zero-gap certificate only after those upstream facilities exist and the native
-proof is retained.
+durable certification: `P1.26` is PASS at upstream main `8c8f918743897b352513b0545ff77487682c088f`,
+certifying source commit `cb8e4ea0b68df693e5d4133fc906ed46234427b6`.  That evidence is still
+kernel wall-clock work, not the required native C48/MEX1/cassette path.
+Fabricating answers for those questions would violate the accuracy-first rule.
+Full native-release compliance becomes eligible for its own three-pass zero-gap
+certificate only after those upstream facilities exist and the native proof is
+retained.
 
 The current compliance certificate therefore has two independent fields:
 `SDK_PROFILE = PASS (3/3 zero-gap review passes)` and
 `FULL_NATIVE_RELEASE = BLOCKED_EXTERNAL`.  A PASS in the first field must never
 be rendered or summarized as a PASS in the second.
 
-## 23. Open design questions after Revision 0.12
+## 23. Resolved SDK parameters and remaining native questions
 
-The following remain deliberately open until measurement resolves them:
+Revision 0.26 closes the SDK-side design questions that are now fixed by
+implementation and retained evidence. They are not open tuning placeholders:
 
-- exact 224-token one-byte hot vocabulary contents;
-- final resident extended-vocabulary/recognition-lexicon size below the 4096 ID ceiling;
-- final A48M numeric field IDs, section order, compact hot/cold interface-identity width and integrity algorithm;
-- exact cold-record type IDs and trigger weights;
-- exact hot LM byte budget, pruning thresholds and whether the Candidate-A 12-continuation cap should move;
-- whether maximum LM order three wins over a smaller order-two model;
-- whether the 4,336-byte context split should trade bytes among L0/L1/L2/session literals/retrieval scratch after real transcripts;
-- whether eight session-literal slots is the best byte/recall trade after measured unknown-name conversations;
-- whether any target L3 archival mode is worth its explicitly reserved arena bytes; it remains off by default in Candidate A;
-- cold model embedded-vs-separate-object split after native MEX1 measurement;
-- one PACKED scan versus RAW indexing, a few PACKED shards or a larger resident cache;
-- exact model logical/physical byte budget and ZXP1 ratio within the u16 object limit;
-- final response token/encoded/printed-byte ceilings after terminal and latency testing;
-- final MEX1 minimum stack reservation, selected from measured native high-water rather than a guessed range, and whether heap remains zero;
-- exact target model object names/types/paths and cassette physical ordering;
-- ordinary-shell launch versus any proven process-replacement launch option;
-- final turn-start beep pitch/cue behavior after real-machine audio/usability testing;
-- quantitative convergence thresholds/consecutive-round count after baseline variance is known.
+- the resident canonical vocabulary is 96 entries; alias retrieval uses
+  collision-free salted trigger IDs in 224..4095 with accepted salt 23;
+- A48M v2 is 8,432 logical bytes with 69 records, a 192-byte maximum record,
+  a 64-byte maximum read request, and cold-model SHA-256
+  `e2df4c13bc0b98999cec1e155bf0c7100d6ffd01965e6d2a4d05071c4da888db`;
+- fixed context bounds are L0=896 bytes/32 descriptors, L1=48 capsules,
+  L2=24 capsules, eight generation-checked literal slots in 272 bytes, and a
+  96-token decoded LM window;
+- the reference stress run covers 500 dialogue pairs, 444 L1-to-L2
+  compactions, 376 L2 evictions, and 51,000 raw source-dialogue bytes without
+  relaxing those fixed capacities;
+- target context commit uses no-mutation preflight before age, eviction, or
+  write mutation; semantic eviction orders retention protection before
+  importance and age;
+- literal storage reuses an exact spelling, prefers an unreferenced slot, and
+  otherwise chooses the least-protected, least-important, oldest referenced
+  slot with explicit stale-reference invalidation;
+- literal-name turns use the same bounded output and L0/L1/L2 commit path as
+  normal turns, and semantic name state is published only after commit success;
+- retained post-repair literal/context iteration 9101 is 70/70 with 15
+  compactions, L2 occupancy 2, 61 semantic retrieval uses, exactly one expected
+  stale-reference invalidation, and successful newest-name recall;
+- retained post-repair final A/B/C iterations 9102/9103/9104 are each 12/12,
+  clean-exit, zero-unexpected-literal-loss runs against one repaired source,
+  one rebuilt C48B1 binary, and one unchanged cold-model identity;
+- the repaired primary `ailmzx48.c` remains below the unchanged 32,768-byte
+  compiler source-object ceiling; helper logic moved to ordinary shipped C48
+  headers instead of weakening the compiler gate;
+- `compiler/verify_release.py` permanently invokes the three-pass design
+  compliance checker, so source/binary/model/evidence/provenance drift fails
+  the full SDK release gate.
 
-These are measurement questions, not invitations to silently assume desktop defaults.
+The remaining questions are specifically native-release questions:
+
+1. native OBJ1/MEX1 text, BSS, stack, heap, and arena-placement measurements;
+2. RAW/PACKED model physical bytes and decoder-state coexistence under the
+   native allocator;
+3. Fuse/cycle and real-tty latency for repeated A48M scans and long context use;
+4. canonical target object names, shell/process-replacement behavior, and M48O
+   cassette ordering;
+5. native build/save/reclaim/load/direct-exec commands proven by the implemented
+   upstream system rather than inferred from architecture prose;
+6. physical unexpanded-48K boot, multi-turn conversation, context compaction,
+   model scanning, and clean `q` termination;
+7. final source/development and runtime/distribution tape hashes and operator
+   transcript.
+
+As of this checkpoint, read-only upstream `main` is `8c8f918743897b352513b0545ff77487682c088f` and its latest
+durable certification is P1.26 PASS from certified source `cb8e4ea0b68df693e5d4133fc906ed46234427b6`. P1.26
+is still Phase-1 kernel wall-clock work. It does not provide the later native
+C48/OBJ1/MEX1/cassette execution path needed for the seven proofs above.
+Therefore `FULL_NATIVE_RELEASE` remains `BLOCKED_EXTERNAL`; no command sequence
+is invented to make that profile appear complete early.
 
 ## 24. Revision and durability discipline
 

@@ -99,6 +99,8 @@ def pass1() -> dict:
 
 def pass2() -> dict:
     source_hash = sha(A / "ailmzx48.c")
+    binary_hash = sha(ROOT / "usr/bin/ailmzx48/ailmzx48.c48b")
+    cold_hash = sha(A / "model" / "cold-seed.bin")
     base = A / "evaluation" / "sdk-conformance"
     for name in ("final-a", "final-b", "final-c"):
         score = load(base / name / "score.json")
@@ -110,6 +112,10 @@ def pass2() -> dict:
         require(score.get("turns") == 12, f"{name}: turn count")
         require(run.get("source_sha256") == source_hash,
                 f"{name}: source identity mismatch")
+        require(run.get("c48b_sha256") == binary_hash,
+                f"{name}: binary identity mismatch")
+        require(run.get("cold_model_sha256") == cold_hash,
+                f"{name}: cold-model identity mismatch")
     score = load(base / "literal-context" / "score.json")
     run = load(base / "literal-context" / "run.json")
     require(score.get("keyword_ratio") == 1.0, "literal-context: keyword ratio")
@@ -125,6 +131,10 @@ def pass2() -> dict:
             "literal-context: newest-name recall failed")
     require(run.get("source_sha256") == source_hash,
             "literal-context: source identity mismatch")
+    require(run.get("c48b_sha256") == binary_hash,
+            "literal-context: binary identity mismatch")
+    require(run.get("cold_model_sha256") == cold_hash,
+            "literal-context: cold-model identity mismatch")
 
     corpus = load(A / "training" / "seed_corpus.json")
     provenance = load(A / "training" / "provenance.json")
@@ -169,12 +179,21 @@ def pass3() -> dict:
             "tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project",
             "upstream blocker repository mismatch")
     require(native.get("upstream_main") ==
-            "cb8e4ea0b68df693e5d4133fc906ed46234427b6",
+            "8c8f918743897b352513b0545ff77487682c088f",
             "upstream blocker identity mismatch")
-    require(native.get("latest_durable_evidence") == "P1.25",
+    require(native.get("latest_durable_evidence") == "P1.26",
             "upstream durable evidence marker mismatch")
+    require(native.get("upstream_certified_source_commit") ==
+            "cb8e4ea0b68df693e5d4133fc906ed46234427b6",
+            "upstream certified source identity mismatch")
     require(status.get("source_sha256") == sha(A / "ailmzx48.c"),
             "status source identity mismatch")
+    require(status.get("sdk_c48b_sha256") ==
+            sha(ROOT / "usr/bin/ailmzx48/ailmzx48.c48b"),
+            "status binary identity mismatch")
+    require(status.get("cold_model_sha256") ==
+            sha(A / "model" / "cold-seed.bin"),
+            "status cold-model identity mismatch")
     require(status.get("design_sha256") ==
             sha(A / "AILMZX48-DETAILED-DESIGN.md"),
             "status design identity mismatch")

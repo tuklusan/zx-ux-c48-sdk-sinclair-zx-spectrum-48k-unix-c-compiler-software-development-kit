@@ -22,13 +22,14 @@ not erase that historical evidence; it makes the current scope explicit.
 ## Reviewed identities
 
 - detailed-design revision: `0.26-draft`
-- detailed-design Git blob: `fb090795488eb9cd168f4c5a3e6df89667f4bf34`
-- detailed-design SHA-256: `50effb12fb2c37a391821849f18bf4fceac2212ebb203ff06926836b8b073660`
+- detailed-design Git blob: `0495fe985874ee287383ad9b3e0719ea3c690495`
+- detailed-design SHA-256: `7a31b658488d2009b01e13f96cb41f4248a52d1047e92d02dd54edecc5208ca7`
 - repaired C48 source SHA-256: `d8def7e22c53657bab1fa66b85bdd1f3be4a04ada54579d488301e7014227693`
 - SDK C48B1 artifact SHA-256: `d6a1b234877e8592c53db17018e59e64c4bf7055d5b682f35b7b24302bfe73da`
 - cold A48M SHA-256: `e2df4c13bc0b98999cec1e155bf0c7100d6ffd01965e6d2a4d05071c4da888db`
-- upstream ZX-UX main inspected read-only: `cb8e4ea0b68df693e5d4133fc906ed46234427b6`
-- latest inspected upstream durable certification item: `P1.25`
+- upstream ZX-UX main inspected read-only: `8c8f918743897b352513b0545ff77487682c088f`
+- latest inspected upstream durable certification item: `P1.26`
+- certified source named by P1.26: `cb8e4ea0b68df693e5d4133fc906ed46234427b6`
 
 ## Three-pass zero-gap result
 
