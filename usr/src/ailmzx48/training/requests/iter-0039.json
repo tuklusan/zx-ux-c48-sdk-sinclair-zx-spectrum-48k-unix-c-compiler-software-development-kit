@@ -2,7 +2,7 @@
   "schema": 1,
   "iteration": 39,
   "scenario": "mixed-same-topic-discrimination-v3",
-  "purpose": "Prove the retained bounded routing fix restores mixed-session retrieval across Spectrum, memory, history, and games facts after the concurrent graphics-artifact cleanup, while the perfect keyword-ratio gate remains enforced.",
+  "purpose": "Prove the retained bounded routing and bitmap-specificity fixes restore mixed-session retrieval across Spectrum, memory, history, and games facts while the perfect keyword-ratio gate remains enforced.",
   "max_seconds": 1200,
   "prompts": [
     "what resolution does the spectrum display use",
