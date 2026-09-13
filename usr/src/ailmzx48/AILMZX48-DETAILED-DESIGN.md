@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.4-draft
+Revision: 0.5-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48`
 
@@ -188,7 +188,7 @@ The working architecture is instead a host-trained, target-inferred sparse stati
 
 This is still a language model: probabilities/weights over token continuations are learned from a corpus and used locally at inference time. The surrounding agent controller supplies conversation state, memory retrieval, topic steering, factual anchoring, uncertainty/fallback behavior, and anti-repetition controls.
 
-The exact release model family is not frozen by this revision. Revision 0.3 introduced concrete **Candidate A**; Revision 0.4 retains it as a corrected benchmark baseline so implementation and measurements can begin without pretending the representation is already optimal. Candidate A is not a promise that no better representation will replace it.
+The exact release model family is not frozen by this revision. Revision 0.3 introduced concrete **Candidate A**; Revision 0.5 retains it as a corrected benchmark baseline so implementation and measurements can begin without pretending the representation is already optimal. Candidate A is not a promise that no better representation will replace it.
 
 ### 6.1 No remote inference dependency
 
@@ -287,8 +287,6 @@ These are Candidate-A bounds. Later measurements may change them only together w
 
 ## 8. Compressed conversational context
 
-## 8. Compressed conversational context
-
 ### 8.1 Terminology
 
 `ailmzx48` will deliberately have an **effective conversational context** much larger than its **live exact-token window**.
@@ -301,9 +299,9 @@ The system is hierarchical. Detail is retained while it is likely to matter and 
 
 The working context has four levels plus one small session-literal table used by the semantic levels.
 
-**L0 — exact live tail**
+**L0 — exact canonical-token live tail**
 
-The newest dialogue remains as canonical encoded tokens in a fixed circular byte buffer plus a small decoded LM-context cache. This is the only part treated as exact word-by-word conversational history by the response generator.
+The newest dialogue remains as canonical encoded tokens in a fixed circular byte buffer plus a small decoded LM-context cache. This is the only part treated as exact canonical-token conversational history by the response generator. Because tokenization normalizes presentation such as ordinary case/spacing, L0 is not a byte-perfect transcript of what the user typed.
 
 L0 contains enough recent user/assistant text to preserve pronouns, immediate corrections, local phrasing, unfinished topic transitions, and short-range linguistic continuity.
 
@@ -379,21 +377,20 @@ A diagnostic build may enable target L3 only with an explicit fixed logical/phys
 A turn is transactional with respect to conversation memory. Candidate A performs these bounded steps:
 
 1. read and validate the raw user line;
-2. tokenize it completely into the 320-byte current-turn encoded scratch; reject the turn without changing memory if the encoded form does not fit;
+2. tokenize it completely into the 320-byte current-turn encoded scratch, including all user-turn/BOS/EOS/turn-end framing; reject the turn without changing memory if the complete framed encoding exceeds 319 bytes;
 3. classify/retrieve/generate using that current-turn scratch plus existing L0/L1/L2;
-4. finish the complete encoded response in the 256-byte response-token buffer and validate factual anchors, token count and eventual printed-byte count before printing any response text;
+4. finish the complete framed encoded response in the 256-byte response-token buffer and validate factual anchors, token count and eventual printed-byte count before printing any response text;
 5. stream the validated response through the production tty path;
-6. append the exact user and assistant encoded turns to L0 as two complete speaker turns;
-7. evict complete oldest speaker turns until the new turns fit; never discard half of a token/escape or knowingly leave a half-turn descriptor;
-8. derive at most two highest-ranked L1 capsules from each evicted speaker turn; if more semantic candidates exist, the deterministic dropped-candidate counter records the loss;
-9. when L1 needs space, compact bounded old L1 records into L2 using the deterministic L2 merge/eviction rule;
-10. update the decoded 96-entry LM-context cache and bounded diagnostic counters;
-11. in a diagnostic L3 build, append only if its pre-budgeted quota permits it;
-12. verify instrumented guard values before emitting the next prompt.
+6. compute the L0 byte and directory capacity required by both complete new speaker turns; the Candidate-A input/response caps are host-tested to prove one maximal accepted user/assistant pair can fit an otherwise empty 896-byte L0 and two of the 32 descriptors;
+7. while either L0 bytes or directory descriptors are insufficient, inspect the oldest complete speaker turn before overwriting it, derive at most two highest-ranked L1 capsules, compact bounded L1 records into L2 if needed, record any dropped semantic candidates, then evict that complete descriptor and its bytes;
+8. append the complete user and assistant encoded turns only after both byte capacity and two descriptor slots are proven available; no half-token, half-escape or half-turn is ever committed;
+9. update the decoded 96-entry LM-context cache and bounded diagnostic counters;
+10. in a diagnostic L3 build, append raw accepted input bytes and exact logical output bytes only if its pre-budgeted quota permits it;
+11. verify instrumented guard values before emitting the next prompt.
 
 The 128-byte L0 directory is exactly 32 four-byte descriptors: `u16` ring start plus `u16` encoded byte length. Speaker/turn type remains encoded in the turn stream itself. Ring reads whose bytes cross the physical end use bounded modulo copying; a descriptor is accepted only when its start/length prove every referenced byte lies within the 896-byte logical ring.
 
-No stage allocates an unbounded temporary copy of text or semantic records.
+The commit path is tested at both limiting resources: nearly full ring bytes with free descriptors, and free bytes with all descriptors occupied by tiny turns. No stage allocates an unbounded temporary copy of text or semantic records.
 
 ### 8.4 Correction and supersession rule
 
@@ -421,9 +418,11 @@ This is how a conversation can behave as though it remembers much more text than
 
 The design promises preservation of useful conversational information across much longer sessions than an all-raw live buffer could hold.
 
-It does not promise perfect verbatim recall after old material has been reduced to L1/L2. If exact quotation of an old turn matters and L3 is unavailable or has been discarded, the agent must not fabricate the wording.
+L0 preserves the exact **canonical token sequence** that survived tokenization. It does not by itself preserve byte-for-byte source spelling, capitalization or whitespace that normalization discarded. Perfect verbatim quotation is therefore promised only when the exact source bytes are still available from the current raw line, the external SDK transcript, or an enabled exact L3 archive.
 
-Quality tests therefore distinguish exact recent recall, semantic old-turn recall, topic continuity, entity continuity, contradiction avoidance, correction handling, and unsupported pseudo-verbatim recall.
+After old material has been reduced to L1/L2, even canonical token wording is no longer promised. If exact quotation matters and no exact transcript source is available, the agent must not fabricate the wording.
+
+Quality tests therefore distinguish canonical-token recent recall, source-byte/verbatim transcript recall, semantic old-turn recall, topic continuity, entity continuity, contradiction avoidance, correction handling, and unsupported pseudo-verbatim recall.
 
 ### 8.7 Candidate-A 4,336-byte conversation/context workspace
 
@@ -437,8 +436,8 @@ L1 semantic capsules           768   48 x 16 bytes
 L2 synopsis records            384   24 x 16 bytes
 session literal slots          272   8 x 34 bytes
 input line buffer              192   at most 191 bytes + NUL
-current-turn encoded scratch   320
-response encoded-token buffer  256   at most 255 encoded bytes
+current-turn encoded scratch   320   <=319 bytes incl. turn framing
+response encoded-token buffer  256   <=255 bytes incl. turn framing
 aim/retrieval scratch          512
 generation/scoring state       256
 guards, counters, cursors      160
@@ -487,7 +486,7 @@ Candidate A therefore deliberately splits the model into a **hot resident plane*
 The executable contains only data that must be accessed repeatedly during generation:
 
 - token-control definitions;
-- hot-token spelling/presentation metadata;
+- resident hot + extended recognition/spelling/presentation lexicon;
 - compact token class tables;
 - intent/topic feature weights or ranks;
 - high-frequency variable-order language-model transitions;
@@ -538,7 +537,7 @@ ZX-UX v1 exposes RAM-object logical/storage lengths and seek offsets as u16 valu
 
 The container shall declare at least format version, feature flags, resident-vocabulary identity, record count, logical length and section lengths. Host tooling validates all sums/counts in widened arithmetic, rejects any stream whose mathematical layout exceeds the u16 target object/seek domain, and only then emits narrowed fields. Target validation uses subtraction/reordered comparisons so 16-bit wrap cannot turn an invalid layout into a valid one.
 
-The target model includes an incremental integrity check suitable for the Z80/C48 implementation. Host release tooling also records SHA-256 for reproducibility. SHA-256 is not imposed on the target merely because the host can calculate it cheaply.
+The target model includes an incremental integrity check suitable for the Z80/C48 implementation. Every complete cold scan validates structural bounds and accumulates that integrity check while bytes are already streaming. No selected cold record may reach response generation until the scan has reached the declared logical end and the integrity result matches. Thus the first question also performs full model validation without requiring an extra unbudgeted startup copy/scan; later scans retain the same fail-closed check unless a separately proved immutable-object optimization replaces it. Host release tooling also records SHA-256 for reproducibility. SHA-256 is not imposed on the target merely because the host can calculate it cheaply.
 
 ### 9.5 Candidate variable-order language model
 
@@ -568,10 +567,9 @@ No release memory claim is frozen until the real compiled C48/MEX1 artifact and 
 
 ```text
 process image/text + immutable resident lexicon/hot model tables
-process BSS including the 4336-byte Candidate-A workspace
+process BSS total, including workspace and any fixed C48 heap reserve
 MEX1 minimum_stack_size plus REV12's additional 64 bootstrap bytes
 ARG1 + ENV1 process bootstrap allocation and alignment
-fixed C48 heap reserve inside BSS
 external cold-model resident physical storage + allocator alignment
 272-byte PACKED-reader state for each independent packed model handle
 optional pre-budgeted target L3 physical storage
@@ -580,7 +578,7 @@ pinned/system arena resources
 allocator fragmentation / placement-class safety margin
 ```
 
-The simple total is a **necessary but not sufficient** invariant:
+The workspace and configured heap are reported as BSS subdivisions and are never added a second time on top of measured total BSS. The simple total is a **necessary but not sufficient** invariant:
 
 ```text
 all simultaneous arena consumers + required safety margin <= 32768 bytes
@@ -596,7 +594,7 @@ Before measurement supplies better numbers, Candidate A aims for:
 
 - 4,336 bytes fixed conversation/context workspace;
 - zero C48 heap for the initial target implementation;
-- MEX1 `minimum_stack_size` of 768..1024 bytes unless measured native call depth requires more, which means 832..1088 actual stack-allocation bytes after REV12's mandatory +64 bootstrap allowance;
+- no arbitrary release stack target: begin measurement from the canonical linker default `minimum_stack_size` of 512 bytes, test native high-water/canaries and call-depth stress, then select the smallest safe even value in REV12's 64..4096 range with an explicitly justified safety margin; the allocator always consumes that chosen value plus REV12's mandatory 64 bootstrap bytes;
 - low-single-digit-KiB resident lexicon/hot model tables only if measured tables really meet that goal;
 - one or a very small number of separately resident cold model objects, PACKED only when physical bytes are materially reduced;
 - exactly one cold-model read handle during normal Candidate-A inference;
@@ -776,6 +774,8 @@ ailmzx48 source hash
 model build id and model SHA-256
 scenario id/hash
 runner/tool hash
+upstream ZX-UX authority commit and hashes of REV12/REV03 bytes
+C48 Rev-0.11 DOCX SHA-256
 exact injected input bytes
 exact logical output bytes
 exit status
@@ -800,6 +800,7 @@ ai_l1count
 ai_l2count
 ai_compact
 ai_l2evict
+ai_l1drop
 ai_litloss
 ai_mrecords
 ai_mhits
@@ -817,7 +818,7 @@ Correctness may not depend on the host being able to inspect these globals. They
 
 Long-conversation tests deliberately place important facts at increasing turn distances, push them out of L0, force L1 compaction into L2, and then ask questions whose correct answers depend on those facts.
 
-Tests separately prove that recent exact wording remains available inside the declared L0 horizon; old semantically important facts survive compaction; low-value chatter can be forgotten safely; later corrections supersede older state according to the documented rule; the agent never claims verbatim recall from lossy state; repeated compaction never grows the fixed workspace; and conversations far longer than L0 complete without memory corruption.
+Tests separately prove that the recent canonical token sequence remains available inside the declared L0 horizon; source-byte quotation is claimed only when an exact transcript source exists; old semantically important facts survive compaction; low-value chatter can be forgotten safely; later corrections supersede older state according to the documented rule; repeated compaction never grows the fixed workspace; and conversations far longer than L0 complete without memory corruption.
 
 ### 14.6 Corruption and boundary instrumentation
 
@@ -913,7 +914,7 @@ No arbitrary web scrape is admitted merely because the text is easy to fetch.
 
 The ZX-UX C48 SDK repository and upstream ZX-UX project are canonical **design authorities** for this implementation. Their license text explicitly restricts use for AI/ML model training unless separately authorized. Therefore their prose/source is not automatically part of the `ailmzx48` training corpus.
 
-This design may read those documents to implement correct ZX-UX/C48 behavior. Training the conversational model on their textual content requires a separately recorded authorization or a user-authored/otherwise permitted factual corpus. Design authority and training permission are different questions.
+This design may read those documents to implement correct ZX-UX/C48 behavior. Training the conversational model on their textual content requires the separate express written authorization required by the repository license or a user-authored/otherwise permitted factual corpus. Merely placing text, generated conversations, extracts, or model-building inputs under `usr/src/ailmzx48/training/` does not grant training permission: every admitted item still needs an independent manifest basis that permits the intended AI/ML use, and any item whose only governing permission is the root SDK license is excluded from training. Design authority, repository location and training permission are three different questions.
 
 ### 16.3 Train/dev/evaluation separation
 
@@ -931,8 +932,6 @@ Generated material is never silently promoted into factual truth. Factual record
 
 ## 17. Evaluation and convergence
 
-## 17. Evaluation and convergence
-
 Evaluation has hard gates and quality scores.
 
 ### 17.1 Hard failures
@@ -946,7 +945,7 @@ Any of the following rejects a candidate regardless of conversational charm:
 - failure to terminate on `q`;
 - deterministic regression that cannot be reproduced from retained identities;
 - target behavior that requires a remote LM/service;
-- false claim of verbatim recall where only lossy context remains;
+- false claim of verbatim/source-byte recall where exact source bytes are not retained;
 - known factual anchor mutated into a contradictory value;
 - a repository/tooling change that weakens an existing SDK verification gate merely to accept the candidate.
 
@@ -1057,7 +1056,7 @@ Each phase preserves a working, release-verifiable repository state on `main`. N
 
 ## 20. Candidate-A implementation interfaces
 
-Revision 0.4 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
+Revision 0.5 keeps conceptual target interfaces deliberately within the C48 Rev-0.11 identifier limit:
 
 ```text
 ai_readline()     bounded tty line input
@@ -1137,7 +1136,7 @@ The model builder never edits target source during a training run. Training gene
 Before the model format is declared final, the project must answer with retained measurements:
 
 1. What are the compiled C48 and native MEX1 image/text/BSS sizes?
-2. What is the exact 4,336-byte workspace map, heap reserve, MEX1 minimum stack, actual +64 stack allocation and measured native stack high-water?
+2. What is the exact 4,336-byte workspace map, BSS total/subdivision accounting, heap reserve, measured MEX1 minimum stack, actual +64 stack allocation and native stack high-water?
 3. What raw-input patterns hit the 191-byte, lexical-span or 319-byte encoded-turn rejection bounds, and are all rejected without state mutation?
 4. How many exact L0 turns/tokens fit in 896 bytes for real conversations?
 5. How much source-equivalent history do 48 L1 capsules, 24 L2 records and eight generation-checked session-literal slots preserve at measured recall quality?
@@ -1157,7 +1156,7 @@ Before the model format is declared final, the project must answer with retained
 
 The final design replaces these questions with measured answers.
 
-## 23. Open design questions after Revision 0.4
+## 23. Open design questions after Revision 0.5
 
 The following remain deliberately open until measurement resolves them:
 
@@ -1174,7 +1173,7 @@ The following remain deliberately open until measurement resolves them:
 - one PACKED scan versus RAW indexing, a few PACKED shards or a larger resident cache;
 - exact model logical/physical byte budget and ZXP1 ratio within the u16 object limit;
 - final response token/encoded/printed-byte ceilings after terminal and latency testing;
-- final MEX1 minimum stack reservation and whether heap remains zero;
+- final MEX1 minimum stack reservation, selected from measured native high-water rather than a guessed range, and whether heap remains zero;
 - exact target object names and cassette physical ordering;
 - ordinary-shell launch versus any proven process-replacement launch option;
 - quantitative convergence thresholds/consecutive-round count after baseline variance is known.
