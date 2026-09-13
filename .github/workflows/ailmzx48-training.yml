@@ -30,7 +30,7 @@ concurrency:
 jobs:
   iterate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Check out main
         uses: actions/checkout@v4
@@ -71,7 +71,7 @@ jobs:
         run: >-
           python -B usr/src/ailmzx48/tooling/run_iteration.py
           --request "${{ steps.req.outputs.request }}"
-          --max-seconds 600
+          --max-seconds 1200
 
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
