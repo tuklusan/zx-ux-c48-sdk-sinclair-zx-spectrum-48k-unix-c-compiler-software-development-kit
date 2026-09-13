@@ -112,6 +112,7 @@ def build(
         topic: [] for topic in TOPICS
     }
     all_seqs = []
+    trigger_words = []
     for record in records:
         topic = record.get("topic")
         if topic not in by_topic:
@@ -124,6 +125,15 @@ def build(
             raise ValueError("empty token sequence in corpus")
         by_topic[topic].append(seq)
         all_seqs.append(seq)
+        for raw_trigger in record.get("triggers", []):
+            word = str(raw_trigger).lower()
+            if toks(word) != [word]:
+                raise ValueError(
+                    "trigger must be one normalized token: "
+                    + repr(raw_trigger)
+                )
+            if word not in trigger_words:
+                trigger_words.append(word)
     for topic in TOPICS:
         if not by_topic[topic]:
             raise ValueError("topic has no records: " + topic)
@@ -131,15 +141,28 @@ def build(
     freq = collections.Counter()
     for seq in all_seqs:
         freq.update(seq)
-    required = tuple(SEED_WORD[t] for t in TOPICS)
+    seed_words = tuple(SEED_WORD[t] for t in TOPICS)
+    required = []
+    for word in seed_words + tuple(trigger_words):
+        if word not in required:
+            required.append(word)
+    if len(required) > MAX_VOCAB - 1:
+        raise ValueError(
+            "seed words and retrieval triggers exceed model vocabulary: "
+            + str(len(required))
+            + " required, "
+            + str(MAX_VOCAB - 1)
+            + " available"
+        )
     ordered = sorted(
         freq,
         key=lambda w: (-freq[w], w),
     )
     selected = []
-    for word in required:
+    for word in seed_words:
         if word not in freq:
             raise ValueError("missing seed word: " + word)
+    for word in required:
         if word not in selected:
             selected.append(word)
     for word in ordered:
