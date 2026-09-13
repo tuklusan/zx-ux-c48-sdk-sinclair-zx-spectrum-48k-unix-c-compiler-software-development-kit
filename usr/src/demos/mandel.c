@@ -24,37 +24,6 @@ void clear_demo_rows(int first, int last)
     }
 }
 
-void view_plot(int x, int y)
-{
-    if (d_ok(x, y) && y >= 16 && y < 184) plot(x, y);
-}
-
-void view_circle(int cx, int cy, int r)
-{
-    int x;
-    int y;
-    int err;
-    x = r;
-    y = 0;
-    err = 1 - r;
-    while (x >= y) {
-        view_plot(cx + x, cy + y);
-        view_plot(cx + y, cy + x);
-        view_plot(cx - y, cy + x);
-        view_plot(cx - x, cy + y);
-        view_plot(cx - x, cy - y);
-        view_plot(cx - y, cy - x);
-        view_plot(cx + y, cy - x);
-        view_plot(cx + x, cy - y);
-        y++;
-        if (err < 0) err = err + 2 * y + 1;
-        else {
-            x--;
-            err = err + 2 * (y - x + 1);
-        }
-    }
-}
-
 void draw_labels(void)
 {
     paper(0);
@@ -62,36 +31,48 @@ void draw_labels(void)
     bright(1);
     over(0);
     inverse(0);
-    print_at(0, 7, "MOIRE ENGINE / XOR INTERFERENCE");
-    print_at(22, 0, "MATH: XOR circles C1(r),C2(r)");
-    print_at(23, 0, "centers move with sin/cos");
+    print_at(0, 7, "MANDELBROT DIVE / FIXED POINT");
+    print_at(22, 0, "MATH: z=z*z+c");
+    print_at(23, 0, "escape if zx*zx+zy*zy>4096");
 }
 
 void scene(int f)
 {
-    int r;
-    int x1;
-    int y1;
-    int x2;
-    int y2;
+    int x;
+    int y;
+    int i;
+    int cx;
+    int cy;
+    int zx;
+    int zy;
+    int xx;
+    int span;
+    int py;
     paper(0);
     clear_demo_rows(1, 21);
-    over(1);
-    x1 = 96 + d_sin(f * 7) / 5;
-    y1 = 96 + d_cos(f * 5) / 8;
-    x2 = 160 + d_cos(f * 6) / 5;
-    y2 = 96 + d_sin(f * 4) / 8;
-    for (r = 8; r <= 80; r = r + 6) {
-        ink(1 + ((r >> 2) % 7));
-        bright(r & 8);
-        view_circle(x1, y1, r);
-        ink(1 + (((r >> 2) + 3) % 7));
-        view_circle(x2, y2, r);
+    span = 96 - (f % 4) * 10;
+    for (y = 0; y < 48; y++) {
+        py = 16 + y * 167 / 47;
+        for (x = 0; x < 64; x++) {
+            cx = -24 + (x - 32) * span / 32;
+            cy = (y - 24) * span / 40;
+            zx = 0;
+            zy = 0;
+            for (i = 0; i < 13; i++) {
+                if (d_abs(zx) > 64) break;
+                if (d_abs(zy) > 64) break;
+                if (zx * zx + zy * zy > 4096) break;
+                xx = (zx * zx - zy * zy) / 32 + cx;
+                zy = 2 * zx * zy / 32 + cy;
+                zx = xx;
+            }
+            ink(i & 7);
+            bright(i > 7);
+            plot(x * 4, py);
+            if (i > 9) plot(x * 4 + 1, py);
+        }
+        if ((y & 7) == 0) yield();
     }
-    over(0);
-    ink(7);
-    bright(1);
-    draw(x1, y1, x2, y2);
 }
 
 int main(int argc, char **argv)
@@ -101,7 +82,7 @@ int main(int argc, char **argv)
     paper(0);
     cls();
     draw_labels();
-    n = d_frames(argc, argv, 10);
+    n = d_frames(argc, argv, 3);
     for (f = 0; f < n; f++) {
         scene(f);
         yield();

@@ -24,22 +24,6 @@ void clear_demo_rows(int first, int last)
     }
 }
 
-void view_line3(int x1, int y1, int z1,
-                int x2, int y2, int z2)
-{
-    int a;
-    int b;
-    int c;
-    int d;
-    a = d_px(x1, z1);
-    b = d_py(y1, z1);
-    c = d_px(x2, z2);
-    d = d_py(y2, z2);
-    if (d_ok(a, b) && d_ok(c, d) &&
-        b >= 16 && b < 184 && d >= 16 && d < 184)
-        draw(a, b, c, d);
-}
-
 void draw_labels(void)
 {
     paper(0);
@@ -47,67 +31,54 @@ void draw_labels(void)
     bright(1);
     over(0);
     inverse(0);
-    print_at(0, 3, "MOBIUS R=48 W=24 / ONE-SIDED");
-    print_at(22, 0, "MATH: r=48+12s*cos(u/2)");
-    print_at(23, 0, "half-twist, then rotate3");
+    print_at(0, 7, "KALEIDOSCOPE / EIGHTFOLD LINES");
+    print_at(22, 0, "MATH: reflect across x,y,x=y");
+    print_at(23, 0, "each line becomes eight copies");
 }
 
-void mpt(int u, int side, int f,
-         int *x, int *y, int *z)
+void ray8(int x, int y, int u, int v)
 {
-    int rr;
-    int a;
-    int b;
-    int c;
-    rr = 48 + side * 12 * d_cos(u / 2) / 128;
-    a = rr * d_cos(u) / 128;
-    c = rr * d_sin(u) / 128;
-    b = side * 10 * d_sin(u / 2) / 128;
-    d_rot3(a, b, c, 20 + f * 2, f * 4, f,
-           x, y, z);
-    *x = *x * 3 / 2;
-    *y = *y * 3 / 2;
-}
-
-void edge(int u1, int u2, int side, int f)
-{
-    int x1;
-    int y1;
-    int z1;
-    int x2;
-    int y2;
-    int z2;
-    mpt(u1, side, f, &x1, &y1, &z1);
-    mpt(u2, side, f, &x2, &y2, &z2);
-    view_line3(x1, y1, z1, x2, y2, z2);
+    draw(128 + x, 100 + y, 128 + u, 100 + v);
+    draw(128 - x, 100 + y, 128 - u, 100 + v);
+    draw(128 + x, 100 - y, 128 + u, 100 - v);
+    draw(128 - x, 100 - y, 128 - u, 100 - v);
+    draw(128 + y, 100 + x, 128 + v, 100 + u);
+    draw(128 - y, 100 + x, 128 - v, 100 + u);
+    draw(128 + y, 100 - x, 128 + v, 100 - u);
+    draw(128 - y, 100 - x, 128 - v, 100 - u);
 }
 
 void scene(int f)
 {
     int i;
-    int u1;
-    int u2;
+    int a;
+    int b;
+    int r1;
+    int r2;
     int x1;
     int y1;
-    int z1;
     int x2;
     int y2;
-    int z2;
     paper(0);
     clear_demo_rows(1, 21);
-    border(2 + (f % 6));
-    for (i = 0; i < 20; i++) {
-        u1 = i * 256 / 20;
-        u2 = (i + 1) * 256 / 20;
-        if (i == 19) u2 = 0;
-        ink(2 + (i % 6));
+    over(1);
+    for (i = 0; i < 22; i++) {
+        r1 = 12 + i * 3;
+        r2 = r1 + 8;
+        a = i * 17 + f * 7;
+        b = a + 11 + (f & 7);
+        x1 = d_cos(a) * r1 / 128;
+        y1 = d_sin(a) * r1 / 128;
+        x2 = d_cos(b) * r2 / 128;
+        y2 = d_sin(b) * r2 / 128;
+        ink(1 + (i % 7));
         bright(i & 1);
-        edge(u1, u2, -1, f);
-        edge(u1, u2, 1, f);
-        mpt(u1, -1, f, &x1, &y1, &z1);
-        mpt(u1, 1, f, &x2, &y2, &z2);
-        view_line3(x1, y1, z1, x2, y2, z2);
+        ray8(x1, y1, x2, y2);
     }
+    over(0);
+    ink(7);
+    bright(1);
+    circle(128, 100, 14 + (f & 7));
 }
 
 int main(int argc, char **argv)
