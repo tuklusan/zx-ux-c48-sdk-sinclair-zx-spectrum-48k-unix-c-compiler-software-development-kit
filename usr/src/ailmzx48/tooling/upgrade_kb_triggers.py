@@ -66,7 +66,8 @@ def patch_reference() -> None:
 
 
 def patch_match_header() -> None:
-    text = '''int ai_wordchar(int c)\n{
+    text = '''int ai_readfull(unsigned char *p, unsigned int n)\n{
+    unsigned int done;\n    unsigned int ask;\n    int got;\n    done = 0;\n    while (done < n) {\n        ask = n - done;\n        if (ask > 64) ask = 64;\n        got = ai_mread(&p[done], ask);\n        ai_mreads = ai_mreads + 1;\n        if (got <= 0) return -1;\n        if ((unsigned int)got > ask) return -1;\n        done = done + (unsigned int)got;\n        ai_mbytes = ai_mbytes + (unsigned int)got;\n    }\n    return 0;\n}\n\nint ai_wordchar(int c)\n{
     c = ai_lower(c);\n    if (c >= 'a' && c <= 'z') return 1;\n    if (c >= '0' && c <= '9') return 1;\n    return 0;\n}\n\nint ai_vhas(unsigned int id)\n{
     unsigned int i;\n    unsigned int j;\n    unsigned int off;\n    unsigned int len;\n    int ok;\n    if (id == 0 || id >= ai_vcnt) return 0;\n    off = ai_voff[id];\n    len = ai_vlen[id];\n    if (len == 0) return 0;\n    i = 0;\n    while (ai_in[i] != 0) {\n        if (i != 0 && ai_wordchar(ai_in[i - 1])) {\n            i = i + 1;\n            continue;\n        }\n        j = 0;\n        ok = 1;\n        while (j < len) {\n            if (ai_in[i + j] == 0) {\n                ok = 0;\n                break;\n            }\n            if (ai_lower(ai_in[i + j]) != ai_vblob[off + j]) {\n                ok = 0;\n                break;\n            }\n            j = j + 1;\n        }\n        if (ok && !ai_wordchar(ai_in[i + len])) return 1;\n        i = i + 1;\n    }\n    return 0;\n}\n'''
     bad = [
@@ -81,9 +82,11 @@ def patch_match_header() -> None:
 
 def patch_source() -> None:
     text = SRC.read_text(encoding="utf-8")
+    old_read = '''int ai_readfull(unsigned char *p, unsigned int n)\n{
+    unsigned int done;\n    unsigned int ask;\n    int got;\n    done = 0;\n    while (done < n) {\n        ask = n - done;\n        if (ask > 64) ask = 64;\n        got = ai_mread(&p[done], ask);\n        ai_mreads = ai_mreads + 1;\n        if (got <= 0) return -1;\n        if ((unsigned int)got > ask) return -1;\n        done = done + (unsigned int)got;\n        ai_mbytes = ai_mbytes + (unsigned int)got;\n    }\n    return 0;\n}\n\n'''
     text = replace_once(
         text,
-        "int ai_modelscan(unsigned int topic)\n{\n",
+        old_read + "int ai_modelscan(unsigned int topic)\n{\n",
         '#include "aimatch.h"\n\nint ai_modelscan(unsigned int topic)\n{\n',
         "target trigger helper include",
     )
@@ -115,6 +118,8 @@ def patch_source() -> None:
     ]
     if bad:
         raise RuntimeError("C48 source exceeds 64 columns: " + repr(bad[:4]))
+    if len(text.encode("utf-8")) > 32768:
+        raise RuntimeError("C48 source object still exceeds 32768 bytes")
     SRC.write_text(text, encoding="utf-8")
 
 
