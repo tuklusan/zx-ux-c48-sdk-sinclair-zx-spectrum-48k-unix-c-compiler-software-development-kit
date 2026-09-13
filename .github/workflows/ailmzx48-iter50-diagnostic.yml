@@ -47,7 +47,7 @@ jobs:
       - name: Replay iteration without early final-keyword abort
         run: python -B usr/src/ailmzx48/tooling/run_iteration.py --request /tmp/iter-0050-diagnostic.json --max-seconds 1200
 
-      - name: Print terminal context diagnostics
+      - name: Print focused context diagnostics
         if: always()
         run: |
           python - <<'PY'
@@ -59,22 +59,40 @@ jobs:
               raise SystemExit(0)
           t = json.loads(p.read_text(encoding="utf-8"))
           turns = t.get("turns", [])
-          def total(key):
-              return sum(int(x.get("diag", {}).get(key, 0)) for x in turns)
-          def maximum(key):
-              return max((int(x.get("diag", {}).get(key, 0)) for x in turns), default=0)
-          out = {
-              "turn_count": len(turns),
-              "final_turn": turns[-1] if turns else None,
-              "last_six": turns[-6:],
-              "final_diag": t.get("final_diag"),
-              "context_compactions": total("ai_compact"),
-              "semantic_uses": total("ai_semuse"),
-              "max_l0bytes": maximum("ai_l0bytes"),
-              "max_l1count": maximum("ai_l1count"),
-              "max_l2count": maximum("ai_l2count"),
-              "max_lmcount": maximum("ai_lmcount"),
-              "literal_losses": total("ai_litloss"),
-          }
-          print(json.dumps(out, indent=2, sort_keys=True))
+          def slim(x):
+              d = x.get("diag", {})
+              return {
+                  "turn": x.get("turn"),
+                  "user": x.get("user"),
+                  "assistant": x.get("assistant"),
+                  "expected_keyword": x.get("expected_keyword"),
+                  "keyword_hit": x.get("keyword_hit"),
+                  "context_used": x.get("context_used"),
+                  "history_used": x.get("history_used"),
+                  "literal_mode": x.get("literal_mode"),
+                  "ai_lasttop": d.get("ai_lasttop"),
+                  "ai_hcount": d.get("ai_hcount"),
+                  "ai_compact": d.get("ai_compact"),
+                  "ai_litloss": d.get("ai_litloss"),
+                  "ai_semuse": d.get("ai_semuse"),
+                  "ai_l0bytes": d.get("ai_l0bytes"),
+                  "ai_l1count": d.get("ai_l1count"),
+                  "ai_l2count": d.get("ai_l2count"),
+              }
+          mismatch = [slim(x) for x in turns if x.get("expected_keyword") is not None and not x.get("keyword_hit")]
+          litloss = [slim(x) for x in turns if int(x.get("diag", {}).get("ai_litloss", 0)) > 0]
+          focus = [
+              slim(x) for x in turns
+              if x.get("turn") in {1,2,3,5,6,15,23,27,28,29,30,31,32,33,35,36,45,53,57,58,59,60,61,62,63,65,66,75,83,87,88,89,90,91,92,93,95,96,105,113,117,118,119,120}
+          ]
+          pin_and_recall = [
+              slim(x) for x in turns
+              if "remember this topic" in x.get("user", "").lower()
+              or "remembered topic" in x.get("user", "").lower()
+              or "topic i asked you to remember" in x.get("user", "").lower()
+          ]
+          print("FOCUS=" + json.dumps(focus, sort_keys=True))
+          print("PIN_RECALL=" + json.dumps(pin_and_recall, sort_keys=True))
+          print("LITLOSS=" + json.dumps(litloss, sort_keys=True))
+          print("MISMATCH=" + json.dumps(mismatch, sort_keys=True))
           PY
