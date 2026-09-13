@@ -1,0 +1,190 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: One-shot demo artifact refresh
+
+on:
+  push:
+    paths:
+      - ".github/workflows/demo-refresh-apply.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact main history with LFS
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: Regenerate validated demo artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          import json
+          from pathlib import Path
+          import struct
+          import sys
+          import zlib
+
+          sys.path.insert(0, "compiler")
+          import verify_graphics_demos as v
+
+          def png_rgb(width, height, rgb):
+              raw = bytearray()
+              stride = width * 3
+              for y in range(height):
+                  raw.append(0)
+                  raw.extend(rgb[y * stride:(y + 1) * stride])
+              def chunk(kind, data):
+                  body = kind + data
+                  return (struct.pack(">I", len(data)) + body +
+                          struct.pack(">I", zlib.crc32(body) & 0xffffffff))
+              head = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+              return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", head) +
+                      chunk(b"IDAT", zlib.compress(bytes(raw), 9)) +
+                      chunk(b"IEND", b""))
+
+          expect = v.load_expect()
+          frames = []
+          for name, exp in expect["demos"].items():
+              data = v.compile_bytes(name)
+              (v.BIN / f"{name}.c48b").write_bytes(data)
+              first = v.run_demo(name, 1)
+              screen = v.run_demo(name, int(exp["frames"]))
+              rgb = screen.render_rgb()
+              png = v.png_bytes(rgb)
+              (v.IMG / f"{name}.png").write_bytes(png)
+              lit, attrs = v.screen_metrics(screen)
+              exp["source_sha256"] = v.sha(v.SRC / f"{name}.c")
+              exp["binary_sha256"] = v.sha_bytes(data)
+              exp["first_screen_sha256"] = v.sha_bytes(first.bytes())
+              exp["screen_sha256"] = v.sha_bytes(screen.bytes())
+              exp["png_sha256"] = v.sha_bytes(png)
+              exp["lit_pixels"] = lit
+              exp["attribute_values"] = attrs
+              frames.append(rgb)
+          v.EXPECT_PATH.write_text(
+              json.dumps(expect, indent=2) + "\n",
+              encoding="ascii", newline="\n",
+          )
+
+          cols, rows = 4, 6
+          width, height = cols * 256, rows * 192
+          sheet = bytearray(width * height * 3)
+          for index, rgb in enumerate(frames):
+              ox = (index % cols) * 256
+              oy = (index // cols) * 192
+              for y in range(192):
+                  src = y * 256 * 3
+                  dst = ((oy + y) * width + ox) * 3
+                  sheet[dst:dst + 256 * 3] = rgb[src:src + 256 * 3]
+          (v.IMG / "contact-sheet.png").write_bytes(
+              png_rgb(width, height, bytes(sheet))
+          )
+          PY
+
+          git rm .github/workflows/demo-refresh-diagnostic.yml
+          git rm .github/workflows/demo-refresh-apply.yml
+
+          python -B - <<'PY'
+          import hashlib
+          from pathlib import Path
+          import subprocess
+
+          paths = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0")
+          lines = []
+          for raw in paths:
+              if not raw:
+                  continue
+              rel = raw.decode("utf-8", "surrogateescape")
+              if rel == "MANIFEST.sha256":
+                  continue
+              path = Path(rel)
+              if not path.is_file():
+                  raise SystemExit(f"tracked file missing while making manifest: {rel}")
+              data = path.read_bytes()
+              if path.suffix.lower() == ".bat":
+                  data = data.replace(b"\r\n", b"\n")
+              lines.append((rel, hashlib.sha256(data).hexdigest()))
+          Path("MANIFEST.sha256").write_text(
+              "".join(f"{digest}  {rel}\n" for rel, digest in sorted(lines)),
+              encoding="ascii", newline="\n",
+          )
+          PY
+
+      - name: Verify refreshed corpus before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_graphics_demos.py --release
+          python -B compiler/verify_release.py
+
+      - name: Commit and fast-forward safely
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Refresh graphics demo release artifacts"
+
+          for attempt in 1 2 3 4 5; do
+            git fetch origin main
+            if ! git rebase origin/main; then
+              git rebase --abort || true
+              echo "Concurrent change conflicts with demo artifact refresh" >&2
+              exit 1
+            fi
+
+            python -B - <<'PY'
+          import hashlib
+          from pathlib import Path
+          import subprocess
+          paths = subprocess.check_output(["git", "ls-files", "-z"]).split(b"\0")
+          lines = []
+          for raw in paths:
+              if not raw:
+                  continue
+              rel = raw.decode("utf-8", "surrogateescape")
+              if rel == "MANIFEST.sha256":
+                  continue
+              path = Path(rel)
+              data = path.read_bytes()
+              if path.suffix.lower() == ".bat":
+                  data = data.replace(b"\r\n", b"\n")
+              lines.append((rel, hashlib.sha256(data).hexdigest()))
+          Path("MANIFEST.sha256").write_text(
+              "".join(f"{digest}  {rel}\n" for rel, digest in sorted(lines)),
+              encoding="ascii", newline="\n",
+          )
+          PY
+            git add MANIFEST.sha256
+            git commit --amend --no-edit
+            python -B compiler/verify_release.py
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            echo "main moved during push attempt $attempt; retrying safely" >&2
+            sleep 2
+          done
+          echo "Could not fast-forward main after five races" >&2
+          exit 1
