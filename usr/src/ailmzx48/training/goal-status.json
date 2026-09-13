@@ -15,11 +15,9 @@
     ]
   },
   "goals_achieved": false,
-  "next_action": "Pursue unmet scenario knowledge-deepening-zxux-v1.",
-  "no_pending_requests_satisfied": false,
-  "pending_iterations": [
-    46
-  ],
+  "next_action": "Pursue unmet scenario retrieval-model-evidence-mixed-topic-v1.",
+  "no_pending_requests_satisfied": true,
+  "pending_iterations": [],
   "qualification_scenarios": [
     {
       "evidence": {
@@ -107,17 +105,20 @@
       "scenario": "knowledge-deepening-software-games-v1"
     },
     {
-      "candidate_failures": [
-        {
-          "failures": [
-            "retained score evidence is missing"
-          ],
-          "iteration": 46
-        }
-      ],
+      "evidence": {
+        "clean_exit": true,
+        "iteration": 46,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 10,
+        "vm_step_limit": 14118400,
+        "vm_step_utilization": 0.6369990933816864,
+        "vm_steps": 8993408
+      },
       "goal": "ZX-UX and SDK-specific knowledge grounded in this repository",
+      "iteration": 46,
       "min_turns": 8,
-      "satisfied": false,
+      "satisfied": true,
       "scenario": "knowledge-deepening-zxux-v1"
     },
     {
@@ -180,7 +181,6 @@
   "schema": 1,
   "status": "GOALS_PENDING",
   "unmet_scenarios": [
-    "knowledge-deepening-zxux-v1",
     "retrieval-model-evidence-mixed-topic-v1",
     "retrieval-model-evidence-same-topic-v1",
     "retrieval-paraphrase-ambiguity-v1",
