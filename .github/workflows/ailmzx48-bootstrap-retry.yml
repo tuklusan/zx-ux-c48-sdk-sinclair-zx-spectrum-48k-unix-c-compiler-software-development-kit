@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: One-shot ailmzx48 topic-conditioned prep
+name: One-shot ailmzx48 context prototype
 
 "on":
   push:
@@ -23,7 +23,7 @@ permissions:
   contents: write
 
 jobs:
-  prepare:
+  context:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -38,44 +38,25 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Apply topic-conditioned bootstrap model
+      - name: Apply bounded prior-topic context prototype
         shell: bash
         env:
-          PATCH_B64: "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"
+          PATCH_B64: "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" 
         run: |
           python - <<'PY'
           import base64, os, zlib
           from pathlib import Path
           data = zlib.decompress(base64.b64decode(os.environ["PATCH_B64"]))
-          Path(".github/ailmzx48_topic_patch.py").write_bytes(data)
+          Path(".github/ailmzx48_context_patch.py").write_bytes(data)
           PY
-          python -B .github/ailmzx48_topic_patch.py
-          rm -f .github/ailmzx48_topic_patch.py
+          python -B .github/ailmzx48_context_patch.py
+          rm -f .github/ailmzx48_context_patch.py
 
-      - name: Build iteration 3 candidate artifacts
-        shell: bash
-        run: |
-          python -B usr/src/ailmzx48/tooling/build_starter_model.py \
-            --corpus usr/src/ailmzx48/training/seed_corpus.json \
-            --out-json usr/src/ailmzx48/model/current-model.json \
-            --out-h usr/src/ailmzx48/aimod.h \
-            --iteration 3
-          python -B compiler/c48.py \
-            usr/src/ailmzx48/ailmzx48.c \
-            -o usr/bin/ailmzx48/ailmzx48.c48b
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          p = Path('usr/src/ailmzx48/model/current-model.json')
-          m = json.loads(p.read_text())
-          assert m['schema'] == 2
-          assert m['topics'] == [
-              'identity', 'spectrum', 'history',
-              'memory', 'local', 'games'
-          ]
-          assert len(m['next_primary']) == len(m['vocab']) * 6
-          assert len(m['next_secondary']) == len(m['vocab']) * 6
-          PY
+      - name: Rebuild C48 artifact
+        run: >-
+          python -B compiler/c48.py
+          usr/src/ailmzx48/ailmzx48.c
+          -o usr/bin/ailmzx48/ailmzx48.c48b
 
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
@@ -85,18 +66,18 @@ jobs:
         run: |
           python -B compiler/verify_release.py
           git diff --check
-          grep -q 'Revision: 0.15-draft' \
+          grep -q 'Revision: 0.16-draft' \
             usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md
-          grep -q 'unsigned int ai_tcnt = 6;' \
-            usr/src/ailmzx48/aimod.h
+          grep -q 'ai_ctxuse' usr/src/ailmzx48/ailmzx48.c
+          grep -q 'expected_context' \
+            usr/src/ailmzx48/tooling/run_iteration.py
 
-      - name: Commit and push iteration 3 preparation
+      - name: Commit and push context prototype
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m \
-            "Prepare topic-conditioned ailmzx48 iteration 3"
+          git commit -m "Add bounded ailmzx48 follow-up context prototype"
           git push origin HEAD:main
