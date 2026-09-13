@@ -48,58 +48,6 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Deepen I/O peripheral seed and rebuild model
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          p = Path("usr/src/ailmzx48/training/seed_corpus.json")
-          doc = json.loads(p.read_text(encoding="utf-8"))
-          additions = [
-              {
-                  "kind": "fact-user", "split": "train", "topic": "spectrum",
-                  "text": "reading spectrum ula port 254 uses bit 6 for the ear cassette input signal",
-                  "triggers": ["ear", "input"],
-              },
-              {
-                  "kind": "fact-user", "split": "train", "topic": "spectrum",
-                  "text": "writing spectrum ula port 254 bit 4 drives the ear output and internal speaker while bit 3 drives the mic output",
-                  "triggers": ["speaker", "mic"],
-              },
-              {
-                  "kind": "fact-user", "split": "train", "topic": "spectrum",
-                  "text": "a kempston joystick interface is read at io port 31 and uses active high direction and fire bits",
-                  "triggers": ["kempston", "31"],
-              },
-              {
-                  "kind": "fact-user", "split": "train", "topic": "spectrum",
-                  "text": "sinclair interface 2 joysticks appear as spectrum number keys 1 through 5 and 6 through 0",
-                  "triggers": ["interface", "joysticks"],
-              },
-              {
-                  "kind": "fact-user", "split": "train", "topic": "spectrum",
-                  "text": "the kempston joystick interface plugs into the spectrum rear edge expansion connector",
-                  "triggers": ["edge", "connector"],
-              },
-              {
-                  "kind": "fact-user", "split": "train", "topic": "spectrum",
-                  "text": "cassette tape was the primary storage medium for the original spectrum and used the ear and mic connections",
-                  "triggers": ["cassette", "storage"],
-              },
-          ]
-          existing = {r["text"] for r in doc["records"]}
-          for record in additions:
-              if record["text"] not in existing:
-                  doc["records"].append(record)
-          p.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
-          PY
-          python -B usr/src/ailmzx48/tooling/build_starter_model.py \
-            --corpus usr/src/ailmzx48/training/seed_corpus.json \
-            --out-json usr/src/ailmzx48/model/current-model.json \
-            --out-h usr/src/ailmzx48/aimod.h \
-            --iteration 43
-
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
