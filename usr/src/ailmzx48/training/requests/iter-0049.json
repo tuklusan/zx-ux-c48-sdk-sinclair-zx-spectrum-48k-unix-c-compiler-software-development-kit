@@ -1,0 +1,32 @@
+{
+  "schema": 1,
+  "iteration": 49,
+  "scenario": "retrieval-paraphrase-ambiguity-v1",
+  "purpose": "Qualify retrieval under paraphrased wording, shared nouns, and nearby ambiguous records using generic cold-model evidence.",
+  "max_seconds": 1200,
+  "prompts": [
+    "where in 48k memory does the screen bitmap live",
+    "how large is the display bitmap in bytes",
+    "where does colour attribute memory begin",
+    "at what address do system variables start",
+    "what clock rate does the z80a processor run at",
+    "which cassette input bit is used for the ear signal",
+    "how is a kempston joystick read on the spectrum",
+    "which firm took spectrum computer rights during 1986",
+    "which melbourne house adventure became the first spectrum game to sell a million copies",
+    "when compiling a source below usr src by default where is the matching relative output path"
+  ],
+  "expected_keywords": [
+    "16384",
+    "6144",
+    "22528",
+    "23552",
+    "3500000",
+    "bit 6",
+    "31",
+    "amstrad",
+    "hobbit",
+    "usr bin"
+  ],
+  "min_keyword_ratio": 1.0
+}
