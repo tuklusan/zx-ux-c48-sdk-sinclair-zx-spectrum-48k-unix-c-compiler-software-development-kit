@@ -1,0 +1,2 @@
+iteration=44
+purpose=query-trigger-cache-headroom
