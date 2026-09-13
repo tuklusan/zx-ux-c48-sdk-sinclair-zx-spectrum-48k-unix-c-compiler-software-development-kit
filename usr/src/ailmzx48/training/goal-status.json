@@ -15,7 +15,7 @@
     ]
   },
   "goals_achieved": false,
-  "next_action": "Pursue unmet scenario knowledge-deepening-software-games-v1.",
+  "next_action": "Pursue unmet scenario knowledge-deepening-zxux-v1.",
   "no_pending_requests_satisfied": true,
   "pending_iterations": [],
   "qualification_scenarios": [
@@ -88,10 +88,20 @@
       "scenario": "knowledge-deepening-history-models-v1"
     },
     {
+      "evidence": {
+        "clean_exit": true,
+        "iteration": 45,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 9,
+        "vm_step_limit": 11615960,
+        "vm_step_utilization": 0.5328250958164457,
+        "vm_steps": 6189275
+      },
       "goal": "Notable Spectrum software, games, creators, and software-culture factual coverage",
+      "iteration": 45,
       "min_turns": 8,
-      "reason": "no retained request/evidence for this scenario",
-      "satisfied": false,
+      "satisfied": true,
       "scenario": "knowledge-deepening-software-games-v1"
     },
     {
@@ -161,7 +171,6 @@
   "schema": 1,
   "status": "GOALS_PENDING",
   "unmet_scenarios": [
-    "knowledge-deepening-software-games-v1",
     "knowledge-deepening-zxux-v1",
     "retrieval-model-evidence-mixed-topic-v1",
     "retrieval-model-evidence-same-topic-v1",
