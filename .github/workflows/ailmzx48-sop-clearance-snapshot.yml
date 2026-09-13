@@ -155,6 +155,8 @@ jobs:
           checker = e / 'check_design_compliance.py'
           cert = e / 'DESIGN-REVIEW-CERTIFICATE.md'
           status_path = e / 'DESIGN-COMPLIANCE-STATUS.json'
+          atest = e / 'test_a48m_reference.py'
+          aicold = a / 'aicold.h'
 
           old = (
               'A turn is transactional with respect to conversation memory for every recoverable failure. '
@@ -206,6 +208,42 @@ jobs:
                   raise SystemExit('pass-1 name-commit checker anchor missing or non-unique')
               ktext = ktext.replace(kanchor, kinsert, 1)
           checker.write_text(ktext, encoding='utf-8', newline='\n')
+
+          ttext = atest.read_text(encoding='utf-8')
+          bad_generator = (
+              '        "// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.",\n'
+              '        "// Generated hot/cold A48M identity constants.",\n'
+          )
+          good_generator = (
+              '        "// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.",\n'
+              '        "// Attribution required: Based on original work by Supratim",\n'
+              '        "// Sanyal of SANYALnet Labs. See root LICENSE for full terms.",\n'
+              '        "// Generated hot/cold A48M identity constants.",\n'
+          )
+          if ttext.count(bad_generator) != 1:
+              raise SystemExit('A48M identity-header generator anchor missing or non-unique')
+          atest.write_text(
+              ttext.replace(bad_generator, good_generator, 1),
+              encoding='utf-8', newline='\n'
+          )
+
+          htext = aicold.read_text(encoding='utf-8')
+          bad_header = (
+              '// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.\n'
+              '// Generated hot/cold A48M identity constants.\n'
+          )
+          good_header = (
+              '// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.\n'
+              '// Attribution required: Based on original work by Supratim\n'
+              '// Sanyal of SANYALnet Labs. See root LICENSE for full terms.\n'
+              '// Generated hot/cold A48M identity constants.\n'
+          )
+          if htext.count(bad_header) != 1:
+              raise SystemExit('generated aicold.h license anchor missing or non-unique')
+          aicold.write_text(
+              htext.replace(bad_header, good_header, 1),
+              encoding='ascii', newline='\n'
+          )
 
           data = design.read_bytes()
           design_sha = hashlib.sha256(data).hexdigest()
