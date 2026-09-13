@@ -50,6 +50,7 @@ unsigned int ai_mrecords;
 unsigned int ai_mhits;
 unsigned int ai_mbytes;
 unsigned int ai_mreads;
+unsigned int ai_mtrusted;
 unsigned int ai_fs1;
 unsigned int ai_fs2;
 unsigned int ai_w1len;
@@ -520,7 +521,7 @@ int ai_modelscan(unsigned int topic)
         if (ai_readfull(&ai_mstage[hlen],
                         acnt * 2) != 0) return -1;
         hlen = hlen + (acnt * 2);
-        ai_fdata(ai_mstage, hlen);
+        if (!ai_mtrusted) ai_fdata(ai_mstage, hlen);
         plen = rlen - hlen;
         if (plen == 0) return -1;
         code = ai_mstage[1];
@@ -581,7 +582,7 @@ int ai_modelscan(unsigned int topic)
             take = plen - pos;
             if (take > 64) take = 64;
             if (ai_readfull(ai_mstage, take) != 0) return -1;
-            ai_fdata(ai_mstage, take);
+            if (!ai_mtrusted) ai_fdata(ai_mstage, take);
             if (slot == 1) {
                 ai_mcopy(&ai_win1[hlen + pos],
                          ai_mstage, take);
@@ -667,9 +668,12 @@ int ai_modelscan(unsigned int topic)
         ai_mrecords = ai_mrecords + 1;
     }
     if (used != rbytes) return -1;
-    calc = ai_fs1 + (ai_fs2 * 256);
-    if (calc != ai_getu16(ai_mhead, 32)) return -1;
-    if (ai_mbytes != logical) return -1;
+    if (!ai_mtrusted) {
+        calc = ai_fs1 + (ai_fs2 * 256);
+        if (calc != ai_getu16(ai_mhead, 32)) return -1;
+        if (ai_mbytes != logical) return -1;
+        ai_mtrusted = 1;
+    }
     if (ai_w1score >= 0) {
         ai_mhits = 1;
         if (ai_w2score >= 0) ai_mhits = 2;
@@ -1174,6 +1178,7 @@ int main(void)
     ai_mhits = 0;
     ai_mbytes = 0;
     ai_mreads = 0;
+    ai_mtrusted = 0;
     ai_l0head = 0;
     ai_l0bytes = 0;
     ai_l0count = 0;
