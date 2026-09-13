@@ -61,19 +61,31 @@ def move_runtime_blocks() -> None:
     src.write_text(text, encoding="utf-8")
 
     evict = AILM / "aievict.h"
-    evict.write_text(HEADER + "\n" + evict_block, encoding="utf-8")
+    evict.write_text(
+        HEADER.rstrip("\n") + "\n\n" +
+        evict_block.rstrip("\n") + "\n",
+        encoding="utf-8",
+    )
 
     ltext = lit.read_text(encoding="utf-8")
     anchor = "void ai_namesuper(void)\n"
     if anchor not in ltext:
         raise RuntimeError("ailit insertion anchor missing")
-    ltext = ltext.replace(anchor, name_block + anchor, 1)
+    ltext = ltext.replace(
+        anchor,
+        name_block.rstrip("\n") + "\n\n" + anchor,
+        1,
+    )
     lit.write_text(ltext, encoding="utf-8")
 
     ctext = ctx.read_text(encoding="utf-8")
     if not ctext.endswith("}\n"):
         raise RuntimeError("aictx end anchor missing")
-    ctx.write_text(ctext + "\n" + ctx_block, encoding="utf-8")
+    ctx.write_text(
+        ctext.rstrip("\n") + "\n\n" +
+        ctx_block.rstrip("\n") + "\n",
+        encoding="utf-8",
+    )
 
     if src.stat().st_size > 32768:
         raise RuntimeError(
