@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import signal
 from pathlib import Path
 import subprocess
 import sys
@@ -183,12 +184,13 @@ def main() -> int:
         "why does memory matter",
         "can you chat locally",
     ]
-    if not isinstance(prompts, list) or len(prompts) > 24:
-        raise RuntimeError("prompts must be a list of at most 24 strings")
+    if not isinstance(prompts, list) or len(prompts) > 500:
+        raise RuntimeError("prompts must be a list of at most 500 strings")
     for p in prompts:
         if not isinstance(p, str) or not p or len(p) > 160:
             raise RuntimeError("invalid prompt")
         p.encode("ascii")
+    max_steps = 2000000 + len(prompts) * 250000
     program = read(BIN)
     font = Font4x8.load(COMP / "assets" / "font4x8-tasword.bin")
     screen = TraceScreen(font)
@@ -196,10 +198,21 @@ def main() -> int:
     vm = RomMathVM(program, screen,
                    argv=[str(BIN)],
                    heap_size=0,
-                   max_steps=2000000,
+                   max_steps=max_steps,
                    input_provider=feeder)
     feeder.vm = vm
-    status = vm.run()
+    remaining = limit - int(time.monotonic() - started)
+    if remaining < 1:
+        raise TimeoutError("active session time exhausted")
+    def session_timeout(signum, frame):
+        raise TimeoutError("active session exceeded limit")
+    old_handler = signal.signal(signal.SIGALRM, session_timeout)
+    signal.alarm(remaining)
+    try:
+        status = vm.run()
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, old_handler)
     if status != 0:
         raise RuntimeError(f"ailmzx48 exited with status {status}")
     final_raw = bytes(screen.trace[feeder.last:])
@@ -214,6 +227,7 @@ def main() -> int:
         raise RuntimeError("unexpected conversation boundary count")
     turns = []
     keyword_hits = 0
+    keyword_total = 0
     expectations = req.get("expected_keywords")
     if expectations is None:
         expectations = [None] * len(prompts)
@@ -277,8 +291,10 @@ def main() -> int:
         reply = derived_reply(event["text"])
         expected = expectations[i] if i < len(expectations) else None
         hit = expected is None or expected in reply.lower()
-        if hit:
-            keyword_hits += 1
+        if expected is not None:
+            keyword_total += 1
+            if hit:
+                keyword_hits += 1
         want_ctx = ctx_expect[i]
         used_ctx = event["diag"].get("ai_ctxuse") == 1
         ctx_hit = want_ctx is None or used_ctx == want_ctx
@@ -361,8 +377,11 @@ def main() -> int:
         "iteration": iteration,
         "turns": len(turns),
         "keyword_hits": keyword_hits,
-        "keyword_total": len(turns),
-        "keyword_ratio": keyword_hits / len(turns),
+        "keyword_total": keyword_total,
+        "keyword_ratio": (
+            keyword_hits / keyword_total
+            if keyword_total else 1.0
+        ),
         "context_hits": context_hits,
         "context_total": context_total,
         "context_ratio": (
@@ -404,7 +423,7 @@ def main() -> int:
         "model_header_sha256": sha(header),
         "c48b_sha256": sha(BIN),
         "heap_size": 0,
-        "max_steps": 2000000,
+        "max_steps": max_steps,
         "runner_max_seconds": limit,
     }
     (out_dir / "run.json").write_text(
