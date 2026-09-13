@@ -252,15 +252,15 @@ def finalize() -> None:
             line = f"- cold A48M SHA-256: `{cold_hash}`"
         lines.append(line)
     ctext = "\n".join(lines) + "\n"
-    cert_anchor = (
-        "The SDK certificate is not a native ZX-UX release certificate.\n"
+    cert_anchor = "## Native release boundary\n"
+    cert_marker = (
+        "Every cold scan recomputes Fletcher-16 and rejects vocabulary/interface "
+        "identity mismatch before record use.\n\n"
     )
-    if cert_anchor in ctext and "Every cold scan recomputes Fletcher-16" not in ctext:
-        ctext = ctext.replace(
-            cert_anchor,
-            "Every cold scan recomputes Fletcher-16 and rejects vocabulary/interface identity mismatch before record use.\n\n" + cert_anchor,
-            1,
-        )
+    if "Every cold scan recomputes Fletcher-16" not in ctext:
+        if ctext.count(cert_anchor) != 1:
+            raise RuntimeError("certificate native-boundary anchor missing or ambiguous")
+        ctext = ctext.replace(cert_anchor, cert_marker + cert_anchor, 1)
     cert.write_text(ctext, encoding="utf-8", newline="\n")
 
     checker = E / "check_design_compliance.py"
