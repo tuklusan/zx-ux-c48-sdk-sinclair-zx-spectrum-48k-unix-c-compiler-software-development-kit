@@ -1,1 +1,0 @@
-Compile the current C48 ailmzx48 cold-model integration, refresh the artifact, and verify all gates.
