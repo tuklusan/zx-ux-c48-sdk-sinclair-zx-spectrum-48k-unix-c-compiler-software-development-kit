@@ -1,1 +1,1 @@
-Retry the bounded ailmzx48 topic-routing patch and regenerate the verified deterministic demo corpus before the complete repository verifier.
+Retry the bounded ailmzx48 topic-routing patch and regenerate the verified deterministic demo corpus before the complete repository verifier. EOF normalization fix is now in place.
