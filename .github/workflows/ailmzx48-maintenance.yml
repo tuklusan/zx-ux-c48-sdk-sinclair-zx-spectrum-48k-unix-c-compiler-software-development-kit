@@ -48,12 +48,6 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Apply staged C48 cold-model integration
-        shell: bash
-        run: |
-          python -B usr/src/ailmzx48/tooling/upgrade_cold.py
-          git rm usr/src/ailmzx48/tooling/upgrade_cold.py
-
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
