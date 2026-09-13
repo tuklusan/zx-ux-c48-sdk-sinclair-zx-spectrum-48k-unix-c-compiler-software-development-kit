@@ -1,1 +1,1 @@
-Retry the bounded topic-routing patch for ailmzx48 iteration 39 after fixing the repository license-header verifier blocker.
+Retry the bounded ailmzx48 topic-routing patch and regenerate the verified deterministic demo corpus before the complete repository verifier.
