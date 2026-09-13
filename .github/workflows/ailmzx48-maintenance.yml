@@ -58,7 +58,7 @@ jobs:
         shell: bash
         run: |
           python -B usr/src/ailmzx48/tooling/upgrade_session_refs.py
-          git rm usr/src/ailmzx48/tooling/upgrade_session_refs.py
+          git rm -f usr/src/ailmzx48/tooling/upgrade_session_refs.py
 
       - name: Test ailmzx48 context reference
         run: >-
