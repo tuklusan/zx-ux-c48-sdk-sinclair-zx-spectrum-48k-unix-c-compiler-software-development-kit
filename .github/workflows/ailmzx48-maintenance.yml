@@ -118,36 +118,38 @@ jobs:
               "        rtopic = ai_getu16(ai_mstage, 2);\n        if (rtopic >= ai_tcnt) return -1;\n        if (ai_getu16(ai_mstage, 4) > 32767) return -1;",
               "runtime topic bound",
           )
-          once(
-              """        score = -1;
-              if (rtopic == topic) {
-                  score = (int)ai_mstage[8];
-                  score = score + (int)(thits * 16);
-              }""".replace("              ", ""),
-              """        score = -1;
-              if (topic == ai_tcnt) {
-                  if (thits != 0) {
-                      score = (int)(thits * 256);
-                      score = score + (int)ai_mstage[8];
-                  }
-              } else if (rtopic == topic) {
-                  score = (int)ai_mstage[8];
-                  score = score + (int)(thits * 16);
-              }""".replace("              ", ""),
-              "generic score",
-          )
-          once(
-              """        if (slot == 1) {
-              ai_w1len = rlen;
-              ai_w1score = score;
-          }""".replace("              ", ""),
-              """        if (slot == 1) {
+
+          score_start = s.index("        score = -1;\n        if (rtopic == topic) {")
+          score_end = s.index("        slot = 0;", score_start)
+          old_score = s[score_start:score_end]
+          if "thits * 16" not in old_score:
+              raise SystemExit("unexpected old score block")
+          new_score = '''        score = -1;
+          if (topic == ai_tcnt) {
+              if (thits != 0) {
+                  score = (int)(thits * 256);
+                  score = score + (int)ai_mstage[8];
+              }
+          } else if (rtopic == topic) {
+              score = (int)ai_mstage[8];
+              score = score + (int)(thits * 16);
+          }
+          '''
+          s = s[:score_start] + new_score + s[score_end:]
+
+          win_start = s.index("        if (slot == 1) {\n            ai_w1len = rlen;")
+          win_end = s.index("        if (slot == 2) {", win_start)
+          old_win = s[win_start:win_end]
+          if "ai_w1score = score;" not in old_win:
+              raise SystemExit("unexpected winning-record block")
+          new_win = '''        if (slot == 1) {
               ai_w1len = rlen;
               ai_w1score = score;
               ai_mtopic = rtopic;
-          }""".replace("              ", ""),
-              "winning topic capture",
-          )
+          }
+          '''
+          s = s[:win_start] + new_win + s[win_end:]
+
           once(
               "    ai_mtrusted = 0;\n    ai_l0head = 0;",
               "    ai_mtrusted = 0;\n    ai_mtopic = ai_t_id;\n    ai_l0head = 0;",
