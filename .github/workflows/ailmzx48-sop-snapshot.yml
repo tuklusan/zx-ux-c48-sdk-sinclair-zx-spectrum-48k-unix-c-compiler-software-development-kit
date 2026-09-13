@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: ailmzx48 SoP scan snapshot
+name: ailmzx48 SoP defect repair
 
 "on":
   push:
@@ -20,96 +20,105 @@ name: ailmzx48 SoP scan snapshot
       - ".github/workflows/ailmzx48-sop-snapshot.yml"
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: ailmzx48-sop-defect-repair-main
+  cancel-in-progress: false
 
 jobs:
-  snapshot:
+  repair:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out exact main bytes
+      - name: Check out current main
         uses: actions/checkout@v4
         with:
           lfs: true
           fetch-depth: 0
 
-      - name: Build immutable scan surface
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Repair stale Revision 0.26 upstream note
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf sop-scan-surface
-          mkdir -p sop-scan-surface
           python - <<'PY'
           from pathlib import Path
           import hashlib
           import json
-          import shutil
-          import subprocess
 
-          root = Path('.')
-          out = Path('sop-scan-surface')
-          tracked = subprocess.check_output(['git','ls-files','-z']).split(b'\0')
-          selected = []
-          for raw in tracked:
-              if not raw:
-                  continue
-              rel = raw.decode('utf-8', 'surrogateescape')
-              p = Path(rel)
-              keep = False
-              if rel == 'usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md':
-                  keep = True
-              elif p.parent == Path('usr/src/ailmzx48') and p.suffix in {'.c', '.h'}:
-                  keep = True
-              elif rel.startswith('usr/src/ailmzx48/model/'):
-                  keep = True
-              elif rel == 'usr/bin/ailmzx48/ailmzx48.c48b':
-                  keep = True
-              elif rel in {
-                  'usr/src/ailmzx48/evaluation/DESIGN-COMPLIANCE-STATUS.json',
-                  'usr/src/ailmzx48/evaluation/DESIGN-REVIEW-CERTIFICATE.md',
-                  'usr/src/ailmzx48/evaluation/check_design_compliance.py',
-                  'usr/src/ailmzx48/evaluation/context-reference-report.json',
-                  'usr/src/ailmzx48/evaluation/a48m-reference-report.json',
-                  'usr/src/ailmzx48/training/provenance.json',
-                  'usr/src/ailmzx48/training/record-lineage.json',
-                  'usr/src/ailmzx48/training/seed_corpus.json',
-                  'usr/src/ailmzx48/training/goal-status.json',
-              }:
-                  keep = True
-              if keep:
-                  selected.append(rel)
+          design = Path('usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md')
+          status = Path('usr/src/ailmzx48/evaluation/DESIGN-COMPLIANCE-STATUS.json')
+          cert = Path('usr/src/ailmzx48/evaluation/DESIGN-REVIEW-CERTIFICATE.md')
+          old = '''The SDK profile is not a substitute for native certification.  As of this
+revision the read-only upstream ZX-UX repository main identity checked for the
+native dependency is `cb8e4ea0b68df693e5d4133fc906ed46234427b6`; its latest
+inspected durable certification item is Phase-1 `P1.25`.  That upstream state
+does not yet provide the native C48/OBJ1/MEX1 build, allocator/stack/Fuse, and
+physical-cassette execution path required by Sections 18, 19 and 22.  Those
+native-only obligations therefore remain explicitly `BLOCKED_EXTERNAL`; they
+are neither silently waived nor counted as SDK zero-gap evidence.
+'''
+          new = '''The SDK profile is not a substitute for native certification.  As of this
+revision the read-only upstream ZX-UX repository main identity checked for the
+native dependency is `8c8f918743897b352513b0545ff77487682c088f`.  Its latest
+inspected durable certification item is Phase-1 `P1.26`, which certifies source
+commit `cb8e4ea0b68df693e5d4133fc906ed46234427b6`.  That upstream state still
+does not provide the native C48/OBJ1/MEX1 build, allocator/stack/Fuse, and
+physical-cassette execution path required by Sections 18, 19 and 22.  Those
+native-only obligations therefore remain explicitly `BLOCKED_EXTERNAL`; they
+are neither silently waived nor counted as SDK zero-gap evidence.
+'''
+          text = design.read_text(encoding='utf-8')
+          if text.count(old) != 1:
+              raise SystemExit('stale Revision 0.26 note anchor not unique')
+          design.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
+          data = design.read_bytes()
+          design_sha = hashlib.sha256(data).hexdigest()
+          blob_sha = hashlib.sha1(
+              b'blob ' + str(len(data)).encode('ascii') + b'\0' + data
+          ).hexdigest()
 
-          rows = []
-          surface = hashlib.sha256()
-          for rel in sorted(selected):
-              src = root / rel
-              data = src.read_bytes()
-              dst = out / rel
-              dst.parent.mkdir(parents=True, exist_ok=True)
-              shutil.copyfile(src, dst)
-              digest = hashlib.sha256(data).hexdigest()
-              rows.append({'path': rel, 'bytes': len(data), 'sha256': digest})
-              surface.update(rel.encode('utf-8'))
-              surface.update(b'\0')
-              surface.update(len(data).to_bytes(8, 'big'))
-              surface.update(data)
-          meta = {
-              'schema': 1,
-              'source_commit': subprocess.check_output(['git','rev-parse','HEAD'], text=True).strip(),
-              'surface_sha256': surface.hexdigest(),
-              'file_count': len(rows),
-              'files': rows,
-          }
-          (out / 'SOP-SCAN-SURFACE.json').write_text(
-              json.dumps(meta, indent=2, sort_keys=True) + '\n',
-              encoding='ascii', newline='\n'
+          s = json.loads(status.read_text(encoding='utf-8'))
+          s['design_sha256'] = design_sha
+          s['design_git_blob_sha1'] = blob_sha
+          status.write_text(
+              json.dumps(s, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8', newline='\n'
           )
-          print(json.dumps(meta, sort_keys=True))
+
+          c = cert.read_text(encoding='utf-8')
+          lines = []
+          for line in c.splitlines():
+              if line.startswith('- detailed-design Git blob:'):
+                  line = f'- detailed-design Git blob: `{blob_sha}`'
+              elif line.startswith('- detailed-design SHA-256:'):
+                  line = f'- detailed-design SHA-256: `{design_sha}`'
+              lines.append(line)
+          cert.write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')
           PY
 
-      - name: Upload frozen on-disk scan surface
-        uses: actions/upload-artifact@v4
-        with:
-          name: ailmzx48-sop-scan-${{ github.sha }}
-          path: sop-scan-surface
-          if-no-files-found: error
-          retention-days: 30
+      - name: Remove temporary repair workflow
+        run: rm .github/workflows/ailmzx48-sop-snapshot.yml
+
+      - name: Revalidate ailmzx48 and repository
+        shell: bash
+        run: |
+          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
+          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+          python -B usr/src/ailmzx48/tooling/update_manifest.py
+          python -B compiler/verify_release.py
+          git diff --check
+
+      - name: Commit repaired checkpoint
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "ailmzx48: repair stale Revision 0.26 authority note"
+          git push origin HEAD:main
