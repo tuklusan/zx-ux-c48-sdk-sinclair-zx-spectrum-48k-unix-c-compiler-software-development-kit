@@ -1,1 +1,0 @@
-refresh deterministic iterative goal status after formalizing exit criteria
