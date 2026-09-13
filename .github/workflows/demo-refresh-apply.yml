@@ -12,6 +12,7 @@
 # patent, trademark, and governing-law provisions.
 # ============================================================================
 name: One-shot demo artifact refresh
+# Final cleanup trigger after verified maintenance refresh.
 
 on:
   push:
