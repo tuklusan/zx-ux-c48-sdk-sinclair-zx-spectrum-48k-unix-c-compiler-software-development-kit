@@ -1,0 +1,105 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: One-shot ailmzx48 bootstrap retry
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-bootstrap-retry.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Confirm certified design ancestry
+        run: >-
+          git merge-base --is-ancestor
+          ddc10507076f2dda4fe119d3af0e7fa2cbe1fd0b HEAD
+
+      - name: Recover and run reviewed bootstrap payload
+        shell: bash
+        run: |
+          python - <<'PY'
+          import base64
+          import re
+          import zlib
+          from pathlib import Path
+          wf = Path('.github/workflows/ailmzx48-bootstrap.yml')
+          text = wf.read_text(encoding='utf-8')
+          m = re.search(r'BOOTSTRAP_B64: "([A-Za-z0-9+/=]+)"', text)
+          if not m:
+              raise SystemExit('bootstrap payload not found')
+          data = zlib.decompress(base64.b64decode(m.group(1)))
+          Path('.github/ailmzx48_bootstrap_runtime.py').write_bytes(data)
+          PY
+          python -B .github/ailmzx48_bootstrap_runtime.py
+          rm -f .github/ailmzx48_bootstrap_runtime.py
+
+      - name: Preserve preinstalled workflow bytes
+        shell: bash
+        run: |
+          git restore --source=HEAD -- \
+            .github/workflows/ailmzx48-training.yml
+          git restore --source=HEAD -- \
+            .github/workflows/ailmzx48-bootstrap.yml
+          git restore --source=HEAD -- \
+            .github/workflows/ailmzx48-bootstrap-retry.yml
+
+      - name: Run starter iteration 1
+        run: >-
+          python -B usr/src/ailmzx48/tooling/run_iteration.py
+          --request usr/src/ailmzx48/training/requests/iter-0001.json
+          --max-seconds 600
+
+      - name: Regenerate release manifest
+        run: python -B usr/src/ailmzx48/tooling/update_manifest.py
+
+      - name: Verify complete candidate
+        shell: bash
+        run: |
+          python -B compiler/verify_release.py
+          git diff --check
+          cat usr/src/ailmzx48/conversations/iter-0001/score.json
+          if ! git diff --quiet -- .github/workflows; then
+            echo "workflow bytes changed unexpectedly" >&2
+            git diff -- .github/workflows
+            exit 1
+          fi
+
+      - name: Commit and push implementation evidence
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m \
+            "Start ailmzx48 implementation and retain iteration 1"
+          git push origin HEAD:main
