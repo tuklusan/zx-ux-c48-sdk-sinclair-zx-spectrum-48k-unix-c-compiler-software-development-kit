@@ -31,10 +31,11 @@ jobs:
       PRE_FIX_SHA: "447881d3ffe24457ccd9bb885503e0fa7d39fd2f"
       PRE_FIX_TAG: "BEFORE-VISUAL-FRAME-DROP-FIX"
     steps:
-      - name: Check out main
+      - name: Check out main with LFS objects
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          lfs: true
 
       - name: Set up Python 3.13
         uses: actions/setup-python@v5
