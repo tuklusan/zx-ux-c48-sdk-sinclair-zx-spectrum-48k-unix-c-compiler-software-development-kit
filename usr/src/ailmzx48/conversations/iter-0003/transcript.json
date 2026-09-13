@@ -1,0 +1,231 @@
+{
+  "exact_output_hex": "57656c636f6d6520746f2053414e59414c6e6574204c616273205a582d5558204149204c4d20436861742e0a436f7079726967687420286329203230323620537570726174696d2053616e79616c0a0a4920616d2061696c6d7a7834382e0a49206b6e6f772061206269742061626f7574207468652053696e636c616972205a5820537065637472756d202d0a776869636820697320666f7274756e6174652c20626563617573652049206c69766520696e73696465206f6e652e0a34384b207365656d656420656e6f726d6f757320696e20313938322e20492068617665206f70696e696f6e73206e6f772e0a0a41736b206d652061626f75742074686520537065637472756d2c206f72206a7573742068617665206120636861742e0a456e746572207120617420616e792074696d6520746f20717569742e0a0a3e204920616d2061696c6d7a7834382061206c6f63616c206c616e6775616765206d6f64656c206d61646520666f7220636f6e766572736174696f6e2e0a3e20537065637472756d206973206120686f6d6520636f6d70757465722066726f6d203139383220776974682034386b206d656d6f72792e0a3e20486973746f7279206f6620737065637472756d206172726976696e6720696e20313938322e0a3e204d656d6f7279206d6174746572732062656361757365206576657279206279746520646573657276657320636172652e0a3e204c6f63616c20636861742072756e7320776974686f75742061206e6574776f726b2e0a3e2047616d6573206172652070617274206f6620737065637472756d2063756c747572652e0a3e204c6f63616c20636861742072756e7320776974686f75742061206e6574776f726b2e0a3e20537065637472756d206973206120686f6d6520636f6d70757465722066726f6d203139383220776974682034386b206d656d6f72792e0a3e20486973746f7279206f6620737065637472756d206172726976696e6720696e20313938322e0a3e204c6f63616c20636861742072756e7320776974686f75742061206e6574776f726b2e0a3e2047616d6573206172652070617274206f6620737065637472756d2063756c747572652e0a3e204920616d2061696c6d7a7834382061206c6f63616c206c616e6775616765206d6f64656c206d61646520666f7220636f6e766572736174696f6e2e0a3e20",
+  "exit_status": 0,
+  "final_diag": {
+    "ai_beeps": 13,
+    "ai_error": 0,
+    "ai_otokens": 10,
+    "ai_turns": 12,
+    "ai_yields": 1
+  },
+  "iteration": 3,
+  "request": {
+    "expected_keywords": [
+      "ailmzx48",
+      "spectrum",
+      "1982",
+      "memory",
+      "network",
+      "games",
+      "network",
+      "1982",
+      "1982",
+      "network",
+      "games",
+      "ailmzx48"
+    ],
+    "iteration": 3,
+    "max_seconds": 1200,
+    "prompts": [
+      "who are you",
+      "tell me about the spectrum",
+      "what happened in 1982",
+      "what about 48k memory",
+      "can you chat locally",
+      "tell me about spectrum games",
+      "are you local or remote",
+      "what is the spectrum",
+      "when did spectrum history start",
+      "does this chat need a network",
+      "what were spectrum games like",
+      "hello"
+    ],
+    "purpose": "Measure topic-conditioned learned transitions against iteration-2 regressions plus fresh paraphrases, with no new corpus text after observing iteration 2.",
+    "scenario": "topic-conditioned-v1",
+    "schema": 1
+  },
+  "schema": 1,
+  "startup_raw": "Welcome to SANYALnet Labs ZX-UX AI LM Chat.\nCopyright (c) 2026 Supratim Sanyal\n\nI am ailmzx48.\nI know a bit about the Sinclair ZX Spectrum -\nwhich is fortunate, because I live inside one.\n48K seemed enormous in 1982. I have opinions now.\n\nAsk me about the Spectrum, or just have a chat.\nEnter q at any time to quit.\n\n> ",
+  "turns": [
+    {
+      "assistant": "I am ailmzx48 a local language model made for conversation.",
+      "assistant_raw": "I am ailmzx48 a local language model made for conversation.\n> ",
+      "diag": {
+        "ai_beeps": 2,
+        "ai_error": 0,
+        "ai_otokens": 10,
+        "ai_turns": 1,
+        "ai_yields": 1
+      },
+      "expected_keyword": "ailmzx48",
+      "keyword_hit": true,
+      "turn": 1,
+      "user": "who are you"
+    },
+    {
+      "assistant": "Spectrum is a home computer from 1982 with 48k memory.",
+      "assistant_raw": "Spectrum is a home computer from 1982 with 48k memory.\n> ",
+      "diag": {
+        "ai_beeps": 3,
+        "ai_error": 0,
+        "ai_otokens": 10,
+        "ai_turns": 2,
+        "ai_yields": 1
+      },
+      "expected_keyword": "spectrum",
+      "keyword_hit": true,
+      "turn": 2,
+      "user": "tell me about the spectrum"
+    },
+    {
+      "assistant": "History of spectrum arriving in 1982.",
+      "assistant_raw": "History of spectrum arriving in 1982.\n> ",
+      "diag": {
+        "ai_beeps": 4,
+        "ai_error": 0,
+        "ai_otokens": 6,
+        "ai_turns": 3,
+        "ai_yields": 1
+      },
+      "expected_keyword": "1982",
+      "keyword_hit": true,
+      "turn": 3,
+      "user": "what happened in 1982"
+    },
+    {
+      "assistant": "Memory matters because every byte deserves care.",
+      "assistant_raw": "Memory matters because every byte deserves care.\n> ",
+      "diag": {
+        "ai_beeps": 5,
+        "ai_error": 0,
+        "ai_otokens": 7,
+        "ai_turns": 4,
+        "ai_yields": 1
+      },
+      "expected_keyword": "memory",
+      "keyword_hit": true,
+      "turn": 4,
+      "user": "what about 48k memory"
+    },
+    {
+      "assistant": "Local chat runs without a network.",
+      "assistant_raw": "Local chat runs without a network.\n> ",
+      "diag": {
+        "ai_beeps": 6,
+        "ai_error": 0,
+        "ai_otokens": 6,
+        "ai_turns": 5,
+        "ai_yields": 1
+      },
+      "expected_keyword": "network",
+      "keyword_hit": true,
+      "turn": 5,
+      "user": "can you chat locally"
+    },
+    {
+      "assistant": "Games are part of spectrum culture.",
+      "assistant_raw": "Games are part of spectrum culture.\n> ",
+      "diag": {
+        "ai_beeps": 7,
+        "ai_error": 0,
+        "ai_otokens": 6,
+        "ai_turns": 6,
+        "ai_yields": 1
+      },
+      "expected_keyword": "games",
+      "keyword_hit": true,
+      "turn": 6,
+      "user": "tell me about spectrum games"
+    },
+    {
+      "assistant": "Local chat runs without a network.",
+      "assistant_raw": "Local chat runs without a network.\n> ",
+      "diag": {
+        "ai_beeps": 8,
+        "ai_error": 0,
+        "ai_otokens": 6,
+        "ai_turns": 7,
+        "ai_yields": 1
+      },
+      "expected_keyword": "network",
+      "keyword_hit": true,
+      "turn": 7,
+      "user": "are you local or remote"
+    },
+    {
+      "assistant": "Spectrum is a home computer from 1982 with 48k memory.",
+      "assistant_raw": "Spectrum is a home computer from 1982 with 48k memory.\n> ",
+      "diag": {
+        "ai_beeps": 9,
+        "ai_error": 0,
+        "ai_otokens": 10,
+        "ai_turns": 8,
+        "ai_yields": 1
+      },
+      "expected_keyword": "1982",
+      "keyword_hit": true,
+      "turn": 8,
+      "user": "what is the spectrum"
+    },
+    {
+      "assistant": "History of spectrum arriving in 1982.",
+      "assistant_raw": "History of spectrum arriving in 1982.\n> ",
+      "diag": {
+        "ai_beeps": 10,
+        "ai_error": 0,
+        "ai_otokens": 6,
+        "ai_turns": 9,
+        "ai_yields": 1
+      },
+      "expected_keyword": "1982",
+      "keyword_hit": true,
+      "turn": 9,
+      "user": "when did spectrum history start"
+    },
+    {
+      "assistant": "Local chat runs without a network.",
+      "assistant_raw": "Local chat runs without a network.\n> ",
+      "diag": {
+        "ai_beeps": 11,
+        "ai_error": 0,
+        "ai_otokens": 6,
+        "ai_turns": 10,
+        "ai_yields": 1
+      },
+      "expected_keyword": "network",
+      "keyword_hit": true,
+      "turn": 10,
+      "user": "does this chat need a network"
+    },
+    {
+      "assistant": "Games are part of spectrum culture.",
+      "assistant_raw": "Games are part of spectrum culture.\n> ",
+      "diag": {
+        "ai_beeps": 12,
+        "ai_error": 0,
+        "ai_otokens": 6,
+        "ai_turns": 11,
+        "ai_yields": 1
+      },
+      "expected_keyword": "games",
+      "keyword_hit": true,
+      "turn": 11,
+      "user": "what were spectrum games like"
+    },
+    {
+      "assistant": "I am ailmzx48 a local language model made for conversation.",
+      "assistant_raw": "I am ailmzx48 a local language model made for conversation.\n> ",
+      "diag": {
+        "ai_beeps": 13,
+        "ai_error": 0,
+        "ai_otokens": 10,
+        "ai_turns": 12,
+        "ai_yields": 1
+      },
+      "expected_keyword": "ailmzx48",
+      "keyword_hit": true,
+      "turn": 12,
+      "user": "hello"
+    }
+  ]
+}
