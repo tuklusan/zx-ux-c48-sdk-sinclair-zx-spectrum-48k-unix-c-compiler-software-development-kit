@@ -42,13 +42,16 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Apply and exercise runtime repair
-        run: python -B usr/src/ailmzx48/tooling/design_gap_repair.py
+      - name: Apply and exercise compact runtime repair
+        run: >-
+          python -B
+          usr/src/ailmzx48/tooling/design_gap_repair_compact.py
 
       - name: Remove temporary repair instrumentation
         run: |
           rm .github/workflows/ailmzx48-design-gap-repair.yml
           rm usr/src/ailmzx48/tooling/design_gap_repair.py
+          rm usr/src/ailmzx48/tooling/design_gap_repair_compact.py
 
       - name: Regenerate manifest and verify complete repository
         run: |
