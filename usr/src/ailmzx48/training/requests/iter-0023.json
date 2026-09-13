@@ -1,0 +1,41 @@
+{
+  "schema": 1,
+  "iteration": 23,
+  "scenario": "target-literal-recall-churn-500-turn-v1",
+  "purpose": "Stress repeated session-name replacement and semantic name recall while cold-topic traffic drives L0/L1/L2 compaction for the full 500-turn target session.",
+  "max_seconds": 1200,
+  "prompt_plan": {
+    "prefix": [
+      "what about 48k memory",
+      "remember this topic",
+      "please tell me something about the spectrum home computer again",
+      "please tell me something about spectrum games and its culture again",
+      "can you chat locally without a network on this small computer",
+      "please tell me again what happened in spectrum history in 1982",
+      "my name is Alice",
+      "what is my name",
+      "my name is Bob",
+      "what is my name"
+    ],
+    "cycle": [
+      "my name is Alice",
+      "what is my name",
+      "please tell me something about the spectrum home computer again",
+      "please tell me something about spectrum games and its culture again",
+      "my name is Bob",
+      "what is my name",
+      "can you chat locally without a network on this small computer",
+      "please tell me again what happened in spectrum history in 1982",
+      "my name is Dave",
+      "what is my name"
+    ],
+    "cycle_count": 49,
+    "suffix": []
+  },
+  "min_dialogue_bytes": 32769,
+  "min_compactions": 100,
+  "min_l2_count": 1,
+  "min_semantic_uses": 100,
+  "min_lmcount": 96,
+  "final_expected_keyword": "dave"
+}
