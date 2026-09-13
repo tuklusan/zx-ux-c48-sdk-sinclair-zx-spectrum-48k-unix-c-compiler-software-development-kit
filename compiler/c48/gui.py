@@ -39,6 +39,9 @@ BORDER_X = 32
 BORDER_Y = 24
 FRAME_WIDTH = WIDTH + BORDER_X * 2
 FRAME_HEIGHT = HEIGHT + BORDER_Y * 2
+# Tk has no portable compositor-present fence. Animation barriers wait for
+# idle drawing plus a conservative host-visible dwell before VM progression.
+VISUAL_FRAME_DWELL_MS = 80
 
 # Rendering the Spectrum bitmap pixel-by-pixel costs enough Python time to
 # starve Tk on animation-heavy programs.  Pre-expand the 128 possible
@@ -265,7 +268,11 @@ class TkDisplay:
         self._frame_generation = 0
         self._frame_snapshot = self.screen.bytes()
         self._frame_border = int(self.screen.border_color) & 7
-        self._rendered_generation = -1
+        self._committed_generation = -1
+        self._presented_generation = -1
+        self._present_target = -1
+        self._present_reason: str | None = None
+        self._present_scheduled_generation = -1
         self._stop = False
         self._root = None
         self._photo = None
@@ -328,19 +335,26 @@ class TkDisplay:
             self._frame_border = border
             return self._frame_generation
 
-    def present(self) -> None:
-        """Wait until Tk has painted the latest intentionally published frame."""
+    def present(self, reason: str = "yield") -> None:
+        """Wait for the latest intentional frame to reach its release fence."""
+        if reason not in {"yield", "sleep", "input"}:
+            raise ValueError(f"invalid presentation reason: {reason}")
         with self._frame_cond:
             target = self._frame_generation
-            while self._rendered_generation < target and not self._stop:
+            if target <= self._presented_generation:
+                return
+            self._present_target = target
+            self._present_reason = reason
+            self._frame_cond.notify_all()
+            while self._presented_generation < target and not self._stop:
                 self._frame_cond.wait()
 
     def _frame_after(
         self,
-        rendered_generation: int,
+        committed_generation: int,
     ) -> tuple[int, bytes, int] | None:
         with self._frame_lock:
-            if self._frame_generation == rendered_generation:
+            if self._frame_generation == committed_generation:
                 return None
             return (
                 self._frame_generation,
@@ -348,10 +362,37 @@ class TkDisplay:
                 self._frame_border,
             )
 
-    def _mark_rendered(self, generation: int) -> None:
+    def _mark_committed(self, generation: int) -> None:
         with self._frame_cond:
-            if generation > self._rendered_generation:
-                self._rendered_generation = generation
+            if generation > self._committed_generation:
+                self._committed_generation = generation
+            self._frame_cond.notify_all()
+
+    def _take_present_request(self) -> tuple[int, str] | None:
+        with self._frame_cond:
+            target = self._present_target
+            if (
+                target <= self._presented_generation
+                or target > self._committed_generation
+                or target <= self._present_scheduled_generation
+            ):
+                return None
+            reason = self._present_reason or "yield"
+            self._present_scheduled_generation = target
+            return target, reason
+
+    def _mark_presented(
+        self, generation: int, reason: str, dwell_ms: int
+    ) -> None:
+        self._probe(
+            "frame_presented",
+            generation=int(generation),
+            reason=reason,
+            dwell_ms=int(dwell_ms),
+        )
+        with self._frame_cond:
+            if generation > self._presented_generation:
+                self._presented_generation = generation
             self._frame_cond.notify_all()
 
     def close(self) -> None:
@@ -526,11 +567,33 @@ class TkDisplay:
 
         threading.Thread(target=worker, daemon=True).start()
 
+        image_id = None
+
+        def release_presented(generation: int, reason: str, dwell_ms: int) -> None:
+            self._mark_presented(generation, reason, dwell_ms)
+
+        def schedule_ready_presentation() -> None:
+            request = self._take_present_request()
+            if request is None:
+                return
+            generation, reason = request
+            if reason == "input":
+                root.after_idle(release_presented, generation, reason, 0)
+            else:
+                root.after(
+                    VISUAL_FRAME_DWELL_MS,
+                    release_presented,
+                    generation,
+                    reason,
+                    VISUAL_FRAME_DWELL_MS,
+                )
+
         def redraw():
+            nonlocal image_id
             if self._stop:
                 root.destroy()
                 return
-            frame = self._frame_after(self._rendered_generation)
+            frame = self._frame_after(self._committed_generation)
             if frame is not None:
                 generation, snapshot, border_color = frame
                 rgb = render_snapshot_frame_rgb(
@@ -544,13 +607,18 @@ class TkDisplay:
                 if self.scale != 1:
                     photo = photo.zoom(self.scale, self.scale)
                 self._photo = photo
-                canvas.delete("all")
-                canvas.create_image(0, 0, image=photo, anchor="nw")
+                if image_id is None:
+                    image_id = canvas.create_image(
+                        0, 0, image=photo, anchor="nw"
+                    )
+                else:
+                    canvas.itemconfigure(image_id, image=photo)
+                # Flush deferred Tk drawing but never run a nested full loop.
+                root.update_idletasks()
                 if self._probe_path:
-                    root.update_idletasks()
                     probe_path = Path(self._probe_path)
                     frame_path = probe_path.with_name(
-                        f"{probe_path.stem}-frame.ppm"
+                        f"{probe_path.stem}-frame-{generation}.ppm"
                     )
                     frame_tmp = frame_path.with_suffix(frame_path.suffix + ".tmp")
                     frame_tmp.write_bytes(ppm)
@@ -566,7 +634,8 @@ class TkDisplay:
                         canvas_width=int(canvas.winfo_width()),
                         canvas_height=int(canvas.winfo_height()),
                     )
-                self._mark_rendered(generation)
+                self._mark_committed(generation)
+            schedule_ready_presentation()
             if result["done"]:
                 root.title(f"{self.title} - exited {result['status']}")
                 footer.configure(**footer_config(True))

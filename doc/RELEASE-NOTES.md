@@ -39,7 +39,7 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - provenance-preserving stale-pointer/forgery defenses;
 - live-allocation indexing that retains dead allocation IDs for ABA defense without quadratic allocator scans;
 - visible C48 security fixtures, an 84-case adversarial review corpus, and mechanically enforced 64-column C48 source;
-- 50-Hz Tk polling, accelerated byte-run framebuffer conversion, and explicit `yield()`/animation-sleep presentation barriers so intentional logical frames are painted rather than silently coalesced;
+- 50-Hz Tk polling, accelerated byte-run framebuffer conversion, and explicit visual-release backpressure for `yield()`/animation-sleep boundaries so intentional frames cannot outrun Tk/host presentation;
 - Tk top-level sizing now maps the packed canvas/footer before locking resize and
   automatically steps down to the largest fully visible integer scale when a host
   desktop constrains the requested surface; Windows also rejects a scale whose full

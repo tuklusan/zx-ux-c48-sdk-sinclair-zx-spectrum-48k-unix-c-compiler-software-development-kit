@@ -70,11 +70,10 @@ int main(int argc, char **argv)
     int f;
     int n;
     init();
-    n = d_frames(argc, argv, 80);
+    n = d_frames(argc, argv, 20);
     for (f = 0; f < n; f++) {
         scene(f);
         yield();
-        if (argc < 2) sleep(4u);
     }
     return 0;
 }

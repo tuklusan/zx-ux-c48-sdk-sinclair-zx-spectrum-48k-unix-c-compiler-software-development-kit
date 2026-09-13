@@ -154,15 +154,15 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
             ZXScreen(Font4x8.load(FONT_PATH)),
             input_provider=lambda: (events.append("input"), ord("q"))[1],
             display_update=lambda: events.append("update"),
-            display_present=lambda: events.append("present"),
+            display_present=lambda reason: events.append(f"present:{reason}"),
         )
         self.assertEqual(vm.run(), 0)
         self.assertEqual(
             events,
             [
-                "update", "present",
-                "update", "present",
-                "update", "present", "input",
+                "update", "present:yield",
+                "update", "present:sleep",
+                "update", "present:input", "input",
             ],
         )
 

@@ -52,7 +52,6 @@ int main(void)
     for (c = 0; c < 8; c++) {
         border(c);
         yield();
-        sleep(2u);
     }
     border(1);
     return 0;

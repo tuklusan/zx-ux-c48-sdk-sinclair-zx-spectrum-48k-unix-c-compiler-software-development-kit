@@ -49,7 +49,7 @@ class C48VM:
     def __init__(self,program:dict[str,Any],screen:ZXScreen,*,argv:list[str]|None=None,
                  approximate_rom_math:bool=False,input_provider:Callable[[],int]|None=None,
                  display_update:Callable[[],None]|None=None,
-                 display_present:Callable[[],None]|None=None,
+                 display_present:Callable[[str],None]|None=None,
                  heap_size:int=1024, max_steps:int|None=None,
                  sound_player:Callable[[Path],None]|None=None):
         if not isinstance(heap_size,int) or isinstance(heap_size,bool) or heap_size < 0 or heap_size > 8192 or (heap_size & 1):
@@ -65,7 +65,7 @@ class C48VM:
         self.approximate_rom_math=approximate_rom_math
         self.input_provider=input_provider or self._stdin_char
         self.display_update=display_update or (lambda:None)
-        self.display_present=display_present or (lambda:None)
+        self.display_present=display_present or (lambda _reason:None)
         self.functions:dict[str,dict[str,Any]]={}
         self.global_lvalues:dict[str,LValue]={}
         self.scope_stack:list[dict[str,LValue]]=[]
@@ -538,12 +538,14 @@ class C48VM:
         return fn(args)
     def _b_exit(self,a):raise RuntimeExit(self._to_unsigned(a[0])&0xFF)
     def _b_yield(self,a):
-        self.display_update();self.display_present();return Value(INT,0)
+        self.display_update();self.display_present("yield")
+        return Value(INT,0)
     def _b_sleep(self,a):
-        # Publish and paint the logical frame before the 50-Hz delay.  This
-        # keeps animation sleeps from hiding a frame behind the next scene.
+        # Publish and visibly release the frame before the 50-Hz host delay.
+        # GUI backpressure may slow execution; it never authorizes frame drops.
         ticks=self._to_unsigned(a[0])
-        self.display_update();self.display_present();time.sleep(ticks/50.0)
+        self.display_update();self.display_present("sleep")
+        time.sleep(ticks/50.0)
         return Value(INT,0)
     def _b_beep(self,a):
         try:
@@ -566,7 +568,7 @@ class C48VM:
         # A blocking read is also a presentation boundary.  Interactive
         # programs commonly draw a prompt and then call getchar() without an
         # explicit yield(); publish and paint that framebuffer before waiting.
-        self.display_update();self.display_present()
+        self.display_update();self.display_present("input")
         return Value(INT,self.input_provider())
     def _b_putchar(self,a):
         c=self._to_unsigned(a[0])&0xFF;self.screen.putchar(c);self.display_update();return Value(INT,c)

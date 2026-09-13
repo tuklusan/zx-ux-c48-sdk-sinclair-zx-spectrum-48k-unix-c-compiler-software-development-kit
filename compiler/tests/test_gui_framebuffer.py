@@ -31,6 +31,7 @@ from c48.gui import (
     FRAME_HEIGHT,
     FRAME_WIDTH,
     TkDisplay,
+    VISUAL_FRAME_DWELL_MS,
     fit_footer_font_size,
     largest_fully_mapped_scale,
     render_snapshot_frame_rgb,
@@ -122,27 +123,46 @@ class GuiFramebufferRegressions(unittest.TestCase):
             screen.render_rgb(flash_phase=True),
         )
 
-    def test_present_waits_for_the_published_generation(self):
+    def test_present_waits_for_visual_release_not_tk_commit(self):
         display = TkDisplay(new_screen())
         generation = display.update()
         finished = []
         thread = threading.Thread(
-            target=lambda: (display.present(), finished.append(True))
+            target=lambda: (display.present("yield"), finished.append(True))
         )
         thread.start()
         time.sleep(0.02)
         self.assertTrue(thread.is_alive())
-        self.assertEqual(finished, [])
-        display._mark_rendered(generation)
+        display._mark_committed(generation)
+        time.sleep(0.02)
+        self.assertTrue(thread.is_alive())
+        self.assertEqual(display._take_present_request(), (generation, "yield"))
+        display._mark_presented(generation, "yield", VISUAL_FRAME_DWELL_MS)
         thread.join(1.0)
         self.assertFalse(thread.is_alive())
         self.assertEqual(finished, [True])
+
+        prompt = TkDisplay(new_screen())
+        prompt_generation = prompt.update()
+        prompt_done = []
+        prompt_thread = threading.Thread(
+            target=lambda: (prompt.present("input"), prompt_done.append(True))
+        )
+        prompt_thread.start()
+        time.sleep(0.02)
+        prompt._mark_committed(prompt_generation)
+        self.assertEqual(
+            prompt._take_present_request(), (prompt_generation, "input")
+        )
+        prompt._mark_presented(prompt_generation, "input", 0)
+        prompt_thread.join(1.0)
+        self.assertEqual(prompt_done, [True])
 
         closing = TkDisplay(new_screen())
         closing.update()
         released = []
         waiter = threading.Thread(
-            target=lambda: (closing.present(), released.append(True))
+            target=lambda: (closing.present("sleep"), released.append(True))
         )
         waiter.start()
         time.sleep(0.02)

@@ -20,8 +20,8 @@
     },
     "colors": {
       "args": [],
-      "source_sha256": "79a7f14328bb40faef5d6b19569f58445a0e36eadc2ab3cf0d39b2465c529078",
-      "binary_sha256": "a1e42b6aca33881a0d2daf3fc2920049081bf3c70d63bfe5ecabfcda48a666d0",
+      "source_sha256": "81eb703765b131f579be5df19b5d79abd9e4b38b97e5122bba8671da27ac5400",
+      "binary_sha256": "41f2a7fea4fa81efa62c289ba7d4cf50a297a709af40859899a640406919d510",
       "screen_sha256": "9852ec86a5fa7a35b1761295933078dcb5b8a3d7f81c1e45a75f1d4aa39f3b25"
     },
     "graphics": {

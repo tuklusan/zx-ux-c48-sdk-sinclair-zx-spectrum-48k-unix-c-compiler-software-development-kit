@@ -148,8 +148,12 @@ does not emulate the raw Spectrum keyboard matrix.
 ## 9. Time/scheduling
 
 `ticks()` and `sleep()` in the provisional host API use host monotonic time and a 50-Hz
-interpretation.  The host does not emulate cooperative ZX-UX scheduling, process tables,
-pipes, cassette I/O or kernel syscalls.
+interpretation.  GUI presentation is deliberately allowed to run slower than that clock:
+`yield()` and animation `sleep()` boundaries apply visual backpressure until the published
+frame has passed the Tk draw/host-visible release fence.  Late presentation is never repaid
+by dropping later intentional frames.  `getchar()` commits its prompt before arming the
+input rendezvous but does not add the animation dwell.  The host does not emulate cooperative
+ZX-UX scheduling, process tables, pipes, cassette I/O or kernel syscalls.
 
 ## 10. Float5
 

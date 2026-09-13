@@ -32,7 +32,9 @@ COMPILER = ROOT / "compiler"
 if str(COMPILER) not in sys.path:
     sys.path.insert(0, str(COMPILER))
 
-from c48.gui import FRAME_HEIGHT, FRAME_WIDTH, footer_text
+from c48.gui import (
+    FRAME_HEIGHT, FRAME_WIDTH, VISUAL_FRAME_DWELL_MS, footer_text,
+)
 from c48.screen import PALETTE_BRIGHT, PALETTE_NORMAL
 
 TIMEOUT = 90.0
@@ -108,13 +110,13 @@ def _check_version() -> str:
     return text
 
 
-def _start(program: Path, probe: Path) -> subprocess.Popen:
+def _start(program: Path, probe: Path, *args: str) -> subprocess.Popen:
     probe.unlink(missing_ok=True)
     env = os.environ.copy()
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["C48_GUI_PROBE"] = str(probe)
     return subprocess.Popen(
-        _launcher_command(str(program)),
+        _launcher_command(str(program), *args),
         cwd=ROOT,
         env=env,
         text=True,
@@ -501,6 +503,83 @@ def _screenshot(
     }
 
 
+def _visual_progression(evidence: Path) -> dict:
+    name = "visual-progression"
+    probe = evidence / f"probe-{name}.jsonl"
+    process = _start(ROOT / "usr/bin/demos/sprites.c48b", probe, "6")
+    title = "ZX-UX C48 - sprites.c48b"
+    try:
+        window = _wait_event(probe, "window_ready", process=process)
+        done = _wait_event(
+            probe,
+            "program_done",
+            process=process,
+            predicate=lambda r: int(r["status"]) == 0
+            and r["error_type"] is None,
+        )
+        records = [
+            r for r in _records(probe)
+            if r.get("event") == "frame_presented"
+            and r.get("reason") == "yield"
+            and int(r["seq"]) < int(done["seq"])
+        ]
+        if len(records) != 6:
+            raise AssertionError(
+                f"expected six non-droppable yield frames, got {len(records)}"
+            )
+        generations = [int(r["generation"]) for r in records]
+        if generations != sorted(set(generations)):
+            raise AssertionError(
+                f"presentation generations are not strictly ordered: {generations}"
+            )
+        rendered = {
+            int(r["generation"]): r for r in _records(probe)
+            if r.get("event") == "frame_rendered"
+        }
+        hashes = []
+        for record in records:
+            generation = int(record["generation"])
+            frame = rendered.get(generation)
+            if frame is None or int(frame["seq"]) >= int(record["seq"]):
+                raise AssertionError(
+                    f"generation {generation} released without prior Tk commit"
+                )
+            hashes.append(str(frame["frame_sha256"]))
+            if int(record["dwell_ms"]) != VISUAL_FRAME_DWELL_MS:
+                raise AssertionError(
+                    f"generation {generation} used wrong visual dwell"
+                )
+        if len(set(hashes)) < 5:
+            raise AssertionError(
+                f"animation exposed too few distinct frames: {hashes}"
+            )
+        intervals = [
+            (int(b["monotonic_ns"]) - int(a["monotonic_ns"])) / 1_000_000.0
+            for a, b in zip(records, records[1:])
+        ]
+        floor = max(1.0, VISUAL_FRAME_DWELL_MS - 10.0)
+        if any(value < floor for value in intervals):
+            raise AssertionError(
+                f"visual-release intervals below dwell floor: {intervals}"
+            )
+        frame = _latest(probe, "frame_rendered")
+        capture = _screenshot(evidence, name, window, frame)
+        _send_key(process, title, "space", shift=True)
+        stdout, stderr = _finish(process, 0)
+        return {
+            "capture": capture,
+            "generations": generations,
+            "frame_sha256": hashes,
+            "release_intervals_ms": [round(v, 3) for v in intervals],
+            "visual_dwell_ms": VISUAL_FRAME_DWELL_MS,
+            "stdout": stdout,
+            "stderr": stderr,
+        }
+    finally:
+        if process.poll() is None:
+            _terminate_process_tree(process)
+
+
 def _forest(evidence: Path) -> dict:
     name = "forest"
     probe = evidence / f"probe-{name}.jsonl"
@@ -641,6 +720,7 @@ def main(argv: list[str] | None = None) -> int:
         "tests": {},
     }
     for name, test in (
+        ("visual-progression", _visual_progression),
         ("forest", _forest),
         ("fortune", _fortune),
         ("snake", _snake),
@@ -661,7 +741,7 @@ def main(argv: list[str] | None = None) -> int:
     # The display process overwrites its probe-frame scratch file as newer
     # generations are painted.  Each screenshot already copied the exact frame
     # it proved to the stable <program>-frame.ppm evidence name.
-    for scratch in evidence.glob("probe-*-frame.ppm"):
+    for scratch in evidence.glob("probe-*-frame-*.ppm"):
         scratch.unlink()
     members = sorted(p for p in evidence.iterdir() if p.is_file())
     (evidence / "SHA256SUMS").write_text(
