@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "iteration": 39,
+  "scenario": "mixed-same-topic-discrimination-v1",
+  "purpose": "Require trigger-aware retrieval to discriminate among competing Spectrum, memory, history, and games facts while enforcing a perfect keyword ratio before retention.",
+  "max_seconds": 1200,
+  "prompts": [
+    "what resolution does the spectrum display use",
+    "where is sinclair basic stored on the spectrum",
+    "what machine came before the spectrum in the sinclair line",
+    "how many bytes does the display bitmap use",
+    "who is manic miner associated with",
+    "what game did jet set willy follow",
+    "what is knight lore known for"
+  ],
+  "expected_keywords": [
+    "256",
+    "16k",
+    "zx81",
+    "6144",
+    "matthew",
+    "manic",
+    "isometric"
+  ],
+  "min_keyword_ratio": 1.0,
+  "final_expected_keyword": "isometric"
+}
