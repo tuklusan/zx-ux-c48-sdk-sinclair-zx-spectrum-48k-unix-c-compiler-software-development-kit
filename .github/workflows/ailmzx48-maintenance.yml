@@ -48,6 +48,71 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
+      - name: Add bounded Spectrum knowledge slice
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          path = Path("usr/src/ailmzx48/training/seed_corpus.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          additions = [
+              {
+                  "kind": "fact-user", "split": "train", "topic": "memory",
+                  "text": "the 48k spectrum screen bitmap occupies addresses 16384 through 22527",
+                  "triggers": ["bitmap", "16384", "22527", "screen"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "memory",
+                  "text": "the spectrum colour attribute memory occupies addresses 22528 through 23295",
+                  "triggers": ["attribute", "22528", "23295", "colour"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "memory",
+                  "text": "the 48k spectrum system variables begin at address 23552 decimal",
+                  "triggers": ["system", "variables", "23552"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "memory",
+                  "text": "the 48k spectrum rom occupies addresses 0 through 16383 and ram occupies 16384 through 65535",
+                  "triggers": ["rom", "ram", "16384", "65535"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "spectrum",
+                  "text": "the spectrum z80a processor runs at about 3.5 mhz",
+                  "triggers": ["z80a", "clock", "processor", "mhz"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "spectrum",
+                  "text": "the spectrum ula io port 254 controls border colour and also carries beeper and cassette signals",
+                  "triggers": ["border", "port", "254", "beeper"],
+              },
+              {
+                  "kind": "fact-user", "split": "train", "topic": "spectrum",
+                  "text": "the spectrum keyboard is an eight by five matrix read through the ula by selecting keyboard rows",
+                  "triggers": ["keyboard", "matrix", "ula", "rows"],
+              },
+          ]
+          existing = {r.get("text") for r in data["records"]}
+          added = 0
+          for record in additions:
+              if record["text"] not in existing:
+                  data["records"].append(record)
+                  existing.add(record["text"])
+                  added += 1
+          assert added == 7, f"expected 7 new facts, added {added}"
+          path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+          PY
+
+      - name: Rebuild retained model artifacts
+        run: >-
+          python -B usr/src/ailmzx48/tooling/build_starter_model.py
+          --corpus usr/src/ailmzx48/training/seed_corpus.json
+          --out-json usr/src/ailmzx48/model/current-model.json
+          --out-h usr/src/ailmzx48/aimod.h
+          --iteration 39
+
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
@@ -71,12 +136,21 @@ jobs:
           python -B compiler/verify_release.py
           git diff --check
 
-      - name: Commit and push maintenance checkpoint
+      - name: Commit and push knowledge checkpoint
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Complete ailmzx48 maintenance checkpoint"
-          git push origin HEAD:main
+          git commit -m "ailmzx48: deepen Spectrum hardware knowledge"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              exit 0
+            fi
+            git fetch origin main
+            git rebase origin/main
+            python -B compiler/verify_release.py
+            git diff --check
+          done
+          exit 1
