@@ -2,7 +2,7 @@
   "schema": 1,
   "iteration": 40,
   "scenario": "knowledge-deepening-spectrum-hardware-v1",
-  "purpose": "Prove the expanded Spectrum hardware and memory-map knowledge is retrievable under a perfect keyword gate with trigger-aware vocabulary reservation and byte-scaled evaluator diagnostics.",
+  "purpose": "Prove the expanded Spectrum hardware and memory-map knowledge is retrievable under a perfect keyword gate with trigger-aware vocabulary reservation, byte-scaled evaluator diagnostics, and token-safe exact clock evidence.",
   "max_seconds": 1200,
   "prompts": [
     "what address does the spectrum screen bitmap start at",
@@ -20,7 +20,7 @@
     "22528",
     "23552",
     "65535",
-    "3.5",
+    "3500000",
     "254",
     "rows",
     "256",
