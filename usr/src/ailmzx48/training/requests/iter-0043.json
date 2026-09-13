@@ -5,7 +5,7 @@
   "purpose": "Qualify keyboard, cassette, ULA I/O, sound, expansion, and joystick peripheral knowledge with exact retrieval gates on the enlarged retained corpus.",
   "max_seconds": 1200,
   "prompts": [
-    "which bit does spectrum ula port 254 use for the ear cassette input",
+    "which bit does the spectrum ula use for the ear cassette input signal",
     "how does spectrum output sound through the internal speaker and mic",
     "how is a kempston joystick read on the spectrum",
     "what keys do spectrum sinclair interface 2 joysticks appear as",
