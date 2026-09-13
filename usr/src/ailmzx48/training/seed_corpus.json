@@ -476,6 +476,66 @@
         "order",
         "ascending"
       ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "reading spectrum ula port 254 uses bit 6 for the ear cassette input signal",
+      "triggers": [
+        "ear",
+        "input"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "writing spectrum ula port 254 bit 4 drives the ear output and internal speaker while bit 3 drives the mic output",
+      "triggers": [
+        "speaker",
+        "mic"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "a kempston joystick interface is read at io port 31 and uses active high direction and fire bits",
+      "triggers": [
+        "kempston",
+        "31"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "sinclair interface 2 joysticks appear as spectrum number keys 1 through 5 and 6 through 0",
+      "triggers": [
+        "interface",
+        "joysticks"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "the kempston joystick interface plugs into the spectrum rear edge expansion connector",
+      "triggers": [
+        "edge",
+        "connector"
+      ]
+    },
+    {
+      "kind": "fact-user",
+      "split": "train",
+      "topic": "spectrum",
+      "text": "cassette tape was the primary storage medium for the original spectrum and used the ear and mic connections",
+      "triggers": [
+        "cassette",
+        "storage"
+      ]
     }
   ],
   "schema": 2
