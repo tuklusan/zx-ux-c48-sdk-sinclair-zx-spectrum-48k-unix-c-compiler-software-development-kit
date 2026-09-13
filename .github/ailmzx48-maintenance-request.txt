@@ -1,1 +1,0 @@
-Generate and verify the A48M seed cold model and permanent cold-model gates.
