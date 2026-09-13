@@ -1,0 +1,42 @@
+{
+  "schema": 1,
+  "iteration": 24,
+  "scenario": "target-repetition-context-500-turn-v1",
+  "purpose": "Exercise repeated learned-topic continuations, follow-up context, history movement, cold retrieval, canonical wire failures, and distant semantic recovery across a 500-turn target session.",
+  "max_seconds": 1200,
+  "prompt_plan": {
+    "prefix": [
+      "what about 48k memory",
+      "remember this topic",
+      "please tell me something about the spectrum home computer again",
+      "please tell me something about the spectrum home computer again"
+    ],
+    "cycle": [
+      "please tell me something about the spectrum home computer again",
+      "please tell me something about the spectrum home computer again",
+      "please tell me something about spectrum games and its culture again",
+      "please tell me something about spectrum games and its culture again",
+      "can you chat locally without a network on this small computer",
+      "can you chat locally without a network on this small computer",
+      "please tell me again what happened in spectrum history in 1982",
+      "please tell me again what happened in spectrum history in 1982",
+      "go back",
+      "1234567890123456",
+      "abcdefghijklmnopqrstuvwxyzabcdef",
+      "what about 48k memory on this small computer"
+    ],
+    "cycle_count": 41,
+    "suffix": [
+      "please tell me something about spectrum games and its culture again",
+      "go back",
+      "can you chat locally without a network on this small computer",
+      "return to the topic i asked you to remember"
+    ]
+  },
+  "min_dialogue_bytes": 32769,
+  "min_compactions": 100,
+  "min_l2_count": 1,
+  "min_semantic_uses": 1,
+  "min_lmcount": 96,
+  "final_expected_keyword": "memory"
+}
