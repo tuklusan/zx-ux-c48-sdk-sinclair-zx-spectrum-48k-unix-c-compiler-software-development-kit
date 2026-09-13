@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "iteration": 28,
+  "scenario": "knowledge-memory-enrichment-v1",
+  "purpose": "Hard-gate the enriched resident memory knowledge while checking concise responses across the other routed domains.",
+  "max_seconds": 1200,
+  "prompts": [
+    "who are you",
+    "name some classic spectrum games",
+    "does local chat need a network",
+    "what happened in spectrum history",
+    "how is 48k memory arranged"
+  ],
+  "expected_keywords": ["ailmzx48","manic","network","1982","64k"],
+  "final_expected_keyword": "64k"
+}
