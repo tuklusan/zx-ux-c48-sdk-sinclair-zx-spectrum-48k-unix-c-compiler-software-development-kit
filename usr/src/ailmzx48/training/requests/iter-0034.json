@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "iteration": 34,
+  "scenario": "trigger-retrieval-bitmap-fact-v1",
+  "purpose": "Prove trigger-aware cold retrieval can select a non-primary same-topic memory fact on the actual C48 target.",
+  "max_seconds": 1200,
+  "prompts": [
+    "in spectrum memory what does the 6144 byte bitmap describe"
+  ],
+  "expected_keywords": ["6144"],
+  "final_expected_keyword": "6144"
+}
