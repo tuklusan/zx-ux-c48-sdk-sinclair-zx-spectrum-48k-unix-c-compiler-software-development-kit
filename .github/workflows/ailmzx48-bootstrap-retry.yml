@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: One-shot ailmzx48 context prototype
+name: One-shot ailmzx48 anti-repetition
 
 "on":
   push:
@@ -23,7 +23,7 @@ permissions:
   contents: write
 
 jobs:
-  context:
+  alternate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -38,19 +38,19 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Apply bounded prior-topic context prototype
+      - name: Apply learned secondary-path anti-repetition
         shell: bash
         env:
-          PATCH_B64: "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" 
+          PATCH_B64: "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"
         run: |
           python - <<'PY'
           import base64, os, zlib
           from pathlib import Path
           data = zlib.decompress(base64.b64decode(os.environ["PATCH_B64"]))
-          Path(".github/ailmzx48_context_patch.py").write_bytes(data)
+          Path(".github/ailmzx48_alt_patch.py").write_bytes(data)
           PY
-          python -B .github/ailmzx48_context_patch.py
-          rm -f .github/ailmzx48_context_patch.py
+          python -B .github/ailmzx48_alt_patch.py
+          rm -f .github/ailmzx48_alt_patch.py
 
       - name: Rebuild C48 artifact
         run: >-
@@ -66,18 +66,18 @@ jobs:
         run: |
           python -B compiler/verify_release.py
           git diff --check
-          grep -q 'Revision: 0.16-draft' \
+          grep -q 'Revision: 0.17-draft' \
             usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md
-          grep -q 'ai_ctxuse' usr/src/ailmzx48/ailmzx48.c
-          grep -q 'expected_context' \
+          grep -q 'ai_altuse' usr/src/ailmzx48/ailmzx48.c
+          grep -q 'expected_alternate' \
             usr/src/ailmzx48/tooling/run_iteration.py
 
-      - name: Commit and push context prototype
+      - name: Commit and push anti-repetition
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Add bounded ailmzx48 follow-up context prototype"
+          git commit -m "Use learned alternate ailmzx48 continuations"
           git push origin HEAD:main
