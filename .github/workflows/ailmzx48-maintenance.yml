@@ -48,32 +48,6 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
-      - name: Refine launch-price retrieval evidence
-        shell: bash
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-
-          p = Path("usr/src/ailmzx48/training/seed_corpus.json")
-          doc = json.loads(p.read_text(encoding="utf-8"))
-          target = "zx spectrum launched 23 april 1982 at 125 pounds for 16k and 175 pounds for 48k"
-          hits = [r for r in doc["records"] if r.get("text") == target]
-          if len(hits) != 1:
-              raise SystemExit(f"expected exactly one launch-price record, got {len(hits)}")
-          old = hits[0].get("triggers")
-          if old != ["launch", "125", "175", "april"]:
-              raise SystemExit("unexpected launch-price triggers: " + repr(old))
-          hits[0]["triggers"] = ["launch", "125", "175", "prices"]
-          p.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
-          print({"old_triggers": old, "new_triggers": hits[0]["triggers"]})
-          PY
-          python -B usr/src/ailmzx48/tooling/build_starter_model.py \
-            --corpus usr/src/ailmzx48/training/seed_corpus.json \
-            --out-json usr/src/ailmzx48/model/current-model.json \
-            --out-h usr/src/ailmzx48/aimod.h \
-            --iteration 47
-
       - name: Test ailmzx48 context reference
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
