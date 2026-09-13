@@ -77,7 +77,6 @@ def run(cmd: list[str], timeout: int) -> None:
         raise RuntimeError("command failed: " + " ".join(cmd))
 
 
-
 class ModelVM(RomMathVM):
     def __init__(self, *args, model_data, **kwargs):
         self.model_data = model_data
@@ -181,6 +180,7 @@ class Feeder:
             "raw_hex": raw.hex(),
             "text": raw.decode("ascii", errors="replace"),
             "diag": self.diag(),
+            "vm_steps": 0 if self.vm is None else self.vm.steps,
         })
         if self.sent < len(self.prompts):
             line = self.prompts[self.sent] + "\n"
@@ -290,7 +290,7 @@ def main() -> int:
     if (isinstance(cold_record_count, bool)
             or not isinstance(cold_record_count, int)
             or cold_record_count < 1
-            or cold_record_count > 255):
+            or cold_record_count > 65535):
         raise RuntimeError("invalid cold model record count")
     cold_model_bytes = len(COLD.read_bytes())
     if cold_model_bytes < 40 or cold_model_bytes > 65535:
@@ -344,6 +344,7 @@ def main() -> int:
             "raw_hex": final_raw.hex(),
             "text": final_raw.decode("ascii", errors="replace"),
             "diag": feeder.diag(),
+            "vm_steps": vm.steps,
         })
     if len(feeder.events) != len(prompts) + 1:
         raise RuntimeError("unexpected conversation boundary count")
@@ -408,6 +409,7 @@ def main() -> int:
     history_total = 0
     literal_hits = 0
     literal_total = 0
+    turn_step_counts = []
     for i, prompt in enumerate(prompts):
         event = feeder.events[i + 1]
         reply = derived_reply(event["text"])
@@ -450,12 +452,18 @@ def main() -> int:
             literal_total += 1
             if lit_hit:
                 literal_hits += 1
+        turn_steps = event["vm_steps"] - feeder.events[i]["vm_steps"]
+        if turn_steps < 0:
+            raise RuntimeError("VM step counter moved backwards")
+        turn_step_counts.append(turn_steps)
         turns.append({
             "turn": i + 1,
             "user": prompt,
             "assistant_raw": event["text"],
             "assistant": reply,
             "diag": event["diag"],
+            "vm_steps": turn_steps,
+            "vm_steps_cumulative": event["vm_steps"],
             "expected_keyword": expected,
             "keyword_hit": hit,
             "expected_context": want_ctx,
@@ -503,6 +511,12 @@ def main() -> int:
     max_lmcount = max(
         (turn["diag"].get("ai_lmcount", 0) for turn in turns),
         default=0,
+    )
+    max_turn_steps = max(turn_step_counts, default=0)
+    min_turn_steps = min(turn_step_counts, default=0)
+    avg_turn_steps = (
+        sum(turn_step_counts) / len(turn_step_counts)
+        if turn_step_counts else 0.0
     )
     if max_l0bytes > 896:
         raise RuntimeError("target L0 exceeded 896 bytes")
@@ -605,6 +619,9 @@ def main() -> int:
         "final_keyword_hit": final_keyword_hit,
         "vm_steps": vm.steps,
         "vm_step_limit": max_steps,
+        "vm_turn_steps_max": max_turn_steps,
+        "vm_turn_steps_min": min_turn_steps,
+        "vm_turn_steps_avg": avg_turn_steps,
         "cold_record_count": cold_record_count,
     }
     (out_dir / "score.json").write_text(
@@ -622,6 +639,10 @@ def main() -> int:
         "heap_size": 0,
         "max_steps": max_steps,
         "vm_steps": vm.steps,
+        "vm_turn_steps": turn_step_counts,
+        "vm_turn_steps_max": max_turn_steps,
+        "vm_turn_steps_min": min_turn_steps,
+        "vm_turn_steps_avg": avg_turn_steps,
         "per_turn_step_budget": per_turn_step_budget,
         "cold_record_count": cold_record_count,
         "cold_model_budget_bytes": cold_model_bytes,
