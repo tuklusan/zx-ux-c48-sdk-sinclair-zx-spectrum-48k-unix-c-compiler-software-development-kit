@@ -15,7 +15,7 @@
     ]
   },
   "goals_achieved": false,
-  "next_action": "Pursue unmet scenario capacity-headroom-v1.",
+  "next_action": "Pursue unmet scenario final-regression-a-v1.",
   "no_pending_requests_satisfied": true,
   "pending_iterations": [],
   "qualification_scenarios": [
@@ -190,10 +190,20 @@
       "scenario": "conversation-context-regression-v1"
     },
     {
+      "evidence": {
+        "clean_exit": true,
+        "iteration": 51,
+        "keyword_ratio": 1.0,
+        "literal_reference_losses": 0,
+        "turns": 60,
+        "vm_step_limit": 74710400,
+        "vm_step_utilization": 0.6154008143444554,
+        "vm_steps": 45976841
+      },
       "goal": "Measured bounded execution and storage headroom under the enlarged retained corpus",
+      "iteration": 51,
       "min_turns": 12,
-      "reason": "no retained request/evidence for this scenario",
-      "satisfied": false,
+      "satisfied": true,
       "scenario": "capacity-headroom-v1"
     },
     {
@@ -221,7 +231,6 @@
   "schema": 1,
   "status": "GOALS_PENDING",
   "unmet_scenarios": [
-    "capacity-headroom-v1",
     "final-regression-a-v1",
     "final-regression-b-v1",
     "final-regression-c-v1"
