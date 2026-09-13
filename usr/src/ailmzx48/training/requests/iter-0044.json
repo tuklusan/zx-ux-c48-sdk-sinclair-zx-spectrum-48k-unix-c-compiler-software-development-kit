@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "iteration": 44,
+  "scenario": "knowledge-deepening-history-models-v1",
+  "purpose": "Qualify Sinclair and Spectrum chronology, model transitions, ownership, and built-in storage knowledge after the bounded salted-trigger A48M v2 migration.",
+  "max_seconds": 1200,
+  "prompts": [
+    "in spectrum history when did the zx spectrum launch and what did the 16k version cost",
+    "in spectrum history what did the 48k spectrum cost at launch",
+    "in spectrum history what changed with the spectrum plus in 1984",
+    "in spectrum history who helped develop the spectrum 128",
+    "in spectrum history when did the spectrum 128 reach britain",
+    "in spectrum history who acquired the spectrum computer rights in 1986",
+    "in spectrum history what storage was built into the spectrum plus 2",
+    "in spectrum history what storage did the spectrum plus 3 use in 1987"
+  ],
+  "expected_keywords": [
+    "125",
+    "175",
+    "reset",
+    "investronica",
+    "january 1986",
+    "amstrad",
+    "cassette",
+    "floppy"
+  ],
+  "min_keyword_ratio": 1.0
+}
