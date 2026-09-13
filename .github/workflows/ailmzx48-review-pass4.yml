@@ -1,0 +1,90 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: One-shot ailmzx48 review pass 4 correction
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-review-pass4.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  correct:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact main tree
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Confirm reviewed ancestry
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD^)" = "93309bb59dda590f261cef9ca16e7da5edc7dafc"
+          test "$(git rev-parse HEAD^^)" = "efa69d43b667c39952d1c1c6395fa07a5719364c"
+
+      - name: Apply pass 4 corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .github/ailmzx48-pass4-patch.py
+
+      - name: Remove temporary helpers and regenerate manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/ailmzx48-pass4-patch.py
+          git rm .github/workflows/ailmzx48-review-pass4.yml
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          root = Path('.').resolve()
+          lines = []
+          for path in sorted(root.rglob('*')):
+              if not path.is_file():
+                  continue
+              rel = path.relative_to(root)
+              if '.git' in rel.parts or rel.as_posix() == 'MANIFEST.sha256':
+                  continue
+              data = path.read_bytes()
+              if path.suffix.lower() == '.bat':
+                  data = data.replace(b'\r\n', b'\n')
+              lines.append(f'{hashlib.sha256(data).hexdigest()}  {rel.as_posix()}\n')
+          (root / 'MANIFEST.sha256').write_text(
+              ''.join(lines), encoding='ascii', newline='\n'
+          )
+          PY
+
+      - name: Verify complete corrected repository
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_release.py
+          git diff --check
+
+      - name: Commit corrected pass 4 design
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --check
+          git commit -m "Resolve ailmzx48 review pass 4 findings"
+          git push origin HEAD:main
