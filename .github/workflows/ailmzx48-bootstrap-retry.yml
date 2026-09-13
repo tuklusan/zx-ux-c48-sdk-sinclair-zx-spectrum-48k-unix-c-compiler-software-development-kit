@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: One-shot ailmzx48 iteration 2 prep
+name: One-shot ailmzx48 20-minute session policy
 
 "on":
   push:
@@ -23,7 +23,7 @@ permissions:
   contents: write
 
 jobs:
-  prepare:
+  policy:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -38,52 +38,41 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Apply iteration 2 preparation
+      - name: Apply exact timing policy
         shell: bash
         env:
-          PATCH_B64: "eNrdV0tz6zQU3vtXCG1ig5s+5g5T2uniwnTLhXJ3JZNR7ZNE1JaMJLcNmfx3zpH8amzaXBbAkE0s6TsPnbdWRpesEm5TyAcmy0obx37CZdR8/2a1iqK7T58+sxt/EPM5T+YGrC6eIE6ij7jvj08Zr605tSY7FbIo/3j5cMmjKIcVM1AVIoOlVhCTqJTpIk+ZgufkKmL4q3oedO73HLw43K5QlMiXtIpBZTqXan3Da7c6ueSJB2a6VoQkyNwvYmQfzuSqOf7qhp0HWfQzQlpgv2ytg/L2Rbp4xeGlgsxBzlBJVgqXbZhUbEfq7FO21o7tPKd9I7WaPxvpICjmRTe3jNu7pew8SdlY52hoDs9rZLfuY57xNJrNZrWycq1QO4l3EXJZyewxftISr7lrLxrj/kbYmJdQarPlSYKGd7VRRGCXuHs9gn64fDwKd/7d5cUh0KLBxsiNtG5C+jSYdp2py+PQmS6r2oH5a/RwN9sIdx3tyXr/CROuRQmHQNqzY6gC96zNiG2hM1GM0X77SCwZ5UjolMvJuUe7fBr8D7kc0+yhlkUOBivDOL+c1gUm5anHLK0TBoUsS51DMa+2fJyiDbPUL2Z3tz8j25hLnrL+Rvjdxs3sSCB+tdbDz+BJ/PBxgVySNxTBS7bljFuA3PIrtgsOvmIyt/codJF2Ja//9Xo0uG49DW9UbcDNarFPu8z6N9WYhLYmbbDtchocjN5Aw2IaGJzSAMOiscKRblrxwxrkSwUGyI54zsKdZov9NR8b94uI3yIia3RUjWmOIPOW6ej86ggqb6aOyq/6+1ErrJV6J0URssRGa4STWk0nZ+DSmesRtlg+c7ypI9lnHhP6u2dCm/ed2j8im4Pk9KXvVZJ2Xx7taRevXHSMTAO/z9fg4m7WWDZUlnfTyisSab28fm45vASdLtjXrAAVVzjIVc52nBSOLNJKhcVN4VQyJE1ZgX5PDuehOxxvZAm3xmgzoSQra4ycB2DCk/c6k/Qh+4SmraFKXyoIadduE+SFUazh1MhcacO6eQ2ntKHwXlZnTQJZbw+yFxMqnzYO4NxmnRmo+57Krds70yA5xixD/VRdYFNuwjzTpqrtkoZJdNtHGpUd8lUU31Q0lwEwp2GbN2gE0nJeaJHbeMDhrYE4iXDbiC7Asd+6bQEndqvcBpzMKJglEyVr84y86VO7EGpdizUOv9QFeZL+fxisROZOaotjRN9vmV6xNueZHwAshVKYet4kNIDV4AGM7emFMfKJHD/iMKF70JU6JBUuy56l2+gaCybr5r73qbV6Qg18yP8dLqEuCwP43sJH3tAWWV3gRAVHkK/FE/R0ZY15ioyoAOLlDJqO5rY0WkSUr49SYXr5R53PWIzSq+b5RpF9zw1kvhQu5qKqQOXxrktDTsTYeT2PaDBAFJKmjJBLg07ESQwe0F/Y3SfDHBw+3fyxT7S8Lqs20VJUMgflbi6wJOAzmGqTvflsakjYN4z/2kqbeN1hE6ORzyf54BmXTKatsJmUSEUWKoV5xF6I1ol516nJ2n3/7VbNgHjVluCG1pc1xVCFN966vJTWUrBaXZsMPYgFCI2I9wpckggZznDsxvn7e2H9kxgrmlxLhZFHoTV7JWQsANs/kP8lxodwWBIf6hCosDZgkSMPMn7Q1Rb5bhyLs4RdnJ19+x5nn6h1xbYgzCt2fwK9Ojnd"
+          PATCH_B64: "eNqtVd9v2zYQfudfcdVLbUCWf6QrCg9+CBCvC7YWw5KHoihgU+LJ4kqRAkk5doP+7ztSsuO0XoAu1YMgkcfvvrv77lhaU0PDfaVkDrJujPXwF/0yJrAEi43iBa6MxkEwSsEokYLGu+GcAT0NLKJ53B3GJY87T6tNZpGLVfgboC6MkHqzSFpfjt4knWFhWh0sg0kWfwaE3u3Jst9+sYBp5yo8lkuHcLN3HuvlTvpBmdwHz1/ngLsGC48CiCvU3BdEdmM83EccMrgn8Bf2a++8ye6s9Njxiwz6WAeHCFOYDlP4njo7TUrESrKN9FWbj++M/Vwqc+fGXKr6y+7Vm5EnyprOZ/taJWlnHrMkazStH9VStx7dHGaTT/pJg4vOYPhz/HfPaFTz3chhYbRw8HryDYdzRtPZ5L+JtM6OnS2O7sfeGEXex7bVK0q35V4anTX73svL8OJNxoVYcbtpayQRJI8cJin4fYMLqX0KpEneKr8gpsNP+uXzQEIkHcrPCCUmTMlaBklT0QbkfnAxISm5jD5XPROSVEf+h4/1dGPmBTq50XTie5qX13+++/iBKn+1vKXv5RV93Fy/fZ/VInkUZoeRQvI3bqWjWOYwyaYXI2F56ZNv11/162dS1QN14STJcot2D1ILuZWi5QreSv97m48q40J7HojCQZlj3HLVxmzCPyaHijvg9LaCzSa9/ONG3xEZXBZebqnJjUAFeSuVGFOSyK3rUEIbgCQUIWRY4ErtWU5jQJB/b4B7Ous8TCfQdxfRBV8h5NwhFRnh0EkpKORbYhnmi5IFlSnQYKWxwK2XJS88lJJcyC/ReQrrd5fvr39b3txmruKzX16v0whdtkrBzdUfNFMJkqYY8ZWlRJuyNbUvCFmW1GpFhcVnOlKYOmiCawFN6yoKOiw1CkMOj/ILUWoTDrvGOJ4rZCRPjRac5x7nZOn6PBUEJQUt0kzbBdaPUkbF0K6wsqH+IASo0XMy5iwQcIWxGO6CcDlQ5HWcsdybWhYnXCL1xlCPRdp1SynOsY+EaDNvNkipsKEG65qqv6b9MmBzUMTMnoDluJHUAowE9cPK4p0+zgiMOXSuz9sZQcweBDGYptRvcGi/DG6phnQZKOOCGross4NeHTaciOMR9FQSUNFFaI2pfz2vMWiJFXB2cU7t4IheJ56HbjhEQTWlQkva6/3hUZQupUbdoMZI64wmQ5Wf1GUo4llphuJ2RR0HaUYUi45G6tMqZQ8qhWerlJ2qFJ6tUnZUKfxvlQ7Zv6l8HQk="
         run: |
           python - <<'PY'
           import base64, os, zlib
           from pathlib import Path
           data = zlib.decompress(base64.b64decode(os.environ["PATCH_B64"]))
-          Path(".github/ailmzx48_iter2_prep.py").write_bytes(data)
+          Path(".github/ailmzx48_timing_patch.py").write_bytes(data)
           PY
-          python -B .github/ailmzx48_iter2_prep.py
-          rm -f .github/ailmzx48_iter2_prep.py
-
-      - name: Prove generated model source compiles
-        shell: bash
-        run: |
-          cp usr/src/ailmzx48/aimod.h /tmp/aimod.h
-          trap 'cp /tmp/aimod.h usr/src/ailmzx48/aimod.h' EXIT
-          python -B usr/src/ailmzx48/tooling/build_starter_model.py \
-            --corpus usr/src/ailmzx48/training/seed_corpus.json \
-            --out-json /tmp/iter-0002-model.json \
-            --out-h usr/src/ailmzx48/aimod.h \
-            --iteration 2
-          python -B compiler/c48.py \
-            usr/src/ailmzx48/ailmzx48.c \
-            -o /tmp/ailmzx48-iter2.c48b
-          cp /tmp/aimod.h usr/src/ailmzx48/aimod.h
-          trap - EXIT
+          python -B .github/ailmzx48_timing_patch.py
+          rm -f .github/ailmzx48_timing_patch.py
 
       - name: Regenerate release manifest
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
 
-      - name: Verify complete preparation
+      - name: Verify complete repository
         shell: bash
         run: |
           python -B compiler/verify_release.py
           git diff --check
-          test ! -e usr/src/ailmzx48/training/requests/iter-0002.json
+          grep -q 'Revision: 0.14-draft' \
+            usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md
+          grep -q -- '--max-seconds 1200' \
+            .github/workflows/ailmzx48-training.yml
+          grep -q 'timeout-minutes: 30' \
+            .github/workflows/ailmzx48-training.yml
 
-      - name: Commit and push preparation
+      - name: Commit and push timing policy
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Prepare ailmzx48 iteration 2"
+          git commit -m "Allow 20-minute ailmzx48 training sessions"
           git push origin HEAD:main
