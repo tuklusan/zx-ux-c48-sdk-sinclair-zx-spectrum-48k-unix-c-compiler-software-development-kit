@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: Design in progress — forensic review corrections incorporated; Candidate A remains a measurement baseline
-Revision: 0.13-draft
+Revision: 0.14-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48/ailmzx48.c48b`
 
@@ -1128,14 +1128,15 @@ substitute for the external A48M cold-object path; the read-only object-I/O
 adapter and normal hot/cold split remain required before external-model SDK
 regressions count as target-interface evidence.
 
-Every individual GitHub-hosted ailmzx48 training/evaluation job has a hard
-20-minute job timeout. Active model build/conversation work is additionally
-bounded to at most 10 minutes in the baseline workflow, leaving explicit time
-for artifact finalization, `MANIFEST.sha256`, the full SDK release verifier,
-`git diff --check`, commit and push. A completed iteration is not disposable
-runner state: its model candidate, exact conversation transcript, run metadata
-and score report form one atomic iteration checkpoint and must be committed
-together to `main` before a later iteration begins.
+Every individual GitHub-hosted ailmzx48 active training/evaluation
+session is bounded to at most 20 minutes (1,200 seconds). The enclosing runner
+job has separate bounded finalization headroom; the baseline workflow uses a
+30-minute job timeout so a full 20-minute session can still finalize artifacts,
+regenerate `MANIFEST.sha256`, run the full SDK release verifier and
+`git diff --check`, and commit/push the result. A completed iteration is not
+disposable runner state: its model candidate, exact conversation transcript,
+run metadata and score report form one atomic iteration checkpoint and must be
+committed together to `main` before a later iteration begins.
 
 ## 20. Candidate-A implementation interfaces
 

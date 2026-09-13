@@ -142,14 +142,14 @@ def derived_reply(text: str) -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--request", type=Path, required=True)
-    ap.add_argument("--max-seconds", type=int, default=600)
+    ap.add_argument("--max-seconds", type=int, default=1200)
     ns = ap.parse_args()
     started = time.monotonic()
     req = json.loads(ns.request.read_text(encoding="utf-8"))
     iteration = int(req["iteration"])
     if iteration < 1:
         raise RuntimeError("iteration must be positive")
-    limit = min(max(30, ns.max_seconds), 600)
+    limit = min(max(30, ns.max_seconds), 1200)
     tag = f"iter-{iteration:04d}"
     out_dir = CONV_DIR / tag
     model_iter = MODEL_DIR / "iterations" / f"{tag}.json"
