@@ -85,7 +85,7 @@ def patch_mandel_stress_workload() -> None:
     )
 
 
-def patch_gui_quota() -> None:
+def patch_gui_acceptance_workload() -> None:
     path = "compiler/verify_gui_desktop.py"
     replace_once(
         path,
@@ -96,6 +96,11 @@ def patch_gui_quota() -> None:
         path,
         '''        _launcher_command(str(program), *args),\n''',
         '''        _launcher_command(\n            "--time-quota", f"{VM_TIME_QUOTA:g}", str(program), *args\n        ),\n''',
+    )
+    replace_once(
+        path,
+        '''    process = _start(ROOT / "usr/bin/demos/forest.c48b", probe)\n''',
+        '''    # This case validates completed-program/footer/close semantics, not\n    # the demo's full 240-frame exhibition loop.  Two frames exercise real Tk\n    # rendering while keeping the binary well inside the 15-second CI quota.\n    process = _start(ROOT / "usr/bin/demos/forest.c48b", probe, "2")\n''',
     )
 
 
@@ -130,6 +135,6 @@ def regenerate_manifest() -> None:
 patch_runtime()
 patch_graphics_diagnostics()
 patch_mandel_stress_workload()
-patch_gui_quota()
+patch_gui_acceptance_workload()
 restore_scaffolding()
 regenerate_manifest()
