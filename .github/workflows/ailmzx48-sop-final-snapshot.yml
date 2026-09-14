@@ -34,6 +34,16 @@ jobs:
           lfs: true
           fetch-depth: 1
 
+      - name: Freeze full release-gate support tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = \
+            "0dbd7b70322935d84d6dc3434600512499b67f9e"
+          tar --exclude='./.git' -czf /tmp/SOP-GATE-TREE.tar.gz .
+          sha256sum /tmp/SOP-GATE-TREE.tar.gz > \
+            /tmp/SOP-GATE-TREE-SHA256.txt
+
       - name: Build immutable SoP surface manifest
         shell: bash
         run: |
@@ -90,6 +100,8 @@ jobs:
           print('total_bytes', total)
           print('surface_sha256', surface.hexdigest())
           PY
+          cp /tmp/SOP-GATE-TREE.tar.gz .
+          cp /tmp/SOP-GATE-TREE-SHA256.txt .
 
       - name: Upload immutable clearance surface
         uses: actions/upload-artifact@v4
@@ -101,6 +113,8 @@ jobs:
             SOP-SOURCE-COMMIT.txt
             SOP-SURFACE-SHA256.txt
             SOP-SURFACE-FINGERPRINT.txt
+            SOP-GATE-TREE.tar.gz
+            SOP-GATE-TREE-SHA256.txt
             LICENSE
             MANIFEST.sha256
             compiler
