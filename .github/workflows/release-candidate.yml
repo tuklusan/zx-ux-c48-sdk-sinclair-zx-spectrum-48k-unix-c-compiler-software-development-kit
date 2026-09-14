@@ -185,11 +185,11 @@ jobs:
               if actual_digest != digest:
                   raise SystemExit(f"aggregate checksum mismatch: {path}")
 
-          lfs_candidates = sorted(Path("doc/images").rglob("*")) + sorted(root.rglob("*"))
+          lfs_candidates = sorted(Path("docs/images").rglob("*")) + sorted(root.rglob("*"))
           for path in lfs_candidates:
               if not path.is_file():
                   continue
-              if path.as_posix().startswith("doc/images/") or path.suffix.lower() in {
+              if path.as_posix().startswith("docs/images/") or path.suffix.lower() in {
                   ".png", ".jpg", ".jpeg", ".webp", ".ppm",
               }:
                   if path.read_bytes().startswith(b"version https://git-lfs.github.com/spec/v1\n"):
