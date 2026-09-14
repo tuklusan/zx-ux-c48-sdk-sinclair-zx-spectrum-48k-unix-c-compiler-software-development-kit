@@ -1,0 +1,30 @@
+name: One-shot historical branch housekeeping
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  delete-historical-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Delete historical branches
+        run: |
+          set -euo pipefail
+          git push origin --delete \
+            demo-text-layout-cleanup \
+            sop-bridge-final-land \
+            sop-bridge-reconcile-docs \
+            sop-bridge-reconcile-final \
+            sop-bridge-reconcile-land \
+            sop-bridge-reconcile-main \
+            sop-bridge-recovery \
+            sop-design-summary-sync \
+            sop-doc-to-docs-rename \
+            sop-final-clearance-snapshot-42d1 \
+            sop-temp-should-not-use
