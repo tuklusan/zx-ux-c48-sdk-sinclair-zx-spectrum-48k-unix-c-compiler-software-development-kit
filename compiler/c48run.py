@@ -147,7 +147,7 @@ def _run_display_with_fuse_icon(display: TkDisplay, target) -> int:
     """Run TkDisplay with the Fuse Spectrum icon on its root window."""
     try:
         import tkinter as tk
-    except Exception as exc:  # pragma: no cover - host-specific
+    except ImportError as exc:  # pragma: no cover - host-specific
         raise RuntimeError(f"Tkinter is unavailable: {exc}") from exc
 
     original_init = tk.Tk.__init__
