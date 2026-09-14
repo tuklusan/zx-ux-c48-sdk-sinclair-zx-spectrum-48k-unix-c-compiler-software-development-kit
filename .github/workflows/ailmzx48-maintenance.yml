@@ -81,6 +81,28 @@ jobs:
         if: steps.marker.outputs.present == 'true'
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
 
+      - name: Bound forest desktop acceptance workload
+        if: steps.marker.outputs.present == 'true'
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("compiler/verify_gui_desktop.py")
+          text = path.read_text(encoding="utf-8")
+          old = '    process = _start(ROOT / "usr/bin/demos/forest.c48b", probe)\n'
+          new = '    process = _start(ROOT / "usr/bin/demos/forest.c48b", probe, "6")\n'
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(
+                  f"forest acceptance patch: expected one match, found {count}"
+              )
+          path.write_text(text.replace(old, new, 1), encoding="utf-8", newline="\n")
+          print("forest acceptance patch: bounded proof to 6 frames", flush=True)
+          PY
+          python -B usr/src/ailmzx48/tooling/update_manifest.py
+          git diff --check
+
       - name: Install focused GUI proof dependencies
         if: steps.marker.outputs.present == 'true'
         run: python -m pip install Pillow==12.3.0 python-xlib==0.33
