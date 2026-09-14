@@ -92,6 +92,7 @@ def check_required_files() -> None:
         ".github/workflows/gui-desktop.yml",
         "c48", "c48run", "c48.bat", "c48run.bat",
         "compiler/check_license_headers.py",
+        "compiler/build_release_candidate.py",
         "compiler/check_legacy_sdk_paths.py", "compiler/c48/limits.py",
         "compiler/tests/test_security.py",
         "compiler/tests/test_security_review.py",
@@ -104,7 +105,6 @@ def check_required_files() -> None:
         "compiler/tests/test_gui_framebuffer.py",
         "compiler/graphics_demo_expectations.json",
         "compiler/assets/font4x8-tasword.bin", "compiler/assets/font4x8-zxux.bin",
-        "docs/C48 Language Specification Rev 0.11.docx",
         "docs/ZX-UX C48 Compiler User Manual Rev 0.11.docx",
         "docs/ZX-UX C48 SDK User Manual.docx",
         "docs/FLOAT5-ORACLE.md", "docs/HOST-DIVERGENCES.md", "docs/CONFORMANCE.md",
@@ -135,6 +135,63 @@ def check_required_files() -> None:
             fail(f"missing required file: {rel}")
     if (SDK / "VERSION").read_text(encoding="ascii").strip() != EXPECT["version"]:
         fail("VERSION does not match release expectations")
+
+
+def check_c48_spec_distribution() -> None:
+    obsolete = SDK / "docs/C48 Language Specification Rev 0.11.docx"
+    packaged = sorted(
+        (SDK / "docs").glob("04-C48 Language Specification Rev *.docx")
+    )
+    provenance = SDK / "C48-SPECIFICATION.json"
+    require_packaged = os.environ.get("C48_REQUIRE_PACKAGED_SPEC") == "1"
+
+    if obsolete.exists():
+        fail("obsolete local C48 specification copy is present")
+
+    if not require_packaged:
+        if packaged:
+            fail(
+                "canonical upstream C48 specification must not be stored in the "
+                "SDK source tree"
+            )
+        if provenance.exists():
+            fail("generated C48-SPECIFICATION.json present in SDK source tree")
+        return
+
+    if len(packaged) != 1:
+        fail(
+            "release package must contain exactly one canonical upstream C48 "
+            f"specification, found {[p.name for p in packaged]}"
+        )
+    if not provenance.is_file():
+        fail("release package C48-SPECIFICATION.json missing")
+    try:
+        metadata = json.loads(provenance.read_text(encoding="ascii"))
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        fail(f"invalid C48-SPECIFICATION.json: {exc}")
+
+    rel = packaged[0].relative_to(SDK).as_posix()
+    if metadata.get("source_repository") != (
+        "tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project"
+    ):
+        fail("C48 specification provenance repository mismatch")
+    if metadata.get("package_path") != rel:
+        fail("C48 specification provenance package path mismatch")
+    if metadata.get("source_path") != rel:
+        fail("C48 specification provenance source path mismatch")
+    if not re.fullmatch(
+        r"docs/04-C48 Language Specification Rev [0-9]+(?:\.[0-9]+)*\.docx",
+        rel,
+    ):
+        fail(f"unexpected packaged C48 specification name: {rel}")
+    commit = metadata.get("source_commit")
+    if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit):
+        fail("C48 specification provenance commit SHA invalid")
+    digest = metadata.get("sha256")
+    if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+        fail("C48 specification provenance SHA-256 invalid")
+    if sha(packaged[0]) != digest:
+        fail("packaged C48 specification SHA-256 mismatch")
 
 
 def check_program_layout() -> None:
@@ -459,6 +516,7 @@ def main() -> int:
     checks = (
         ("clean-tree preflight", check_clean_tree),
         ("required files", check_required_files),
+        ("C48 specification distribution", check_c48_spec_distribution),
         ("categorized program layout", check_program_layout),
         ("Python source", check_python_source),
         ("license/header policy", check_license_policy),

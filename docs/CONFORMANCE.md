@@ -17,16 +17,16 @@ patent, trademark, and governing-law provisions.
 
 ## Authorities
 
-- `C48 Language Specification Rev 0.11.docx`
+- [`docs/04-C48 Language Specification Rev 0.11.docx`](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) in the upstream ZX-UX repository
 - `ZX-UX C48 Compiler User Manual Rev 0.11.docx`
 - ZX-UX Architecture REV11 where host-visible runtime behavior is already frozen.
 - For tty64 right-margin behavior, the approved
   `04-ZX-UX-CHANGE-REQUEST-DEFERRED-WRAP-REV01.md` is the interim authority
   pending incorporation into the next ZX-UX architecture revision.
 
-The language specification remains authoritative over this SDK.  This SDK does not
-replace the future native `cc.asm`, OBJ1 backend, linker/runtime library or P11.41
-built-in header freeze.
+The language specification remains authoritative over this SDK. The SDK source repository does not maintain a duplicate copy. The current canonical upstream file is `docs/04-C48 Language Specification Rev 0.11.docx`; its revisioned `04-*` filename may change. Release packages fetch the latest matching upstream specification and record its source commit, path and SHA-256 in `C48-SPECIFICATION.json`. The upstream documentation directory is https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/tree/main/docs.
+
+This SDK does not replace the future native `cc.asm`, OBJ1 backend, linker/runtime library or P11.41 built-in header freeze.
 
 ## Automated corpus
 

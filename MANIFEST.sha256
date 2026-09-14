@@ -4,11 +4,11 @@ b52fa7df91534c13f29843533a5e79aa8a681f3e0ab206b6ea8b4f4f72ed7be3  .github/workfl
 d2b20c479e4dd70dd3de69666428bf6b27b4e4a176ce979c4a3bc3fe81acd841  .github/workflows/beep.yml
 b4b3b68254df6f966e1abe32068e67ac6ac2c04d183f0734545129bef68b5934  .github/workflows/graphics-demos.yml
 b865c066d4f17041eb0a0ce309461ee7ed129ff828b239880be627109a48bc4f  .github/workflows/gui-desktop.yml
-8584de0570af86788ab216c40478c84c7cb89275278f7d42d83dee61a1765fad  .github/workflows/release-candidate.yml
+572a1d2c3300f1f4a4315241ac1fefc646aec92df8a83298b36709cd2a152b9d  .github/workflows/release-candidate.yml
 2d1e311bd425ea154ef171bef716aed7fb62e10824b2bd183b054061e8cf94cd  .github/workflows/verify.yml
 8e689e12d16333ced289623d83e17020590c62c38aea172534dc799c9a56e801  .gitignore
 815f03446621e9a77be49d706a99da8f1d9bbc383a7d02de62b3674badd42731  LICENSE
-f7fc90f910a862c6d7212025f1f18101a9f41dcc5ffb621c47143deac2f7773e  README.md
+d14c458236bff3cba14f884cf5ff645fc674ae12e8cc593c04f102cda73a9557  README.md
 59854984853104df5c353e2f681a15fc7924742f9a2e468c29af248dce45ce03  VERSION
 f4d6738fae734698bd596071e19e7a949a5fc859740c4ff41351aa1c00efe3aa  c48
 d3b7673c0f8a557b1a1e7333f51ffaa328fa000373260410439d2d68964ee8d5  c48.bat
@@ -30,6 +30,7 @@ a2f5ff024f19dcf9b4f3c8aff4add5168e97e4a4f895db8b09b3b727649564e3  compiler/asset
 3666e4a7ecdc297df06dff0993a9ad8d33054e0ed91b3855f008dbf4dba72bbc  compiler/assets/SANYALnet-Labs-4x8-font-5.txt
 90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339  compiler/assets/font4x8-tasword.bin
 90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339  compiler/assets/font4x8-zxux.bin
+629e06775a514895386407cc1b363f974e330366398fab8f99e45f65e72a7878  compiler/build_release_candidate.py
 4fee1d04a90886c9952bf4390730d51e3cd7ded922474445d99fd48d2bcd68b3  compiler/c48/__init__.py
 7dc4db36040f3e82510c001e29cba2c14110e7942c4a393c5af54549ba53f7be  compiler/c48/astutil.py
 3862320bb1dfe50be1cfe6bef75965f4bc35906f245e1975cf83801998c4eb30  compiler/c48/compiler.py
@@ -72,10 +73,9 @@ db3fd942b901867232e91f1653bc20c90466c8d0309afee4be4aabe042ec71cc  compiler/verif
 fdc3c500e30cc44495db8fa786484170164f9339109c356c3cf2968dc5b32990  compiler/verify_games.py
 d4ec6f328b309ae0bcc270a2a850751c645a9753e4d772958b2200bd94d43439  compiler/verify_graphics_demos.py
 7b6a9efcf54d0af1295f3f0dd34a0d874afa6872d45bb1f2c51e7f70b8f40cfc  compiler/verify_gui_desktop.py
-1ac2dbff1f73c214015d7d1e14835c33fe0205c5b12613840b20ddb6c59811fe  compiler/verify_release.py
+021b3a060634376e69e30647b0ea33159f4587e31b05ecce50d53d33973b7794  compiler/verify_release.py
 4ce20fa1a98be989e6d7cccbdd0c276f78d6edeb3cc7f169fde918c877166cf9  docs/APPS.md
-bc371718637b1ffe840bb220c6fff6421982a05337e30cafdbf05497b202268d  docs/C48 Language Specification Rev 0.11.docx
-9c9a70e5a250db43075cd2e1ad5aee6bf97d97a2090ee9bcbfd1b4698d18bf47  docs/CONFORMANCE.md
+702a807c6357299f3ae4ceda30b2e2437a762ede7c1729728ec917822e69fd7c  docs/CONFORMANCE.md
 f85d47d08bbeba148befdfef9908a22e745fa34248853cf487778811518d077b  docs/DEMO-HASHES.md
 8a476a65aa8c357a4e936a618927de6b271d2a48b0b7811e62aa1dfacc601346  docs/FLOAT5-ORACLE.md
 7cc770a21fc856c8b59db849251e939cd3ad03f7273a23998410cff3a1777943  docs/GAMES.md
@@ -84,11 +84,11 @@ f85d47d08bbeba148befdfef9908a22e745fa34248853cf487778811518d077b  docs/DEMO-HASH
 0aac35618b2ea08fa4a079d628ac3152673b3409ef29d9313c79148c8e0006f5  docs/HOST-DIVERGENCES.md
 e9488b62b3311fe5325999f398c59b92f876b0db30e2e8c9bc51300370b49bf3  docs/LICENSE-HEADER-POLICY.md
 328e0aac2d727b0e2a167aa69027fdc67171b4c2b7999ca966d048ac4609a926  docs/PRE-RELEASE-NEXT-STEPS.md
-1542563f6cbc77d21831560945694196ba95ff54d530eded98524343cb3cb217  docs/RELEASE-NOTES.md
+6c95afcbb8dfcb754a5ed1f8d29994971cb397d005a81be30f7b548b18ceff98  docs/RELEASE-NOTES.md
 6dafd69be246e59c0dbc09695ac6cd19fca67b749d89fafc9d9edbbcf7d04c1c  docs/SECURITY-TEST-RESULTS.md
 c254a73cea9238525b4a50ebca1cf8bf29b56a618595559d724d67b1e4d54750  docs/ZX-UX C48 Compiler User Manual Rev 0.11.docx
 cc8d7e3c4d2d3c6958c7512a1a3ce2e0d728f750b2775e04519e7d42df79d972  docs/ZX-UX C48 SDK Adversarial Security Review.docx
-6e4cfee4be135abbd37d0fff0823c8714ecfa4dbfb2c159d8643e5fd08b32c24  docs/ZX-UX C48 SDK User Manual.docx
+67b3b4f0c87f69f50035bb6bd2d9ab117d51c4f0f91fec05fe62b2455759e1ea  docs/ZX-UX C48 SDK User Manual.docx
 41649818fa9e3369da96e5104962a995080f4f49bf3d2d037e07b408fd21c08b  docs/images/demos/city.png
 b86e6eb7688fdd4bfdd0fa3b21db6aab56de119116c5cc41948a7fa08b3d43fb  docs/images/demos/contact-sheet.png
 7fcef0ecaf58d7ff36454bed5734693a9f4d10d620decbd8fd3cceff007cc62c  docs/images/demos/firework.png
@@ -1098,7 +1098,6 @@ a766d67b15bb1ad4e6f097af0d3b6eaf1f3e0d900250f189fbbdc094927c1b2f  screenshots/gu
 f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38  screenshots/gui-desktop/macos-15-intel/python-3.10/snake-frame.ppm
 b64f97aa801dfa6cc558ef4549fbaf89344bade2fd6c234e0bb596bb80280cc8  screenshots/gui-desktop/macos-15-intel/python-3.10/visual-progression-canvas.png
 48f2bdb579ed7b8c8b87499925f3acf14e9ce3d48dc37cda452bbf4f7e943750  screenshots/gui-desktop/macos-15-intel/python-3.10/visual-progression-desktop.png
-da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f  screenshots/gui-desktop/macos-15-intel/python-3.10/visual-progression-frame.ppm
 6624d23bd90bf6b78adb51cf3068d498bd870d8dee04b53c1e8e2c3b807e8edb  screenshots/gui-desktop/macos-15-intel/python-3.13/GUI-EVIDENCE.json
 37e53017ad2fe6f380632fed1e692bd9fd043957f3bbaabd6bafd49f4597b5d3  screenshots/gui-desktop/macos-15-intel/python-3.13/SHA256SUMS
 ce34e72c2b8ca33de602f6c441e9290a1ff1a435036479112c0d44429266cbab  screenshots/gui-desktop/macos-15-intel/python-3.13/forest-canvas.png
@@ -1116,7 +1115,6 @@ df6095408706c66086c76f07bd1a808b7b71665e4bf8252aad7f6f7f66da8b0b  screenshots/gu
 f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38  screenshots/gui-desktop/macos-15-intel/python-3.13/snake-frame.ppm
 b64f97aa801dfa6cc558ef4549fbaf89344bade2fd6c234e0bb596bb80280cc8  screenshots/gui-desktop/macos-15-intel/python-3.13/visual-progression-canvas.png
 568ed6bb977ffa79c3563943a1ef9c5a3e2fb7c8885f0bd11ff643d50acd300e  screenshots/gui-desktop/macos-15-intel/python-3.13/visual-progression-desktop.png
-da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f  screenshots/gui-desktop/macos-15-intel/python-3.13/visual-progression-frame.ppm
 24625de06be90802aa3da8255cfdd761d3bf4c97ab3ab6c1f92f678edab88af3  screenshots/gui-desktop/macos-latest/python-3.10/GUI-EVIDENCE.json
 47aeabbe4a1b7a5cdb8a377be885e79cbbd0aadc515858ffb8a88c67f44f9d80  screenshots/gui-desktop/macos-latest/python-3.10/SHA256SUMS
 363b667acb3262146336a2190ea6a7a919990caa6d529a85e850e3182f834ca0  screenshots/gui-desktop/macos-latest/python-3.10/forest-canvas.png
@@ -1134,7 +1132,6 @@ ca6475bbbfa2361b80fe9ada3b7a632416e88b052ce9b88c3bef5cf92e38e211  screenshots/gu
 f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38  screenshots/gui-desktop/macos-latest/python-3.10/snake-frame.ppm
 f724b3afd238522a011f656e9784ab7fe310683624cde5777d8200be7fdfe23a  screenshots/gui-desktop/macos-latest/python-3.10/visual-progression-canvas.png
 7001b58c0633f45c83166ab6f73c1659898da2c3fa9bcc55b4b663218e65ee10  screenshots/gui-desktop/macos-latest/python-3.10/visual-progression-desktop.png
-da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f  screenshots/gui-desktop/macos-latest/python-3.10/visual-progression-frame.ppm
 846a7a3f6f6e6ad5f5057efa9bd4cb486845f404616aa9cfba66bb66e5b66b03  screenshots/gui-desktop/macos-latest/python-3.13/GUI-EVIDENCE.json
 544ee33376a22cbf8aa737f83e79685c3dd871c87a19d935ae7d7beea5867fb6  screenshots/gui-desktop/macos-latest/python-3.13/SHA256SUMS
 363b667acb3262146336a2190ea6a7a919990caa6d529a85e850e3182f834ca0  screenshots/gui-desktop/macos-latest/python-3.13/forest-canvas.png
@@ -1152,7 +1149,6 @@ d846025816ede70f91f1268825a8fedd7f26b25331d860d3895ccfe6a64f5d98  screenshots/gu
 f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38  screenshots/gui-desktop/macos-latest/python-3.13/snake-frame.ppm
 f724b3afd238522a011f656e9784ab7fe310683624cde5777d8200be7fdfe23a  screenshots/gui-desktop/macos-latest/python-3.13/visual-progression-canvas.png
 7fcb7352ca9bcf6f732e2486c19e276e4d12e6804404cfe7af2043b5ef438b3f  screenshots/gui-desktop/macos-latest/python-3.13/visual-progression-desktop.png
-da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f  screenshots/gui-desktop/macos-latest/python-3.13/visual-progression-frame.ppm
 18ceba11e4e3393106d6d513ce348ad60e5404c5642153d8375eef4b45a6d66e  screenshots/gui-desktop/ubuntu-latest/python-3.10/GUI-EVIDENCE.json
 4b95c74f88f0f13fb0966dbc794f955c61d619ca7c9df53a4969ec401c907f7e  screenshots/gui-desktop/ubuntu-latest/python-3.10/SHA256SUMS
 9b8ea925a8181f13b10eaa7204f179b5fa8dd6a2723028be8422385b42c23154  screenshots/gui-desktop/ubuntu-latest/python-3.10/forest-canvas.png
@@ -1170,7 +1166,6 @@ a68f4b7c4bc60366ab8a867a922aba8deae7e487315a7b429c8a8fe2a64267bf  screenshots/gu
 f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38  screenshots/gui-desktop/ubuntu-latest/python-3.10/snake-frame.ppm
 c59ef6363eec01f3fe09211be0bcabbfb19c5c1185ce7aa6b1493b7f14090033  screenshots/gui-desktop/ubuntu-latest/python-3.10/visual-progression-canvas.png
 09e39505db37428b55b80da132aa41bcc5e06d835fe9369b0b42b45b856f04a4  screenshots/gui-desktop/ubuntu-latest/python-3.10/visual-progression-desktop.png
-da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f  screenshots/gui-desktop/ubuntu-latest/python-3.10/visual-progression-frame.ppm
 6fdd77a7dafaf7866b47f6b87bef7f6d65316e0c2f7515a7aff173dfa3558361  screenshots/gui-desktop/ubuntu-latest/python-3.13/GUI-EVIDENCE.json
 67d506b1ec98239a44cceaa52a65859c585feecdb32eb7e7c81228c051601f75  screenshots/gui-desktop/ubuntu-latest/python-3.13/SHA256SUMS
 9b8ea925a8181f13b10eaa7204f179b5fa8dd6a2723028be8422385b42c23154  screenshots/gui-desktop/ubuntu-latest/python-3.13/forest-canvas.png
@@ -1188,7 +1183,6 @@ a68f4b7c4bc60366ab8a867a922aba8deae7e487315a7b429c8a8fe2a64267bf  screenshots/gu
 f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38  screenshots/gui-desktop/ubuntu-latest/python-3.13/snake-frame.ppm
 c59ef6363eec01f3fe09211be0bcabbfb19c5c1185ce7aa6b1493b7f14090033  screenshots/gui-desktop/ubuntu-latest/python-3.13/visual-progression-canvas.png
 09e39505db37428b55b80da132aa41bcc5e06d835fe9369b0b42b45b856f04a4  screenshots/gui-desktop/ubuntu-latest/python-3.13/visual-progression-desktop.png
-da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f  screenshots/gui-desktop/ubuntu-latest/python-3.13/visual-progression-frame.ppm
 3f38969b1dfa49ecf9ef54d48029696ec4c5ff464ede0b375a7df9fe4cc8ef75  screenshots/gui-desktop/windows-latest/python-3.10/GUI-EVIDENCE.json
 d56f44ceab50e0d9309d268c9827994d78dcee4e12ba6e5bb59bfd13688afb9f  screenshots/gui-desktop/windows-latest/python-3.10/SHA256SUMS
 df7aa297cb47db9615cdbce5fb31833f1c04f056f6fd8f78ce7339004ac0b689  screenshots/gui-desktop/windows-latest/python-3.10/forest-canvas.png
@@ -1206,7 +1200,6 @@ cd818f686eb7e745a10754c03344d3f1bab16fd190994af491f8f9fbef589a0d  screenshots/gu
 f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38  screenshots/gui-desktop/windows-latest/python-3.10/snake-frame.ppm
 a395a2bc88f382d16c5a85acd9d87a3f9356509f5e5aeb58a12e97bb55333f93  screenshots/gui-desktop/windows-latest/python-3.10/visual-progression-canvas.png
 760a6d97918c52e0ed88b94f8cb0fe1b7ff68c329cb3264dce016205737cc90a  screenshots/gui-desktop/windows-latest/python-3.10/visual-progression-desktop.png
-da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f  screenshots/gui-desktop/windows-latest/python-3.10/visual-progression-frame.ppm
 130e35fbbd51bc8b8bc2e21f7f680751e87b871de2b399662e984b5393a6d419  screenshots/gui-desktop/windows-latest/python-3.13/GUI-EVIDENCE.json
 fc1cccc28967850922a226cd34cfdaf3e7bda1c67db922832d327ee85834eb0d  screenshots/gui-desktop/windows-latest/python-3.13/SHA256SUMS
 df7aa297cb47db9615cdbce5fb31833f1c04f056f6fd8f78ce7339004ac0b689  screenshots/gui-desktop/windows-latest/python-3.13/forest-canvas.png
@@ -1224,7 +1217,6 @@ e95210d00b0be7e2b4e46378c3b677d475d4b59d88aa4191022b9f3065192d89  screenshots/gu
 f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38  screenshots/gui-desktop/windows-latest/python-3.13/snake-frame.ppm
 a395a2bc88f382d16c5a85acd9d87a3f9356509f5e5aeb58a12e97bb55333f93  screenshots/gui-desktop/windows-latest/python-3.13/visual-progression-canvas.png
 a3b3cde7b4756b3136cd2bf95fc39a6292ed0911a8a73e4312f3ce09f24a6728  screenshots/gui-desktop/windows-latest/python-3.13/visual-progression-desktop.png
-da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f  screenshots/gui-desktop/windows-latest/python-3.13/visual-progression-frame.ppm
 89b0905ce631c2fb4c3962414774858c15eba01d4cfd803d9ce45edfd1e6fc0e  usr/bin/ailmzx48/ailmzx48.c48b
 5a41b625e0436e0e8ea7be817a4e001235eeadce9f9e57a9f07c0ba585563345  usr/bin/apps/sheet48.c48b
 f387bf7d99b5e535caabf3767551186076c18552983f5620a6d6a9520675e887  usr/bin/apps/wire3d.c48b

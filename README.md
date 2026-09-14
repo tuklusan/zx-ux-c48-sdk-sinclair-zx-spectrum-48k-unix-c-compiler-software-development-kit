@@ -63,9 +63,10 @@ The main project lives here:
 
 https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project
 
-The architectural and implementation authorities copied into this SDK under `docs/` freeze the C48 host-development contract used by this release:
+The canonical C48 language specification is maintained only in the overarching ZX-UX repository. The current upstream file is [`docs/04-C48 Language Specification Rev 0.11.docx`](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx). Its revisioned `04-C48 Language Specification Rev ...` filename may change as the specification advances. This SDK source tree deliberately does not keep a separate copy.
 
-- `docs/C48 Language Specification Rev 0.11.docx`
+Release packages fetch the latest matching upstream `docs/04-C48 Language Specification Rev *.docx` at package-build time and include `C48-SPECIFICATION.json` recording the upstream commit, source path, package path, Git blob and SHA-256. The compiler architecture/user manual remains local:
+
 - `docs/ZX-UX C48 Compiler User Manual Rev 0.11.docx`
 
 The host SDK is intentionally useful before native Phase-11 `cc` is finished. Programs written against the frozen C48 language subset and conservative host API can therefore be developed early, while target-native compiler, linker, ROM bridge, and ABI work remain separately verifiable.
@@ -444,7 +445,7 @@ zx-ux-c48-sdk/
 |-- usr/
 |   |-- src/                 editable C48 programs
 |   `-- bin/                 deterministic C48B1 binaries
-|-- docs/                     C48 specification, manual, verification notes
+|-- docs/                     SDK manuals and verification notes; C48 spec is upstream
 |-- LICENSE
 |-- MANIFEST.sha256
 `-- VERSION
@@ -479,7 +480,7 @@ The constraints are part of the fun: 16-bit pointers, tiny heap, 4x8 text, attri
 
 Start with:
 
-- `docs/C48 Language Specification Rev 0.11.docx` - normative language baseline;
+- [`docs/04-C48 Language Specification Rev 0.11.docx`](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) in the upstream ZX-UX repository - normative language baseline; the revisioned filename may change, and release packages carry the latest matching upstream version;
 - `docs/ZX-UX C48 Compiler User Manual Rev 0.11.docx` - frozen/native compiler architecture and user manual;
 - `docs/ZX-UX C48 SDK User Manual.docx` - portable Windows, Linux and macOS host-SDK installation and workflow manual;
 - `docs/CONFORMANCE.md` - host conformance evidence and scope;

@@ -35,6 +35,7 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 - Windows `.bat` and POSIX shell command launchers for Linux/macOS;
 - provisional host-game API header with synchronous ROM-derived `beep()`;
 - specification-driven conformance/regression suite and deterministic demos;
+- single-sourced C48 language specification: the SDK source tree carries no duplicate; release packages fetch the latest upstream `docs/04-C48 Language Specification Rev *.docx` and record its exact upstream commit/path/hash in `C48-SPECIFICATION.json` (current upstream revision at this cleanup is 0.11, and the revisioned filename may change);
 - adversarial hostile-input/resource ceilings and C48B1 hardening;
 - provenance-preserving stale-pointer/forgery defenses;
 - live-allocation indexing that retains dead allocation IDs for ABA defense without quadratic allocator scans;
@@ -71,8 +72,10 @@ compiling and exercising C48 programs before the native ZX-UX Phase-11 compiler 
 Release acceptance requires three independent fresh-filesystem executions of
 `compiler/verify_release.py` against identical frozen bytes, followed by creation of the
 platform-neutral release ZIP and one more verification from a virgin extraction of that
-ZIP. The ZIP contains both Windows batch and POSIX shell launchers; no separate native
-host installer formats are produced. The release is not delivered unless those gates pass.
+ZIP. The ZIP contains both Windows batch and POSIX shell launchers plus the latest canonical
+upstream C48 language specification selected at package-build time. The packaged
+`C48-SPECIFICATION.json` records exactly which upstream revision was included. No separate
+native host installer formats are produced. The release is not delivered unless those gates pass.
 
 ## Certification boundary
 
