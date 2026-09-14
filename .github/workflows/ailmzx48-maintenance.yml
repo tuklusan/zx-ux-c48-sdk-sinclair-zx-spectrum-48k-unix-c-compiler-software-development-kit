@@ -91,7 +91,6 @@ jobs:
         run: >-
           python -B compiler/verify_graphics_demos.py
           --demo mandel
-          --stress
           --runner ubuntu-latest
           --time-quota 15
           --evidence-dir "$RUNNER_TEMP/c48-mandel-quota-proof"

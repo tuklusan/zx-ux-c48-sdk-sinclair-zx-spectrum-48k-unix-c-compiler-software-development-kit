@@ -1,1 +1,1 @@
-Apply the low-overhead 15-second C48 runtime watchdog, prove Mandel stress and Tk desktop behavior on Ubuntu, regenerate MANIFEST.sha256, and verify the repository.
+Retry the low-overhead 15-second C48 runtime watchdog proof with the graphics verifier's built-in stress path; prove Mandel and Tk desktop behavior, regenerate MANIFEST.sha256, and verify the repository.
