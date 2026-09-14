@@ -14,7 +14,7 @@
 """Native Sinclair ZX Spectrum 48K ROM floating-point math.
 
 The routines below are a source-level port of the calculator bytecode in the
-48K ROM disassembly shipped in ``doc/reference/rom-disassemblies/spectrum-48k``.
+48K ROM disassembly shipped in ``docs/reference/rom-disassemblies/spectrum-48k``.
 Every calculator arithmetic step is quantized back to :class:`Float5`, and the
 ROM's compressed constants and Chebyshev series are used verbatim.
 """

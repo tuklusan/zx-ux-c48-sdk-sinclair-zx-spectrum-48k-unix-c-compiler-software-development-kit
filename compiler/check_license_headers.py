@@ -49,7 +49,7 @@ def check_tree(root: Path) -> list[str]:
         rel = path.relative_to(root).as_posix()
         # Imported third-party reference material is preserved byte-for-byte
         # and is governed by its own provenance/licensing, not the SDK header.
-        if rel.startswith("doc/reference/"):
+        if rel.startswith("docs/reference/"):
             continue
         # Generated GUI release evidence is retained byte-for-byte. Injecting a
         # source header would corrupt images, PPM frames, JSONL probes, or

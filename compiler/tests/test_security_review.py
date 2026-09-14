@@ -13,7 +13,7 @@
 # ============================================================================
 """Executable corpus for the review's 84 additional pre-1.0 attacks.
 
-The method order is deliberately identical to doc/SECURITY-TEST-RESULTS.md:
+The method order is deliberately identical to docs/SECURITY-TEST-RESULTS.md:
 MEM-01..20, B1-01..22, LEX-01..22, PAR-01..20.  Each test either executes a
 C48 program, compiles hostile C48 bytes, or mutates C48B1 produced from a C48
 program.  Host exceptions are failures, not acceptable security outcomes.

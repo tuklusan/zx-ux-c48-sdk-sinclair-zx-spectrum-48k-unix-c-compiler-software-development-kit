@@ -21,7 +21,7 @@ patent, trademark, and governing-law provisions.
 
 | Demo | Demo | Demo |
 |---|---|---|
-| ![UDG Walker](doc/images/demos/spriteanim.png)<br>**UDG Walker**<br>Ubuntu / x64 · `ubuntu-latest` · frame 12 | ![Torus Reactor](doc/images/demos/torus.png)<br>**Torus Reactor**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Raycast Labyrinth](doc/images/demos/raymaze.png)<br>**Raycast Labyrinth**<br>macOS / arm64 · `macos-latest` · frame 2 |
+| ![UDG Walker](docs/images/demos/spriteanim.png)<br>**UDG Walker**<br>Ubuntu / x64 · `ubuntu-latest` · frame 12 | ![Torus Reactor](docs/images/demos/torus.png)<br>**Torus Reactor**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Raycast Labyrinth](docs/images/demos/raymaze.png)<br>**Raycast Labyrinth**<br>macOS / arm64 · `macos-latest` · frame 2 |
 
 **ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is the **1.0.0 release line**, frozen for formal release from the fully certified release commit. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows plus POSIX (Linux/macOS) launchers.
 
@@ -63,10 +63,10 @@ The main project lives here:
 
 https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project
 
-The architectural and implementation authorities copied into this SDK under `doc/` freeze the C48 host-development contract used by this release:
+The architectural and implementation authorities copied into this SDK under `docs/` freeze the C48 host-development contract used by this release:
 
-- `doc/C48 Language Specification Rev 0.11.docx`
-- `doc/ZX-UX C48 Compiler User Manual Rev 0.11.docx`
+- `docs/C48 Language Specification Rev 0.11.docx`
+- `docs/ZX-UX C48 Compiler User Manual Rev 0.11.docx`
 
 The host SDK is intentionally useful before native Phase-11 `cc` is finished. Programs written against the frozen C48 language subset and conservative host API can therefore be developed early, while target-native compiler, linker, ROM bridge, and ABI work remain separately verifiable.
 
@@ -121,26 +121,26 @@ CPU architecture as well as the workflow label and canonical frame.
 
 | Demo | Demo | Demo |
 |---|---|---|
-| ![Crystal Goblet](doc/images/demos/goblet.png)<br>**Crystal Goblet**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Infinity Tunnel](doc/images/demos/tunnel.png)<br>**Infinity Tunnel**<br>Windows / x64 · `windows-latest` · frame 2 | ![Vector Metropolis](doc/images/demos/city.png)<br>**Vector Metropolis**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 |
-| ![Mountain Flight](doc/images/demos/terrain.png)<br>**Mountain Flight**<br>Windows / x64 · `windows-latest` · frame 2 | ![Ocean Grid](doc/images/demos/ocean.png)<br>**Ocean Grid**<br>macOS / arm64 · `macos-latest` · frame 2 | ![Mobius Flight](doc/images/demos/mobius.png)<br>**Mobius Flight**<br>Windows / x64 · `windows-latest` · frame 2 |
-| ![Polyhedron Morph](doc/images/demos/morph3d.png)<br>**Polyhedron Morph**<br>macOS / arm64 · `macos-latest` · frame 2 | ![Warp Drive](doc/images/demos/warp.png)<br>**Warp Drive**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Spiral Galaxy](doc/images/demos/galaxy.png)<br>**Spiral Galaxy**<br>Windows / x64 · `windows-latest` · frame 2 |
-| ![Clockwork Orrery](doc/images/demos/orrery.png)<br>**Clockwork Orrery**<br>macOS / arm64 · `macos-latest` · frame 2 | ![Firework Night](doc/images/demos/firework.png)<br>**Firework Night**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Sprite Storm](doc/images/demos/sprites.png)<br>**Sprite Storm**<br>Windows / x64 · `windows-latest` · frame 2 |
-| ![Spectrum Plasma](doc/images/demos/plasma.png)<br>**Spectrum Plasma**<br>macOS / arm64 · `macos-latest` · frame 2 | ![Kaleidoscope](doc/images/demos/kaleido.png)<br>**Kaleidoscope**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Moire Engine](doc/images/demos/moire.png)<br>**Moire Engine**<br>Windows / x64 · `windows-latest` · frame 2 |
-| ![Mandelbrot Dive](doc/images/demos/mandel.png)<br>**Mandelbrot Dive**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Julia Ballet](doc/images/demos/julia.png)<br>**Julia Ballet**<br>Windows / x64 · `windows-latest` · frame 2 | ![Fractal Forest](doc/images/demos/forest.png)<br>**Fractal Forest**<br>macOS / arm64 · `macos-latest` · frame 2 |
+| ![Crystal Goblet](docs/images/demos/goblet.png)<br>**Crystal Goblet**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Infinity Tunnel](docs/images/demos/tunnel.png)<br>**Infinity Tunnel**<br>Windows / x64 · `windows-latest` · frame 2 | ![Vector Metropolis](docs/images/demos/city.png)<br>**Vector Metropolis**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 |
+| ![Mountain Flight](docs/images/demos/terrain.png)<br>**Mountain Flight**<br>Windows / x64 · `windows-latest` · frame 2 | ![Ocean Grid](docs/images/demos/ocean.png)<br>**Ocean Grid**<br>macOS / arm64 · `macos-latest` · frame 2 | ![Mobius Flight](docs/images/demos/mobius.png)<br>**Mobius Flight**<br>Windows / x64 · `windows-latest` · frame 2 |
+| ![Polyhedron Morph](docs/images/demos/morph3d.png)<br>**Polyhedron Morph**<br>macOS / arm64 · `macos-latest` · frame 2 | ![Warp Drive](docs/images/demos/warp.png)<br>**Warp Drive**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Spiral Galaxy](docs/images/demos/galaxy.png)<br>**Spiral Galaxy**<br>Windows / x64 · `windows-latest` · frame 2 |
+| ![Clockwork Orrery](docs/images/demos/orrery.png)<br>**Clockwork Orrery**<br>macOS / arm64 · `macos-latest` · frame 2 | ![Firework Night](docs/images/demos/firework.png)<br>**Firework Night**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Sprite Storm](docs/images/demos/sprites.png)<br>**Sprite Storm**<br>Windows / x64 · `windows-latest` · frame 2 |
+| ![Spectrum Plasma](docs/images/demos/plasma.png)<br>**Spectrum Plasma**<br>macOS / arm64 · `macos-latest` · frame 2 | ![Kaleidoscope](docs/images/demos/kaleido.png)<br>**Kaleidoscope**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Moire Engine](docs/images/demos/moire.png)<br>**Moire Engine**<br>Windows / x64 · `windows-latest` · frame 2 |
+| ![Mandelbrot Dive](docs/images/demos/mandel.png)<br>**Mandelbrot Dive**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Julia Ballet](docs/images/demos/julia.png)<br>**Julia Ballet**<br>Windows / x64 · `windows-latest` · frame 2 | ![Fractal Forest](docs/images/demos/forest.png)<br>**Fractal Forest**<br>macOS / arm64 · `macos-latest` · frame 2 |
 
 The top three plus this gallery show all 21 current graphics demos exactly once.
 
-The combined 21-demo contact sheet is preserved at [`doc/images/demos/contact-sheet.png`](doc/images/demos/contact-sheet.png) and is covered by `MANIFEST.sha256`.
+The combined 21-demo contact sheet is preserved at [`docs/images/demos/contact-sheet.png`](docs/images/demos/contact-sheet.png) and is covered by `MANIFEST.sha256`.
 
 Each graphics runner preserves its freshly rebuilt `.c48b`, canonical `.scr`, rendered
 `.png`, and machine-readable `.json` evidence. A final aggregation job collects all 21
 runner artifacts, writes `SHA256SUMS` plus release metadata, and retains the combined
 pre-release evidence artifact for 90 days.
 
-See [`doc/GRAPHICS-DEMOS.md`](doc/GRAPHICS-DEMOS.md) for the verification contract,
-[`doc/GUI-SMOKE-TESTS.md`](doc/GUI-SMOKE-TESTS.md) for the required host-native Tk
+See [`docs/GRAPHICS-DEMOS.md`](docs/GRAPHICS-DEMOS.md) for the verification contract,
+[`docs/GUI-SMOKE-TESTS.md`](docs/GUI-SMOKE-TESTS.md) for the required host-native Tk
 release gate and bounded screenshot/probe evidence, and
-[`doc/PRE-RELEASE-NEXT-STEPS.md`](doc/PRE-RELEASE-NEXT-STEPS.md) for the remaining
+[`docs/PRE-RELEASE-NEXT-STEPS.md`](docs/PRE-RELEASE-NEXT-STEPS.md) for the remaining
 release-candidate work.
 
 ## Clone and quick start
@@ -262,8 +262,8 @@ It exposes useful host-side calls for text, graphics, UDGs, memory/string operat
 
 See:
 
-- `doc/HOST-DIVERGENCES.md`
-- `doc/CONFORMANCE.md`
+- `docs/HOST-DIVERGENCES.md`
+- `docs/CONFORMANCE.md`
 
 ### Sinclair-compatible BEEP
 
@@ -336,7 +336,7 @@ The normal runtime uses the checked-in 48K-ROM-derived implementation for the tr
 ./c48run --allow-approx-rom-math usr/bin/program.c48b
 ```
 
-See `doc/FLOAT5-ORACLE.md` for the exact certification boundary.
+See `docs/FLOAT5-ORACLE.md` for the exact certification boundary.
 
 ## Included C48 examples
 
@@ -381,7 +381,7 @@ c48run usr\bin\security\secguard.c48b
 c48run --max-steps 300 usr\bin\security\secloop.c48b
 ```
 
-The hostile-input regression suite additionally attacks recursive parser structures, macro-expansion bombs, oversized source/C48B1 inputs, malformed-but-correctly-checksummed C48B1 schemas, stale-pointer address reuse, and raw pointer representation forgery. See `doc/ZX-UX C48 SDK Adversarial Security Review.docx` for the threat model and findings.
+The hostile-input regression suite additionally attacks recursive parser structures, macro-expansion bombs, oversized source/C48B1 inputs, malformed-but-correctly-checksummed C48B1 schemas, stale-pointer address reuse, and raw pointer representation forgery. See `docs/ZX-UX C48 SDK Adversarial Security Review.docx` for the threat model and findings.
 
 ## Verification and zero-gap release discipline
 
@@ -444,7 +444,7 @@ zx-ux-c48-sdk/
 |-- usr/
 |   |-- src/                 editable C48 programs
 |   `-- bin/                 deterministic C48B1 binaries
-|-- doc/                     C48 specification, manual, verification notes
+|-- docs/                     C48 specification, manual, verification notes
 |-- LICENSE
 |-- MANIFEST.sha256
 `-- VERSION
@@ -479,15 +479,15 @@ The constraints are part of the fun: 16-bit pointers, tiny heap, 4x8 text, attri
 
 Start with:
 
-- `doc/C48 Language Specification Rev 0.11.docx` - normative language baseline;
-- `doc/ZX-UX C48 Compiler User Manual Rev 0.11.docx` - frozen/native compiler architecture and user manual;
-- `doc/ZX-UX C48 SDK User Manual.docx` - portable Windows, Linux and macOS host-SDK installation and workflow manual;
-- `doc/CONFORMANCE.md` - host conformance evidence and scope;
-- `doc/HOST-DIVERGENCES.md` - explicit host/native differences;
-- `doc/FLOAT5-ORACLE.md` - five-byte floating-point verification boundary;
-- `doc/DEMO-HASHES.md` - deterministic demo hashes;
-- `doc/RELEASE-NOTES.md` - release notes;
-- `doc/ZX-UX C48 SDK Adversarial Security Review.docx` - hostile-input and memory-boundary security assessment.
+- `docs/C48 Language Specification Rev 0.11.docx` - normative language baseline;
+- `docs/ZX-UX C48 Compiler User Manual Rev 0.11.docx` - frozen/native compiler architecture and user manual;
+- `docs/ZX-UX C48 SDK User Manual.docx` - portable Windows, Linux and macOS host-SDK installation and workflow manual;
+- `docs/CONFORMANCE.md` - host conformance evidence and scope;
+- `docs/HOST-DIVERGENCES.md` - explicit host/native differences;
+- `docs/FLOAT5-ORACLE.md` - five-byte floating-point verification boundary;
+- `docs/DEMO-HASHES.md` - deterministic demo hashes;
+- `docs/RELEASE-NOTES.md` - release notes;
+- `docs/ZX-UX C48 SDK Adversarial Security Review.docx` - hostile-input and memory-boundary security assessment.
 
 ## License
 

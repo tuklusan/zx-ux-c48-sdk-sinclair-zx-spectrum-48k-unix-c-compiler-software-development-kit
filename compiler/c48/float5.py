@@ -49,7 +49,7 @@ class Float5:
 
     ROM-derived transcendental functions live in ``c48.rommath``. Full
     ROM/native/host certification remains a separate release boundary; see
-    doc/FLOAT5-ORACLE.md in the SDK release.
+    docs/FLOAT5-ORACLE.md in the SDK release.
     """
 
     raw: bytes

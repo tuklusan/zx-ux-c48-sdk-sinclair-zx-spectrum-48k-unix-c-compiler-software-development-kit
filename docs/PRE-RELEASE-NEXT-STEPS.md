@@ -49,8 +49,8 @@ host-SDK implementation documentation.
 
 Review at least:
 
-- `README.md` and `doc/RELEASE-NOTES.md`;
-- `doc/GRAPHICS-DEMOS.md`, `doc/HOST-DIVERGENCES.md` and `doc/CONFORMANCE.md`;
+- `README.md` and `docs/RELEASE-NOTES.md`;
+- `docs/GRAPHICS-DEMOS.md`, `docs/HOST-DIVERGENCES.md` and `docs/CONFORMANCE.md`;
 - the C48 Compiler User Manual and C48 SDK User Manual DOCX files;
 - installation/launcher examples, especially where POSIX shell commands are
   described as Linux-only even though they are also used on macOS;

@@ -22,8 +22,8 @@ not erase that historical evidence; it makes the current scope explicit.
 ## Reviewed identities
 
 - detailed-design revision: `0.27-draft`
-- detailed-design Git blob: `93335d286b87a5538f27de2d043a71f0add04980`
-- detailed-design SHA-256: `1412cde257bb5026eee313aadc6830fbf6a50195b89983fa6c791671100f6f04`
+- detailed-design Git blob: `826b24499385ef3631d4645c720dc1bd38104f91`
+- detailed-design SHA-256: `75e34087f369634d1a86a8c1da9e0035adfc3182188f8c1b53e5b5e6531d0d14`
 - repaired C48 source SHA-256: `660d517059644b04a3e6507d45d28aed7603cdfd5e0ab5adc136bd121cc3c3b7`
 - SDK C48B1 artifact SHA-256: `560414b6a1e8dd2f388adbff6887508b855d6e91649c08bcc525447910fc9584`
 - cold A48M SHA-256: `3dda3f6633cd8731e158970bf0658cd9126496e9d7c30ff14ab4cbcae25611ea`

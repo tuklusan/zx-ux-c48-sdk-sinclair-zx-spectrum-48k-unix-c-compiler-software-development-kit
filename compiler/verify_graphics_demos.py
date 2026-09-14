@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent
 SDK = ROOT.parent
 SRC = SDK / "usr" / "src" / "demos"
 BIN = SDK / "usr" / "bin" / "demos"
-IMG = SDK / "doc" / "images" / "demos"
+IMG = SDK / "docs" / "images" / "demos"
 EXPECT_PATH = ROOT / "graphics_demo_expectations.json"
 
 sys.path.insert(0, str(ROOT))

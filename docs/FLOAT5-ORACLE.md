@@ -62,7 +62,7 @@ is still outside this 1.0.0 host SDK's certified envelope. See `CONFORMANCE.md`.
 ## ROM reference source
 
 The source-level import is tied to
-`doc/reference/rom-disassemblies/spectrum-48k/Spectrum48.asm`. In particular,
+`docs/reference/rom-disassemblies/spectrum-48k/Spectrum48.asm`. In particular,
 the implementation follows the ROM calculator's `series-xx`, `exp`, `ln`,
 `get-argt`, `sin`, `cos`, `tan`, `atn`, `asn`, `acs`, `sqr`, and `to-power`
 routines rather than substituting host libm formulas.

@@ -56,7 +56,7 @@ The authority order for this project is frozen as follows.
 
 1. ZX-UX architecture: upstream `docs/01-ZX-UX-ARCHITECTURE-REV12.md` on `main` in `tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project`.
 2. ZX-UX implementation/certification plan: upstream `docs/02-ZX-UX-IMPLEMENTATION-STEPS-REV03.md` on `main` in the same repository. REV03 explicitly declares itself subordinate to REV12; if the two conflict, REV12 wins.
-3. C48 language: `doc/C48 Language Specification Rev 0.11.docx` on `main` in this SDK repository.
+3. C48 language: `docs/C48 Language Specification Rev 0.11.docx` on `main` in this SDK repository.
 4. C48 SDK/compiler/runtime documentation, implementation, examples, tests, and generated artifacts in this repository are implementation evidence and compatibility aids. They do not override the three canonical documents above.
 5. This `ailmzx48` design is subordinate to the canonical ZX-UX and C48 contracts.
 

@@ -32,7 +32,7 @@ every runner artifact and publishes one commit-addressed release-evidence
 bundle with `SHA256SUMS` and workflow/run metadata, retained for 90 days.
 The general SDK verifier separately covers both macOS arm64 (`macos-latest`)
 and macOS Intel (`macos-15-intel`) at Python 3.10 and 3.13. The checked-in
-combined reel is `doc/images/demos/contact-sheet.png`; the release manifest
+combined reel is `docs/images/demos/contact-sheet.png`; the release manifest
 covers that contact sheet as well as the 21 individual canonical PNG files.
 
 Math-oriented demonstrations reserve the bottom 64-column text row for a

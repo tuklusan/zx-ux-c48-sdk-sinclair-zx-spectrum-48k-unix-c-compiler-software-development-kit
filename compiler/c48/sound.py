@@ -14,7 +14,7 @@
 """Sinclair-compatible host support for the architecture-frozen C48 beep().
 
 The arithmetic and timing constants below come from the repository's frozen
-48K ROM disassembly under ``doc/reference/rom-disassemblies``:
+48K ROM disassembly under ``docs/reference/rom-disassemblies``:
 
 * BEEP command: $03F8-$0469
 * BEEPER routine: $03B5-$03F7
