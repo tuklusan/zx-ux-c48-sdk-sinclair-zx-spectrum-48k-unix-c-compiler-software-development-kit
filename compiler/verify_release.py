@@ -44,11 +44,11 @@ def sha(path: Path) -> str:
 
 
 def manifest_sha(path: Path) -> str:
-    """Hash a working-tree file in its canonical repository representation.
+    """Hash a package file in its canonical repository representation.
 
     Git intentionally checks *.bat files out as CRLF on Windows while storing
-    their normalized blobs with LF.  MANIFEST.sha256 records the canonical LF
-    representation so the same manifest verifies on Windows and POSIX hosts.
+    their normalized blobs with LF. MANIFEST.sha256 records canonical LF bytes
+    so the same packaged manifest verifies on Windows and POSIX hosts.
     Binary/container formats remain byte-for-byte exact.
     """
     data = path.read_bytes()
@@ -104,15 +104,14 @@ def check_required_files() -> None:
         "compiler/app_expectations.json",
         "compiler/tests/test_gui_framebuffer.py",
         "compiler/graphics_demo_expectations.json",
+        "compiler/GUI-SMOKE-TESTS.md",
+        "compiler/LICENSE-HEADER-POLICY.md",
         "compiler/assets/font4x8-tasword.bin", "compiler/assets/font4x8-zxux.bin",
         "docs/ZX-UX C48 Compiler User Manual Rev 0.11.docx",
         "docs/ZX-UX C48 SDK User Manual.docx",
-        "docs/FLOAT5-ORACLE.md", "docs/HOST-DIVERGENCES.md", "docs/CONFORMANCE.md",
-        "docs/RELEASE-NOTES.md", "docs/LICENSE-HEADER-POLICY.md", "docs/GAMES.md",
-        "docs/GUI-SMOKE-TESTS.md", "screenshots/gui-desktop/README.md",
-        "docs/GRAPHICS-DEMOS.md", "docs/APPS.md",
+        "docs/ZX-UX C48 SDK Technical Reference.docx",
+        "screenshots/gui-desktop/README.md",
         "docs/ZX-UX C48 SDK Adversarial Security Review.docx",
-        "docs/SECURITY-TEST-RESULTS.md",
         "usr/src/c48host.h",
         "usr/src/examples/exapi.h",
         "usr/src/security/secapi.h",
@@ -382,7 +381,6 @@ def check_graphics_demos() -> None:
         fail("graphics demo completion marker missing")
 
 
-
 def check_apps() -> None:
     cp = run(
         [sys.executable, "-B", str(ROOT / "verify_apps.py")],
@@ -458,10 +456,16 @@ def check_launchers() -> None:
             if cp.returncode != 0 or cp.stdout.strip() != f"{name} {EXPECT['version']}":
                 fail(f"root launcher failed: {name}: {cp.stdout.strip()!r} {cp.stderr.strip()!r}")
 
+
 def check_manifest() -> None:
     mf = SDK / "MANIFEST.sha256"
+    require_packaged = os.environ.get("C48_REQUIRE_PACKAGED_SPEC") == "1"
+    if not require_packaged:
+        if mf.exists():
+            fail("generated MANIFEST.sha256 present in SDK source tree")
+        return
     if not mf.is_file():
-        fail("MANIFEST.sha256 missing")
+        fail("release package MANIFEST.sha256 missing")
     listed = {}
     for lineno, line in enumerate(mf.read_text(encoding="ascii").splitlines(), 1):
         if not line:
@@ -504,13 +508,13 @@ def check_versions() -> None:
                 fail(f"{tool.name}: --about text mismatch for {marker!r}")
 
 
-
 def check_ailmzx48_design() -> None:
     checker = SDK / "usr/src/ailmzx48/evaluation/check_design_compliance.py"
     cp = run([sys.executable, "-B", str(checker)], timeout=120)
     if cp.returncode != 0:
         detail = (cp.stdout + cp.stderr).strip()
         fail("ailmzx48 design compliance failed: " + detail)
+
 
 def main() -> int:
     checks = (
@@ -525,7 +529,7 @@ def main() -> int:
         ("C48 64-column sources", check_c48_source_columns),
         ("launchers", check_launchers),
         ("version/about", check_versions),
-        ("manifest", check_manifest),
+        ("manifest policy", check_manifest),
         ("ailmzx48 design compliance", check_ailmzx48_design),
         ("automated tests", check_tests),
         ("ROM-derived BEEP", check_beep),

@@ -33,6 +33,7 @@ SPEC_RE = re.compile(
     r"^04-C48 Language Specification Rev ([0-9]+(?:\.[0-9]+)*)\.docx$"
 )
 PROVENANCE_NAME = "C48-SPECIFICATION.json"
+MANIFEST_NAME = "MANIFEST.sha256"
 OBSOLETE_SPEC = "docs/C48 Language Specification Rev 0.11.docx"
 
 
@@ -42,6 +43,19 @@ def fail(message: str) -> None:
 
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
+
+
+def canonical_tracked_bytes(path: Path) -> bytes:
+    """Return bytes used both in the release ZIP and its manifest.
+
+    Git may check batch files out with CRLF on Windows. Normalize those files
+    to the repository's canonical LF form so archives are host-independent.
+    Other files, including binary/container formats, remain byte-for-byte exact.
+    """
+    data = path.read_bytes()
+    if path.suffix.lower() == ".bat":
+        data = data.replace(b"\r\n", b"\n")
+    return data
 
 
 def request_bytes(url: str) -> bytes:
@@ -145,27 +159,10 @@ def tracked_entries() -> list[tuple[str, int]]:
             fail(f"canonical C48 specification must not be tracked here: {path}")
         if path == PROVENANCE_NAME:
             fail(f"generated package provenance must not be tracked: {path}")
+        if path == MANIFEST_NAME:
+            fail(f"generated package manifest must not be tracked: {path}")
         entries.append((path, int(mode[-3:], 8)))
     return sorted(entries)
-
-
-def load_source_manifest() -> dict[str, str]:
-    manifest = SDK / "MANIFEST.sha256"
-    if not manifest.is_file():
-        fail("MANIFEST.sha256 missing")
-    result: dict[str, str] = {}
-    for line_no, line in enumerate(manifest.read_text(encoding="ascii").splitlines(), 1):
-        if not line:
-            continue
-        if "  " not in line:
-            fail(f"MANIFEST.sha256 malformed at line {line_no}")
-        digest, rel = line.split("  ", 1)
-        if rel in result or len(digest) != 64:
-            fail(f"MANIFEST.sha256 invalid entry at line {line_no}")
-        result[rel] = digest
-    if OBSOLETE_SPEC in result:
-        fail(f"MANIFEST.sha256 still lists obsolete local spec: {OBSOLETE_SPEC}")
-    return result
 
 
 def build_archive(archive: Path, prefix: str) -> dict[str, object]:
@@ -176,14 +173,10 @@ def build_archive(archive: Path, prefix: str) -> dict[str, object]:
         json.dumps(spec_meta, indent=2, sort_keys=True) + "\n"
     ).encode("ascii")
 
-    source_manifest = load_source_manifest()
-    tracked_members = {path for path, _perm in entries if path != "MANIFEST.sha256"}
-    if set(source_manifest) != tracked_members:
-        missing = sorted(tracked_members - set(source_manifest))
-        extra = sorted(set(source_manifest) - tracked_members)
-        fail(f"source manifest member mismatch: missing={missing} extra={extra}")
-
-    package_manifest = dict(source_manifest)
+    package_manifest = {
+        rel: sha256_bytes(canonical_tracked_bytes(SDK / rel))
+        for rel, _perm in entries
+    }
     package_manifest[spec_rel] = sha256_bytes(spec_bytes)
     package_manifest[PROVENANCE_NAME] = sha256_bytes(provenance_bytes)
     manifest_bytes = "".join(
@@ -191,6 +184,7 @@ def build_archive(archive: Path, prefix: str) -> dict[str, object]:
     ).encode("ascii")
 
     extras = {
+        MANIFEST_NAME: (manifest_bytes, 0o644),
         spec_rel: (spec_bytes, 0o644),
         PROVENANCE_NAME: (provenance_bytes, 0o644),
     }
@@ -198,7 +192,7 @@ def build_archive(archive: Path, prefix: str) -> dict[str, object]:
         archive, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9
     ) as zf:
         for rel, perm in entries:
-            data = manifest_bytes if rel == "MANIFEST.sha256" else (SDK / rel).read_bytes()
+            data = canonical_tracked_bytes(SDK / rel)
             if data.startswith(b"version https://git-lfs.github.com/spec/v1\n"):
                 fail(f"release archive would contain an LFS pointer: {rel}")
             info = zipfile.ZipInfo(prefix + rel, date_time=(1980, 1, 1, 0, 0, 0))
