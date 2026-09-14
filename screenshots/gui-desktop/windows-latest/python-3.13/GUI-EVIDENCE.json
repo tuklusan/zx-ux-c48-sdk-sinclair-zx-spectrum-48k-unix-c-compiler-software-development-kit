@@ -1,5 +1,5 @@
 {
-  "commit": "0f392619abf01483153108d6281269c445c6a9b2",
+  "commit": "87eaba9ece76ff23ef5a86a8d2a757a7feebcfa0",
   "machine": "AMD64",
   "platform": "Windows-2025Server-10.0.26100-SP0",
   "python": "3.13.15",
@@ -17,17 +17,17 @@
           480
         ],
         "canvas_png": "forest-canvas.png",
-        "canvas_sha256": "a534eb667303b06558617acc4687a1bab315fda946b6f800a2bd728a610a9ce0",
+        "canvas_sha256": "df7aa297cb47db9615cdbce5fb31833f1c04f056f6fd8f78ce7339004ac0b689",
         "capture_size": [
           1024,
           768
         ],
         "comparison": "exact-rgb",
         "desktop_png": "forest-desktop.png",
-        "desktop_sha256": "30d0fa69b0ad27ea5b5afd4a4fa0d83e6a3f505d663835d148aec7a5e91ebe66",
+        "desktop_sha256": "b66d0803f2f340c8d299c73c217c5ebd3dea6d0164d7799607399cccec407845",
         "frame_ppm": "forest-frame.ppm",
-        "frame_ppm_sha256": "d21fdc7d37bbb8ae929e78aaa2158ca2efcfb1ae0914720a19087e827cd6c238",
-        "frame_sha256": "9c6658dae8aae98d0ad5871a0aada6b0d718fd1af9756f3595e95c3d461f3955"
+        "frame_ppm_sha256": "60c07625314001ac39dccf57866182ab993eeae05ace16b7674f575e4ff54a43",
+        "frame_sha256": "0e2f572a1f511192153bb8a42ab444eb672366e4f1a4e27ab836caed8cb0b366"
       },
       "stderr": "",
       "stdout": ""
@@ -48,7 +48,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "fortune-desktop.png",
-        "desktop_sha256": "4f1e5d457ab6e0f42ced9fcd244547697a654c4916013d7699514d3acfb3dec0",
+        "desktop_sha256": "c66f950afea4cda841325327efff97277cbeb4b81be79fab55b7769160774aa7",
         "frame_ppm": "fortune-frame.ppm",
         "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
         "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
@@ -72,13 +72,61 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "snake-desktop.png",
-        "desktop_sha256": "8f03508929e2658f55bfce8563ac2c830db023b483bf29abc524d511c82f8611",
+        "desktop_sha256": "e95210d00b0be7e2b4e46378c3b677d475d4b59d88aa4191022b9f3065192d89",
         "frame_ppm": "snake-frame.ppm",
         "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
         "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"
       },
       "stderr": "",
       "stdout": ""
+    },
+    "visual-progression": {
+      "capture": {
+        "aqua_color_bijection": null,
+        "aqua_palette_spatial": null,
+        "canvas_capture_size": [
+          640,
+          480
+        ],
+        "canvas_png": "visual-progression-canvas.png",
+        "canvas_sha256": "a395a2bc88f382d16c5a85acd9d87a3f9356509f5e5aeb58a12e97bb55333f93",
+        "capture_size": [
+          1024,
+          768
+        ],
+        "comparison": "exact-rgb",
+        "desktop_png": "visual-progression-desktop.png",
+        "desktop_sha256": "a3b3cde7b4756b3136cd2bf95fc39a6292ed0911a8a73e4312f3ce09f24a6728",
+        "frame_ppm": "visual-progression-frame.ppm",
+        "frame_ppm_sha256": "da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f",
+        "frame_sha256": "473d19905b5d8cc3a081c6935fa06e8fe5ee1a46359e113a6bf9cb606f66b2dd"
+      },
+      "frame_sha256": [
+        "c5cdfbd16ff6089f97e15286ca1adf748dc5e60fc310e00ac7a8904840451190",
+        "e7b61549c8230274205229f7ab9494f310073a2293b3ee6b1d295d556fde91c9",
+        "b8ac3d23a3ddc8ae764dfe2a3d142148f27913cd0ff54068e60412b1c21349ab",
+        "614e6c4046a3e799d4b014b3859353913840907c0bdf9470d9d71197682023ac",
+        "90ae1dd6cd0cadff320d48643203a9eb6d673da091bedc24466fd0ec2d699273",
+        "473d19905b5d8cc3a081c6935fa06e8fe5ee1a46359e113a6bf9cb606f66b2dd"
+      ],
+      "generations": [
+        116,
+        224,
+        332,
+        440,
+        548,
+        656
+      ],
+      "release_intervals_ms": [
+        115.598,
+        114.666,
+        118.831,
+        114.795,
+        122.819
+      ],
+      "stderr": "",
+      "stdout": "",
+      "visual_dwell_ms": 80
     }
   },
   "tk_patchlevel": "8.6.15",

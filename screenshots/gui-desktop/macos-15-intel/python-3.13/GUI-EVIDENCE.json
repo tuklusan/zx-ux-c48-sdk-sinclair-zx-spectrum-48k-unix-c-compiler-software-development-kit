@@ -1,5 +1,5 @@
 {
-  "commit": "0f392619abf01483153108d6281269c445c6a9b2",
+  "commit": "87eaba9ece76ff23ef5a86a8d2a757a7feebcfa0",
   "machine": "x86_64",
   "platform": "macOS-15.7.9-x86_64-i386-64bit-Mach-O",
   "python": "3.13.15",
@@ -21,17 +21,17 @@
           720
         ],
         "canvas_png": "forest-canvas.png",
-        "canvas_sha256": "7199d1c01850d4593534c96b4cb33af19df0446ef473d99663d14c6008d71e49",
+        "canvas_sha256": "ce34e72c2b8ca33de602f6c441e9290a1ff1a435036479112c0d44429266cbab",
         "capture_size": [
           1920,
           1080
         ],
         "comparison": "aqua-palette-spatial",
         "desktop_png": "forest-desktop.png",
-        "desktop_sha256": "c75640fba7c0999233656d237fcbf83efd355346d158cfaa40b36047d7aa57fb",
+        "desktop_sha256": "df6095408706c66086c76f07bd1a808b7b71665e4bf8252aad7f6f7f66da8b0b",
         "frame_ppm": "forest-frame.ppm",
-        "frame_ppm_sha256": "d21fdc7d37bbb8ae929e78aaa2158ca2efcfb1ae0914720a19087e827cd6c238",
-        "frame_sha256": "9c6658dae8aae98d0ad5871a0aada6b0d718fd1af9756f3595e95c3d461f3955"
+        "frame_ppm_sha256": "60c07625314001ac39dccf57866182ab993eeae05ace16b7674f575e4ff54a43",
+        "frame_sha256": "0e2f572a1f511192153bb8a42ab444eb672366e4f1a4e27ab836caed8cb0b366"
       },
       "stderr": "",
       "stdout": ""
@@ -52,7 +52,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "fortune-desktop.png",
-        "desktop_sha256": "fd040123ce5426991c14b092f6df2d6f4af7faf8f04c844f516b59ae4b0e715b",
+        "desktop_sha256": "151102aa9356ac9a12496cb7b854047c12e23b7adf0a0e200b2076c6b80edd1e",
         "frame_ppm": "fortune-frame.ppm",
         "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
         "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
@@ -76,13 +76,65 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "snake-desktop.png",
-        "desktop_sha256": "02e9f5050f82d541b490dcb7e0f289b034c6ec58e8137de379001332eb0d0ebb",
+        "desktop_sha256": "0223de932ac04394767ddf9edff4170a3e746118f80fd895b335da951ea99ed3",
         "frame_ppm": "snake-frame.ppm",
         "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
         "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"
       },
       "stderr": "",
       "stdout": ""
+    },
+    "visual-progression": {
+      "capture": {
+        "aqua_color_bijection": null,
+        "aqua_palette_spatial": {
+          "limit": 24,
+          "max_channel_delta": 11,
+          "minimum_palette_separation": 50
+        },
+        "canvas_capture_size": [
+          960,
+          720
+        ],
+        "canvas_png": "visual-progression-canvas.png",
+        "canvas_sha256": "b64f97aa801dfa6cc558ef4549fbaf89344bade2fd6c234e0bb596bb80280cc8",
+        "capture_size": [
+          1920,
+          1080
+        ],
+        "comparison": "aqua-palette-spatial",
+        "desktop_png": "visual-progression-desktop.png",
+        "desktop_sha256": "568ed6bb977ffa79c3563943a1ef9c5a3e2fb7c8885f0bd11ff643d50acd300e",
+        "frame_ppm": "visual-progression-frame.ppm",
+        "frame_ppm_sha256": "da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f",
+        "frame_sha256": "473d19905b5d8cc3a081c6935fa06e8fe5ee1a46359e113a6bf9cb606f66b2dd"
+      },
+      "frame_sha256": [
+        "c5cdfbd16ff6089f97e15286ca1adf748dc5e60fc310e00ac7a8904840451190",
+        "e7b61549c8230274205229f7ab9494f310073a2293b3ee6b1d295d556fde91c9",
+        "b8ac3d23a3ddc8ae764dfe2a3d142148f27913cd0ff54068e60412b1c21349ab",
+        "614e6c4046a3e799d4b014b3859353913840907c0bdf9470d9d71197682023ac",
+        "90ae1dd6cd0cadff320d48643203a9eb6d673da091bedc24466fd0ec2d699273",
+        "473d19905b5d8cc3a081c6935fa06e8fe5ee1a46359e113a6bf9cb606f66b2dd"
+      ],
+      "generations": [
+        116,
+        224,
+        332,
+        440,
+        548,
+        656
+      ],
+      "release_intervals_ms": [
+        196.108,
+        149.74,
+        151.61,
+        158.076,
+        213.102
+      ],
+      "stderr": "",
+      "stdout": "",
+      "visual_dwell_ms": 80
     }
   },
   "tk_patchlevel": "8.6.18",

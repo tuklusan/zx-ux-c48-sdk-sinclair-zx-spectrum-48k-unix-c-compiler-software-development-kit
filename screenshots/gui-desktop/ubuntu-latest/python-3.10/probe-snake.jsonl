@@ -1,16 +1,17 @@
-{"canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "window_ready", "monotonic_ns": 130269827425, "pid": 2526, "root_height": 760, "root_width": 962, "root_x": 0, "root_y": 0, "scale": 3, "screen_height": 1200, "screen_width": 1600, "seq": 1, "title": "ZX-UX C48 - snake.c48b", "tk_patchlevel": "8.6.14", "windowing_system": "x11"}
-{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-snake-frame.ppm", "frame_sha256": "dee950a1252bfcaf0277a7f754c036c6bc263f5275f2fcd3b989842214e50d75", "generation": 34, "monotonic_ns": 130358429359, "pid": 2526, "seq": 2}
-{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-snake-frame.ppm", "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08", "generation": 201, "monotonic_ns": 130398509463, "pid": 2526, "seq": 3}
-{"event": "input_waiting", "monotonic_ns": 130398732591, "pid": 2526, "seq": 4}
-{"break_running": true, "done": false, "event": "break_key", "monotonic_ns": 130637064998, "pid": 2526, "seq": 5}
-{"event": "display_close", "monotonic_ns": 130637208542, "pid": 2526, "seq": 6}
-{"event": "input_return", "monotonic_ns": 130637320688, "pid": 2526, "seq": 7, "value": -1}
-{"event": "input_waiting", "monotonic_ns": 130640047925, "pid": 2526, "seq": 8}
-{"event": "input_return", "monotonic_ns": 130640184192, "pid": 2526, "seq": 9, "value": -1}
-{"event": "input_waiting", "monotonic_ns": 130642675149, "pid": 2526, "seq": 10}
-{"event": "input_return", "monotonic_ns": 130642834100, "pid": 2526, "seq": 11, "value": -1}
-{"event": "input_waiting", "monotonic_ns": 130645506717, "pid": 2526, "seq": 12}
-{"event": "input_return", "monotonic_ns": 130645670763, "pid": 2526, "seq": 13, "value": -1}
-{"break_running": true, "error_type": null, "event": "mainloop_exit", "monotonic_ns": 130647555214, "pid": 2526, "seq": 14, "status": 1}
-{"event": "input_waiting", "monotonic_ns": 130647976296, "pid": 2526, "seq": 15}
-{"event": "input_return", "monotonic_ns": 130648108467, "pid": 2526, "seq": 16, "value": -1}
+{"canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "window_ready", "monotonic_ns": 72937591362, "pid": 2658, "root_height": 760, "root_width": 962, "root_x": 0, "root_y": 0, "scale": 3, "screen_height": 1200, "screen_width": 1600, "seq": 1, "title": "ZX-UX C48 - snake.c48b", "tk_patchlevel": "8.6.14", "windowing_system": "x11"}
+{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-snake-frame-34.ppm", "frame_sha256": "dee950a1252bfcaf0277a7f754c036c6bc263f5275f2fcd3b989842214e50d75", "generation": 34, "monotonic_ns": 73020473039, "pid": 2658, "seq": 2}
+{"border_color": 0, "canvas_height": 720, "canvas_width": 960, "canvas_x": 1, "canvas_y": 0, "event": "frame_rendered", "frame_ppm": "probe-snake-frame-201.ppm", "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08", "generation": 201, "monotonic_ns": 73062417045, "pid": 2658, "seq": 3}
+{"dwell_ms": 0, "event": "frame_presented", "generation": 201, "monotonic_ns": 73062707673, "pid": 2658, "reason": "input", "seq": 4}
+{"event": "input_waiting", "monotonic_ns": 73062829701, "pid": 2658, "seq": 5}
+{"break_running": true, "done": false, "event": "break_key", "monotonic_ns": 73313372845, "pid": 2658, "seq": 6}
+{"event": "display_close", "monotonic_ns": 73313559426, "pid": 2658, "seq": 7}
+{"event": "input_return", "monotonic_ns": 73313684799, "pid": 2658, "seq": 8, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 73316114406, "pid": 2658, "seq": 9}
+{"event": "input_return", "monotonic_ns": 73316229269, "pid": 2658, "seq": 10, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 73318231813, "pid": 2658, "seq": 11}
+{"event": "input_return", "monotonic_ns": 73318351934, "pid": 2658, "seq": 12, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 73320590113, "pid": 2658, "seq": 13}
+{"event": "input_return", "monotonic_ns": 73320761160, "pid": 2658, "seq": 14, "value": -1}
+{"break_running": true, "error_type": null, "event": "mainloop_exit", "monotonic_ns": 73322699193, "pid": 2658, "seq": 15, "status": 1}
+{"event": "input_waiting", "monotonic_ns": 73322828692, "pid": 2658, "seq": 16}
+{"event": "input_return", "monotonic_ns": 73322917506, "pid": 2658, "seq": 17, "value": -1}
