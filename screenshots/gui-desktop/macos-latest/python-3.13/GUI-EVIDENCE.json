@@ -1,5 +1,5 @@
 {
-  "commit": "87eaba9ece76ff23ef5a86a8d2a757a7feebcfa0",
+  "commit": "6825f7f4b40a20073c061d6fd6e0a852ae9b0a2b",
   "machine": "arm64",
   "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
   "python": "3.13.15",
@@ -75,7 +75,7 @@
         ],
         "comparison": "aqua-color-bijection",
         "desktop_png": "forest-desktop.png",
-        "desktop_sha256": "3c622241430a2e1a09d767c18dfc6475016a4bf8895dd568a708f22a2674bcab",
+        "desktop_sha256": "5a1a214322e8535ffcbb77c18d5a0bd17ae97f112392f3a82e196ac32342d28d",
         "frame_ppm": "forest-frame.ppm",
         "frame_ppm_sha256": "60c07625314001ac39dccf57866182ab993eeae05ace16b7674f575e4ff54a43",
         "frame_sha256": "0e2f572a1f511192153bb8a42ab444eb672366e4f1a4e27ab836caed8cb0b366"
@@ -99,7 +99,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "fortune-desktop.png",
-        "desktop_sha256": "26af7be24b54415159d6c67f1c0d47970be335579fd92583ec63a097972056e6",
+        "desktop_sha256": "7308b9dfe90c5a5f9884c6c391c66c59242e7949c743c91f63299b4a6adb743e",
         "frame_ppm": "fortune-frame.ppm",
         "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
         "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
@@ -123,7 +123,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "snake-desktop.png",
-        "desktop_sha256": "37fff07ee810e982ecc1c19827f2fd4180c2113881f2ed6430fec3b9261d80ac",
+        "desktop_sha256": "f855ebdb370f8fc42991deb8b65d9270626df8cc5209421c7f92df7b2ed52b06",
         "frame_ppm": "snake-frame.ppm",
         "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
         "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"
@@ -147,7 +147,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "visual-progression-desktop.png",
-        "desktop_sha256": "7fcb7352ca9bcf6f732e2486c19e276e4d12e6804404cfe7af2043b5ef438b3f",
+        "desktop_sha256": "3e60e46615a563a9acc711f6fd95c3db813df3ad6ff1ff0587001f902ee09163",
         "frame_ppm": "visual-progression-frame.ppm",
         "frame_ppm_sha256": "da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f",
         "frame_sha256": "473d19905b5d8cc3a081c6935fa06e8fe5ee1a46359e113a6bf9cb606f66b2dd"
@@ -169,11 +169,11 @@
         656
       ],
       "release_intervals_ms": [
-        161.625,
-        141.83,
-        204.426,
-        130.961,
-        138.773
+        140.578,
+        179.382,
+        153.461,
+        106.761,
+        124.925
       ],
       "stderr": "",
       "stdout": "",

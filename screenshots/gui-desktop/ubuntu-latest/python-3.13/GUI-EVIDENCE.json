@@ -1,5 +1,5 @@
 {
-  "commit": "87eaba9ece76ff23ef5a86a8d2a757a7feebcfa0",
+  "commit": "6825f7f4b40a20073c061d6fd6e0a852ae9b0a2b",
   "machine": "x86_64",
   "platform": "Linux-6.17.0-1022-azure-x86_64-with-glibc2.39",
   "python": "3.13.15",
@@ -118,11 +118,11 @@
         656
       ],
       "release_intervals_ms": [
-        157.964,
-        158.382,
-        158.46,
-        157.466,
-        158.467
+        123.776,
+        149.281,
+        151.369,
+        155.432,
+        155.174
       ],
       "stderr": "",
       "stdout": "",

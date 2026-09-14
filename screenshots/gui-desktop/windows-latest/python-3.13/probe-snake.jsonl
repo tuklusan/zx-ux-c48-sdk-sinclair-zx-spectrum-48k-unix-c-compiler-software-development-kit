@@ -1,21 +1,32 @@
-{"canvas_height": 480, "canvas_width": 640, "canvas_x": 55, "canvas_y": 31, "event": "window_ready", "monotonic_ns": 166482169100, "pid": 4352, "root_height": 522, "root_width": 642, "root_x": 54, "root_y": 31, "scale": 2, "screen_height": 768, "screen_width": 1024, "seq": 1, "title": "ZX-UX C48 - snake.c48b", "tk_patchlevel": "8.6.15", "windowing_system": "win32"}
-{"border_color": 0, "canvas_height": 480, "canvas_width": 640, "canvas_x": 55, "canvas_y": 31, "event": "frame_rendered", "frame_ppm": "probe-snake-frame-97.ppm", "frame_sha256": "1291f1c6898ad494c7a675d46764a0469269f6042673a48b74ea4aaf1640c8bd", "generation": 97, "monotonic_ns": 166568714800, "pid": 4352, "seq": 2}
-{"border_color": 0, "canvas_height": 480, "canvas_width": 640, "canvas_x": 55, "canvas_y": 31, "event": "frame_rendered", "frame_ppm": "probe-snake-frame-201.ppm", "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08", "generation": 201, "monotonic_ns": 166612818500, "pid": 4352, "seq": 3}
-{"dwell_ms": 0, "event": "frame_presented", "generation": 201, "monotonic_ns": 166613517500, "pid": 4352, "reason": "input", "seq": 4}
-{"event": "input_waiting", "monotonic_ns": 166613864000, "pid": 4352, "seq": 5}
-{"break_running": true, "done": false, "event": "break_key", "monotonic_ns": 166985678400, "pid": 4352, "seq": 6}
-{"event": "display_close", "monotonic_ns": 166986077000, "pid": 4352, "seq": 7}
-{"event": "input_return", "monotonic_ns": 166986425400, "pid": 4352, "seq": 8, "value": -1}
-{"event": "input_waiting", "monotonic_ns": 166988620400, "pid": 4352, "seq": 9}
-{"event": "input_return", "monotonic_ns": 166988946900, "pid": 4352, "seq": 10, "value": -1}
-{"event": "input_waiting", "monotonic_ns": 166991010700, "pid": 4352, "seq": 11}
-{"event": "input_return", "monotonic_ns": 166991310900, "pid": 4352, "seq": 12, "value": -1}
-{"event": "input_waiting", "monotonic_ns": 166995830900, "pid": 4352, "seq": 13}
-{"event": "input_return", "monotonic_ns": 166996335900, "pid": 4352, "seq": 14, "value": -1}
-{"event": "input_waiting", "monotonic_ns": 166999454200, "pid": 4352, "seq": 15}
-{"event": "input_return", "monotonic_ns": 166999891600, "pid": 4352, "seq": 16, "value": -1}
-{"event": "input_waiting", "monotonic_ns": 167003819800, "pid": 4352, "seq": 17}
-{"event": "input_return", "monotonic_ns": 167004308700, "pid": 4352, "seq": 18, "value": -1}
-{"event": "input_waiting", "monotonic_ns": 167007073900, "pid": 4352, "seq": 19}
-{"break_running": true, "error_type": null, "event": "mainloop_exit", "monotonic_ns": 167007530800, "pid": 4352, "seq": 20, "status": 1}
-{"event": "input_return", "monotonic_ns": 167007857500, "pid": 4352, "seq": 21, "value": -1}
+{"canvas_height": 480, "canvas_width": 640, "canvas_x": 55, "canvas_y": 31, "event": "window_ready", "monotonic_ns": 277128038100, "pid": 5252, "root_height": 522, "root_width": 642, "root_x": 54, "root_y": 31, "scale": 2, "screen_height": 768, "screen_width": 1024, "seq": 1, "title": "ZX-UX C48 - snake.c48b", "tk_patchlevel": "8.6.15", "windowing_system": "win32"}
+{"border_color": 0, "canvas_height": 480, "canvas_width": 640, "canvas_x": 55, "canvas_y": 31, "event": "frame_rendered", "frame_ppm": "probe-snake-frame-201.ppm", "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08", "generation": 201, "monotonic_ns": 277174793800, "pid": 5252, "seq": 2}
+{"dwell_ms": 0, "event": "frame_presented", "generation": 201, "monotonic_ns": 277175364900, "pid": 5252, "reason": "input", "seq": 3}
+{"event": "input_waiting", "monotonic_ns": 277175846700, "pid": 5252, "seq": 4}
+{"break_running": true, "done": false, "event": "break_key", "monotonic_ns": 277554643000, "pid": 5252, "seq": 5}
+{"event": "display_close", "monotonic_ns": 277555121700, "pid": 5252, "seq": 6}
+{"event": "input_return", "monotonic_ns": 277555417400, "pid": 5252, "seq": 7, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277557021100, "pid": 5252, "seq": 8}
+{"event": "input_return", "monotonic_ns": 277557324800, "pid": 5252, "seq": 9, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277558676200, "pid": 5252, "seq": 10}
+{"event": "input_return", "monotonic_ns": 277559142700, "pid": 5252, "seq": 11, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277560719800, "pid": 5252, "seq": 12}
+{"event": "input_return", "monotonic_ns": 277561149100, "pid": 5252, "seq": 13, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277562410800, "pid": 5252, "seq": 14}
+{"event": "input_return", "monotonic_ns": 277562591300, "pid": 5252, "seq": 15, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277563913600, "pid": 5252, "seq": 16}
+{"event": "input_return", "monotonic_ns": 277564201500, "pid": 5252, "seq": 17, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277565469600, "pid": 5252, "seq": 18}
+{"event": "input_return", "monotonic_ns": 277566217000, "pid": 5252, "seq": 19, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277567603200, "pid": 5252, "seq": 20}
+{"event": "input_return", "monotonic_ns": 277567958800, "pid": 5252, "seq": 21, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277569272400, "pid": 5252, "seq": 22}
+{"event": "input_return", "monotonic_ns": 277569576300, "pid": 5252, "seq": 23, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277570643400, "pid": 5252, "seq": 24}
+{"event": "input_return", "monotonic_ns": 277570950300, "pid": 5252, "seq": 25, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277572553100, "pid": 5252, "seq": 26}
+{"event": "input_return", "monotonic_ns": 277573000200, "pid": 5252, "seq": 27, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277574401400, "pid": 5252, "seq": 28}
+{"event": "input_return", "monotonic_ns": 277574762300, "pid": 5252, "seq": 29, "value": -1}
+{"event": "input_waiting", "monotonic_ns": 277576158800, "pid": 5252, "seq": 30}
+{"break_running": true, "error_type": null, "event": "mainloop_exit", "monotonic_ns": 277576838800, "pid": 5252, "seq": 31, "status": 1}
+{"event": "input_return", "monotonic_ns": 277577298900, "pid": 5252, "seq": 32, "value": -1}
