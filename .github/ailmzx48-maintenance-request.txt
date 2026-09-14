@@ -1,1 +1,1 @@
-Keep the C48 binary wall-clock quota at 15 seconds, reduce only Mandel's stress probe from 3 frames to 2, prove Mandel and Tk desktop behavior, regenerate MANIFEST.sha256, and verify the repository.
+Keep every build-phase C48 binary under --time-quota 15, keep Mandel canonical output unchanged while fitting its stress probe inside the quota, run the Tk desktop forest completion case with two deterministic frames instead of the 240-frame exhibition loop, regenerate MANIFEST.sha256, and verify the repository.
