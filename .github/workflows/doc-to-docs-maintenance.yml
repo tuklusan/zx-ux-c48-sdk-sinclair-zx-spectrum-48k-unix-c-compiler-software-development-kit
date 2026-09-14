@@ -42,7 +42,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Normalize active SoP instrumentation headers
+      - name: Normalize helper license headers
         shell: bash
         run: |
           python - <<'PY'
@@ -65,24 +65,10 @@ jobs:
               line[10:] if line.startswith('          ') else line
               for line in header.splitlines()
           ) + '\n'
-          workflows = [
-              '.github/workflows/ailmzx48-sop-anchor-repair.yml',
-              '.github/workflows/ailmzx48-sop-bridge-probe.yml',
-              '.github/workflows/ailmzx48-sop-bridge-snapshot.yml',
-          ]
           helpers = [
               'usr/src/ailmzx48/tooling/sop_anchor_doc_repair.py',
               'usr/src/ailmzx48/tooling/sop_anchor_repair.py',
           ]
-          for rel in workflows:
-              path = Path(rel)
-              text = path.read_text(encoding='utf-8')
-              at = text.find('name:')
-              if at < 0:
-                  raise SystemExit(f'workflow name marker missing: {rel}')
-              path.write_text(
-                  header + text[at:], encoding='utf-8', newline='\n')
-              print('HEADER_NORMALIZED', rel)
           for rel in helpers:
               path = Path(rel)
               text = path.read_text(encoding='utf-8')
@@ -107,12 +93,11 @@ jobs:
           root = Path('.')
           workflow = '.github/workflows/doc-to-docs-maintenance.yml'
           changed = []
-          before = []
           for path in sorted(root.rglob('*')):
               if not path.is_file():
                   continue
               rel = path.as_posix()
-              if rel.startswith('.git/'):
+              if rel.startswith('.git/') or rel.startswith('.github/workflows/'):
                   continue
               if rel == 'MANIFEST.sha256' or rel == workflow:
                   continue
@@ -122,10 +107,6 @@ jobs:
                   text = path.read_text(encoding='utf-8')
               except UnicodeDecodeError:
                   continue
-              if 'doc/' in text or '"doc"' in text or "'doc'" in text:
-                  for no, line in enumerate(text.splitlines(), 1):
-                      if 'doc/' in line or '"doc"' in line or "'doc'" in line:
-                          before.append(f'{rel}:{no}:{line}')
               new = text.replace('doc/', 'docs/')
               if rel == 'compiler/verify_graphics_demos.py':
                   new = new.replace(
@@ -134,10 +115,6 @@ jobs:
               if new != text:
                   path.write_text(new, encoding='utf-8', newline='\n')
                   changed.append(rel)
-          print('DOCS_RENAME_MATCHES_BEGIN')
-          for line in before:
-              print(line)
-          print('DOCS_RENAME_MATCHES_END')
           print('DOCS_RENAME_CHANGED', len(changed))
           for rel in changed:
               print('DOCS_RENAME_FILE', rel)
@@ -146,7 +123,9 @@ jobs:
               if not path.is_file():
                   continue
               rel = path.as_posix()
-              if rel.startswith('.git/') or rel.startswith('docs/reference/'):
+              if (rel.startswith('.git/') or
+                  rel.startswith('.github/workflows/') or
+                  rel.startswith('docs/reference/')):
                   continue
               if rel == 'MANIFEST.sha256' or rel == workflow:
                   continue
@@ -251,11 +230,17 @@ jobs:
           test ! -e doc
           test -d docs
 
-      - name: Commit and push completed rename maintenance
+      - name: Restore workflow and push qualified ordinary files
         shell: bash
         run: |
+          git checkout -- .github/workflows/doc-to-docs-maintenance.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
+          git diff --cached --quiet && exit 1
+          if git diff --cached --name-only | grep -q '^\.github/workflows/'; then
+            echo 'workflow diff unexpectedly remains in Actions commit' >&2
+            exit 1
+          fi
           git commit -m "Complete doc to docs directory rename [skip ci]"
           git push origin HEAD:main
