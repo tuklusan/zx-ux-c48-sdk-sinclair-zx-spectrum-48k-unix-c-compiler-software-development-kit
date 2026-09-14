@@ -19,4 +19,10 @@ htmlcov/
 *.ppm
 *.tmp
 *.temp
-!screenshots/gui-desktop/**/visual-progression-frame.ppm
+
+# Generated release-package metadata and archives.
+MANIFEST.sha256
+C48-SPECIFICATION.json
+RELEASE-CANDIDATE.json
+SHA256SUMS.release
+zx-ux-c48-sdk-*.zip
