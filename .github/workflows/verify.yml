@@ -15,7 +15,7 @@ name: C48 SDK verification
 
 "on":
   push:
-    branches: [main]
+    branches: [main, cleanup/deep-clean-2026-09-14]
     paths:
       # Executable/test inputs only. Documentation, images, retained evidence,
       # and generated checksum metadata must not consume the 8-row CI matrix.
