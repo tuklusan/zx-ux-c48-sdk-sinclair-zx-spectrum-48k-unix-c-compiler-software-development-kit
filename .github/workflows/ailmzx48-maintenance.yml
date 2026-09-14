@@ -48,6 +48,9 @@ jobs:
           test -f .github/ailmzx48-maintenance-request.txt
           git rm .github/ailmzx48-maintenance-request.txt
 
+      - name: Repair quota constructor initialization order
+        run: python -B .github/c48-runtime-constructor-fix.py
+
       - name: Apply C48 15-second runtime quota maintenance
         run: python -B .github/c48-quota-maintenance.py
 
