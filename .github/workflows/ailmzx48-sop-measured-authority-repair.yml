@@ -1,0 +1,153 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs. See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions."
+# ============================================================================
+name: ailmzx48 SoP measured-authority repair
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-sop-measured-authority-repair.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ailmzx48-sop-measured-authority-main
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Repair measured SDK authority
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+          import re
+
+          a = Path('usr/src/ailmzx48')
+          design = a / 'AILMZX48-DETAILED-DESIGN.md'
+          text = design.read_text(encoding='utf-8')
+          old = '### 22.1 Revision-0.26 measured SDK answers and release-profile boundary'
+          new = '### 22.1 Revision-0.29 measured SDK answers and release-profile boundary'
+          if text.count(old) != 1:
+              raise SystemExit('measured-answer heading anchor mismatch')
+          text = text.replace(old, new, 1)
+          old = (
+              'decoded LM-context ring to 96 u16 entries; the cold A48M object is 8432 logical\n'
+              'bytes with 69 records, a 64-byte maximum read request and a 192-byte maximum\n'
+              'record;'
+          )
+          new = (
+              'decoded LM-context ring to 96 u16 entries; the cold A48M object is 8566 logical\n'
+              'bytes with 69 records, a 64-byte maximum read request and a 192-byte maximum\n'
+              'record;'
+          )
+          if text.count(old) != 1:
+              raise SystemExit('measured cold-model size anchor mismatch')
+          design.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
+
+          checker = a / 'evaluation/check_design_compliance.py'
+          check = checker.read_text(encoding='utf-8')
+          anchor = (
+              '    require("Revision 0.29 closes the SDK-side design questions" in design,\n'
+              '            "current resolved-parameter revision is stale")\n'
+          )
+          insert = anchor + '''    require("### 22.1 Revision-0.29 measured SDK answers" in design,\n            "measured SDK answer revision heading is stale")\n    require("### 22.1 Revision-0.26 measured SDK answers" not in design,\n            "stale Revision-0.26 measured-answer heading remains")\n    measured = design.split("### 22.1 Revision-0.29 measured SDK answers", 1)[1]\n    measured = measured.split("## 23. Resolved SDK parameters", 1)[0]\n    require("cold A48M object is 8566 logical" in measured and\n            "cold A48M object is 8432 logical" not in measured,\n            "measured SDK cold-model size is stale")\n'''
+          if check.count(anchor) != 1:
+              raise SystemExit('compliance checker anchor mismatch')
+          checker.write_text(check.replace(anchor, insert, 1),
+                             encoding='utf-8', newline='\n')
+
+          data = design.read_bytes()
+          design_sha = hashlib.sha256(data).hexdigest()
+          design_blob = hashlib.sha1(
+              b'blob ' + str(len(data)).encode('ascii') + b'\0' + data
+          ).hexdigest()
+          if design_sha != 'c5bae5348c0a190e06c7fd9fd3af46f9c154ed4db8b0b2231d4669b3dca227a0':
+              raise SystemExit('unexpected repaired design SHA: ' + design_sha)
+          if design_blob != 'f8120b66ade6029665cbd11910bdea593f9d64d9':
+              raise SystemExit('unexpected repaired design blob: ' + design_blob)
+
+          status_path = a / 'evaluation/DESIGN-COMPLIANCE-STATUS.json'
+          status = json.loads(status_path.read_text(encoding='utf-8'))
+          status['design_sha256'] = design_sha
+          status['design_git_blob_sha1'] = design_blob
+          status_path.write_text(json.dumps(status, indent=2, sort_keys=True) + '\n',
+                                 encoding='utf-8', newline='\n')
+
+          cert_path = a / 'evaluation/DESIGN-REVIEW-CERTIFICATE.md'
+          cert = cert_path.read_text(encoding='utf-8')
+          cert = re.sub(r'- detailed-design Git blob: `[0-9a-f]{40}`',
+                        f'- detailed-design Git blob: `{design_blob}`', cert)
+          cert = re.sub(r'- detailed-design SHA-256: `[0-9a-f]{64}`',
+                        f'- detailed-design SHA-256: `{design_sha}`', cert)
+          cert_path.write_text(cert, encoding='utf-8', newline='\n')
+          PY
+
+      - name: Rebuild and run ailmzx48 reference gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B usr/src/ailmzx48/evaluation/test_context_reference.py
+          python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
+          python -B compiler/c48.py usr/src/ailmzx48/ailmzx48.c \
+            -o /tmp/ailmzx48.c48b
+          cmp /tmp/ailmzx48.c48b usr/bin/ailmzx48/ailmzx48.c48b
+
+      - name: Remove temporary SoP instrumentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/ailmzx48-sop-measured-authority-repair.yml
+
+      - name: Run hard release gates
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B usr/src/ailmzx48/tooling/update_manifest.py
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py --pass-id 1
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py --pass-id 2
+          python -B usr/src/ailmzx48/evaluation/check_design_compliance.py --pass-id 3
+          python -B compiler/verify_release.py
+          git diff --check
+
+      - name: Commit and push measured-authority repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "${GITHUB_SHA}"
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 1
+          git commit -m "ailmzx48: repair measured SDK authority"
+          git push origin HEAD:main
