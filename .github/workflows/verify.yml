@@ -33,22 +33,6 @@ name: C48 SDK verification
       - "c48run"
       - "c48run.bat"
       - ".github/workflows/verify.yml"
-  pull_request:
-    paths:
-      - "VERSION"
-      - ".gitattributes"
-      - "compiler/**/*.py"
-      - "compiler/**/*.json"
-      - "compiler/**/*.bin"
-      - "compiler/**/*.rom"
-      - "usr/src/**/*.c"
-      - "usr/src/**/*.h"
-      - "usr/bin/**/*.c48b"
-      - "c48"
-      - "c48.bat"
-      - "c48run"
-      - "c48run.bat"
-      - ".github/workflows/verify.yml"
   workflow_dispatch:
 
 concurrency:
