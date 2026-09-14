@@ -13,37 +13,36 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# Host-native GUI screenshot evidence
+# Host-native GUI screenshots
 
-`compiler/verify_gui_desktop.py` writes compositor screenshots and machine-readable
-probe evidence under a stable row path:
+`compiler/verify_gui_desktop.py` writes compositor screenshots and generated
+probe/checksum evidence under a stable working path:
 
 ```text
 screenshots/gui-desktop/<runner>/python-<version>/
 ```
 
-Each row contains a fixed set of `forest`, `fortune`, and `snake` desktop/canvas
-PNGs, the exact Tk-rendered frame PPMs, probe logs, `GUI-EVIDENCE.json`, and
-`SHA256SUMS`. The verifier clears the target row before writing, so reruns replace that row
-instead of accumulating files. GitHub Actions uploads each row and a combined
-release-evidence artifact with 90-day retention. After all eight rows pass on a
-`main` push, the GUI workflow also replaces the eight stable in-tree rows and
-commits that bounded evidence snapshot. Binary PNG/PPM payloads are stored through
-Git LFS; JSON, probe logs, checksums, and this README remain ordinary Git text.
+The checked-in PNG files are retained as human-facing screenshots. They are not
+the release gate's machine evidence and do not need to match the most recent CI
+run. Generated `GUI-EVIDENCE.json`, `SHA256SUMS`, probe `*.jsonl` files and Tk
+frame `*.ppm` files are deliberately not retained in the source repository.
 
-A release candidate is not packageable unless all eight retained rows are present,
-their row checksums verify, the aggregate checksum verifies, and the retained GUI
-evidence identifies the immediately preceding source commit. This keeps the
-release source archive self-contained while preventing stale screenshots from
-being silently reused after source changes.
+The host-native GUI workflow creates fresh evidence for all eight runner/Python
+rows, uploads each row as a GitHub Actions artifact, then uploads a combined
+release-evidence artifact with the aggregate manifest. Those artifacts are
+bounded by the workflow retention period rather than committed back to `main`.
 
-The full-desktop PNGs are actual host screenshot captures. Their canvas regions
-are cropped using Tk-reported screen geometry and compared, after nearest-neighbor
-normalization, with the RGB framebuffer that Tk reported as painted. Linux and
-Windows require byte-for-byte RGB identity. Aqua first accepts the same strict
-one-to-one color bijection. If the host compositor spatially dithers color-managed
-pixels, every captured pixel must instead remain uniquely classified as the exact
-Spectrum palette color expected at that same position and stay inside half the
-minimum palette separation. This preserves spatial identity while rejecting
-clipping, shifts, normal/bright swaps, or cross-palette corruption. This makes the
-screenshots executable release evidence rather than decorative images.
+Release packaging requires a successful host-native GUI workflow for the exact
+candidate commit. This prevents stale checked-in evidence from being reused and
+keeps generated execution material out of the source tree.
+
+The full-desktop PNGs produced by the verifier are actual host screenshot
+captures. Their canvas regions are cropped using Tk-reported screen geometry and
+compared, after nearest-neighbor normalization, with the RGB framebuffer that Tk
+reported as painted. Linux and Windows require byte-for-byte RGB identity. Aqua
+first accepts the same strict one-to-one color bijection. If the host compositor
+spatially dithers color-managed pixels, every captured pixel must instead remain
+uniquely classified as the exact Spectrum palette color expected at that same
+position and stay inside half the minimum palette separation. This preserves
+spatial identity while rejecting clipping, shifts, normal/bright swaps, or
+cross-palette corruption.

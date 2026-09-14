@@ -11,6 +11,11 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-# The eight stable runner/version evidence rows are tracked. The GUI workflow
-# replaces each row atomically after a successful matrix, so the directory is
-# bounded rather than append-only. Binary images are stored through Git LFS.
+# PNG screenshots may remain human-facing repository material. Machine evidence
+# is generated per run and belongs in bounded GitHub Actions artifacts.
+**/GUI-EVIDENCE.json
+**/SHA256SUMS
+**/*.jsonl
+**/*-frame.ppm
+/RELEASE-GUI-EVIDENCE.json
+/SHA256SUMS
