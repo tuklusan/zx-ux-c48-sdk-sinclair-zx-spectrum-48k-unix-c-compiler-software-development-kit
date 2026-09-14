@@ -42,6 +42,10 @@ jobs:
         run: >-
           python -B usr/src/ailmzx48/tooling/sop_anchor_repair.py patch
 
+      - name: Close stale anchor envelope
+        run: >-
+          python -B usr/src/ailmzx48/tooling/sop_anchor_doc_repair.py
+
       - name: Rebuild anchor-qualified model
         shell: bash
         run: |
@@ -160,6 +164,7 @@ jobs:
         run: |
           rm .github/workflows/ailmzx48-sop-anchor-repair.yml
           rm usr/src/ailmzx48/tooling/sop_anchor_repair.py
+          rm usr/src/ailmzx48/tooling/sop_anchor_doc_repair.py
 
       - name: Run hard release gates
         shell: bash
