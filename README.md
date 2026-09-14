@@ -131,7 +131,7 @@ CPU architecture as well as the workflow label and canonical frame.
 
 The top three plus this gallery show all 21 current graphics demos exactly once.
 
-The combined 21-demo contact sheet is preserved at [`docs/images/demos/contact-sheet.png`](docs/images/demos/contact-sheet.png) and is covered by `MANIFEST.sha256`.
+The combined 21-demo contact sheet is preserved at [`docs/images/demos/contact-sheet.png`](docs/images/demos/contact-sheet.png) and is covered by the release package's generated `MANIFEST.sha256`.
 
 Each graphics runner preserves its freshly rebuilt `.c48b`, canonical `.scr`, rendered
 `.png`, and machine-readable `.json` evidence. A final aggregation job collects all 21
@@ -408,7 +408,7 @@ The release verifier checks, among other things:
 - the 64-column physical-line contract for shipped C48 source;
 - launcher behavior;
 - version/about attribution output;
-- manifest integrity;
+- source-tree/package manifest policy and packaged manifest integrity;
 - the full compiler/runtime conformance, regression, and adversarial-security suite;
 - deterministic reconstruction of every security-fixture binary;
 - deterministic reconstruction of every frozen demo binary;
@@ -440,7 +440,6 @@ zx-ux-c48-sdk/
 |   `-- bin/                 deterministic C48B1 binaries
 |-- docs/                     human manuals, technical reference, images, protected reference material
 |-- LICENSE
-|-- MANIFEST.sha256
 `-- VERSION
 ```
 
