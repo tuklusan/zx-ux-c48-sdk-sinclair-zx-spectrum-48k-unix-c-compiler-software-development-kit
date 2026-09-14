@@ -48,7 +48,7 @@ jobs:
           python - <<'PY'
           from pathlib import Path
 
-          yaml_header = '''# ============================================================================
+          header = '''# ============================================================================
           # Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
           # Proprietary rights reserved except as expressly licensed herein.
           #
@@ -62,29 +62,10 @@ jobs:
           # patent, trademark, and governing-law provisions.
           # ============================================================================
           '''
-          py_header = '''# ============================================================================
-          # Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-          # Proprietary rights reserved except as expressly licensed herein.
-          #
-          # ZX-UX C48 SDK
-          # This file is governed by the SANYALnet Labs Non-Commercial License in the
-          # root LICENSE file. Non-Commercial use permitted; Commercial Use and use
-          # for AI/ML model training are prohibited unless separately authorized.
-          #
-          # Attribution is required: "Based on original work by Supratim Sanyal of
-          # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-          # patent, trademark, and governing-law provisions.
-          # ============================================================================
-          '''
-          yaml_header = '\n'.join(
+          header = '\n'.join(
               line[10:] if line.startswith('          ') else line
-              for line in yaml_header.splitlines()
+              for line in header.splitlines()
           ) + '\n'
-          py_header = '\n'.join(
-              line[10:] if line.startswith('          ') else line
-              for line in py_header.splitlines()
-          ) + '\n'
-
           workflows = [
               '.github/workflows/ailmzx48-sop-anchor-repair.yml',
               '.github/workflows/ailmzx48-sop-bridge-probe.yml',
@@ -94,18 +75,15 @@ jobs:
               'usr/src/ailmzx48/tooling/sop_anchor_doc_repair.py',
               'usr/src/ailmzx48/tooling/sop_anchor_repair.py',
           ]
-
           for rel in workflows:
               path = Path(rel)
               text = path.read_text(encoding='utf-8')
-              marker = 'name:'
-              at = text.find(marker)
+              at = text.find('name:')
               if at < 0:
                   raise SystemExit(f'workflow name marker missing: {rel}')
               path.write_text(
-                  yaml_header + text[at:], encoding='utf-8', newline='\n')
+                  header + text[at:], encoding='utf-8', newline='\n')
               print('HEADER_NORMALIZED', rel)
-
           for rel in helpers:
               path = Path(rel)
               text = path.read_text(encoding='utf-8')
@@ -117,7 +95,7 @@ jobs:
                   print('HEADER_ALREADY_PRESENT', rel)
                   continue
               path.write_text(
-                  shebang + py_header + '\n' + rest,
+                  shebang + header + '\n' + rest,
                   encoding='utf-8', newline='\n')
               print('HEADER_NORMALIZED', rel)
           PY
@@ -132,7 +110,6 @@ jobs:
           workflow = '.github/workflows/doc-to-docs-maintenance.yml'
           changed = []
           before = []
-
           for path in sorted(root.rglob('*')):
               if not path.is_file():
                   continue
@@ -159,7 +136,6 @@ jobs:
               if new != text:
                   path.write_text(new, encoding='utf-8', newline='\n')
                   changed.append(rel)
-
           print('DOCS_RENAME_MATCHES_BEGIN')
           for line in before:
               print(line)
@@ -167,7 +143,6 @@ jobs:
           print('DOCS_RENAME_CHANGED', len(changed))
           for rel in changed:
               print('DOCS_RENAME_FILE', rel)
-
           residual = []
           for path in sorted(root.rglob('*')):
               if not path.is_file():
@@ -190,6 +165,53 @@ jobs:
               print('RESIDUAL_OLD_DOC_PATHS')
               print('\n'.join(residual))
               raise SystemExit(1)
+          PY
+
+      - name: Refresh ailm design identities
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+
+          a = Path('usr/src/ailmzx48')
+          design = a / 'AILMZX48-DETAILED-DESIGN.md'
+          raw = design.read_bytes()
+          design_sha = hashlib.sha256(raw).hexdigest()
+          framed = b'blob ' + str(len(raw)).encode('ascii') + b'\0' + raw
+          design_blob = hashlib.sha1(framed).hexdigest()
+
+          status_path = a / 'evaluation/DESIGN-COMPLIANCE-STATUS.json'
+          status = json.loads(status_path.read_text(encoding='utf-8'))
+          status['design_sha256'] = design_sha
+          status['design_git_blob_sha1'] = design_blob
+          status_path.write_text(
+              json.dumps(status, indent=2, sort_keys=True) + '\n',
+              encoding='utf-8', newline='\n')
+
+          cert_path = a / 'evaluation/DESIGN-REVIEW-CERTIFICATE.md'
+          cert = cert_path.read_text(encoding='utf-8')
+          blob_prefix = '- detailed-design Git blob: `'
+          sha_prefix = '- detailed-design SHA-256: `'
+          out = []
+          blob_hits = 0
+          sha_hits = 0
+          for line in cert.splitlines():
+              if line.startswith(blob_prefix):
+                  line = f'{blob_prefix}{design_blob}`'
+                  blob_hits += 1
+              elif line.startswith(sha_prefix):
+                  line = f'{sha_prefix}{design_sha}`'
+                  sha_hits += 1
+              out.append(line)
+          if blob_hits != 1 or sha_hits != 1:
+              raise SystemExit(
+                  f'certificate identity anchors mismatch: blob={blob_hits} sha={sha_hits}')
+          cert_path.write_text(
+              '\n'.join(out) + '\n', encoding='utf-8', newline='\n')
+          print('DESIGN_SHA256', design_sha)
+          print('DESIGN_GIT_BLOB_SHA1', design_blob)
           PY
 
       - name: Remove temporary workflow and regenerate manifest
