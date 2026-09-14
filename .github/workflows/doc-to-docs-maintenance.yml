@@ -47,7 +47,6 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-
           header = '''# ============================================================================
           # Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
           # Proprietary rights reserved except as expressly licensed herein.
@@ -105,7 +104,6 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
-
           root = Path('.')
           workflow = '.github/workflows/doc-to-docs-maintenance.yml'
           changed = []
@@ -167,6 +165,26 @@ jobs:
               raise SystemExit(1)
           PY
 
+      - name: Rehydrate renamed LFS image paths
+        shell: bash
+        run: |
+          git lfs pull --include="docs/images/**" --exclude=""
+          git lfs checkout docs/images
+          python - <<'PY'
+          from pathlib import Path
+          checked = 0
+          for path in sorted(Path('docs/images').rglob('*')):
+              if not path.is_file():
+                  continue
+              data = path.read_bytes()
+              if data.startswith(b'version https://git-lfs.github.com/spec/v1'):
+                  raise SystemExit(f'LFS pointer remained unhydrated: {path}')
+              checked += 1
+          if checked == 0:
+              raise SystemExit('no renamed LFS images found')
+          print('LFS_REHYDRATED_FILES', checked)
+          PY
+
       - name: Refresh ailm design identities
         shell: bash
         run: |
@@ -174,14 +192,12 @@ jobs:
           from pathlib import Path
           import hashlib
           import json
-
           a = Path('usr/src/ailmzx48')
           design = a / 'AILMZX48-DETAILED-DESIGN.md'
           raw = design.read_bytes()
           design_sha = hashlib.sha256(raw).hexdigest()
           framed = b'blob ' + str(len(raw)).encode('ascii') + b'\0' + raw
           design_blob = hashlib.sha1(framed).hexdigest()
-
           status_path = a / 'evaluation/DESIGN-COMPLIANCE-STATUS.json'
           status = json.loads(status_path.read_text(encoding='utf-8'))
           status['design_sha256'] = design_sha
@@ -189,7 +205,6 @@ jobs:
           status_path.write_text(
               json.dumps(status, indent=2, sort_keys=True) + '\n',
               encoding='utf-8', newline='\n')
-
           cert_path = a / 'evaluation/DESIGN-REVIEW-CERTIFICATE.md'
           cert = cert_path.read_text(encoding='utf-8')
           blob_prefix = '- detailed-design Git blob: `'
