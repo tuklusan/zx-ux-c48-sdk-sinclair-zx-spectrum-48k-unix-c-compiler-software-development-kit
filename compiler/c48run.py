@@ -127,13 +127,15 @@ class _QuotaRomMathVM(RomMathVM):
     """RomMathVM with an optional wall-clock execution quota."""
 
     def __init__(self, *args, time_quota: float = 0.0, **kwargs):
-        super().__init__(*args, **kwargs)
+        # VM construction evaluates global initializers, which can call _tick().
+        # Establish quota state before the base constructor starts that work.
         self._time_quota = float(time_quota)
         self._time_deadline = (
             time.monotonic() + self._time_quota
             if self._time_quota > 0.0
             else None
         )
+        super().__init__(*args, **kwargs)
 
     def _tick(self) -> None:
         super()._tick()

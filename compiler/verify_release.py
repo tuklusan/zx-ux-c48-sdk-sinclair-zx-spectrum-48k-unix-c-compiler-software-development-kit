@@ -282,8 +282,11 @@ def check_demos() -> None:
             screen = d / f"{name}.scr"
             # Run from the temp directory with an exact basename token so argv[0]
             # is deterministic even though each clean-room root is different.
-            cmd = [sys.executable, "-B", str(ROOT / "c48run.py"), "--headless",
-                   "--dump-screen", screen.name, rebuilt.name, *exp["args"]]
+            cmd = [
+                sys.executable, "-B", str(ROOT / "c48run.py"), "--headless",
+                "--time-quota", "15",
+                "--dump-screen", screen.name, rebuilt.name, *exp["args"],
+            ]
             rp = run(cmd, cwd=d)
             if rp.returncode != 0:
                 fail(f"{name}: runtime status {rp.returncode}: {rp.stderr.strip()}")

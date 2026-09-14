@@ -18,10 +18,13 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 from pathlib import Path
 import platform
 import struct
+import subprocess
 import sys
+import tempfile
 import time
 import zlib
 
@@ -36,9 +39,8 @@ EXPECT_PATH = ROOT / "graphics_demo_expectations.json"
 
 sys.path.insert(0, str(ROOT))
 from c48.compiler import compile_file
-from c48.format import encode, read
-from c48.screen import Font4x8, ZXScreen
-from c48.vm import C48VM
+from c48.format import encode
+from c48.screen import Font4x8, SCREEN_SIZE, ZXScreen
 
 FONT = Font4x8.load(ROOT / "assets" / "font4x8-tasword.bin")
 
@@ -107,18 +109,56 @@ def compile_bytes(name: str) -> bytes:
     return encode(compile_file(SRC / f"{name}.c"))
 
 
-def run_demo(name: str, frames: int) -> ZXScreen:
-    program = read(BIN / f"{name}.c48b")
+def run_demo(name: str, frames: int, time_quota: float) -> ZXScreen:
+    with tempfile.TemporaryDirectory(prefix=f"c48-graphics-{name}-") as td:
+        temp = Path(td)
+        program_token = name
+        (temp / program_token).write_bytes(
+            (BIN / f"{name}.c48b").read_bytes()
+        )
+        screen_path = temp / f"{name}.scr"
+        cmd = [
+            sys.executable,
+            "-B",
+            str(ROOT / "c48run.py"),
+            "--headless",
+            "--time-quota",
+            f"{time_quota:g}",
+            "--dump-screen",
+            screen_path.name,
+            program_token,
+            str(frames),
+        ]
+        host_timeout = time_quota + 5.0
+        try:
+            cp = subprocess.run(
+                cmd,
+                cwd=temp,
+                text=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                check=False,
+                timeout=host_timeout,
+            )
+        except subprocess.TimeoutExpired as exc:
+            fail(
+                f"{name}: host timeout after {host_timeout:g}s "
+                f"(VM quota {time_quota:g}s)"
+            )
+            raise AssertionError("unreachable") from exc
+        if cp.returncode != 0:
+            detail = (cp.stderr or cp.stdout).strip()
+            fail(f"{name}: runtime status {cp.returncode}: {detail}")
+        if not screen_path.is_file():
+            fail(f"{name}: runtime did not emit a screen dump")
+        screen_data = screen_path.read_bytes()
+        if len(screen_data) != SCREEN_SIZE:
+            fail(
+                f"{name}: screen dump size {len(screen_data)} "
+                f"!= {SCREEN_SIZE}"
+            )
     screen = ZXScreen(FONT)
-    vm = C48VM(
-        program,
-        screen,
-        argv=[name, str(frames)],
-        max_steps=10000000,
-    )
-    status = vm.run()
-    if status != 0:
-        fail(f"{name}: runtime status {status}")
+    screen.mem[:] = screen_data
     return screen
 
 
@@ -166,16 +206,17 @@ def check_one(
     *,
     stress: bool,
     evidence_dir: Path | None,
+    time_quota: float,
 ) -> dict:
     rebuilt = check_static_one(name, exp)
     image = IMG / f"{name}.png"
 
-    first = run_demo(name, 1)
+    first = run_demo(name, 1, time_quota)
     first_hash = sha_bytes(first.bytes())
     if first_hash != exp["first_screen_sha256"]:
         fail(f"{name}: first-frame screen hash mismatch")
 
-    screen = run_demo(name, int(exp["frames"]))
+    screen = run_demo(name, int(exp["frames"]), time_quota)
     screen_data = screen.bytes()
     screen_hash = sha_bytes(screen_data)
     if screen_hash != exp["screen_sha256"]:
@@ -200,7 +241,7 @@ def check_one(
     stress_seconds = 0.0
     if stress:
         started = time.monotonic()
-        run_demo(name, int(exp["stress_frames"]))
+        run_demo(name, int(exp["stress_frames"]), time_quota)
         stress_seconds = time.monotonic() - started
 
     evidence = {
@@ -217,6 +258,7 @@ def check_one(
         "frames": exp["frames"],
         "stress_frames": exp["stress_frames"],
         "stress_seconds": round(stress_seconds, 3),
+        "time_quota_seconds": time_quota,
         "lit_pixels": lit,
         "attribute_values": attrs,
         "status": "PASS",
@@ -243,7 +285,16 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--release", action="store_true")
     ap.add_argument("--static", action="store_true")
     ap.add_argument("--evidence-dir", type=Path)
+    ap.add_argument(
+        "--time-quota",
+        type=float,
+        default=15.0,
+        metavar="SECONDS",
+        help="per-C48B wall-clock runtime quota (default: 15)",
+    )
     ns = ap.parse_args(argv)
+    if not math.isfinite(ns.time_quota) or ns.time_quota <= 0.0:
+        ap.error("--time-quota must be a finite positive number")
 
     expect = load_expect()
     if expect.get("schema") != 1:
@@ -277,6 +328,7 @@ def main(argv: list[str] | None = None) -> int:
             exp,
             stress=True,
             evidence_dir=ns.evidence_dir,
+            time_quota=ns.time_quota,
         )
         print(f"GRAPHICS DEMO PASS: {ns.demo}")
         return 0
@@ -285,7 +337,13 @@ def main(argv: list[str] | None = None) -> int:
         ap.error("choose --demo NAME, --static, or --release")
 
     for name, exp in expect["demos"].items():
-        check_one(name, exp, stress=False, evidence_dir=None)
+        check_one(
+            name,
+            exp,
+            stress=False,
+            evidence_dir=None,
+            time_quota=ns.time_quota,
+        )
         print(f"GRAPHICS DEMO: {name} PASS", flush=True)
     print("GRAPHICS DEMO VERIFY PASS: 21 demos", flush=True)
     return 0
