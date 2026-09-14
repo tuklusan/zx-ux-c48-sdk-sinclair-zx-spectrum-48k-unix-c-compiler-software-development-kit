@@ -22,6 +22,10 @@ import json
 import re
 from pathlib import Path
 
+from bridge_policy import (
+    assign_bridge_gaps, build_bridge_rows,
+)
+
 TOKEN_RE = re.compile(r"[a-z0-9]+")
 MAX_VOCAB = 96
 MAX_UNIGRAM = 12
@@ -178,6 +182,7 @@ def build(
 ) -> dict:
     doc = json.loads(corpus.read_text(encoding="utf-8"))
     records = doc["records"]
+    bridge_assign = assign_bridge_gaps(records)
     by_topic: dict[str, list[list[str]]] = {
         topic: [] for topic in TOPICS
     }
@@ -218,6 +223,12 @@ def build(
             raise ValueError("missing seed word: " + word)
         if word not in selected:
             selected.append(word)
+    bridge_words = sorted({
+        item["word"] for item in bridge_assign.values()
+    })
+    for word in bridge_words:
+        if word not in selected:
+            selected.append(word)
     for word in ordered:
         if word not in selected:
             selected.append(word)
@@ -227,6 +238,10 @@ def build(
     vocab = ["<eos>"] + selected
     ids = {word: index for index, word in enumerate(vocab)}
     seeds = {topic: ids[SEED_WORD[topic]] for topic in TOPICS}
+    topic_map = {name: index for index, name in enumerate(TOPICS)}
+    bridge_salt, bridge_rows = build_bridge_rows(
+        bridge_assign, topic_map, ids
+    )
 
     flat_n1: list[int] = []
     flat_n2: list[int] = []
@@ -285,6 +300,8 @@ def build(
         ],
         "trigger_words": sorted(trigger_words),
         "trigger_salt": trigger_salt,
+        "bridge_salt": bridge_salt,
+        "bridge_contexts": bridge_rows,
     }
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(
@@ -315,6 +332,8 @@ def build(
         "unsigned int ai_t_games = 6;",
         f"unsigned int ai_tricnt = {len(tri)};",
         f"unsigned int ai_hcnt = {len(hids)};",
+        f"unsigned int ai_brcnt = {len(bridge_rows)};",
+        f"unsigned int ai_bsalt = {bridge_salt};",
     ]
     hdr.append(wrap_nums(
         "ai_tseed", "unsigned char",
@@ -336,6 +355,14 @@ def build(
     ))
     hdr.append(wrap_nums(
         "ai_trin2", "unsigned char", [row[3] for row in tri]
+    ))
+    hdr.append(wrap_nums(
+        "ai_brkey", "unsigned int",
+        [row["key"] for row in bridge_rows]
+    ))
+    hdr.append(wrap_nums(
+        "ai_brnext", "unsigned char",
+        [row["next"] for row in bridge_rows]
     ))
     hdr.append(wrap_nums("ai_hid", "unsigned int", hids))
     hdr.append(wrap_nums("ai_hoff", "unsigned int", hoffs))

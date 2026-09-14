@@ -27,10 +27,12 @@
   "policy": "Training, development, deterministic regression and blind-candidate material are explicitly separated. Blind candidates are reserved and unscored; no blind-generalization claim is made by the SDK profile.",
   "regression": {
     "request_sha256": {
-      "final-a": "dfd5d07e2b9185107adf63170c1df01ee2e4bb9331eabbdb43f08466c59f3db5",
-      "final-b": "8ea96c912da85c0d90f5a70492944be30bb2d6a44fdad28a7c23ead53a8d460b",
-      "final-c": "570b12fd11c93a083e87c9b53a5476d84c3cd05c276175ea99cb8f5298e8beed",
-      "literal-context": "1fc741fcfe356e2216a5ca87335f4730f4ce0915818fb81ca43fd0adadbfe073"
+      "architecture-routing": "5fe407b59dfa8ca827ce06c4b4e52d3ee4db266f5b7266523d3a3bd43674a1f7",
+      "final-a": "c214f3b5d07e780764d45093a709b1746465c938eb2809b982a453b95fa03be2",
+      "final-b": "04208bc846087e92469ce184997433b4708fabe606edfa8b0fb9512e5eb1fa21",
+      "final-c": "48808fee4f21325bfb7da5560c136195d36947c583784345cb72be41d6bf4839",
+      "learned-bridge": "a2c81c16bde255781b6f56472a0bd47d4bfb885ce4ca0747dbd7bd0d6c55ce47",
+      "literal-context": "fbca1e2a688cbc5182f50778c7da4e7404239c1aa2ca307a112440170a5fa2bc"
     },
     "status": "INSPECTED_DETERMINISTIC"
   },

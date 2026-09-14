@@ -19,6 +19,8 @@ import json
 from pathlib import Path
 import re
 
+from bridge_policy import assign_bridge_gaps
+
 MAGIC = b"A48M"
 VERSION = 2
 TRIGGER_BASE = 224
@@ -117,7 +119,8 @@ def choose_trigger_salt(words: list[str]) -> int:
 
 
 def encode_literal_payload(
-    text: str, anchor_words: tuple[str, ...] = ()
+    text: str, anchor_words: tuple[str, ...] = (),
+    gap_index: int | None = None,
 ) -> tuple[bytes, list[tuple[int, int]]]:
     words = TOKEN_RE.findall(text)
     if not words:
@@ -138,14 +141,26 @@ def encode_literal_payload(
             payload.extend((0xF1, len(raw)))
         payload.extend(raw)
         ends.append(len(payload))
-    first = 2 if len(words) > 3 else max(0, len(words) - 2)
     anchors: list[tuple[int, int]] = []
-    if words[0].lower() in set(anchor_words) and first > 0:
-        anchors.append((starts[0], ends[0] - starts[0]))
-    anchors.append((starts[first], ends[-1] - starts[first]))
+    if gap_index is None:
+        first = 2 if len(words) > 3 else max(0, len(words) - 2)
+        if words[0].lower() in set(anchor_words) and first > 0:
+            anchors.append((starts[0], ends[0] - starts[0]))
+        anchors.append((starts[first], ends[-1] - starts[first]))
+    else:
+        if gap_index < 0 or gap_index >= len(words) - 1:
+            raise A48MError("bridge gap outside safe range")
+        if gap_index > 0:
+            anchors.append((starts[0], ends[gap_index - 1] - starts[0]))
+        anchors.append((
+            starts[gap_index + 1],
+            ends[-1] - starts[gap_index + 1],
+        ))
     payload.append(0x02)
+    if not anchors or len(anchors) > 2:
+        raise A48MError("fact anchor count outside Candidate-A bound")
     if any(length < 1 or length > 255 for _, length in anchors):
-        raise A48MError("predicate anchor outside u8 length")
+        raise A48MError("fact anchor outside u8 length")
     return bytes(payload), anchors
 
 def token_spans(payload: bytes) -> list[tuple[int, int, bool]]:
@@ -224,6 +239,7 @@ def encode_record(
     entity_a: int = 0,
     entity_b: int = 0,
     anchor_words: tuple[str, ...] = (),
+    gap_index: int | None = None,
 ) -> bytes:
     if record_type not in RECORD_TYPES.values():
         raise A48MError("unknown record type")
@@ -240,7 +256,7 @@ def encode_record(
         if trigger < 0 or trigger > 4095:
             raise A48MError("trigger outside lexical id space")
     payload, fact_anchors = encode_literal_payload(
-        text, anchor_words
+        text, anchor_words, gap_index
     )
     anchors = fact_anchors if record_type in FACT_TYPES else []
     validate_anchors(payload, anchors)
@@ -463,6 +479,7 @@ def build_from_seed(
     model = json.loads(model_path.read_text(encoding="utf-8"))
     topics = list(model["topics"])
     topic_map = {name: index for index, name in enumerate(topics)}
+    bridge_assign = assign_bridge_gaps(corpus["records"])
     vocab_id = identity(model["vocab"])
     all_trigger_words = []
     for item in corpus["records"]:
@@ -486,10 +503,11 @@ def build_from_seed(
         "trigger_scheme": "salted-wordhash16-exact-v2",
         "trigger_lexicon": sorted(all_trigger_words),
         "lm_schema": model.get("schema"),
+        "learned_bridge": "topic-prev2-prev1-hash-v1",
     }
     interface_id = identity(interface_desc)
     records: list[bytes] = []
-    for item in corpus["records"]:
+    for item_index, item in enumerate(corpus["records"]):
         if item.get("kind") != "fact-user":
             continue
         topic = item["topic"]
@@ -519,6 +537,7 @@ def build_from_seed(
                 anchor_words=tuple(
                     str(word).lower() for word in trigger_words
                 ),
+                gap_index=bridge_assign[item_index]["gap"],
             )
         )
     if not records:
@@ -534,6 +553,10 @@ def build_from_seed(
         "vocab_id_hex": vocab_id.hex(),
         "interface_id_hex": interface_id.hex(),
         "trigger_salt": trigger_salt,
+        "bridge_salt": model.get("bridge_salt"),
+        "bridge_contexts": len(
+            model.get("bridge_contexts", [])
+        ),
         "interface_sha256": hashlib.sha256(
             json.dumps(
                 interface_desc,

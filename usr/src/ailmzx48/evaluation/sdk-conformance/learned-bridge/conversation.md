@@ -14,7 +14,7 @@ patent, trademark, and governing-law provisions.
 ============================================================================
 -->
 
-# ailmzx48 iter-9132 conversation
+# ailmzx48 iter-9131 conversation
 
 ## Startup
 
@@ -35,18 +35,18 @@ Enter q at any time to quit.
 
 ## Turn 1
 
-User: what address does the spectrum screen bitmap start at
+User: how are spectrum basic program lines listed
 
 ```text
-Memory code graphics the 48k spectrum screen bitmap occupies addresses 16384 through 22527.
+Spectrum basic the spectrum basic program lines are listed in ascending line number order.
 >
 ```
 
 ## Turn 2
 
-User: ah
+User: what representation does c48 float storage use
 
 ```text
-Small computer with the machine and i am ailmzx48 a.
+Spectrum basic the c48 float storage uses five byte spectrum style representation.
 >
 ```

@@ -14,7 +14,7 @@
     "6912"
   ],
   "final_expected_keyword": "6912",
-  "iteration": 9120,
+  "iteration": 9136,
   "max_seconds": 1200,
   "min_keyword_ratio": 1.0,
   "min_semantic_uses": 10,
@@ -32,7 +32,7 @@
     "is c48b1 the same as zx ux obj1 mex1 or z80 machine code in the spectrum c48 sdk",
     "what exact screen state can c48run headless mode dump in the spectrum c48 sdk"
   ],
-  "purpose": "Broad independent final regression suite C using a third non-overlapping cross-domain set of retained probes for memory mapping, BASIC storage and ordering, peripherals, Spectrum chronology, software culture, and C48 SDK representation and headless execution. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair. SoP requalification after per-scan A48M integrity and identity repair. SoP requalification after model/controller architecture repair.",
+  "purpose": "Broad independent final regression suite C using a third non-overlapping cross-domain set of retained probes for memory mapping, BASIC storage and ordering, peripherals, Spectrum chronology, software culture, and C48 SDK representation and headless execution. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair. SoP requalification after per-scan A48M integrity and identity repair. SoP requalification after model/controller architecture repair. SoP requalification after learned factual bridge repair.",
   "scenario": "final-regression-c-v1",
   "schema": 1
 }

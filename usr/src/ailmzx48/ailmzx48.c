@@ -80,6 +80,7 @@ unsigned int ai_litloss;
 unsigned int ai_encfail;
 unsigned int ai_semuse;
 unsigned int ai_triuse;
+unsigned int ai_bruse;
 unsigned int ai_lmring[96];
 unsigned int ai_lmhead;
 unsigned int ai_lmcount;
@@ -575,88 +576,7 @@ if (topic == ai_tcnt) {
     return 0;
 }
 
-int ai_addlit(unsigned char *p, unsigned int n)
-{
-    unsigned int i;
-    if (ai_olen != 0) {
-        if (ai_olen >= 254) return 0;
-        ai_out[ai_olen] = ' ';
-        ai_olen = ai_olen + 1;
-    }
-    if (n > 254 - ai_olen) return 0;
-    i = 0;
-    while (i < n) {
-        ai_out[ai_olen] = p[i];
-        ai_olen = ai_olen + 1;
-        i = i + 1;
-    }
-    return 1;
-}
-
-int ai_coldans(void)
-{
-    unsigned int tcnt;
-    unsigned int acnt;
-    unsigned int apos;
-    unsigned int pbase;
-    unsigned int pos;
-    unsigned int end;
-    unsigned int code;
-    unsigned int n;
-    unsigned int id;
-    unsigned int a;
-    if (ai_w1len < 11) return 0;
-    tcnt = ai_win1[9];
-    apos = 10 + (tcnt * 2);
-    if (apos >= ai_w1len) return 0;
-    acnt = ai_win1[apos];
-    if (acnt == 0 || acnt > 2) return 0;
-    pbase = apos + 1 + (acnt * 2);
-    if (pbase >= ai_w1len) return 0;
-    if (!ai_lmlead(ai_mtopic)) {
-        ai_olen = 0;
-        ai_otokens = 0;
-    }
-    a = 0;
-    while (a < acnt) {
-        pos = pbase + ai_win1[apos + 1 + (a * 2)];
-        end = pos + ai_win1[apos + 2 + (a * 2)];
-        if (end > ai_w1len || end <= pos) return 0;
-        while (pos < end) {
-            code = ai_win1[pos];
-            pos = pos + 1;
-            if (code >= 16 && code <= 239) {
-                id = code - 16;
-                if (!ai_addtok(id)) return 0;
-            } else if (code == 240) {
-                if (pos + 2 > end) return 0;
-                id = ai_getu16(ai_win1, pos);
-                pos = pos + 2;
-                if (!ai_addtok(id)) return 0;
-            } else if (code == 241 || code == 242 ||
-                       code == 243) {
-                if (pos >= end) return 0;
-                n = ai_win1[pos];
-                pos = pos + 1;
-                if (pos + n > end) return 0;
-                if (!ai_addlit(&ai_win1[pos], n)) return 0;
-                pos = pos + n;
-            } else {
-                return 0;
-            }
-            ai_otokens = ai_otokens + 1;
-        }
-        a = a + 1;
-    }
-    if (ai_olen >= 254) return 0;
-    ai_out[ai_olen] = '.';
-    ai_olen = ai_olen + 1;
-    ai_out[ai_olen] = 0;
-    if (ai_out[0] >= 'a' && ai_out[0] <= 'z') {
-        ai_out[0] = ai_out[0] - 32;
-    }
-    return 1;
-}
+#include "aibridge.h"
 
 unsigned int ai_strlen(char *s)
 {
@@ -1056,6 +976,7 @@ int main(void)
     ai_encfail = 0;
     ai_semuse = 0;
     ai_triuse = 0;
+    ai_bruse = 0;
     ai_yields = 0;
     ai_lmhead = 0;
     ai_lmcount = 0;
@@ -1090,6 +1011,7 @@ int main(void)
         ai_encfail = 0;
         ai_semuse = 0;
         ai_triuse = 0;
+        ai_bruse = 0;
         ai_yields = 0;
         ai_error = 0;
         namecmd = ai_namecmd();

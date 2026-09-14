@@ -3,7 +3,7 @@
     "16384",
     "small"
   ],
-  "iteration": 9121,
+  "iteration": 9132,
   "max_seconds": 1200,
   "min_cooperative_yields": 18,
   "min_keyword_ratio": 1.0,
@@ -12,7 +12,7 @@
     "what address does the spectrum screen bitmap start at",
     "ah"
   ],
-  "purpose": "SoP architecture proof for predicate anchoring, variable-order generation, cooperative scan yields, generic unknown routing, and exact trigger-spelling rejection of a deliberate salted-hash collision. SoP requalification after model/controller architecture repair.",
+  "purpose": "SoP architecture proof for predicate anchoring, variable-order generation, cooperative scan yields, generic unknown routing, and exact trigger-spelling rejection of a deliberate salted-hash collision. SoP requalification after model/controller architecture repair. SoP requalification after learned factual bridge repair.",
   "scenario": "sdk-architecture-routing-v1",
   "schema": 1
 }

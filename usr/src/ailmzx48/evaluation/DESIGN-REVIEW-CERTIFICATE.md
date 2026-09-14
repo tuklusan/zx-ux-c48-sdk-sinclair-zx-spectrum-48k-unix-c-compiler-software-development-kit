@@ -16,17 +16,22 @@ patent, trademark, and governing-law provisions.
 # ailmzx48 Design Compliance Certificate
 
 This certificate supersedes the historical Revision-0.11 design-only review
-certificate for the current Revision-0.27 SDK implementation profile.  It does
-not erase that historical evidence; it makes the current scope explicit.
+certificate and the Revision-0.27 SDK certificate for the current
+Revision-0.29 SDK implementation profile. Historical evidence remains retained;
+this certificate states the current qualified SDK scope.
 
 ## Reviewed identities
 
-- detailed-design revision: `0.27-draft`
-- detailed-design Git blob: `826b24499385ef3631d4645c720dc1bd38104f91`
-- detailed-design SHA-256: `75e34087f369634d1a86a8c1da9e0035adfc3182188f8c1b53e5b5e6531d0d14`
-- repaired C48 source SHA-256: `660d517059644b04a3e6507d45d28aed7603cdfd5e0ab5adc136bd121cc3c3b7`
-- SDK C48B1 artifact SHA-256: `560414b6a1e8dd2f388adbff6887508b855d6e91649c08bcc525447910fc9584`
-- cold A48M SHA-256: `3dda3f6633cd8731e158970bf0658cd9126496e9d7c30ff14ab4cbcae25611ea`
+- detailed-design revision: `0.29-draft`
+- detailed-design Git blob: `2b35bc15fccb080565ae786e2945fe595010fc9d`
+- detailed-design SHA-256: `8bb40c234da4cbc0caec05608d8a849ee9b25fc57dc8fdb357b73849190ea67a`
+- repaired C48 source SHA-256: `739285f329ac686e5fbcf6f9753e87d08d2b90a8c7cfe94c080218662e417271`
+- SDK C48B1 artifact SHA-256: `89b0905ce631c2fb4c3962414774858c15eba01d4cfd803d9ce45edfd1e6fc0e`
+- cold A48M SHA-256: `a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096`
+- cold A48M logical length: `8566` bytes
+- factual records: `69`
+- learned bridge contexts: `68`
+- bridge hash salt: `0`
 - upstream ZX-UX main inspected read-only: `8c8f918743897b352513b0545ff77487682c088f`
 - latest inspected upstream durable certification item: `P1.26`
 - certified source named by P1.26: `cb8e4ea0b68df693e5d4133fc906ed46234427b6`
@@ -36,19 +41,32 @@ not erase that historical evidence; it makes the current scope explicit.
 **SDK_PROFILE: PASS (3/3 zero-gap passes)**
 
 Pass 1 maps frozen SDK-scope design requirements to target implementation and
-fixed bounds.  Pass 2 maps the repaired implementation identity to retained
-active-SDK evidence and complete seed-record lineage.  Pass 3 checks durability,
-release-gate integration, current design/status identities, temporary-helper
-removal, and the prohibition on turning SDK evidence into a native claim.
+fixed bounds. Pass 2 maps the repaired implementation identity to fresh retained
+SDK evidence and complete seed-record lineage. Pass 3 checks durability,
+release-gate integration, current design/status identities, removal of repair
+scaffolding, and the prohibition on turning SDK evidence into a native claim.
 
-The workflow that creates the durable checkpoint executes all three independent
-checker modes, the context/A48M reference suites, C48 compilation, the complete
-SDK release verifier and `git diff --check`.  A failure prevents the certificate
-from being committed.
+Fresh retained VM evidence uses iterations 9131 through 9136. Learned-bridge
+iteration 9131 passed 2/2 factual prompts with 2 bridge uses and 2 real trigram
+uses. Architecture-routing iteration 9132 passed its two-turn collision and
+unknown-route proof. Literal/context iteration 9133 passed 70 turns while
+retaining bounded compaction, literal invalidation and model-ring behavior.
+Final A/B/C iterations 9134/9135/9136 each passed all 12 prompts with clean exit
+and no literal-reference losses.
 
 Every cold scan recomputes Fletcher-16 and rejects vocabulary/interface identity mismatch before record use.
 
-The schema-3 hot plane is a bounded variable-order LM with a 12-token unigram fallback, topic-conditioned bigrams and 64 sorted sparse trigram contexts. Cold retrieval requires exact trigger spelling after salted-ID lookup, factual answers combine learned lead wording with immutable subject/predicate anchors, topic 0 is generic/unknown, and cold scans yield after each eight records. The blind candidate remains reserved and unscored; no blind-generalization result is claimed.
+The schema-3 hot plane is a bounded variable-order LM with a 12-token unigram
+fallback, topic-conditioned bigrams and 64 sorted sparse trigram contexts. Cold
+retrieval requires exact trigger spelling after salted-ID lookup. Factual answers
+retain immutable admitted-fact anchors while exactly one safe non-trigger gap is
+supplied through a 68-row learned factual bridge. The runtime validates the hot
+vocabulary spelling against the cold gap but does not copy those cold gap bytes
+into the answer. The bounded resident bridge scan needs no inner cooperative
+yield; measured outer cold/model scans retain their deterministic yield cadence.
+`ai_bruse` counts learned bridge emissions and `ai_triuse` remains exclusively a
+real trigram-table-use counter. The blind candidate remains reserved and unscored;
+no blind-generalization result is claimed.
 
 ## Native release boundary
 
@@ -56,10 +74,10 @@ The schema-3 hot plane is a bounded variable-order LM with a 12-token unigram fa
 
 The current upstream ZX-UX implementation is still at Phase-1 durable evidence;
 it does not yet expose the native C48/OBJ1/MEX1, allocator/stack/Fuse and
-physical-cassette path required for the design's native proof.  Those obligations
-remain in the design and machine-readable status as blockers.  They are not
+physical-cassette path required for the design's native proof. Those obligations
+remain in the design and machine-readable status as blockers. They are not
 waived, simulated by the host SDK, or counted among the three SDK zero-gap
-passes.
+passes. Other GitHub projects remain read-only.
 
 A full native-release PASS requires a new certificate after the upstream native
 facilities exist and the Section-18.4 proof has been executed and retained.

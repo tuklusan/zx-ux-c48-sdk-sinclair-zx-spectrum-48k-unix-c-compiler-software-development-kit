@@ -72,7 +72,7 @@
     "ivy"
   ],
   "final_expected_keyword": "ivy",
-  "iteration": 9117,
+  "iteration": 9133,
   "max_seconds": 1200,
   "min_compactions": 1,
   "min_keyword_ratio": 1.0,
@@ -152,7 +152,7 @@
     "where in 48k memory does the screen bitmap live",
     "what is my name"
   ],
-  "purpose": "Post-repair SDK proof for deterministic literal-slot selection, stale-reference invalidation, bounded context compaction, and newest-name recovery. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair. SoP requalification after per-scan A48M integrity and identity repair. SoP requalification after model/controller architecture repair.",
+  "purpose": "Post-repair SDK proof for deterministic literal-slot selection, stale-reference invalidation, bounded context compaction, and newest-name recovery. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair. SoP requalification after per-scan A48M integrity and identity repair. SoP requalification after model/controller architecture repair. SoP requalification after learned factual bridge repair.",
   "scenario": "sdk-design-literal-context-v1",
   "schema": 1
 }

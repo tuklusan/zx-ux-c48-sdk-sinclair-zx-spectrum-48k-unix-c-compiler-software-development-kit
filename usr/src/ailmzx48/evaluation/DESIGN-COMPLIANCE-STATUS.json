@@ -1,8 +1,8 @@
 {
-  "cold_model_sha256": "3dda3f6633cd8731e158970bf0658cd9126496e9d7c30ff14ab4cbcae25611ea",
-  "design_git_blob_sha1": "826b24499385ef3631d4645c720dc1bd38104f91",
-  "design_revision": "0.27-draft",
-  "design_sha256": "75e34087f369634d1a86a8c1da9e0035adfc3182188f8c1b53e5b5e6531d0d14",
+  "cold_model_sha256": "a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096",
+  "design_git_blob_sha1": "2b35bc15fccb080565ae786e2945fe595010fc9d",
+  "design_revision": "0.29-draft",
+  "design_sha256": "8bb40c234da4cbc0caec05608d8a849ee9b25fc57dc8fdb357b73849190ea67a",
   "full_native_release": {
     "latest_durable_evidence": "P1.26",
     "missing_native_evidence": [
@@ -20,10 +20,13 @@
     "upstream_repository": "tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project"
   },
   "schema": 1,
-  "sdk_c48b_sha256": "560414b6a1e8dd2f388adbff6887508b855d6e91649c08bcc525447910fc9584",
+  "sdk_c48b_sha256": "89b0905ce631c2fb4c3962414774858c15eba01d4cfd803d9ce45edfd1e6fc0e",
   "sdk_profile": {
     "architecture_routing": {
+      "bridge_uses": 1,
+      "clean_exit": true,
       "cooperative_yields": 18,
+      "iteration": 9132,
       "keyword_ratio": 1.0,
       "semantic_retrieval_uses": 1,
       "trigram_uses": 4,
@@ -40,10 +43,23 @@
       "blind_status": "RESERVED_UNSCORED_NOT_USED_FOR_TUNING",
       "manifest": "training/evaluation-partitions.json"
     },
+    "learned_bridge": {
+      "bridge_uses": 2,
+      "clean_exit": true,
+      "cooperative_yields": 18,
+      "iteration": 9131,
+      "keyword_ratio": 1.0,
+      "semantic_retrieval_uses": 2,
+      "trigram_uses": 2,
+      "turns": 2
+    },
     "literal_context": {
-      "context_compactions": 15,
+      "bridge_uses": 60,
+      "clean_exit": true,
+      "context_compactions": 16,
       "cooperative_yields": 550,
       "final_keyword_hit": true,
+      "iteration": 9133,
       "keyword_ratio": 1.0,
       "literal_reference_losses": 1,
       "max_l2count": 2,
@@ -53,39 +69,55 @@
       "turns": 70
     },
     "model_architecture": {
+      "bridge_contexts": 68,
+      "bridge_counter": "ai_bruse",
+      "bridge_hash_salt": 0,
+      "bridge_policy": "internal-safe-gap-preferred-leading-article-fallback",
+      "cold_gap_bytes_copied": false,
       "exact_trigger_spelling": true,
-      "factual_anchor_policy": "subject-when-trigger-plus-predicate",
+      "factual_anchor_policy": "immutable-anchors-plus-one-learned-safe-gap",
       "generic_unknown_topic": 0,
+      "hot_bridge_scan_bound": 68,
       "max_order": 3,
       "scan_yield_records": 8,
       "schema": 3,
       "topic_count": 7,
       "trigram_contexts": 64,
+      "trigram_counter": "ai_triuse",
       "unigram_fallback": 12
     },
     "post_repair_final_regressions": {
       "final-a": {
+        "bridge_uses": 12,
         "clean_exit": true,
         "cooperative_yields": 108,
+        "iteration": 9134,
         "keyword_ratio": 1.0,
         "literal_reference_losses": 0,
-        "trigram_uses": 21,
+        "semantic_retrieval_uses": 12,
+        "trigram_uses": 14,
         "turns": 12
       },
       "final-b": {
+        "bridge_uses": 12,
         "clean_exit": true,
         "cooperative_yields": 108,
+        "iteration": 9135,
         "keyword_ratio": 1.0,
         "literal_reference_losses": 0,
-        "trigram_uses": 21,
+        "semantic_retrieval_uses": 12,
+        "trigram_uses": 14,
         "turns": 12
       },
       "final-c": {
+        "bridge_uses": 12,
         "clean_exit": true,
         "cooperative_yields": 108,
+        "iteration": 9136,
         "keyword_ratio": 1.0,
         "literal_reference_losses": 0,
-        "trigram_uses": 20,
+        "semantic_retrieval_uses": 12,
+        "trigram_uses": 14,
         "turns": 12
       }
     },
@@ -98,5 +130,5 @@
     "status": "PASS",
     "zero_gap_passes": 3
   },
-  "source_sha256": "660d517059644b04a3e6507d45d28aed7603cdfd5e0ab5adc136bd121cc3c3b7"
+  "source_sha256": "739285f329ac686e5fbcf6f9753e87d08d2b90a8c7cfe94c080218662e417271"
 }

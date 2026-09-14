@@ -14,7 +14,7 @@
     "runtime"
   ],
   "final_expected_keyword": "runtime",
-  "iteration": 9119,
+  "iteration": 9135,
   "max_seconds": 1200,
   "min_keyword_ratio": 1.0,
   "min_semantic_uses": 10,
@@ -32,7 +32,7 @@
     "which publisher made spectrum game jetpac shoot em up",
     "what role does c48run have in the spectrum c48 sdk runtime"
   ],
-  "purpose": "Broad independent final regression suite B using a different cross-domain set of retained probes for memory mapping, BASIC behaviour, ULA sound, launch history, software culture, peripherals, and C48 SDK execution roles. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair. SoP requalification after per-scan A48M integrity and identity repair. SoP requalification after model/controller architecture repair.",
+  "purpose": "Broad independent final regression suite B using a different cross-domain set of retained probes for memory mapping, BASIC behaviour, ULA sound, launch history, software culture, peripherals, and C48 SDK execution roles. Post-design-gap-repair SDK requalification. SoP requalification after transactional literal-publication repair. SoP requalification after factual-provenance and corpus repair. SoP requalification after per-scan A48M integrity and identity repair. SoP requalification after model/controller architecture repair. SoP requalification after learned factual bridge repair.",
   "scenario": "final-regression-b-v1",
   "schema": 1
 }

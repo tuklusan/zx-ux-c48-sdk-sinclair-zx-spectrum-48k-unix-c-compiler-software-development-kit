@@ -1,11 +1,13 @@
 {
-  "logical_length": 8458,
+  "bridge_contexts": 68,
+  "bridge_salt": 0,
+  "logical_length": 8566,
   "max_read_request": 64,
   "max_record_bytes": 192,
   "record_count": 69,
   "schema": 1,
-  "sha256": "3dda3f6633cd8731e158970bf0658cd9126496e9d7c30ff14ab4cbcae25611ea",
-  "short_read_calls": 748,
+  "sha256": "a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096",
+  "short_read_calls": 760,
   "status": "PASS",
   "tests": [
     "deterministic-seed-build",
@@ -17,6 +19,8 @@
     "oversize-record-length-rejection",
     "factual-anchor-presence",
     "predicate-anchor-not-full-sentence",
+    "learned-bridge-full-factual-coverage",
+    "cold-gap-excluded-from-anchor-copy",
     "exact-record-count-and-section-end",
     "collision-free-salted-trigger-id-space"
   ],

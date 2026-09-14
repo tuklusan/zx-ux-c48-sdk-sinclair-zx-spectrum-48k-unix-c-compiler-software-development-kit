@@ -1,0 +1,20 @@
+{
+  "expected_keywords": [
+    "in ascending line number order",
+    "spectrum style representation"
+  ],
+  "iteration": 9131,
+  "max_seconds": 1200,
+  "min_bridge_uses": 2,
+  "min_cooperative_yields": 18,
+  "min_keyword_ratio": 1.0,
+  "min_semantic_uses": 2,
+  "min_trigram_uses": 2,
+  "prompts": [
+    "how are spectrum basic program lines listed",
+    "what representation does c48 float storage use"
+  ],
+  "purpose": "Demonstrate a learned hot-model bridge token inside two factual answers while immutable cold anchors preserve admitted facts; bridge use is counted separately from real trigram use.",
+  "scenario": "learned-factual-bridge-v1",
+  "schema": 1
+}

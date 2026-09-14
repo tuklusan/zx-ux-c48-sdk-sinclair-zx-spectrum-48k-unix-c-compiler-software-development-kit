@@ -55,9 +55,10 @@ def pass1() -> dict:
     evict = (A / "aievict.h").read_text(encoding="utf-8")
     gen = (A / "aigen.h").read_text(encoding="utf-8")
     match = (A / "aimatch.h").read_text(encoding="utf-8")
+    bridge = (A / "aibridge.h").read_text(encoding="utf-8")
     cold_header = (A / "aicold.h").read_text(encoding="utf-8")
     cold_bytes = (A / "model" / "cold-seed.bin").read_bytes()
-    require("Revision: 0.27-draft" in design, "design revision mismatch")
+    require("Revision: 0.29-draft" in design, "design revision mismatch")
     require("SDK implementation profile qualified" in design, "design status mismatch")
     require("BLOCKED_EXTERNAL" in design, "native blocker not explicit in design")
     require((A / "ailmzx48.c").stat().st_size <= 32768,
@@ -65,6 +66,7 @@ def pass1() -> dict:
     require('#include "aievict.h"' in source, "eviction policy header not wired")
     require('#include "aicold.h"' in source, "cold identity header not wired")
     require('#include "aigen.h"' in source, "variable-order LM header not wired")
+    require('#include "aibridge.h"' in source, "learned bridge header not wired")
     require("ai_mtrusted" not in source,
             "cached model trust bypasses per-scan integrity")
     require("ai_mhead[8+i]!=ai_cvid[i]" in source and
@@ -117,6 +119,16 @@ def pass1() -> dict:
             "variable-order LM lookup/fallback missing")
     require("ai_triuse = ai_triuse + 1" in gen,
             "trigram-use instrumentation missing")
+    require("unsigned int ai_bfind" in bridge and
+            "int ai_bmatch" in bridge and
+            "int ai_bemit" in bridge,
+            "learned factual bridge runtime missing")
+    require("ai_bruse = ai_bruse + 1" in bridge and
+            "ai_triuse" not in bridge,
+            "bridge/trigram instrumentation is not separated")
+    require("while (i < ai_brcnt)" in bridge and
+            "yield()" not in bridge,
+            "bounded hot bridge lookup policy drifted")
     require("unsigned int ai_hfind" in match and
             "int ai_hsame" in match,
             "exact trigger spelling verification missing")
@@ -141,6 +153,13 @@ def pass1() -> dict:
             "bounded trigram plane missing")
     require(len(model.get("unigram_fallback", [])) == 12,
             "unigram fallback bound mismatch")
+    bridges = model.get("bridge_contexts")
+    require(isinstance(bridges, list) and len(bridges) == 68,
+            "learned bridge context coverage/bound mismatch")
+    require(model.get("bridge_salt") == 0,
+            "learned bridge hash salt mismatch")
+    require(len({row.get("key") for row in bridges}) == len(bridges),
+            "learned bridge key collision")
     words = model.get("trigger_words")
     require(isinstance(words, list) and len(words) > 100 and
             len(words) == len(set(words)),
@@ -170,13 +189,24 @@ def pass1() -> dict:
             "context stress does not exceed arena-sized source history")
     a48m = load(A / "evaluation" / "a48m-reference-report.json")
     require(a48m.get("status") == "PASS", "A48M reference not PASS")
-    require(a48m.get("logical_length") == 8458, "A48M logical length mismatch")
+    require(a48m.get("logical_length") == len(cold_bytes),
+            "A48M logical length differs from built bytes")
+    require(a48m.get("sha256") == sha(A / "model" / "cold-seed.bin"),
+            "A48M report identity differs from built bytes")
+    require(a48m.get("bridge_contexts") == len(bridges) and
+            a48m.get("bridge_salt") == model.get("bridge_salt"),
+            "hot/cold bridge metadata mismatch")
     require(a48m.get("record_count") == 69, "A48M record count mismatch")
     require(a48m.get("max_read_request") == 64, "A48M read bound mismatch")
     require(a48m.get("max_record_bytes") == 192, "A48M record bound mismatch")
     require("predicate-anchor-not-full-sentence" in
             a48m.get("tests", []),
             "predicate-anchor reference test missing")
+    require("learned-bridge-full-factual-coverage" in
+            a48m.get("tests", []) and
+            "cold-gap-excluded-from-anchor-copy" in
+            a48m.get("tests", []),
+            "learned bridge A48M reference tests missing")
     goal = load(A / "training" / "goal-status.json")
     require(goal.get("goals_achieved") is True and goal.get("status") == "GOALS_ACHIEVED",
             "retained training goal no longer achieved")
@@ -211,8 +241,8 @@ def pass2() -> dict:
                 f"{name}: binary identity mismatch")
         require(run.get("cold_model_sha256") == cold_hash,
                 f"{name}: cold-model identity mismatch")
-    expected_iters = {"final-a": 9118, "final-b": 9119,
-                      "final-c": 9120}
+    expected_iters = {"final-a": 9134, "final-b": 9135,
+                      "final-c": 9136}
     for name, iteration in expected_iters.items():
         run = load(base / name / "run.json")
         require(run.get("iteration") == iteration,
@@ -236,12 +266,28 @@ def pass2() -> dict:
             "literal-context: binary identity mismatch")
     require(run.get("cold_model_sha256") == cold_hash,
             "literal-context: cold-model identity mismatch")
-    require(run.get("iteration") == 9117,
+    require(run.get("iteration") == 9133,
             "literal-context: architecture iteration mismatch")
     require(score.get("trigram_uses", 0) > 0,
             "literal-context: trigram use absent")
     require(score.get("cooperative_yields", 0) >= 100,
             "literal-context: cooperative yields absent")
+
+    bridge_score = load(base / "learned-bridge" / "score.json")
+    bridge_run = load(base / "learned-bridge" / "run.json")
+    require(bridge_score.get("keyword_ratio") == 1.0 and
+            bridge_score.get("turns") == 2 and
+            bridge_score.get("bridge_uses", 0) >= 2,
+            "learned-bridge: bridge evidence missing")
+    require(bridge_score.get("trigram_uses", 0) >= 2 and
+            bridge_score.get("cooperative_yields", 0) >= 18,
+            "learned-bridge: LM/yield evidence missing")
+    require(bridge_run.get("iteration") == 9131,
+            "learned-bridge: iteration mismatch")
+    require(bridge_run.get("source_sha256") == source_hash and
+            bridge_run.get("c48b_sha256") == binary_hash and
+            bridge_run.get("cold_model_sha256") == cold_hash,
+            "learned-bridge: identity mismatch")
 
     route_score = load(base / "architecture-routing" / "score.json")
     route_run = load(base / "architecture-routing" / "run.json")
@@ -250,9 +296,10 @@ def pass2() -> dict:
             route_score.get("turns") == 2,
             "architecture-routing: score mismatch")
     require(route_score.get("trigram_uses", 0) >= 2 and
+            route_score.get("bridge_uses", 0) >= 1 and
             route_score.get("cooperative_yields", 0) >= 18,
-            "architecture-routing: LM/yield evidence missing")
-    require(route_run.get("iteration") == 9121,
+            "architecture-routing: LM/bridge/yield evidence missing")
+    require(route_run.get("iteration") == 9132,
             "architecture-routing: iteration mismatch")
     require(route_run.get("source_sha256") == source_hash and
             route_run.get("c48b_sha256") == binary_hash and
@@ -346,8 +393,8 @@ def pass2() -> dict:
     require(seen == set(range(len(records))), "lineage exact coverage mismatch")
     parts = load(A / "training" / "evaluation-partitions.json")
     reg = parts.get("regression", {}).get("request_sha256", {})
-    for name in ("literal-context", "final-a", "final-b",
-                 "final-c"):
+    for name in ("learned-bridge", "architecture-routing",
+                 "literal-context", "final-a", "final-b", "final-c"):
         require(reg.get(name) == sha(base / name / "request.json"),
                 f"evaluation partition request hash {name}")
     return {
@@ -361,6 +408,8 @@ def pass2() -> dict:
 def pass3() -> dict:
     status = load(A / "evaluation" / "DESIGN-COMPLIANCE-STATUS.json")
     require(status.get("schema") == 1, "compliance status schema")
+    require(status.get("design_revision") == "0.29-draft",
+            "compliance design revision mismatch")
     sdk = status.get("sdk_profile", {})
     native = status.get("full_native_release", {})
     require(sdk.get("status") == "PASS", "SDK profile status is not PASS")
@@ -374,12 +423,53 @@ def pass3() -> dict:
     require(arch.get("schema") == 3 and
             arch.get("max_order") == 3 and
             arch.get("trigram_contexts") == 64 and
+            arch.get("bridge_contexts") == 68 and
+            arch.get("bridge_hash_salt") == 0 and
+            arch.get("hot_bridge_scan_bound") == 68 and
             arch.get("exact_trigger_spelling") is True and
-            arch.get("generic_unknown_topic") == 0,
+            arch.get("generic_unknown_topic") == 0 and
+            arch.get("bridge_counter") == "ai_bruse" and
+            arch.get("trigram_counter") == "ai_triuse" and
+            arch.get("cold_gap_bytes_copied") is False,
             "model architecture status missing")
     require(sdk.get("evaluation_partitioning", {}).get("blind_status") ==
             "RESERVED_UNSCORED_NOT_USED_FOR_TUNING",
             "evaluation partition status missing")
+
+    base = A / "evaluation" / "sdk-conformance"
+    def evidence_summary(name: str, fields: tuple[str, ...]) -> dict:
+        score = load(base / name / "score.json")
+        run = load(base / name / "run.json")
+        value = {"iteration": run.get("iteration")}
+        for field in fields:
+            value[field] = score.get(field)
+        return value
+
+    require(sdk.get("learned_bridge") == evidence_summary(
+        "learned-bridge", (
+            "turns", "keyword_ratio", "clean_exit", "bridge_uses",
+            "trigram_uses", "cooperative_yields", "semantic_retrieval_uses",
+        )), "learned-bridge status/evidence mismatch")
+    require(sdk.get("architecture_routing") == evidence_summary(
+        "architecture-routing", (
+            "turns", "keyword_ratio", "clean_exit", "bridge_uses",
+            "trigram_uses", "cooperative_yields", "semantic_retrieval_uses",
+        )), "architecture-routing status/evidence mismatch")
+    require(sdk.get("literal_context") == evidence_summary(
+        "literal-context", (
+            "turns", "keyword_ratio", "clean_exit", "bridge_uses",
+            "trigram_uses", "cooperative_yields", "semantic_retrieval_uses",
+            "context_compactions", "literal_reference_losses", "max_l2count",
+            "max_lmcount", "final_keyword_hit",
+        )), "literal-context status/evidence mismatch")
+    finals = sdk.get("post_repair_final_regressions", {})
+    for name in ("final-a", "final-b", "final-c"):
+        require(finals.get(name) == evidence_summary(name, (
+            "turns", "keyword_ratio", "clean_exit", "bridge_uses",
+            "trigram_uses", "cooperative_yields", "semantic_retrieval_uses",
+            "literal_reference_losses",
+        )), f"{name}: status/evidence mismatch")
+
     require(native.get("status") == "BLOCKED_EXTERNAL",
             "native blocker status must remain explicit")
     require(native.get("upstream_repository") ==
@@ -404,9 +494,12 @@ def pass3() -> dict:
     require(status.get("design_sha256") ==
             sha(A / "AILMZX48-DETAILED-DESIGN.md"),
             "status design identity mismatch")
+
     cert = (A / "evaluation" / "DESIGN-REVIEW-CERTIFICATE.md").read_text(
         encoding="utf-8"
     )
+    require("Revision-0.29 SDK implementation profile" in cert,
+            "SDK certificate revision missing")
     require("SDK_PROFILE: PASS (3/3 zero-gap passes)" in cert,
             "SDK certificate result missing")
     require("FULL_NATIVE_RELEASE: BLOCKED_EXTERNAL" in cert,
@@ -415,16 +508,39 @@ def pass3() -> dict:
             "cold-scan integrity certificate marker missing")
     require("variable-order LM" in cert and
             "exact trigger spelling" in cert and
+            "68-row learned factual bridge" in cert and
+            "`ai_bruse`" in cert and "`ai_triuse`" in cert and
             "blind candidate remains reserved and unscored" in cert,
             "architecture certificate markers missing")
+    for identity in (
+        status.get("design_sha256"), status.get("source_sha256"),
+        status.get("sdk_c48b_sha256"), status.get("cold_model_sha256"),
+    ):
+        require(isinstance(identity, str) and identity in cert,
+                "certificate identity mismatch")
+
     verify = (ROOT / "compiler" / "verify_release.py").read_text(encoding="utf-8")
     require("check_ailmzx48_design" in verify,
             "release verifier does not invoke design compliance")
-    require(not (ROOT / ".github" / "workflows" /
-                 "ailmzx48-design-compliance-finalize.yml").exists(),
-            "temporary compliance workflow remains")
-    require(not (A / "tooling" / "finalize_design_compliance.py").exists(),
-            "temporary finalizer remains")
+    temporary = (
+        ROOT / ".github/workflows/ailmzx48-design-compliance-finalize.yml",
+        ROOT / ".github/workflows/ailmzx48-sop-anchor-repair.yml",
+        ROOT / ".github/workflows/ailmzx48-sop-bridge-probe.yml",
+        ROOT / ".github/workflows/ailmzx48-sop-bridge-recovery.yml",
+        ROOT / ".github/workflows/ailmzx48-sop-bridge-snapshot.yml",
+        ROOT / ".github/workflows/ailmzx48-sop-recovery-snapshot.yml",
+        ROOT / ".github/workflows/ailmzx48-sop-bridge-qualification.yml",
+        ROOT / ".github/workflows/ailmzx48-sop-bridge-evidence.yml",
+        ROOT / ".github/workflows/ailmzx48-sop-bridge-finalize.yml",
+        A / "tooling/finalize_design_compliance.py",
+        A / "tooling/sop_anchor_doc_repair.py",
+        A / "tooling/sop_anchor_repair.py",
+        A / "tooling/sop_bridge_recover.py",
+        A / "tooling/sop_bridge_qualification_prep.py",
+        A / "tooling/sop_bridge_finalize.py",
+    )
+    require(not any(path.exists() for path in temporary),
+            "temporary SoP repair/finalization scaffolding remains")
     return {
         "pass": 3,
         "scope": "durability-release-boundary-and-native-nonclaim",

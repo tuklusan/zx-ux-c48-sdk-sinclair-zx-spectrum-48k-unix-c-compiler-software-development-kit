@@ -1,12 +1,14 @@
 {
-  "fletcher16": 60654,
+  "bridge_contexts": 68,
+  "bridge_salt": 0,
+  "fletcher16": 15008,
   "format": "A48M Candidate-A prototype v2",
-  "interface_id_hex": "99e3659bd8028cbd",
-  "interface_sha256": "99e3659bd8028cbd0c1308290b2cb821916270d814fdd433d65e3bbd51433967",
-  "logical_length": 8458,
+  "interface_id_hex": "c56c5cdeabb55f16",
+  "interface_sha256": "c56c5cdeabb55f16c90a93396dca51bc6d16d0e25424548895cd22aa78fa15a9",
+  "logical_length": 8566,
   "record_count": 69,
   "schema": 1,
-  "sha256": "3dda3f6633cd8731e158970bf0658cd9126496e9d7c30ff14ab4cbcae25611ea",
+  "sha256": "a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096",
   "trigger_salt": 23,
-  "vocab_id_hex": "3d4f6558a980978b"
+  "vocab_id_hex": "4c38c93f9e218669"
 }

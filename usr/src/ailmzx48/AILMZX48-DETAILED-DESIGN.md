@@ -18,7 +18,7 @@ patent, trademark, and governing-law provisions.
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
 Status: SDK implementation profile qualified; full native-release profile blocked on upstream ZX-UX implementation
-Revision: 0.27-draft
+Revision: 0.29-draft
 Canonical repository path: `usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md`  
 Canonical SDK executable path: `usr/bin/ailmzx48/ailmzx48.c48b`
 
@@ -271,6 +271,8 @@ SDK profile makes no blind-generalization claim.  Fresh architecture
 requalification uses literal/context iteration 9117, final A/B/C iterations
 9118/9119/9120, and the dedicated hash-collision/unknown-routing iteration
 9121.
+
+Implementation measurement note (Revision 0.29): factual cold records retain immutable admitted-fact anchors but leave exactly one safe, non-trigger bridge word outside those spans. A corpus-derived hot bridge table predicts that word from topic plus hashes of the preceding two factual words. The runtime validates that the predicted hot-vocabulary spelling equals the cold gap spelling, emits the hot token, and never copies the gap bytes into the answer. The bridge lookup is a bounded resident scan (currently at most 68 rows), so cooperative yielding remains at the measured outer cold/model scans rather than inside this small hot lookup. `ai_triuse` remains strictly a real trigram-table-use counter; `ai_bruse` separately records learned bridge emissions.
 
 ### 6.1 No remote inference dependency
 

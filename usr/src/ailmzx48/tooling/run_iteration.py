@@ -166,7 +166,8 @@ class Feeder:
                      "ai_compact", "ai_l2evict",
                      "ai_l1drop", "ai_litloss",
                      "ai_encfail", "ai_semuse",
-                     "ai_triuse", "ai_lmcount",
+                     "ai_triuse", "ai_bruse",
+                     "ai_lmcount",
                      "ai_l0wire"):
             lv = self.vm.global_lvalues.get(name)
             if lv is not None:
@@ -500,6 +501,9 @@ def main() -> int:
     triuse_total = sum(
         turn["diag"].get("ai_triuse", 0) for turn in turns
     )
+    bridge_total = sum(
+        turn["diag"].get("ai_bruse", 0) for turn in turns
+    )
     yield_total = sum(
         turn["diag"].get("ai_yields", 0) for turn in turns
     )
@@ -545,6 +549,8 @@ def main() -> int:
         raise RuntimeError("decoded LM-context gate failed")
     if triuse_total < int(req.get("min_trigram_uses", 0)):
         raise RuntimeError("trigram-use gate failed")
+    if bridge_total < int(req.get("min_bridge_uses", 0)):
+        raise RuntimeError("learned-bridge-use gate failed")
     if yield_total < int(req.get("min_cooperative_yields", 0)):
         raise RuntimeError("cooperative-yield gate failed")
     final_keyword = req.get("final_expected_keyword")
@@ -571,14 +577,17 @@ def main() -> int:
     (out_dir / "transcript.json").write_text(
         json.dumps(transcript, indent=2, sort_keys=True) + "\n",
         encoding="utf-8")
+    def md_block(text: str) -> str:
+        return "\n".join(line.rstrip() for line in text.splitlines())
+
     md = [MD_HEADER, f"# ailmzx48 {tag} conversation\n",
-          "## Startup\n", "```text", feeder.events[0]["text"],
-          "```\n"]
+          "## Startup\n", "```text",
+          md_block(feeder.events[0]["text"]), "```\n"]
     for turn in turns:
         md.extend([
             f"## Turn {turn['turn']}",
             "", f"User: {turn['user']}", "",
-            "```text", turn["assistant_raw"], "```", "",
+            "```text", md_block(turn["assistant_raw"]), "```", "",
         ])
     (out_dir / "conversation.md").write_text(
         "\n".join(md), encoding="utf-8")
@@ -624,6 +633,7 @@ def main() -> int:
         "semantic_retrieval_uses": semuse_total,
         "literal_reference_losses": litloss_total,
         "trigram_uses": triuse_total,
+        "bridge_uses": bridge_total,
         "cooperative_yields": yield_total,
         "max_l0bytes": max_l0bytes,
         "max_l1count": max_l1count,
@@ -672,6 +682,7 @@ def main() -> int:
         "semantic_retrieval_uses": semuse_total,
         "literal_reference_losses": litloss_total,
         "trigram_uses": triuse_total,
+        "bridge_uses": bridge_total,
         "cooperative_yields": yield_total,
         "max_l0bytes": max_l0bytes,
         "max_l1count": max_l1count,

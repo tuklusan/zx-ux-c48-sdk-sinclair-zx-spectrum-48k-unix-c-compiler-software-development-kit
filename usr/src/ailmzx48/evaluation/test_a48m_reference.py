@@ -32,7 +32,12 @@ from a48m_reference import (
     fletcher16,
     parse_container,
     protected_bytes,
+    token_spans,
     u16,
+)
+
+from bridge_policy import (
+    BRIDGE_WORDS, assign_bridge_gaps,
 )
 
 
@@ -66,6 +71,44 @@ def main() -> int:
     assert all(sum(length for _, length in record["anchors"])
                < len(record["payload"]) - 2
                for record in parsed["records"])
+    corpus_doc = json.loads(corpus.read_text(encoding="utf-8"))
+    assignments = assign_bridge_gaps(corpus_doc["records"])
+    facts = [
+        (index, row)
+        for index, row in enumerate(corpus_doc["records"])
+        if row.get("kind") == "fact-user"
+    ]
+    assert len(facts) == len(parsed["records"])
+    assert len(assignments) == len(facts)
+    model_doc = json.loads(model.read_text(encoding="utf-8"))
+    assert len(model_doc.get("bridge_contexts", [])) <= 68
+    assert len(model_doc.get("bridge_contexts", [])) >= 1
+    for (source_index, source), record in zip(
+        facts, parsed["records"]
+    ):
+        payload = record["payload"]
+        spans = [span for span in token_spans(payload) if not span[2]]
+        uncovered = []
+        for start, end, _control in spans:
+            covered = any(
+                off <= start and end <= off + length
+                for off, length in record["anchors"]
+            )
+            if not covered:
+                code = payload[start]
+                assert code in (0xF1, 0xF2, 0xF3)
+                size = payload[start + 1]
+                word = bytes(
+                    payload[start + 2:start + 2 + size]
+                ).decode("ascii").lower()
+                uncovered.append(word)
+        expected = assignments[source_index]["word"]
+        assert uncovered == [expected], (source["text"], uncovered)
+        assert expected in BRIDGE_WORDS
+        triggers = {
+            str(value).lower() for value in source.get("triggers", [])
+        }
+        assert expected not in triggers
     assert any(record["triggers"] for record in parsed["records"])
     assert any(len(record["triggers"]) >= 2 for record in parsed["records"])
 
@@ -136,6 +179,8 @@ def main() -> int:
         "max_read_request": parsed["max_read_request"],
         "max_record_bytes": 192,
         "trigger_salt": parsed["trigger_salt"],
+        "bridge_salt": meta.get("bridge_salt"),
+        "bridge_contexts": meta.get("bridge_contexts"),
         "tests": [
             "deterministic-seed-build",
             "positive-short-read-full-parse",
@@ -146,6 +191,8 @@ def main() -> int:
             "oversize-record-length-rejection",
             "factual-anchor-presence",
             "predicate-anchor-not-full-sentence",
+            "learned-bridge-full-factual-coverage",
+            "cold-gap-excluded-from-anchor-copy",
             "exact-record-count-and-section-end",
             "collision-free-salted-trigger-id-space",
         ],
