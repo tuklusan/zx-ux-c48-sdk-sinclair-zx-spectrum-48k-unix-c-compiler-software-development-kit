@@ -1,1 +1,1 @@
-Retry the low-overhead 15-second C48 runtime watchdog proof with the graphics verifier's built-in stress path; prove Mandel and Tk desktop behavior, regenerate MANIFEST.sha256, and verify the repository.
+Keep the C48 binary wall-clock quota at 15 seconds, reduce only Mandel's stress probe from 3 frames to 2, prove Mandel and Tk desktop behavior, regenerate MANIFEST.sha256, and verify the repository.

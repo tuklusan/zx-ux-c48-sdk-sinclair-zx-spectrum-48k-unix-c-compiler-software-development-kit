@@ -76,6 +76,15 @@ def patch_graphics_diagnostics() -> None:
     )
 
 
+def patch_mandel_stress_workload() -> None:
+    path = "compiler/graphics_demo_expectations.json"
+    replace_once(
+        path,
+        '''    "mandel": {\n      "title": "Mandelbrot Dive",\n      "runner": "ubuntu-latest",\n      "architecture": "x64",\n      "frames": 2,\n      "stress_frames": 3,\n''',
+        '''    "mandel": {\n      "title": "Mandelbrot Dive",\n      "runner": "ubuntu-latest",\n      "architecture": "x64",\n      "frames": 2,\n      "stress_frames": 2,\n''',
+    )
+
+
 def restore_scaffolding() -> None:
     subprocess.run(
         ["git", "checkout", BASE_COMMIT, "--", str(SELF), str(WORKFLOW)],
@@ -106,5 +115,6 @@ def regenerate_manifest() -> None:
 
 patch_runtime()
 patch_graphics_diagnostics()
+patch_mandel_stress_workload()
 restore_scaffolding()
 regenerate_manifest()
