@@ -1,0 +1,30 @@
+name: One-shot tag HEAD
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  tag-head:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag requested checkpoint and remove probe branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          tag='BEFORE-USER-DOC-BEAUTIFICATION'
+          target='15e6f12e3f1004c253dc7c7461df72c10fd4e8a2'
+          git fetch --tags origin
+          if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+            test "$(git rev-list -n 1 "$tag")" = "$target"
+          else
+            git tag "$tag" "$target"
+            git push origin "refs/tags/$tag"
+          fi
+          git push origin --delete __noop_should_not_exist || true
