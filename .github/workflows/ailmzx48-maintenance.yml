@@ -77,10 +77,6 @@ jobs:
           python -B usr/src/ailmzx48/evaluation/check_exit_criteria.py
           --write-status usr/src/ailmzx48/training/goal-status.json
 
-      - name: Regenerate release manifest
-        if: steps.marker.outputs.present == 'true'
-        run: python -B usr/src/ailmzx48/tooling/update_manifest.py
-
       - name: Verify complete repository
         if: steps.marker.outputs.present == 'true'
         shell: bash
