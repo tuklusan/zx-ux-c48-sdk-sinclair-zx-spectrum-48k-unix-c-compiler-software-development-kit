@@ -61,6 +61,18 @@ def pass1() -> dict:
     require("Revision: 0.29-draft" in design, "design revision mismatch")
     require("SDK implementation profile qualified" in design, "design status mismatch")
     require("BLOCKED_EXTERNAL" in design, "native blocker not explicit in design")
+    require("Revision 0.29 closes the SDK-side design questions" in design,
+            "current resolved-parameter revision is stale")
+    require("Revision 0.27 closes the SDK-side design questions" not in design,
+            "stale Revision-0.27 current-parameter marker remains")
+    require("A48M v2 is 8,566 logical bytes" in design and
+            "a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096" in design,
+            "current design A48M identity is stale")
+    require("retained learned-bridge iteration 9131" in design and
+            "architecture-routing iteration 9132" in design and
+            "literal/context iteration 9133" in design and
+            "final A/B/C iterations 9134/9135/9136" in design,
+            "current retained-evidence identities are stale")
     require((A / "ailmzx48.c").stat().st_size <= 32768,
             "primary C48 source-object ceiling exceeded")
     require('#include "aievict.h"' in source, "eviction policy header not wired")

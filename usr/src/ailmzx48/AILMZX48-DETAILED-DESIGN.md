@@ -267,10 +267,11 @@ per-attempt count instead of being reset after the scan.
 `training/evaluation-partitions.json` makes the evidence boundary explicit:
 training data, active nonblind development probes, inspected deterministic
 regressions, and a reserved unscored blind-candidate set are separate.  The
-SDK profile makes no blind-generalization claim.  Fresh architecture
-requalification uses literal/context iteration 9117, final A/B/C iterations
-9118/9119/9120, and the dedicated hash-collision/unknown-routing iteration
-9121.
+SDK profile makes no blind-generalization claim.  Revision-0.27
+architecture requalification used literal/context iteration 9117, final A/B/C
+iterations 9118/9119/9120, and the dedicated hash-collision/unknown-routing
+iteration 9121. Revision-0.29 bridge-repair evidence supersedes those runtime
+identities for the current SDK profile as recorded in Section 23.
 
 Implementation measurement note (Revision 0.29): factual cold records retain immutable admitted-fact anchors but leave exactly one safe, non-trigger bridge word outside those spans. A corpus-derived hot bridge table predicts that word from topic plus hashes of the preceding two factual words. The runtime validates that the predicted hot-vocabulary spelling equals the cold gap spelling, emits the hot token, and never copies the gap bytes into the answer. The bridge lookup is a bounded resident scan (currently at most 68 rows), so cooperative yielding remains at the measured outer cold/model scans rather than inside this small hot lookup. `ai_triuse` remains strictly a real trigram-table-use counter; `ai_bruse` separately records learned bridge emissions.
 
@@ -1370,7 +1371,7 @@ be rendered or summarized as a PASS in the second.
 
 ## 23. Resolved SDK parameters and remaining native questions
 
-Revision 0.27 closes the SDK-side design questions that are now fixed by
+Revision 0.29 closes the SDK-side design questions that are now fixed by
 implementation and retained evidence. They are not open tuning placeholders:
 
 - the resident canonical vocabulary is 96 entries; schema-3 hot inference
@@ -1378,9 +1379,9 @@ implementation and retained evidence. They are not open tuning placeholders:
   bigrams, and 64 sorted sparse trigram contexts; alias retrieval uses
   collision-free salted trigger IDs in 224..4095 with accepted salt 23 plus
   exact resident trigger-spelling verification before a hash hit is admitted;
-- A48M v2 is 8,458 logical bytes with 69 records, a 192-byte maximum record,
+- A48M v2 is 8,566 logical bytes with 69 records, a 192-byte maximum record,
   a 64-byte maximum read request, and cold-model SHA-256
-  `3dda3f6633cd8731e158970bf0658cd9126496e9d7c30ff14ab4cbcae25611ea`;
+  `a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096`;
 - fixed context bounds are L0=896 bytes/32 descriptors, L1=48 capsules,
   L2=24 capsules, eight generation-checked literal slots in 272 bytes, and a
   96-token decoded LM window;
@@ -1396,25 +1397,30 @@ implementation and retained evidence. They are not open tuning placeholders:
 - literal-name turns use the same bounded output and L0/L1/L2 commit path as
   normal turns; literal generation/slot bytes and semantic name state are both
   published only after the context commit succeeds;
-- retained post-architecture-repair literal/context iteration 9117 is 70/70
-  with real compaction, L2 occupancy, semantic retrieval, stale-reference
-  invalidation, trigram use, cooperative scan yields, and newest-name recall;
-- retained post-architecture-repair final A/B/C iterations 9118/9119/9120 are
-  each 12/12 clean-exit, zero-unexpected-literal-loss runs against one source,
-  one rebuilt C48B1 binary, and one provenance-qualified cold-model identity;
-- retained architecture-routing iteration 9121 proves learned trigram wording,
-  bounded cold-scan yields, generic topic-0 fallback, and rejection of `ah` as
-  a deliberate hash collision with admitted trigger `jetpac`;
-- factual A48M anchors cover selected predicate spans rather than complete
-  stored sentences; normal cold answers generate learned lead wording before
-  copying the selected factual span unchanged;
+- retained learned-bridge iteration 9131 is 2/2 with two learned bridge uses,
+  two real trigram uses, semantic retrieval on both turns, bounded cold-scan
+  yields, clean exit, and zero literal-reference losses;
+- retained architecture-routing iteration 9132 proves learned bridge/trigram
+  wording, bounded cold-scan yields, generic topic-0 fallback, and rejection of
+  `ah` as a deliberate hash collision with admitted trigger `jetpac`;
+- retained post-learned-bridge literal/context iteration 9133 is 70/70 with real
+  compaction, L2 occupancy, semantic retrieval, stale-reference invalidation,
+  bridge/trigram use, cooperative scan yields, and newest-name recall;
+- retained post-learned-bridge final A/B/C iterations 9134/9135/9136 are each
+  12/12 clean-exit, zero-unexpected-literal-loss runs against one source, one
+  rebuilt C48B1 binary, and one provenance-qualified cold-model identity;
+- factual A48M anchors retain every critical admitted-fact token while leaving
+  exactly one safe non-trigger gap outside the copied spans; a 68-row
+  corpus-derived hot bridge table predicts that gap from bounded topic/context,
+  the runtime verifies the predicted hot-vocabulary spelling against the cold
+  gap, emits the hot token, and never copies the cold gap bytes into the answer;
 - the evaluation partition manifest separates train, active nonblind
   development and inspected deterministic regression evidence while keeping
   the blind candidate explicitly reserved/unscored; no blind score is claimed;
 - provenance schema 3 gives every factual seed record a non-generated licensed
   or separately authorized authority and permanently rejects synthetic material
   as factual authority; corrected BASIC RUN and Hobbit sales claims remain within the
-  measured 8,458-byte A48M envelope;
+  measured 8,566-byte A48M envelope;
 - every cold scan rechecks A48M vocabulary/interface identities, structural bounds,
   exact logical consumption, and Fletcher-16 integrity before a selected record can
   reach response generation; the target has no cached model-trust bypass;
