@@ -19,3 +19,4 @@ htmlcov/
 *.ppm
 *.tmp
 *.temp
+!screenshots/gui-desktop/**/visual-progression-frame.ppm
