@@ -245,7 +245,7 @@
       "runner": "ubuntu-latest",
       "architecture": "x64",
       "frames": 2,
-      "stress_frames": 3,
+      "stress_frames": 2,
       "source_sha256": "3aa14cd5dc620170afe3008f315983b78d5e08673d4a0202248908d27e7eb9c2",
       "binary_sha256": "97119f07cef6167fa459343c42b43e9b76ab456504f188630e65bc75efb75d4e",
       "first_screen_sha256": "46782a5036073010c4e61d71f2101681469d71805654f04d5cdb51a8ea70b45b",

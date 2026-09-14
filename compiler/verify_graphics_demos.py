@@ -142,13 +142,16 @@ def run_demo(name: str, frames: int, time_quota: float) -> ZXScreen:
             )
         except subprocess.TimeoutExpired as exc:
             fail(
-                f"{name}: host timeout after {host_timeout:g}s "
-                f"(VM quota {time_quota:g}s)"
+                f"{name}: {frames} frame(s): host timeout after "
+                f"{host_timeout:g}s (VM quota {time_quota:g}s)"
             )
             raise AssertionError("unreachable") from exc
         if cp.returncode != 0:
             detail = (cp.stderr or cp.stdout).strip()
-            fail(f"{name}: runtime status {cp.returncode}: {detail}")
+            fail(
+                f"{name}: {frames} frame(s): runtime status "
+                f"{cp.returncode}: {detail}"
+            )
         if not screen_path.is_file():
             fail(f"{name}: runtime did not emit a screen dump")
         screen_data = screen_path.read_bytes()

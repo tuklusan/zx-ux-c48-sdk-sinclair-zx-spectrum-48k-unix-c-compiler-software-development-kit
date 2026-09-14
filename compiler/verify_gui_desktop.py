@@ -38,6 +38,7 @@ from c48.gui import (
 from c48.screen import PALETTE_BRIGHT, PALETTE_NORMAL
 
 TIMEOUT = 90.0
+VM_TIME_QUOTA = 15.0
 
 
 def _records(path: Path) -> list[dict]:
@@ -116,7 +117,9 @@ def _start(program: Path, probe: Path, *args: str) -> subprocess.Popen:
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["C48_GUI_PROBE"] = str(probe)
     return subprocess.Popen(
-        _launcher_command(str(program), *args),
+        _launcher_command(
+            "--time-quota", f"{VM_TIME_QUOTA:g}", str(program), *args
+        ),
         cwd=ROOT,
         env=env,
         text=True,
@@ -583,7 +586,10 @@ def _visual_progression(evidence: Path) -> dict:
 def _forest(evidence: Path) -> dict:
     name = "forest"
     probe = evidence / f"probe-{name}.jsonl"
-    process = _start(ROOT / "usr/bin/demos/forest.c48b", probe)
+    # This case validates completed-program/footer/close semantics, not
+    # the demo's full 240-frame exhibition loop.  Two frames exercise real Tk
+    # rendering while keeping the binary well inside the 15-second CI quota.
+    process = _start(ROOT / "usr/bin/demos/forest.c48b", probe, "2")
     title = "ZX-UX C48 - forest.c48b"
     try:
         window = _wait_event(probe, "window_ready", process=process)

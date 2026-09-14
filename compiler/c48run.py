@@ -18,7 +18,7 @@ import argparse
 import math
 from pathlib import Path
 import sys
-import time
+import threading
 
 sys.dont_write_bytecode = True
 
@@ -124,25 +124,45 @@ AElFTkSuQmCC
 
 
 class _QuotaRomMathVM(RomMathVM):
-    """RomMathVM with an optional wall-clock execution quota."""
+    """RomMathVM with a low-overhead wall-clock execution quota."""
 
-    def __init__(self, *args, time_quota: float = 0.0, **kwargs):
-        # VM construction evaluates global initializers, which can call _tick().
-        # Establish quota state before the base constructor starts that work.
+    def __init__(self, *args, time_quota: float, **kwargs):
         self._time_quota = float(time_quota)
-        self._time_deadline = (
-            time.monotonic() + self._time_quota
-            if self._time_quota > 0.0
-            else None
-        )
+        self._time_quota_expired = False
+        self._quota_timer: threading.Timer | None = None
+        # Global initializers can call _tick(); the false flag above keeps those
+        # construction-time ticks safe without charging them to program runtime.
         super().__init__(*args, **kwargs)
+        timer = threading.Timer(self._time_quota, self._expire_time_quota)
+        timer.daemon = True
+        self._quota_timer = timer
+        timer.start()
+
+    def _expire_time_quota(self) -> None:
+        self._time_quota_expired = True
 
     def _tick(self) -> None:
         super()._tick()
-        if self._time_deadline is not None and time.monotonic() >= self._time_deadline:
+        if self._time_quota_expired:
             raise RuntimeC48Error(
                 f"C48 execution time quota exceeded ({self._time_quota:g}s)"
             )
+
+    def run(self) -> int:
+        try:
+            return super().run()
+        finally:
+            if self._quota_timer is not None:
+                self._quota_timer.cancel()
+
+
+def _new_vm(program, screen, *, time_quota: float, **kwargs) -> RomMathVM:
+    """Use the historical zero-overhead VM unless a quota is requested."""
+    if time_quota > 0.0:
+        return _QuotaRomMathVM(
+            program, screen, time_quota=time_quota, **kwargs
+        )
+    return RomMathVM(program, screen, **kwargs)
 
 
 def _run_display_with_fuse_icon(display: TkDisplay, target) -> int:
@@ -238,7 +258,7 @@ def main(argv: list[str] | None = None) -> int:
         # Preserve argv[0] as the exact host command token supplied for the program.
         pargv = [ns.program, *ns.args]
         if ns.headless:
-            vm = _QuotaRomMathVM(
+            vm = _new_vm(
                 program, screen, argv=pargv,
                 approximate_rom_math=ns.allow_approx_rom_math,
                 heap_size=ns.heap, max_steps=max_steps,
@@ -247,7 +267,7 @@ def main(argv: list[str] | None = None) -> int:
             status = vm.run()
         else:
             display = TkDisplay(screen, scale=ns.scale, title=f"ZX-UX C48 - {program_path.name}")
-            vm = _QuotaRomMathVM(
+            vm = _new_vm(
                 program, screen, argv=pargv,
                 approximate_rom_math=ns.allow_approx_rom_math,
                 heap_size=ns.heap, max_steps=max_steps,
