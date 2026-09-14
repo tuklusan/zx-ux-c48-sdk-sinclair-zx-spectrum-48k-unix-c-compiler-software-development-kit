@@ -43,40 +43,53 @@ jobs:
           python-version: "3.13"
 
       - name: Validate maintenance marker
+        id: marker
         shell: bash
         run: |
-          test -f .github/ailmzx48-maintenance-request.txt
-          git rm .github/ailmzx48-maintenance-request.txt
+          if test -f .github/ailmzx48-maintenance-request.txt; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+            git rm .github/ailmzx48-maintenance-request.txt
+          else
+            echo "present=false" >> "$GITHUB_OUTPUT"
+            echo "Maintenance marker is absent; marker-removal event is a clean no-op."
+          fi
 
       - name: Test ailmzx48 context reference
+        if: steps.marker.outputs.present == 'true'
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_context_reference.py
 
       - name: Test ailmzx48 A48M reference
+        if: steps.marker.outputs.present == 'true'
         run: >-
           python -B usr/src/ailmzx48/evaluation/test_a48m_reference.py
 
       - name: Compile ailmzx48 SDK artifact
+        if: steps.marker.outputs.present == 'true'
         run: >-
           python -B compiler/c48.py
           usr/src/ailmzx48/ailmzx48.c
           -o usr/bin/ailmzx48/ailmzx48.c48b
 
       - name: Evaluate iterative exit criteria
+        if: steps.marker.outputs.present == 'true'
         run: >-
           python -B usr/src/ailmzx48/evaluation/check_exit_criteria.py
           --write-status usr/src/ailmzx48/training/goal-status.json
 
       - name: Regenerate release manifest
+        if: steps.marker.outputs.present == 'true'
         run: python -B usr/src/ailmzx48/tooling/update_manifest.py
 
       - name: Verify complete repository
+        if: steps.marker.outputs.present == 'true'
         shell: bash
         run: |
           python -B compiler/verify_release.py
           git diff --check
 
       - name: Commit and push maintenance checkpoint
+        if: steps.marker.outputs.present == 'true'
         shell: bash
         run: |
           git config user.name "github-actions[bot]"

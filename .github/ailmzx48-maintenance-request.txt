@@ -1,0 +1,1 @@
+Regenerate MANIFEST.sha256 and verify the repository after making maintenance marker removal a clean no-op.
