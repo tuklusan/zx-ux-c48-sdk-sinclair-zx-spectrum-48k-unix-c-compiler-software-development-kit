@@ -1,0 +1,1 @@
+Apply the C48 15-second per-binary runtime quota, regenerate MANIFEST.sha256, and verify the complete repository.
