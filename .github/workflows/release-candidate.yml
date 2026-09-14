@@ -67,6 +67,8 @@ jobs:
           }
           required = {
               "GUI-EVIDENCE.json", "SHA256SUMS",
+              "visual-progression-canvas.png", "visual-progression-desktop.png",
+              "probe-visual-progression.jsonl",
               "forest-canvas.png", "forest-desktop.png", "forest-frame.ppm", "probe-forest.jsonl",
               "fortune-canvas.png", "fortune-desktop.png", "fortune-frame.ppm", "probe-fortune.jsonl",
               "snake-canvas.png", "snake-desktop.png", "snake-frame.ppm", "probe-snake.jsonl",
