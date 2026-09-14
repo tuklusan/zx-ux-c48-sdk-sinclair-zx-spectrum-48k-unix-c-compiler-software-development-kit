@@ -1,5 +1,5 @@
 {
-  "commit": "6825f7f4b40a20073c061d6fd6e0a852ae9b0a2b",
+  "commit": "ae0c3b2252b8999358607abcbd85fa3283137428",
   "machine": "AMD64",
   "platform": "Windows-10-10.0.26100-SP0",
   "python": "3.10.11",
@@ -24,7 +24,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "forest-desktop.png",
-        "desktop_sha256": "220ff5d407d2b69bf89b86935f7b7dcd7c3f1ef2a3c77318b2a39ba5b6105509",
+        "desktop_sha256": "9f883359da0572effe69c6ccefe11b52fa03ec84051ac33cd3f0bd14b854fc52",
         "frame_ppm": "forest-frame.ppm",
         "frame_ppm_sha256": "60c07625314001ac39dccf57866182ab993eeae05ace16b7674f575e4ff54a43",
         "frame_sha256": "0e2f572a1f511192153bb8a42ab444eb672366e4f1a4e27ab836caed8cb0b366"
@@ -48,7 +48,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "fortune-desktop.png",
-        "desktop_sha256": "7cfb7994daac8a3e9b6197cc9d9fc2f1981c8ce89e5d8752eb73fc40e3e7d2b6",
+        "desktop_sha256": "4f56bd84ac44d87e7e1d3eb40d78bf56de9d121b718b2989f07d0ea0c882ac93",
         "frame_ppm": "fortune-frame.ppm",
         "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
         "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
@@ -72,7 +72,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "snake-desktop.png",
-        "desktop_sha256": "966b14bc527b1f139f392f4d4c244d706503419b677e311832f526127220ccf5",
+        "desktop_sha256": "5f9fbe2f4022375de04e943e82814825f3d2343adec27d731ed0b260a79f77a5",
         "frame_ppm": "snake-frame.ppm",
         "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
         "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"
@@ -96,7 +96,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "visual-progression-desktop.png",
-        "desktop_sha256": "edc32c0330fea6d18bc1f1a28f9bceb3d023f1e006bd65ee995592c3420d3f02",
+        "desktop_sha256": "fcd968cc859d031f16d64f2ed7907198445ca80f7b92d0a6ca9bf8f89b8477fa",
         "frame_ppm": "visual-progression-frame.ppm",
         "frame_ppm_sha256": "da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f",
         "frame_sha256": "473d19905b5d8cc3a081c6935fa06e8fe5ee1a46359e113a6bf9cb606f66b2dd"
@@ -118,9 +118,9 @@
         656
       ],
       "release_intervals_ms": [
-        125.0,
-        125.0,
-        188.0,
+        140.0,
+        110.0,
+        172.0,
         125.0,
         125.0
       ],

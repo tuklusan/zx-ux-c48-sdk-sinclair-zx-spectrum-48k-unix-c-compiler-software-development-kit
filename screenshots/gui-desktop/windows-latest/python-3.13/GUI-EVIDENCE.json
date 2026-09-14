@@ -1,5 +1,5 @@
 {
-  "commit": "6825f7f4b40a20073c061d6fd6e0a852ae9b0a2b",
+  "commit": "ae0c3b2252b8999358607abcbd85fa3283137428",
   "machine": "AMD64",
   "platform": "Windows-2025Server-10.0.26100-SP0",
   "python": "3.13.15",
@@ -24,7 +24,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "forest-desktop.png",
-        "desktop_sha256": "888fd3082a4211ce3b02a23d1ac4b120ae5593d9afb4ed8e0a870fcc5f9b8e77",
+        "desktop_sha256": "b68b8892a2fa6fa7baaa975a2fd9ee4d9aac8dbcbcd42c82deeeba1fe5e79ef8",
         "frame_ppm": "forest-frame.ppm",
         "frame_ppm_sha256": "60c07625314001ac39dccf57866182ab993eeae05ace16b7674f575e4ff54a43",
         "frame_sha256": "0e2f572a1f511192153bb8a42ab444eb672366e4f1a4e27ab836caed8cb0b366"
@@ -48,7 +48,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "fortune-desktop.png",
-        "desktop_sha256": "bd760741862e317132c0277e9be14f6b4620c72495f81bc24729b1bc49b8b33b",
+        "desktop_sha256": "739bf96135cab07208bbb58845c52d23de30126c53e3bb5f9a81daf2ab2108cf",
         "frame_ppm": "fortune-frame.ppm",
         "frame_ppm_sha256": "7e4b8b1a56a64c9d04246937e7d8f419691e18998d70c16a07a80f360a62be93",
         "frame_sha256": "96a8372ff644fb72c318b5c4179559dd24817fadc5389d0c887296c77b6b8f3a"
@@ -72,7 +72,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "snake-desktop.png",
-        "desktop_sha256": "f2d6537b870592e1d0342a512a12f2dc689379aa507c54ba4178eb713f9bb2c1",
+        "desktop_sha256": "9eea6be6f8bc3635339160b7f1bf151407bf4cfdc9309eece7aaeb1fdc8906a0",
         "frame_ppm": "snake-frame.ppm",
         "frame_ppm_sha256": "f95fe0356ab2667a953fbebc748e924645bd46ae82e0c93c328e687ef1c9ad38",
         "frame_sha256": "c6f9dfcf03396073a880b68328870a0b63228394f0d7a923583fa3d6ff02ac08"
@@ -96,7 +96,7 @@
         ],
         "comparison": "exact-rgb",
         "desktop_png": "visual-progression-desktop.png",
-        "desktop_sha256": "3db640994cf07ddecc46e1f9272a8f19ff5ed3ca813757d139a4e1faf9a0d2b8",
+        "desktop_sha256": "6cecd79d455d60d22a858eb0849cd7ad295ccb6f0426116dc082b9916561d510",
         "frame_ppm": "visual-progression-frame.ppm",
         "frame_ppm_sha256": "da9b084665a8297719f5d53956948a70112ee4c0ccc03696a0f3dd672675698f",
         "frame_sha256": "473d19905b5d8cc3a081c6935fa06e8fe5ee1a46359e113a6bf9cb606f66b2dd"
@@ -118,11 +118,11 @@
         656
       ],
       "release_intervals_ms": [
-        110.889,
-        125.906,
-        101.011,
-        114.704,
-        101.044
+        123.69,
+        115.118,
+        154.839,
+        127.19,
+        159.006
       ],
       "stderr": "",
       "stdout": "",
