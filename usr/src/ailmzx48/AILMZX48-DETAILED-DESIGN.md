@@ -1329,7 +1329,7 @@ Before the model format is declared final, the project must answer with retained
 
 The final design replaces these questions with measured answers.
 
-### 22.1 Revision-0.26 measured SDK answers and release-profile boundary
+### 22.1 Revision-0.29 measured SDK answers and release-profile boundary
 
 The acceptance questions above are now classified by evidence scope rather
 than left as an undifferentiated to-do list.  The durable machine-readable
@@ -1341,7 +1341,7 @@ following: the shipped SDK artifact is C48B1 and is never mislabeled as native
 OBJ1/MEX1/Z80 code; the active runner uses zero C48 heap; L0 is bounded to 896
 bytes/32 descriptors, L1 to 48 x 16-byte capsules, L2 to 24 x 16-byte records,
 the session-literal store to 272 bytes/eight generation-checked slots, and the
-decoded LM-context ring to 96 u16 entries; the cold A48M object is 8432 logical
+decoded LM-context ring to 96 u16 entries; the cold A48M object is 8566 logical
 bytes with 69 records, a 64-byte maximum read request and a 192-byte maximum
 record; the host context oracle has retained a 500-dialogue/51000-source-byte
 stress while fixed capacities remained bounded; the post-repair target-SDK

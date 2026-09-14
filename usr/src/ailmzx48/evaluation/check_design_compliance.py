@@ -63,6 +63,15 @@ def pass1() -> dict:
     require("BLOCKED_EXTERNAL" in design, "native blocker not explicit in design")
     require("Revision 0.29 closes the SDK-side design questions" in design,
             "current resolved-parameter revision is stale")
+    require("### 22.1 Revision-0.29 measured SDK answers" in design,
+            "measured SDK answer revision heading is stale")
+    require("### 22.1 Revision-0.26 measured SDK answers" not in design,
+            "stale Revision-0.26 measured-answer heading remains")
+    measured = design.split("### 22.1 Revision-0.29 measured SDK answers", 1)[1]
+    measured = measured.split("## 23. Resolved SDK parameters", 1)[0]
+    require("cold A48M object is 8566 logical" in measured and
+            "cold A48M object is 8432 logical" not in measured,
+            "measured SDK cold-model size is stale")
     require("Revision 0.27 closes the SDK-side design questions" not in design,
             "stale Revision-0.27 current-parameter marker remains")
     require("A48M v2 is 8,566 logical bytes" in design and

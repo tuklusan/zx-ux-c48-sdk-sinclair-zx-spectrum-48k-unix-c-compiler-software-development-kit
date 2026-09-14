@@ -23,8 +23,8 @@ this certificate states the current qualified SDK scope.
 ## Reviewed identities
 
 - detailed-design revision: `0.29-draft`
-- detailed-design Git blob: `c47aab8a7f005f61aea462e2a1c9a6b2d3506504`
-- detailed-design SHA-256: `1a4d2ffc1635019be6d88e534891ee5105d1313a5e5eb91cdc0571b1d0e763d4`
+- detailed-design Git blob: `f8120b66ade6029665cbd11910bdea593f9d64d9`
+- detailed-design SHA-256: `c5bae5348c0a190e06c7fd9fd3af46f9c154ed4db8b0b2231d4669b3dca227a0`
 - repaired C48 source SHA-256: `739285f329ac686e5fbcf6f9753e87d08d2b90a8c7cfe94c080218662e417271`
 - SDK C48B1 artifact SHA-256: `89b0905ce631c2fb4c3962414774858c15eba01d4cfd803d9ce45edfd1e6fc0e`
 - cold A48M SHA-256: `a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096`
