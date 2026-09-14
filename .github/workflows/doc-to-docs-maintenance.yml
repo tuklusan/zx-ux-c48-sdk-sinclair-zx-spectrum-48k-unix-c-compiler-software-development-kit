@@ -1,0 +1,144 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: doc to docs maintenance
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/doc-to-docs-maintenance.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: doc-to-docs-maintenance-main
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Rewrite repository-owned doc paths
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path('.')
+          workflow = '.github/workflows/doc-to-docs-maintenance.yml'
+          changed = []
+          before = []
+
+          for path in sorted(root.rglob('*')):
+              if not path.is_file():
+                  continue
+              rel = path.as_posix()
+              if rel.startswith('.git/'):
+                  continue
+              if rel == 'MANIFEST.sha256' or rel == workflow:
+                  continue
+              if rel.startswith('docs/reference/'):
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              if 'doc/' in text or '"doc"' in text or "'doc'" in text:
+                  for no, line in enumerate(text.splitlines(), 1):
+                      if 'doc/' in line or '"doc"' in line or "'doc'" in line:
+                          before.append(f'{rel}:{no}:{line}')
+              new = text.replace('doc/', 'docs/')
+              if rel == 'compiler/verify_graphics_demos.py':
+                  new = new.replace(
+                      'SDK / "doc" / "images" / "demos"',
+                      'SDK / "docs" / "images" / "demos"')
+              if new != text:
+                  path.write_text(new, encoding='utf-8', newline='\n')
+                  changed.append(rel)
+
+          print('DOCS_RENAME_MATCHES_BEGIN')
+          for line in before:
+              print(line)
+          print('DOCS_RENAME_MATCHES_END')
+          print('DOCS_RENAME_CHANGED', len(changed))
+          for rel in changed:
+              print('DOCS_RENAME_FILE', rel)
+
+          residual = []
+          for path in sorted(root.rglob('*')):
+              if not path.is_file():
+                  continue
+              rel = path.as_posix()
+              if rel.startswith('.git/') or rel.startswith('docs/reference/'):
+                  continue
+              if rel == 'MANIFEST.sha256' or rel == workflow:
+                  continue
+              try:
+                  text = path.read_text(encoding='utf-8')
+              except UnicodeDecodeError:
+                  continue
+              for no, line in enumerate(text.splitlines(), 1):
+                  if 'doc/' in line:
+                      residual.append(f'{rel}:{no}:{line}')
+                  if rel == 'compiler/verify_graphics_demos.py' and 'SDK / "doc"' in line:
+                      residual.append(f'{rel}:{no}:{line}')
+          if residual:
+              print('RESIDUAL_OLD_DOC_PATHS')
+              print('\n'.join(residual))
+              raise SystemExit(1)
+          PY
+
+      - name: Remove temporary workflow and regenerate manifest
+        shell: bash
+        run: |
+          rm .github/workflows/doc-to-docs-maintenance.yml
+          python -B usr/src/ailmzx48/tooling/update_manifest.py
+
+      - name: Run hard release gates
+        shell: bash
+        run: |
+          python -B compiler/verify_release.py
+          git diff --check
+          if grep -q '  doc/' MANIFEST.sha256; then
+            echo 'stale doc path remains in MANIFEST.sha256' >&2
+            exit 1
+          fi
+          if ! grep -q '  docs/' MANIFEST.sha256; then
+            echo 'docs paths missing from MANIFEST.sha256' >&2
+            exit 1
+          fi
+          test ! -e doc
+          test -d docs
+
+      - name: Commit and push completed rename maintenance
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Complete doc to docs directory rename"
+          git push origin HEAD:main
