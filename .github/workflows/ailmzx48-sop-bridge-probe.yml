@@ -33,7 +33,7 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Measure learned bridge coverage
+      - name: Search all learned-compatible filler gaps
         shell: bash
         run: |
           set -euo pipefail
@@ -48,10 +48,10 @@ jobs:
           from pathlib import Path
 
           words_re = re.compile(r"[a-z0-9]+")
-          gap_words = (
+          gap_words = {
               "a", "an", "the", "and", "in", "on", "at",
               "for", "with", "by", "of", "from", "to", "style",
-          )
+          }
           corpus = json.loads(Path(
               "usr/src/ailmzx48/training/seed_corpus.json"
           ).read_text())
@@ -68,11 +68,27 @@ jobs:
               )
               for row in model["trigram_contexts"]
           }
+
+          def learned(record, words, at):
+              if at == 0:
+                  return ("LEAD", None)
+              cur = ids.get(words[at - 1], 0)
+              prev = ids.get(words[at - 2], 0) if at > 1 else 0
+              first = second = 0
+              if prev and cur and (prev, cur) in tri:
+                  first, second = tri[(prev, cur)]
+              if first == 0 and cur:
+                  base = topics[record["topic"]] * vcnt
+                  first = n1[base + cur]
+                  second = n2[base + cur]
+              p1 = vocab[first] if 0 < first < vcnt else None
+              p2 = vocab[second] if 0 < second < vcnt else None
+              return p1, p2
+
           rows = []
-          internal = 0
-          primary_exact = 0
-          either_exact = 0
-          no_hot_context = 0
+          viable = 0
+          primary_viable = 0
+          lead_viable = 0
           for index, record in enumerate(corpus["records"]):
               if record.get("kind") != "fact-user":
                   continue
@@ -80,74 +96,55 @@ jobs:
               triggers = {
                   str(word).lower() for word in record.get("triggers", [])
               }
-              gap = -1
-              for filler in gap_words:
-                  for at, word in enumerate(words):
-                      if word != filler or word in triggers:
-                          continue
-                      if at == len(words) - 1:
-                          continue
-                      if at == 0 and filler not in ("a", "an", "the"):
-                          continue
-                      gap = at
-                      break
-                  if gap >= 0:
-                      break
-              if gap < 0:
-                  raise SystemExit(f"record {index} has no candidate gap")
-              if gap == 0:
-                  rows.append({
-                      "record": index,
-                      "gap": gap,
-                      "word": words[gap],
-                      "mode": "leading-gap-covered-by-lead",
+              candidates = []
+              for at, word in enumerate(words):
+                  if word not in gap_words or word in triggers:
+                      continue
+                  if at == len(words) - 1:
+                      continue
+                  if at == 0 and word not in ("a", "an", "the"):
+                      continue
+                  p1, p2 = learned(record, words, at)
+                  exact = (
+                      at == 0 or word == p1 or word == p2
+                  )
+                  candidates.append({
+                      "gap": at,
+                      "word": word,
+                      "primary": p1,
+                      "secondary": p2,
+                      "exact": exact,
+                      "prev2": words[at - 2] if at > 1 else None,
+                      "prev1": words[at - 1] if at > 0 else None,
+                      "next_anchor": words[at + 1],
                   })
-                  continue
-              internal += 1
-              cur = ids.get(words[gap - 1], 0)
-              prev = ids.get(words[gap - 2], 0) if gap > 1 else 0
-              first = 0
-              second = 0
-              if prev and cur and (prev, cur) in tri:
-                  first, second = tri[(prev, cur)]
-              if first == 0 and cur:
-                  base = topics[record["topic"]] * vcnt
-                  first = n1[base + cur]
-                  second = n2[base + cur]
-              if cur == 0:
-                  no_hot_context += 1
-              p1 = vocab[first] if 0 < first < vcnt else None
-              p2 = vocab[second] if 0 < second < vcnt else None
-              if p1 == words[gap]:
-                  primary_exact += 1
-              if words[gap] in (p1, p2):
-                  either_exact += 1
+              exacts = [candidate for candidate in candidates if candidate["exact"]]
+              if exacts:
+                  viable += 1
+                  if exacts[0]["gap"] == 0:
+                      lead_viable += 1
+                  elif exacts[0]["word"] == exacts[0]["primary"]:
+                      primary_viable += 1
               rows.append({
                   "record": index,
                   "topic": record["topic"],
-                  "gap": gap,
-                  "word": words[gap],
-                  "prev2": words[gap - 2] if gap > 1 else None,
-                  "prev1": words[gap - 1],
-                  "primary": p1,
-                  "secondary": p2,
-                  "next_anchor": words[gap + 1],
+                  "text": record["text"],
+                  "viable": exacts,
+                  "candidates": candidates,
               })
           report = {
               "fact_records": len(rows),
-              "internal_gaps": internal,
-              "primary_exact": primary_exact,
-              "primary_or_secondary_exact": either_exact,
-              "no_hot_preceding_context": no_hot_context,
-              "mismatches": [
-                  row for row in rows
-                  if row.get("mode") is None and
-                  row["word"] not in (row["primary"], row["secondary"])
+              "records_with_learned_compatible_gap": viable,
+              "records_without_learned_compatible_gap": len(rows) - viable,
+              "first_viable_is_leading": lead_viable,
+              "first_viable_is_primary": primary_viable,
+              "uncovered_records": [
+                  row for row in rows if not row["viable"]
               ],
           }
           print(json.dumps(report, indent=2, sort_keys=True))
           raise SystemExit(
-              "diagnostic-only learned bridge probe complete; "
+              "diagnostic-only all-gap bridge probe complete; "
               "candidate intentionally not qualified"
           )
           PY
