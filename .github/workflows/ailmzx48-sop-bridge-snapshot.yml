@@ -1,0 +1,53 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+# ============================================================================
+name: ailmzx48 SoP bridge snapshot
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-sop-bridge-snapshot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out current main
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 1
+
+      - name: Record source identity
+        shell: bash
+        run: git rev-parse HEAD > SOP-SOURCE-COMMIT.txt
+
+      - name: Upload exact repair surface
+        uses: actions/upload-artifact@v4
+        with:
+          name: ailmzx48-sop-bridge-${{ github.sha }}
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            SOP-SOURCE-COMMIT.txt
+            LICENSE
+            SOURCE-COMMIT.txt
+            MANIFEST.sha256
+            compiler
+            usr/bin/ailmzx48
+            usr/src/ailmzx48
+            .github/workflows/ailmzx48-maintenance.yml
+            .github/workflows/ailmzx48-sop-anchor-repair.yml
+            .github/workflows/ailmzx48-sop-bridge-probe.yml
+            .github/workflows/ailmzx48-sop-bridge-snapshot.yml
