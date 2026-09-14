@@ -1,0 +1,111 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: ailmzx48 SoP final clearance snapshot
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/ailmzx48-sop-final-snapshot.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out frozen bridge-repair tree
+        uses: actions/checkout@v4
+        with:
+          ref: 0dbd7b70322935d84d6dc3434600512499b67f9e
+          lfs: true
+          fetch-depth: 1
+
+      - name: Build immutable SoP surface manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = \
+            "0dbd7b70322935d84d6dc3434600512499b67f9e"
+          printf '%s\n' "$(git rev-parse HEAD)" > SOP-SOURCE-COMMIT.txt
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+
+          roots = [
+              Path('LICENSE'),
+              Path('MANIFEST.sha256'),
+              Path('compiler'),
+              Path('usr/bin/ailmzx48'),
+              Path('usr/src/ailmzx48'),
+              Path('.github/workflows/ailmzx48-maintenance.yml'),
+              Path('.github/workflows/ailmzx48-training.yml'),
+              Path('.github/workflows/verify.yml'),
+          ]
+          files = []
+          for root in roots:
+              if root.is_file():
+                  files.append(root)
+              elif root.is_dir():
+                  files.extend(p for p in root.rglob('*') if p.is_file())
+              else:
+                  raise SystemExit('missing SoP surface root: ' + str(root))
+          files = sorted(set(files), key=lambda p: p.as_posix())
+          rows = []
+          total = 0
+          surface = hashlib.sha256()
+          for path in files:
+              data = path.read_bytes()
+              digest = hashlib.sha256(data).hexdigest()
+              rel = path.as_posix()
+              rows.append(f'{digest}  {len(data)}  {rel}')
+              total += len(data)
+              surface.update(rel.encode('utf-8'))
+              surface.update(b'\0')
+              surface.update(str(len(data)).encode('ascii'))
+              surface.update(b'\0')
+              surface.update(bytes.fromhex(digest))
+          Path('SOP-SURFACE-SHA256.txt').write_text(
+              '\n'.join(rows) + '\n', encoding='utf-8', newline='\n')
+          Path('SOP-SURFACE-FINGERPRINT.txt').write_text(
+              'source_commit=0dbd7b70322935d84d6dc3434600512499b67f9e\n'
+              f'file_count={len(files)}\n'
+              f'total_bytes={total}\n'
+              f'surface_sha256={surface.hexdigest()}\n',
+              encoding='utf-8', newline='\n')
+          print('file_count', len(files))
+          print('total_bytes', total)
+          print('surface_sha256', surface.hexdigest())
+          PY
+
+      - name: Upload immutable clearance surface
+        uses: actions/upload-artifact@v4
+        with:
+          name: ailmzx48-sop-final-0dbd7b70322935d84d6dc3434600512499b67f9e
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            SOP-SOURCE-COMMIT.txt
+            SOP-SURFACE-SHA256.txt
+            SOP-SURFACE-FINGERPRINT.txt
+            LICENSE
+            MANIFEST.sha256
+            compiler
+            usr/bin/ailmzx48
+            usr/src/ailmzx48
+            .github/workflows/ailmzx48-maintenance.yml
+            .github/workflows/ailmzx48-training.yml
+            .github/workflows/verify.yml
