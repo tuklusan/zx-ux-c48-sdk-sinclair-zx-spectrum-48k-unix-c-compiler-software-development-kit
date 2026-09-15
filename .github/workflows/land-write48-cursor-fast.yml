@@ -1,0 +1,196 @@
+# ============================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================
+name: Land write48 cursor fast path
+
+on:
+  push:
+    paths:
+      - '.github/workflows/land-write48-cursor-fast.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  land:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Patch cursor-only movement path
+        shell: bash
+        run: |
+          set -euo pipefail
+          git lfs fsck
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('usr/src/apps/write48.c')
+          s = p.read_text(encoding='utf-8')
+          anchor = '''void wr_frow(int row)\n{\n    int base;\n    int cc;\n    base = row * 60;\n    memmove(wr_line, wr_prev + base, 60u);\n    wr_line[60] = 0;\n    inverse(0);\n    print_at(row + 2, 2, wr_line);\n    if (wr_pcursor >= base && wr_pcursor < base + 60) {\n        cc = wr_prev[wr_pcursor];\n        if (cc == ' ')\n            cc = '_';\n        inverse(1);\n        app_putc(row + 2, wr_pcursor - base + 2, cc);\n        inverse(0);\n    }\n}\n\n'''
+          insert = anchor + '''int wr_fmove(int d)\n{\n    int old;\n    int next;\n    int row;\n    int col;\n    int cc;\n    if (!wr_drawn || wr_pcursor < 0)\n        return 0;\n    old = wr_pcursor;\n    row = old / 60;\n    col = old % 60;\n    if (d > 0) {\n        if (wr_cur >= wr_len)\n            return 1;\n        if (wr_doc[wr_cur] == '\\n') {\n            if (row >= 18 || !wr_rowsafe[row] ||\n                !wr_rowsafe[row + 1])\n                return 0;\n            next = (row + 1) * 60;\n        } else {\n            if (!wr_rowsafe[row] || col >= wr_rowlen[row])\n                return 0;\n            next = old + 1;\n        }\n        wr_cur++;\n    } else {\n        if (wr_cur <= 0)\n            return 1;\n        if (wr_doc[wr_cur - 1] == '\\n') {\n            if (row <= 0 || !wr_rowsafe[row] ||\n                !wr_rowsafe[row - 1])\n                return 0;\n            next = (row - 1) * 60 + wr_rowlen[row - 1];\n        } else {\n            if (!wr_rowsafe[row] || col <= 0)\n                return 0;\n            next = old - 1;\n        }\n        wr_cur--;\n    }\n    cc = wr_prev[old];\n    inverse(0);\n    app_putc(old / 60 + 2, old % 60 + 2, cc);\n    cc = wr_prev[next];\n    if (cc == ' ')\n        cc = '_';\n    inverse(1);\n    app_putc(next / 60 + 2, next % 60 + 2, cc);\n    inverse(0);\n    wr_pcursor = next;\n    wr_ncursor = next;\n    return 1;\n}\n\n'''
+          if s.count(anchor) != 1:
+              raise SystemExit('wr_frow anchor mismatch')
+          s = s.replace(anchor, insert)
+          old = '''            if ((key == '8' || key == 'l') && wr_cur < wr_len)\n                wr_cur++;\n            if ((key == '5' || key == 'h') && wr_cur > 0)\n                wr_cur--;\n'''
+          new = '''            if ((key == '8' || key == 'l') && wr_cur < wr_len) {\n                if (wr_fmove(1))\n                    wr_fast = 1;\n                else\n                    wr_cur++;\n            }\n            if ((key == '5' || key == 'h') && wr_cur > 0) {\n                if (wr_fmove(-1))\n                    wr_fast = 1;\n                else\n                    wr_cur--;\n            }\n'''
+          if s.count(old) != 1:
+              raise SystemExit('cursor movement anchor mismatch')
+          s = s.replace(old, new)
+          bad = [(i, len(line)) for i, line in enumerate(s.splitlines(), 1)
+                 if len(line) > 64]
+          if bad:
+              raise SystemExit('64-column violations: ' + repr(bad))
+          p.write_text(s, encoding='utf-8', newline='\n')
+          PY
+          python -B compiler/c48.py usr/src/apps/write48.c -o usr/bin/apps/write48.c48b
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+          p = Path('compiler/app_expectations.json')
+          data = json.loads(p.read_text(encoding='ascii'))
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+          app = data['apps']['write48']
+          app['source_sha256'] = sha('usr/src/apps/write48.c')
+          app['binary_sha256'] = sha('usr/bin/apps/write48.c48b')
+          p.write_text(json.dumps(data, indent=2) + '\n',
+                       encoding='ascii', newline='\n')
+          print('source', app['source_sha256'])
+          print('binary', app['binary_sha256'])
+          print('screen', app['screen_sha256'])
+          PY
+
+      - name: Exercise cursor and edit paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, time
+          binary = Path('usr/bin/apps/write48.c48b')
+          def run(name, payload, limit):
+              t0 = time.perf_counter()
+              cp = subprocess.run(
+                  ['python','-B','compiler/c48run.py','--headless',str(binary)],
+                  input=payload, stdout=subprocess.DEVNULL,
+                  stderr=subprocess.PIPE, timeout=20,
+              )
+              dt = time.perf_counter() - t0
+              if cp.returncode:
+                  raise SystemExit(
+                      f'{name}: rc={cp.returncode}: ' +
+                      cp.stderr.decode(errors='replace'))
+              if dt > limit:
+                  raise SystemExit(
+                      f'{name}: too slow {dt:.3f}s > {limit:.3f}s')
+              print(f'{name}: PASS {dt:.4f}s')
+              return dt
+          cp = subprocess.run(
+              ['python','-B','compiler/c48run.py','--headless',str(binary),'verify'],
+              stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=10)
+          if cp.returncode:
+              raise SystemExit('verify mode failed')
+          run('cursor-right-20', b'8' * 20 + b'q', 2.0)
+          run('cursor-roundtrip', b'8' * 20 + b'5' * 20 + b'q', 2.5)
+          run('newline-cross', b'8' * 20 + b'8' + b'5' + b'q', 3.0)
+          run('typing-20', b'iabcdefghijklmnopqrst\x1bq', 2.0)
+          run('page-fallback', b'66' + b'77' + b'q', 6.0)
+          PY
+
+      - name: Commit clean prospective tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/land-write48-cursor-fast.yml
+          git add usr/src/apps/write48.c usr/bin/apps/write48.c48b \
+            compiler/app_expectations.json
+          git commit -m 'write48: make cursor movement incremental'
+          mapfile -t changed < <(git diff --name-only \
+            da0d8003bc61edb0fe874d6ceb92c9d8ac8f821e HEAD | sort)
+          printf 'FINAL_DIFF %s\n' "${changed[@]}"
+          test "${#changed[@]}" -eq 3
+          test "${changed[0]}" = 'compiler/app_expectations.json'
+          test "${changed[1]}" = 'usr/bin/apps/write48.c48b'
+          test "${changed[2]}" = 'usr/src/apps/write48.c'
+          test -z "$(git status --porcelain)"
+
+      - name: Full repository verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_release.py
+          git diff --check da0d8003bc61edb0fe874d6ceb92c9d8ac8f821e HEAD
+
+      - name: SoP three fresh byte scans
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, shutil, subprocess, tempfile
+          root = Path.cwd()
+          raw = subprocess.check_output(['git','ls-files','-z'])
+          paths = [Path(x.decode('utf-8','surrogateescape'))
+                   for x in raw.split(b'\0') if x]
+          text = {'.py','.c','.h','.md','.txt','.json','.yml',
+                  '.yaml','.bat','.sh'}
+          manifests=[]
+          for pass_no in (1,2,3):
+              fresh=Path(tempfile.mkdtemp(prefix=f'w48-cur-{pass_no}-'))
+              defects=[]; files=bytes_n=lines_n=0
+              whole=hashlib.sha256()
+              for rel in paths:
+                  dst=fresh/rel
+                  dst.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copyfile(root/rel, dst)
+                  data=dst.read_bytes()
+                  files += 1; bytes_n += len(data)
+                  lines=data.splitlines(keepends=True)
+                  lines_n += len(lines)
+                  if data.startswith(
+                      b'version https://git-lfs.github.com/spec/v1\n'):
+                      defects.append('LFS pointer: ' + rel.as_posix())
+                  if rel.suffix.lower() in text:
+                      for lineno,line in enumerate(lines,1):
+                          body=line.rstrip(b'\r\n')
+                          if (body.startswith(b'<<<<<<< ') or
+                              body == b'=======' or
+                              body.startswith(b'>>>>>>> ')):
+                              defects.append(
+                                  f'conflict: {rel.as_posix()}:{lineno}')
+                  rb=rel.as_posix().encode('utf-8','surrogateescape')
+                  whole.update(len(rb).to_bytes(4,'big'))
+                  whole.update(rb)
+                  whole.update(hashlib.sha256(data).digest())
+              manifest=whole.hexdigest(); manifests.append(manifest)
+              print(f'SOP_PASS_{pass_no}: files={files} bytes={bytes_n} '
+                    f'lines={lines_n} defects={len(defects)} '
+                    f'manifest={manifest}')
+              if defects:
+                  raise SystemExit('\n'.join(defects))
+              shutil.rmtree(fresh)
+          if len(set(manifests)) != 1:
+              raise SystemExit('SoP manifests differ: ' + repr(manifests))
+          PY
+
+      - name: Push verified final tree
+        run: git push origin HEAD:main
