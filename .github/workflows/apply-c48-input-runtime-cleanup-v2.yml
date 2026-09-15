@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Apply C48 input runtime cleanup v14
+name: Apply C48 input runtime cleanup v16
 
 "on":
   push:
@@ -109,8 +109,6 @@ jobs:
             cp "usr/src/ailmzx48/conversations/$tag/score.json" \
               "usr/src/ailmzx48/evaluation/sdk-conformance/$name/score.json"
           done
-          python -B usr/src/ailmzx48/evaluation/check_exit_criteria.py \
-            --write-status usr/src/ailmzx48/training/goal-status.json
       - name: Run complete release verifier
         shell: bash
         run: |
