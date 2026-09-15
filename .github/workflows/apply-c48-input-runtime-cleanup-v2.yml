@@ -39,7 +39,9 @@ jobs:
         with:
           python-version: "3.13"
       - name: Apply instrumented source transformation
-        run: python -B .github/apply_c48_input_cleanup.py
+        run: |
+          python -B .github/apply_c48_input_cleanup.py
+          python -B .github/reduce_c48_model_io_ast.py
       - name: Compile updated ailmzx48 artifact
         run: >-
           python -B compiler/c48.py
@@ -83,6 +85,7 @@ jobs:
         shell: bash
         run: |
           git rm .github/apply_c48_input_cleanup.py
+          git rm .github/reduce_c48_model_io_ast.py
           git rm .github/workflows/apply-c48-input-runtime-cleanup-v2.yml
           git config user.name "github-actions[bot]"
           git config user.email \
