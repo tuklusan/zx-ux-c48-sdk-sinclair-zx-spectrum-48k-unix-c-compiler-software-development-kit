@@ -336,6 +336,61 @@ void wr_frow(int row)
     }
 }
 
+int wr_fmove(int d)
+{
+    int old;
+    int next;
+    int row;
+    int col;
+    int cc;
+    if (!wr_drawn || wr_pcursor < 0)
+        return 0;
+    old = wr_pcursor;
+    row = old / 60;
+    col = old % 60;
+    if (d > 0) {
+        if (wr_cur >= wr_len)
+            return 1;
+        if (wr_doc[wr_cur] == '\n') {
+            if (row >= 18 || !wr_rowsafe[row] ||
+                !wr_rowsafe[row + 1])
+                return 0;
+            next = (row + 1) * 60;
+        } else {
+            if (!wr_rowsafe[row] || col >= wr_rowlen[row])
+                return 0;
+            next = old + 1;
+        }
+        wr_cur++;
+    } else {
+        if (wr_cur <= 0)
+            return 1;
+        if (wr_doc[wr_cur - 1] == '\n') {
+            if (row <= 0 || !wr_rowsafe[row] ||
+                !wr_rowsafe[row - 1])
+                return 0;
+            next = (row - 1) * 60 + wr_rowlen[row - 1];
+        } else {
+            if (!wr_rowsafe[row] || col <= 0)
+                return 0;
+            next = old - 1;
+        }
+        wr_cur--;
+    }
+    cc = wr_prev[old];
+    inverse(0);
+    app_putc(old / 60 + 2, old % 60 + 2, cc);
+    cc = wr_prev[next];
+    if (cc == ' ')
+        cc = '_';
+    inverse(1);
+    app_putc(next / 60 + 2, next % 60 + 2, cc);
+    inverse(0);
+    wr_pcursor = next;
+    wr_ncursor = next;
+    return 1;
+}
+
 int wr_fins(int c)
 {
     int row;
@@ -454,10 +509,18 @@ int main(int argc, char **argv)
             key = app_key();
             if (key == 'q')
                 return 0;
-            if ((key == '8' || key == 'l') && wr_cur < wr_len)
-                wr_cur++;
-            if ((key == '5' || key == 'h') && wr_cur > 0)
-                wr_cur--;
+            if ((key == '8' || key == 'l') && wr_cur < wr_len) {
+                if (wr_fmove(1))
+                    wr_fast = 1;
+                else
+                    wr_cur++;
+            }
+            if ((key == '5' || key == 'h') && wr_cur > 0) {
+                if (wr_fmove(-1))
+                    wr_fast = 1;
+                else
+                    wr_cur--;
+            }
             if (key == '6') {
                 wr_cur = wr_cur + 60;
                 if (wr_cur > wr_len)
