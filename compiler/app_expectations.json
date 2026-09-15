@@ -8,8 +8,8 @@
       "screen_sha256": "68f96705adf756099467e5ba1382f7fa8a47947be38c685e57067816b1940b63"
     },
     "write48": {
-      "source_sha256": "531ae0d65a8320b097191ebd619dd4b41fd5684bb09a47ed4c39e59a51fac72e",
-      "binary_sha256": "2f82ce848a592f3cbeb52fcd0be5ed1ede006351bc5076eb967a1c7d994f86c1",
+      "source_sha256": "3f034337eeb12972253701607e3daa415085c84bfc4c3c982eaee3d0870466cc",
+      "binary_sha256": "bcc6b92e6512c1f756995fc9398b32ea20ccdce43e0a92bdf575d306b66ed52c",
       "screen_sha256": "5264760ca71a18e50237244f30ceb40c50d6ca55e4cd6716d502af360d65ebd2"
     },
     "wire3d": {

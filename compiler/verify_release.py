@@ -141,12 +141,15 @@ def check_c48_spec_distribution() -> None:
         (SDK / "docs").glob("04-C48 Language Specification Rev *.docx")
     )
     provenance = SDK / "C48-SPECIFICATION.json"
+    local_stub = SDK / "docs/ZX-UX C48 Language Specification.md"
     require_packaged = os.environ.get("C48_REQUIRE_PACKAGED_SPEC") == "1"
 
     if obsolete.exists():
         fail("obsolete local C48 specification copy is present")
 
     if not require_packaged:
+        if not local_stub.is_file():
+            fail("source-tree C48 specification stub is missing")
         if packaged:
             fail(
                 "canonical upstream C48 specification must not be stored in the "
@@ -156,6 +159,8 @@ def check_c48_spec_distribution() -> None:
             fail("generated C48-SPECIFICATION.json present in SDK source tree")
         return
 
+    if local_stub.exists():
+        fail("release package must not contain the local C48 specification stub")
     if len(packaged) != 1:
         fail(
             "release package must contain exactly one canonical upstream C48 "

@@ -218,7 +218,6 @@ void wr_render(void)
     wr_build();
     wr_diff();
     wr_status();
-    yield();
 }
 
 void wr_start(void)

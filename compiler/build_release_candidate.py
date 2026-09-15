@@ -35,6 +35,7 @@ SPEC_RE = re.compile(
 PROVENANCE_NAME = "C48-SPECIFICATION.json"
 MANIFEST_NAME = "MANIFEST.sha256"
 OBSOLETE_SPEC = "docs/C48 Language Specification Rev 0.11.docx"
+LOCAL_SPEC_STUB = "docs/ZX-UX C48 Language Specification.md"
 
 
 def fail(message: str) -> None:
@@ -143,6 +144,7 @@ def tracked_entries() -> list[tuple[str, int]]:
         ["git", "ls-files", "--stage", "-z"], cwd=SDK
     )
     entries: list[tuple[str, int]] = []
+    stub_seen = False
     for record in raw.split(b"\0"):
         if not record:
             continue
@@ -153,6 +155,9 @@ def tracked_entries() -> list[tuple[str, int]]:
         path = raw_path.decode("utf-8", "surrogateescape")
         if mode not in {"100644", "100755"}:
             fail(f"unsupported release-tree mode {mode}: {path}")
+        if path == LOCAL_SPEC_STUB:
+            stub_seen = True
+            continue
         if path == OBSOLETE_SPEC:
             fail(f"obsolete local C48 specification is still tracked: {path}")
         if path.startswith("docs/04-C48 Language Specification Rev "):
@@ -162,6 +167,8 @@ def tracked_entries() -> list[tuple[str, int]]:
         if path == MANIFEST_NAME:
             fail(f"generated package manifest must not be tracked: {path}")
         entries.append((path, int(mode[-3:], 8)))
+    if not stub_seen:
+        fail(f"source-tree C48 specification stub is not tracked: {LOCAL_SPEC_STUB}")
     return sorted(entries)
 
 
