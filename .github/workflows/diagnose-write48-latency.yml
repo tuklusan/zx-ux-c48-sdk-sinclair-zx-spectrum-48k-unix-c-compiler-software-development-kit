@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - '.github/workflows/diagnose-write48-latency.yml'
+      - '.github/diag_write48_fast.py'
 
 permissions:
   contents: read
@@ -19,51 +20,4 @@ jobs:
         with:
           python-version: '3.13'
       - name: Benchmark incremental typing candidate
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import re, subprocess, time
-          root=Path.cwd(); src=root/'usr/src/apps/write48.c'
-          original=src.read_text(encoding='utf-8')
-
-          def build(name):
-              out=root/f'usr/bin/apps/{name}.c48b'
-              subprocess.run(['python','-B','compiler/c48.py',str(src),'-o',str(out)],check=True)
-              return out
-          def bench(label,binary,data):
-              t0=time.perf_counter()
-              cp=subprocess.run(['python','-B','compiler/c48run.py','--headless',str(binary)],input=data,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,timeout=60)
-              dt=time.perf_counter()-t0
-              if cp.returncode: raise SystemExit(cp.stderr.decode(errors='replace'))
-              print(f'{label}: {dt:.4f}s')
-
-          # Start with the already-proven row-buffered fallback renderer.
-          text=original.replace('#include "appapi.h"\n','#include "appapi.h"\nvoid *memset(void *d, int c, unsigned int n);\n')
-          text=text.replace('unsigned char wr_pinv[1140];\nunsigned char wr_ninv[1140];\n','char wr_line[61];\nint wr_pcursor;\nint wr_ncursor;\nint wr_rowsafe[19];\nint wr_rowlen[19];\nint wr_fast;\n')
-          text=re.sub(r'void wr_insert_char\(int c\)\n\{.*?\n\}\n\nvoid wr_delete_at', '''void wr_insert_char(int c)\n{\n    int n;\n    if (wr_len >= 1899) return;\n    n = wr_len - wr_cur;\n    if (n > 0) memmove(wr_doc + wr_cur + 1, wr_doc + wr_cur, (unsigned int)n);\n    wr_doc[wr_cur] = (char)c;\n    wr_len++; wr_cur++; wr_doc[wr_len] = 0;\n}\n\nvoid wr_delete_at''',text,flags=re.S)
-          text=re.sub(r'void wr_delete_at\(int pos\)\n\{.*?\n\}\n\nint wr_word_len', '''void wr_delete_at(int pos)\n{\n    int n;\n    if (pos < 0 || pos >= wr_len) return;\n    n = wr_len - pos;\n    memmove(wr_doc + pos, wr_doc + pos + 1, (unsigned int)n);\n    wr_len--;\n    if (wr_cur > wr_len) wr_cur = wr_len;\n}\n\nint wr_word_len''',text,flags=re.S)
-          text=re.sub(r'void wr_blank\(void\)\n\{.*?\n\}', '''void wr_blank(void)\n{\n    int i;\n    memset(wr_next, ' ', 1140u);\n    wr_ncursor = -1;\n    for (i = 0; i < 19; i++) { wr_rowsafe[i] = 0; wr_rowlen[i] = 0; }\n}''',text,flags=re.S)
-
-          # Full rebuild: same layout semantics, but cache whether each visible row
-          # is one complete explicit logical line and therefore safe for incremental editing.
-          text=re.sub(r'void wr_build\(void\)\n\{.*?\n\}\n\nvoid wr_diff', '''void wr_build(void)\n{\n    int row; int col; int pos; int n; int c; int cell; int fresh;\n    wr_blank(); row = 0; col = 0; pos = wr_view;\n    fresh = (wr_view == 0 || wr_doc[wr_view - 1] == '\\n');\n    while (row < 19 && pos <= wr_len) {\n        if (pos == wr_len) {\n            if (fresh && col < 60) { wr_rowsafe[row] = 1; wr_rowlen[row] = col; }\n            if (pos == wr_cur) wr_ncursor = row * 60 + col;\n            break;\n        }\n        c = wr_doc[pos];\n        if (c == '\\n') {\n            if (fresh && col < 60) { wr_rowsafe[row] = 1; wr_rowlen[row] = col; }\n            if (pos == wr_cur) wr_ncursor = row * 60 + col;\n            row++; col = 0; pos++; fresh = 1;\n        } else {\n            if (c != ' ' && col > 0 &&\n                (pos == wr_view || pos == 0 || wr_doc[pos - 1] == ' ' || wr_doc[pos - 1] == '\\n')) {\n                n = wr_word_len(pos);\n                if (col + n > 60) { row++; col = 0; fresh = 0; if (row >= 19) break; }\n            }\n            cell = row * 60 + col;\n            wr_next[cell] = (char)c;\n            if (pos == wr_cur) wr_ncursor = cell;\n            col++; pos++;\n            if (col >= 60) { row++; col = 0; fresh = 0; }\n        }\n    }\n}\n\nvoid wr_diff''',text,flags=re.S)
-
-          text=re.sub(r'void wr_diff\(void\)\n\{.*?\n\}\n\nvoid wr_status', '''void wr_diff(void)\n{\n    int row; int col; int base; int dirty; int cc;\n    for (row = 0; row < 19; row++) {\n        base = row * 60; dirty = !wr_drawn; col = 0;\n        while (!dirty && col < 60) {\n            if (wr_prev[base + col] != wr_next[base + col]) dirty = 1;\n            col++;\n        }\n        if (!dirty && wr_pcursor >= base && wr_pcursor < base + 60) dirty = 1;\n        if (!dirty && wr_ncursor >= base && wr_ncursor < base + 60) dirty = 1;\n        if (dirty) {\n            memmove(wr_line, wr_next + base, 60u); wr_line[60] = 0;\n            inverse(0); print_at(row + 2, 2, wr_line);\n            if (wr_ncursor >= base && wr_ncursor < base + 60) {\n                cc = wr_next[wr_ncursor]; if (cc == ' ') cc = '_';\n                inverse(1); app_putc(row + 2, wr_ncursor - base + 2, cc); inverse(0);\n            }\n        }\n    }\n    memmove(wr_prev, wr_next, 1140u); wr_pcursor = wr_ncursor; wr_drawn = 1;\n}\n\nvoid wr_status''',text,flags=re.S)
-          text=re.sub(r'    for \(i = 0; i < 1140; i\+\+\) \{\n        wr_prev\[i\] = 0;\n        wr_pinv\[i\] = 0;\n    \}\n    wr_drawn = 0;', "    memset(wr_prev, 0, 1140u);\n    wr_pcursor = -1; wr_ncursor = -1; wr_fast = 0;\n    wr_drawn = 0;",text)
-
-          fast_helpers = r'''\nvoid wr_draw_fast_row(int row)\n{\n    int base; int cc;\n    base = row * 60;\n    memmove(wr_line, wr_prev + base, 60u); wr_line[60] = 0;\n    inverse(0); print_at(row + 2, 2, wr_line);\n    if (wr_pcursor >= base && wr_pcursor < base + 60) {\n        cc = wr_prev[wr_pcursor]; if (cc == ' ') cc = '_';\n        inverse(1); app_putc(row + 2, wr_pcursor - base + 2, cc); inverse(0);\n    }\n}\n\nint wr_fast_insert_char(int c)\n{\n    int row; int col; int base; int n; int len;\n    if (!wr_drawn || wr_pcursor < 0 || wr_len >= 1899) return 0;\n    row = wr_pcursor / 60; col = wr_pcursor % 60;\n    if (!wr_rowsafe[row]) return 0;\n    len = wr_rowlen[row];\n    if (len >= 59 || col > len) return 0;\n    n = wr_len - wr_cur;\n    if (n > 0) memmove(wr_doc + wr_cur + 1, wr_doc + wr_cur, (unsigned int)n);\n    wr_doc[wr_cur] = (char)c; wr_len++; wr_cur++; wr_doc[wr_len] = 0;\n    base = row * 60;\n    if (len > col) memmove(wr_prev + base + col + 1, wr_prev + base + col, (unsigned int)(len - col));\n    wr_prev[base + col] = (char)c;\n    wr_rowlen[row] = len + 1; wr_pcursor = base + col + 1;\n    wr_draw_fast_row(row);\n    return 1;\n}\n\nint wr_fast_backspace(void)\n{\n    int row; int col; int base; int n; int len;\n    if (!wr_drawn || wr_pcursor < 0 || wr_cur <= 0) return 0;\n    row = wr_pcursor / 60; col = wr_pcursor % 60;\n    if (!wr_rowsafe[row] || col <= 0) return 0;\n    len = wr_rowlen[row];\n    n = wr_len - (wr_cur - 1);\n    memmove(wr_doc + wr_cur - 1, wr_doc + wr_cur, (unsigned int)n);\n    wr_len--; wr_cur--;\n    base = row * 60;\n    if (len > col) memmove(wr_prev + base + col - 1, wr_prev + base + col, (unsigned int)(len - col));\n    wr_prev[base + len - 1] = ' ';\n    wr_rowlen[row] = len - 1; wr_pcursor = base + col - 1;\n    wr_draw_fast_row(row);\n    return 1;\n}\n'''
-          text=text.replace('\nvoid wr_insert_key(void)\n',fast_helpers+'\nvoid wr_insert_key(void)\n')
-          text=re.sub(r'void wr_insert_key\(void\)\n\{.*?\n\}\n\nint main', '''void wr_insert_key(void)\n{\n    int c;\n    wr_fast = 0;\n    c = getchar();\n    if (c == 27) { wr_insert = 0; return; }\n    if (c == 8) {\n        if (wr_cur > 0) {\n            if (wr_fast_backspace()) wr_fast = 1;\n            else { wr_cur--; wr_delete_at(wr_cur); }\n        }\n        return;\n    }\n    if (c == 10 || c == 13) { wr_insert_char('\\n'); return; }\n    if (c >= 32 && c <= 126) {\n        if (wr_fast_insert_char(c)) wr_fast = 1;\n        else wr_insert_char(c);\n    }\n}\n\nint main''',text,flags=re.S)
-          text=text.replace('        if (wr_insert) {\n            wr_insert_key();\n        } else {','        wr_fast = 0;\n        if (wr_insert) {\n            wr_insert_key();\n        } else {')
-          text=text.replace('        wr_ensure();\n        wr_render();\n','        {\n            int old_view;\n            old_view = wr_view;\n            wr_ensure();\n            if (!wr_fast || wr_view != old_view)\n                wr_render();\n        }\n')
-          if 'wr_pinv' in text or 'wr_ninv' in text: raise SystemExit('old inverse arrays remain')
-          src.write_text(text,encoding='utf-8',newline='\n')
-          binary=build('write48-fast-diag')
-          bench('fast-1',binary,b'ia\x1bq')
-          bench('fast-5',binary,b'iabcde\x1bq')
-          bench('fast-20',binary,b'iabcdefghijklmnopqrst\x1bq')
-          subprocess.run(['python','-B','compiler/c48run.py','--headless',str(binary),'verify'],check=True)
-          print('fast candidate verify PASS')
-          PY
+        run: python -B .github/diag_write48_fast.py
