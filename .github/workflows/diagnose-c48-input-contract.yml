@@ -1,0 +1,73 @@
+name: Diagnose C48 input contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/diagnose-c48-input-contract.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Prove ordinary c48run ailmzx48 failure point
+        shell: bash
+        run: |
+          set +e
+          printf 'how popular was the spectrum?\nq\n' | \
+            python -B compiler/c48run.py --headless \
+            usr/bin/ailmzx48/ailmzx48.c48b \
+            > /tmp/ailm.out 2> /tmp/ailm.err
+          rc=$?
+          set -e
+          echo "C48RUN_RC=$rc"
+          echo '--- stdout ---'
+          cat /tmp/ailm.out
+          echo '--- stderr ---'
+          cat /tmp/ailm.err
+          echo '--- end ---'
+
+      - name: Extract authoritative Rev 0.11 I/O text read-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 \
+            'https://raw.githubusercontent.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx' \
+            --output /tmp/c48spec.docx
+          python - <<'PY'
+          from zipfile import ZipFile
+          from xml.etree import ElementTree as ET
+          import re
+
+          path = '/tmp/c48spec.docx'
+          with ZipFile(path) as z:
+              xml = z.read('word/document.xml')
+          root = ET.fromstring(xml)
+          ns = {'w':'http://schemas.openxmlformats.org/wordprocessingml/2006/main'}
+          paras = []
+          for p in root.findall('.//w:p', ns):
+              text = ''.join(t.text or '' for t in p.findall('.//w:t', ns)).strip()
+              if text:
+                  paras.append(text)
+          terms = re.compile(r'\b(getchar|putchar|puts|stdin|standard input|EOF|console|keyboard|open|read|seek|close)\b', re.I)
+          hits = [i for i,p in enumerate(paras) if terms.search(p)]
+          emitted = set()
+          print(f'SPEC_PARAGRAPHS={len(paras)}')
+          for i in hits:
+              lo=max(0,i-2); hi=min(len(paras),i+3)
+              key=(lo,hi)
+              if key in emitted: continue
+              emitted.add(key)
+              print(f'--- SPEC CONTEXT {lo+1}-{hi} ---')
+              for j in range(lo,hi):
+                  print(f'{j+1:04d}: {paras[j]}')
+          PY
