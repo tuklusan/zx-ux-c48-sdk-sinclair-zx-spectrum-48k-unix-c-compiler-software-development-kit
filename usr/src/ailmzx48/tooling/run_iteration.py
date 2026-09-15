@@ -32,7 +32,7 @@ if str(COMP) not in sys.path:
 from c48.format import read
 from c48.romvm import RomMathVM
 from c48.screen import Font4x8, ZXScreen
-from c48.typesys import INT, UINT
+from c48.typesys import UINT
 from c48.vm import Value
 
 A = ROOT / "usr" / "src" / "ailmzx48"
@@ -78,55 +78,33 @@ def run(cmd: list[str], timeout: int) -> None:
 
 
 class ModelVM(RomMathVM):
-    def __init__(self, *args, model_data, **kwargs):
-        self.model_data = model_data
-        self.model_pos = 0
+    def __init__(self, *args, **kwargs):
         self.model_calls = 0
         self.model_bytes = 0
         self.model_seeks = 0
         self.model_max_request = 0
         self.model_pattern = (1, 7, 3, 64, 2, 11)
         super().__init__(*args, **kwargs)
-        self.builtins["ai_mstat"] = self._b_ai_mstat
-        self.builtins["ai_mseek"] = self._b_ai_mseek
-        self.builtins["ai_mread"] = self._b_ai_mread
 
-    def _b_ai_mstat(self, args):
-        return Value(UINT, len(self.model_data))
-
-    def _b_ai_mseek(self, args):
-        offset = self._to_unsigned(args[0])
-        if offset > len(self.model_data):
-            return Value(INT, -1)
-        self.model_pos = offset
-        self.model_seeks += 1
-        return Value(INT, 0)
-
-    def _b_ai_mread(self, args):
-        ptr = self._as_pointer(args[0])
-        count = self._to_unsigned(args[1])
-        if count > 64:
-            return Value(INT, -1)
+    def _b_read(self, args):
+        count = self._to_unsigned(args[2])
         if count > self.model_max_request:
             self.model_max_request = count
-        if count == 0 or self.model_pos >= len(self.model_data):
-            return Value(INT, 0)
-        cap = self.model_pattern[
-            self.model_calls % len(self.model_pattern)
-        ]
+        cap = self.model_pattern[self.model_calls % len(self.model_pattern)]
         self.model_calls += 1
-        take = min(
-            count, cap, len(self.model_data) - self.model_pos
-        )
-        if take:
-            self.mem.require_range(ptr, take, write=True)
-            data = self.model_data[
-                self.model_pos:self.model_pos + take
-            ]
-            self.mem.write_bytes(ptr.address, data)
-            self.model_pos += take
-            self.model_bytes += take
-        return Value(INT, take)
+        limited = list(args)
+        limited[2] = Value(UINT, min(count, cap))
+        result = super()._b_read(limited)
+        got = int(result.data)
+        if got > 0:
+            self.model_bytes += got
+        return result
+
+    def _b_seek(self, args):
+        result = super()._b_seek(args)
+        if int(result.data) == 0:
+            self.model_seeks += 1
+        return result
 
 
 class TraceScreen(ZXScreen):
@@ -204,9 +182,13 @@ class Feeder:
         return value
 
 
-def derived_reply(text: str) -> str:
+def derived_reply(text: str, prompt: str) -> str:
     if text.endswith("> "):
         text = text[:-2]
+    text = text.strip()
+    prefix = prompt + "\n"
+    if text.startswith(prefix):
+        text = text[len(prefix):]
     return text.strip()
 
 
@@ -245,6 +227,7 @@ def main() -> int:
     remaining = max(30, limit - int(time.monotonic() - started))
     run([sys.executable, "-B", str(COMP / "c48.py"),
          str(SRC), "-o", str(BIN)], remaining)
+    (BIN.parent / "ailm.dat").write_bytes(COLD.read_bytes())
     prompt_plan = req.get("prompt_plan")
     if prompt_plan is None:
         prompts = req.get("prompts") or [
@@ -304,7 +287,6 @@ def main() -> int:
     screen = TraceScreen(font)
     feeder = Feeder(screen, prompts)
     vm = ModelVM(program, screen,
-                 model_data=COLD.read_bytes(),
                  argv=[str(BIN)],
                  heap_size=0,
                  max_steps=max_steps,
@@ -348,7 +330,7 @@ def main() -> int:
             "diag": feeder.diag(),
             "vm_steps": vm.steps,
         })
-    if len(feeder.events) != len(prompts) + 1:
+    if len(feeder.events) != len(prompts) + 2:
         raise RuntimeError("unexpected conversation boundary count")
     turns = []
     keyword_hits = 0
@@ -414,7 +396,7 @@ def main() -> int:
     turn_step_counts = []
     for i, prompt in enumerate(prompts):
         event = feeder.events[i + 1]
-        reply = derived_reply(event["text"])
+        reply = derived_reply(event["text"], prompt)
         expected = expectations[i] if i < len(expectations) else None
         hit = expected is None or expected in reply.lower()
         if expected is not None:
@@ -671,7 +653,7 @@ def main() -> int:
         "cold_model_budget_bytes": cold_model_bytes,
         "runner_max_seconds": limit,
         "cold_model_sha256": sha(COLD),
-        "cold_model_logical_length": len(vm.model_data),
+        "cold_model_logical_length": cold_model_bytes,
         "cold_model_read_calls": vm.model_calls,
         "cold_model_bytes_read": vm.model_bytes,
         "cold_model_seek_calls": vm.model_seeks,

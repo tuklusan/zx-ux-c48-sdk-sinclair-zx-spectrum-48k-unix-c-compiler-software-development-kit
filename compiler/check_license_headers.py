@@ -30,7 +30,7 @@ HEADER_NAMES = {"c48", "c48run", ".gitignore", ".gitattributes"}
 # Deliberate exemptions: adding text would corrupt the syntax/format/container,
 # or LICENSE must remain the exact license text rather than recursively header itself.
 EXEMPT_NAMES = {"LICENSE", "VERSION", "MANIFEST.sha256"}
-EXEMPT_SUFFIXES = {".json", ".bin", ".png", ".c48b", ".docx", ".zip", ".rom"}
+EXEMPT_SUFFIXES = {".json", ".bin", ".dat", ".png", ".c48b", ".docx", ".zip", ".rom"}
 
 
 def classify(path: Path) -> str:

@@ -2,7 +2,7 @@
   "cold_model_sha256": "a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096",
   "design_git_blob_sha1": "f8120b66ade6029665cbd11910bdea593f9d64d9",
   "design_revision": "0.29-draft",
-  "design_sha256": "c5bae5348c0a190e06c7fd9fd3af46f9c154ed4db8b0b2231d4669b3dca227a0",
+  "design_sha256": "796b2f9c6f6b1c630b2e7ef709f1969f264ce1bacf4edd3ae570f27c51778ad9",
   "full_native_release": {
     "latest_durable_evidence": "P1.26",
     "missing_native_evidence": [
@@ -20,7 +20,7 @@
     "upstream_repository": "tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project"
   },
   "schema": 1,
-  "sdk_c48b_sha256": "89b0905ce631c2fb4c3962414774858c15eba01d4cfd803d9ce45edfd1e6fc0e",
+  "sdk_c48b_sha256": "2db3ac84bfe057a939755f31c3064559e05b819f68c39a8799a86dc288856e56",
   "sdk_profile": {
     "architecture_routing": {
       "bridge_uses": 1,
@@ -130,5 +130,5 @@
     "status": "PASS",
     "zero_gap_passes": 3
   },
-  "source_sha256": "739285f329ac686e5fbcf6f9753e87d08d2b90a8c7cfe94c080218662e417271"
+  "source_sha256": "eebebeb4adf28bbc0b4efc3dc4d6e300353d286570882c4d0d404b9c05da981c"
 }

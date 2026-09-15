@@ -24,9 +24,9 @@ this certificate states the current qualified SDK scope.
 
 - detailed-design revision: `0.29-draft`
 - detailed-design Git blob: `f8120b66ade6029665cbd11910bdea593f9d64d9`
-- detailed-design SHA-256: `c5bae5348c0a190e06c7fd9fd3af46f9c154ed4db8b0b2231d4669b3dca227a0`
-- repaired C48 source SHA-256: `739285f329ac686e5fbcf6f9753e87d08d2b90a8c7cfe94c080218662e417271`
-- SDK C48B1 artifact SHA-256: `89b0905ce631c2fb4c3962414774858c15eba01d4cfd803d9ce45edfd1e6fc0e`
+- detailed-design SHA-256: `796b2f9c6f6b1c630b2e7ef709f1969f264ce1bacf4edd3ae570f27c51778ad9`
+- repaired C48 source SHA-256: `eebebeb4adf28bbc0b4efc3dc4d6e300353d286570882c4d0d404b9c05da981c`
+- SDK C48B1 artifact SHA-256: `2db3ac84bfe057a939755f31c3064559e05b819f68c39a8799a86dc288856e56`
 - cold A48M SHA-256: `a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096`
 - cold A48M logical length: `8566` bytes
 - factual records: `69`

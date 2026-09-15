@@ -14,9 +14,11 @@ int putchar(int c);
 int puts(char *s);
 int beep(float duration, float pitch);
 int yield(void);
-unsigned int ai_mstat(void);
-int ai_mseek(unsigned int pos);
-int ai_mread(unsigned char *p, unsigned int n);
+int open(char *path, int flags);
+int read(int h, unsigned char *p, unsigned int n);
+int seek(int h, unsigned int pos);
+unsigned int strlen(char *s);
+int ai_mfd;
 
 #include "aimod.h"
 #include "aicold.h"
@@ -92,24 +94,11 @@ int ai_lower(int c)
     return c;
 }
 
+int ai_find(char *s);
+
 int ai_has(char *s)
 {
-    unsigned int i;
-    unsigned int j;
-    int ok;
-    i = 0;
-    while (ai_in[i] != 0) {
-        j = 0;
-        ok = 1;
-        while (s[j] != 0 && ai_in[i + j] != 0) {
-            if (ai_lower(ai_in[i + j]) != s[j]) ok = 0;
-            if (!ok) break;
-            j = j + 1;
-        }
-        if (s[j] == 0 && ok) return 1;
-        i = i + 1;
-    }
-    return 0;
+    return ai_find(s) >= 0;
 }
 
 int ai_find(char *s)
@@ -148,13 +137,29 @@ int ai_readline(void)
         }
         if (c == 13) {
             ai_drop_lf = 1;
+            c = 10;
+        }
+        if (c == 10) {
+            putchar(10);
             break;
         }
-        if (c == 10) break;
-        if (c < 32 || c > 126) bad = 1;
+        if (c == 8 || c == 127) {
+            if (n != 0 && !bad) {
+                n = n - 1;
+                putchar(8);
+                putchar(' ');
+                putchar(8);
+            }
+            continue;
+        }
+        if (c < 32 || c > 126) {
+            bad = 1;
+            continue;
+        }
         if (n < 191 && !bad) {
             ai_in[n] = c;
             n = n + 1;
+            putchar(c);
         } else {
             bad = 1;
         }
@@ -358,9 +363,10 @@ int ai_modelscan(unsigned int topic)
     ai_w1score = -1;
     ai_w2score = -1;
     ai_mtopic = ai_t_id;
-    actual = ai_mstat();
+    if (ai_mfd < 3) return -1;
+    actual = 8566;
     if (actual < 40) return -1;
-    if (ai_mseek(0) != 0) return -1;
+    if (seek(ai_mfd, 0) != 0) return -1;
     if (ai_readfull(ai_mhead, 40) != 0) return -1;
     if(ai_mhead[0]!='A'||ai_mhead[1]!='4'||
        ai_mhead[2]!='8'||ai_mhead[3]!='M')return -1;
@@ -578,14 +584,6 @@ if (topic == ai_tcnt) {
 
 #include "aibridge.h"
 
-unsigned int ai_strlen(char *s)
-{
-    unsigned int n;
-    n = 0;
-    while (s[n] != 0) n = n + 1;
-    return n;
-}
-
 unsigned char ai_l0char(unsigned int d, unsigned int n)
 {
     unsigned int p;
@@ -600,7 +598,7 @@ int ai_l0has(unsigned int d, char *s)
     unsigned int j;
     unsigned int sl;
     int ok;
-    sl = ai_strlen(s);
+    sl = strlen(s);
     if (sl == 0 || sl > ai_l0len[d]) return 0;
     i = 0;
     while (i + sl <= ai_l0len[d]) {
@@ -938,6 +936,12 @@ void ai_start(void)
     puts("");
 }
 
+void ai_give(void)
+{
+    yield();
+    ai_yields = ai_yields + 1;
+}
+
 int main(void)
 {
     int rc;
@@ -981,6 +985,7 @@ int main(void)
     ai_lmhead = 0;
     ai_lmcount = 0;
     ai_l0wire = 1;
+    ai_mfd = open("ailm.dat", 1);
     ai_start();
     while (1) {
         ai_beeps = ai_beeps + 1;
@@ -1031,8 +1036,7 @@ int main(void)
             if (ai_ctxready() < 0) {
                 ai_error = 5;
                 puts("Context rejected.");
-                yield();
-                ai_yields = ai_yields + 1;
+                ai_give();
                 continue;
             }
             puts(ai_out);
@@ -1045,8 +1049,7 @@ int main(void)
                     ai_turns = ai_turns + 1;
                 }
             }
-            yield();
-            ai_yields = ai_yields + 1;
+            ai_give();
             continue;
         }
         if (ai_pinreq() && ai_havectx) {
@@ -1056,8 +1059,7 @@ int main(void)
             if (ai_ctxready() < 0) {
                 ai_error = 5;
                 puts("Context rejected.");
-                yield();
-                ai_yields = ai_yields + 1;
+                ai_give();
                 continue;
             }
             puts(ai_out);
@@ -1067,8 +1069,7 @@ int main(void)
             } else if (ai_turns != 65535) {
                 ai_turns = ai_turns + 1;
             }
-            yield();
-            ai_yields = ai_yields + 1;
+            ai_give();
             continue;
         }
         if (ai_recallreq()) {
@@ -1112,16 +1113,14 @@ int main(void)
         if (ai_ctxready() < 0) {
             ai_error = 5;
             puts("Context rejected.");
-            yield();
-            ai_yields = ai_yields + 1;
+            ai_give();
             continue;
         }
         puts(ai_out);
         rc = ai_ctxpair(topic);
         if (rc < 0) {
             ai_error = 5;
-            yield();
-            ai_yields = ai_yields + 1;
+            ai_give();
             continue;
         }
         if (ai_histuse) {
@@ -1136,8 +1135,7 @@ int main(void)
         ai_lasttop = topic;
         ai_havectx = 1;
         if (ai_turns != 65535) ai_turns = ai_turns + 1;
-        yield();
-        ai_yields = ai_yields + 1;
+        ai_give();
     }
     return 0;
 }

@@ -14,6 +14,10 @@
  * ZX-UX P11.41 <c48.h> ABI.
  * The source language remains strict C48 Rev 0.11.
  */
+int open(char *path, int flags);
+int close(int h);
+int read(int h, void *p, unsigned int n);
+int seek(int h, unsigned int pos);
 int getchar(void);
 int putchar(int c);
 int puts(char *s);

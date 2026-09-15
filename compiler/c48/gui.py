@@ -13,6 +13,8 @@
 # ============================================================================
 from __future__ import annotations
 
+from collections import deque
+
 import hashlib
 import json
 import os
@@ -258,11 +260,11 @@ class TkDisplay:
     title: str = "ZX-UX C48"
 
     def __post_init__(self) -> None:
-        # Keyboard input is a rendezvous, not a typeahead FIFO. A normal key
-        # event is accepted only while the VM is blocked in getchar().
+        # Console bytes use a bounded FIFO so normal typeahead survives the
+        # presentation gap between adjacent getchar() calls.
         self._key_cond = threading.Condition()
         self._key_waiting = False
-        self._key_byte: int | None = None
+        self._key_queue = deque()
         self._frame_lock = threading.Lock()
         self._frame_cond = threading.Condition(self._frame_lock)
         self._frame_generation = 0
@@ -302,29 +304,32 @@ class TkDisplay:
     def input_char(self) -> int:
         with self._key_cond:
             self._key_waiting = True
-            self._key_byte = None
-            self._probe("input_waiting")
-            while self._key_byte is None and not self._stop:
+            self._probe("input_waiting", queued=len(self._key_queue))
+            while not self._key_queue and not self._stop:
                 self._key_cond.wait()
-            value = -1 if self._key_byte is None else self._key_byte
+            value = -1 if not self._key_queue else self._key_queue.popleft()
             self._key_waiting = False
-            self._key_byte = None
-            self._probe("input_return", value=value)
+            self._probe(
+                "input_return", value=value, queued=len(self._key_queue)
+            )
             return value
 
     def _offer_key(self, value: int) -> bool:
-        """Offer one key to a currently waiting getchar()."""
+        """Queue one console byte, preserving bounded typeahead."""
         with self._key_cond:
-            if not self._key_waiting or self._key_byte is not None:
+            if self._stop or len(self._key_queue) >= 256:
                 return False
-            self._key_byte = int(value) & 0xFF
-            self._probe("key_accepted", value=self._key_byte)
+            byte = int(value) & 0xFF
+            self._key_queue.append(byte)
+            self._probe(
+                "key_accepted", value=byte, queued=len(self._key_queue)
+            )
             self._key_cond.notify()
             return True
 
     def _waiting_for_key(self) -> bool:
         with self._key_cond:
-            return self._key_waiting and self._key_byte is None
+            return self._key_waiting and not self._key_queue
 
     def update(self) -> int:
         snapshot = self.screen.bytes()

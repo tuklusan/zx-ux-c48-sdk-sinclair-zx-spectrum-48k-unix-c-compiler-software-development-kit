@@ -27,6 +27,7 @@ from c48.compiler import compile_bytes, compile_file
 from c48.errors import RuntimeC48Error
 from c48.gui import footer_text, is_break_key, key_event_bytes
 from c48.screen import Font4x8, ZXScreen
+from c48.romvm import RomMathVM
 from c48.vm import C48VM
 
 FONT_PATH = COMPILER / "assets" / "font4x8-tasword.bin"
@@ -251,6 +252,74 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
             self.assertIn('c48run:',r.stderr)
             self.assertNotIn('Traceback',r.stderr)
 
+
+    def test_rommath_read_only_object_io(self):
+        src = (
+            "int open(char *p,int f);int close(int h);"
+            "int read(int h,unsigned char *p,unsigned int n);"
+            "int seek(int h,unsigned int p);"
+            "int main(void){unsigned char b[4];int h;"
+            "h=open(\"data.dat\",1);if(h<3)return 1;"
+            "if(read(h,b,3)!=3)return 2;"
+            "if(b[0]!=10||b[1]!=20||b[2]!=30)return 3;"
+            "if(seek(h,1)!=0)return 4;"
+            "if(read(h,b,4)!=3)return 5;"
+            "if(b[0]!=20||b[1]!=30||b[2]!=40)return 6;"
+            "if(close(h)!=0)return 7;"
+            "if(open(\"../bad\",1)>=0)return 8;return 0;}"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "data.dat").write_bytes(bytes((10, 20, 30, 40)))
+            program = compile_bytes(
+                src.encode("ascii"), source_name="io.c", base_dir=root
+            )
+            screen = ZXScreen(Font4x8.load(FONT_PATH))
+            vm = RomMathVM(program, screen, argv=[str(root / "prog.c48b")])
+            self.assertEqual(vm.run(), 0)
+
+    def test_ailmzx48_normal_runner_prompt_and_line_editing(self):
+        from c48.format import read
+
+        class TraceScreen(ZXScreen):
+            def __init__(self, font):
+                super().__init__(font)
+                self.trace = bytearray()
+
+            def putchar(self, c):
+                self.trace.append(int(c) & 0xFF)
+                return super().putchar(c)
+
+        program_path = SDK / "usr/bin/ailmzx48/ailmzx48.c48b"
+        program = read(program_path)
+        first = iter(b"how popular was the spectrum?\nq\n")
+        screen = TraceScreen(Font4x8.load(FONT_PATH))
+        vm = RomMathVM(
+            program,
+            screen,
+            argv=[str(program_path)],
+            heap_size=0,
+            max_steps=4000000,
+            input_provider=lambda: next(first, -1),
+        )
+        self.assertEqual(vm.run(), 0)
+        load = lambda name: int(vm._load(vm.global_lvalues[name]).data)
+        self.assertEqual(load("ai_error"), 0)
+        self.assertEqual(load("ai_turns"), 1)
+        self.assertGreater(load("ai_mrecords"), 0)
+        self.assertIn(b"how popular was the spectrum?\n", bytes(screen.trace))
+
+        second = iter(b"qq\x08\n")
+        screen2 = TraceScreen(Font4x8.load(FONT_PATH))
+        vm2 = RomMathVM(
+            program,
+            screen2,
+            argv=[str(program_path)],
+            heap_size=0,
+            input_provider=lambda: next(second, -1),
+        )
+        self.assertEqual(vm2.run(), 0)
+        self.assertIn(b"qq\x08 \x08\n", bytes(screen2.trace))
 
 if __name__ == "__main__":
     unittest.main()

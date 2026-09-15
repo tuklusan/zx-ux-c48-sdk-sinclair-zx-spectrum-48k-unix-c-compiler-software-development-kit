@@ -146,6 +146,22 @@ A PACKED object is read as its logical byte stream through normal reads. A packe
 
 Any write-capable open of a PACKED RAM object materializes a private RAW replacement before the writer is returned, except that truncation may create an empty RAW replacement directly. This makes PACKED model/context data safe to transform, but reinforces the rule that archived PACKED data is cold storage rather than a random-access working set.
 
+### 5.4A Runtime model-object name and SDK mapping
+
+The runtime cold-model basename is frozen as `ailm.dat`. On native ZX-UX it is
+a DAT object opened through the ordinary C48 object API with a relative path,
+so normal process working-directory semantics apply. The SDK packages the same
+logical model bytes beside the C48B1 artifact and its host runner resolves this
+bounded read-only packaged-object subset there. This SDK placement is a
+convenience mapping only; it does not create a target `/usr` namespace or an
+AI-specific runtime ABI. `ailmzx48` obtains model bytes through generic object
+I/O and no shipped execution path requires private `ai_m*` host builtins.
+
+Interactive line editing is application-visible behavior: accepted printable
+bytes are echoed, Enter emits LF, and destructive backspace is `BS`, space,
+`BS`. The SDK GUI preserves bounded typeahead between adjacent `getchar()` calls
+rather than discarding characters during framebuffer-presentation gaps.
+
 ### 5.5 Scheduler/process behavior
 
 ZX-UX v1 is cooperative. `ailmzx48` must return to kernel boundaries often enough that it does not make the machine feel dead during long scoring/generation loops. The implementation shall define bounded work quanta and call `yield()` at deterministic safe points where measured inference latency warrants it.

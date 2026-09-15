@@ -107,7 +107,6 @@ def check_required_files() -> None:
         "compiler/GUI-SMOKE-TESTS.md",
         "compiler/LICENSE-HEADER-POLICY.md",
         "compiler/assets/font4x8-tasword.bin", "compiler/assets/font4x8-zxux.bin",
-        "docs/ZX-UX C48 Compiler User Manual Rev 0.11.docx",
         "docs/ZX-UX C48 SDK User Manual.docx",
         "docs/ZX-UX C48 SDK Technical Reference.docx",
         "screenshots/gui-desktop/README.md",

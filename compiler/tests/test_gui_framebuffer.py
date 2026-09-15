@@ -172,21 +172,13 @@ class GuiFramebufferRegressions(unittest.TestCase):
         self.assertFalse(waiter.is_alive())
         self.assertEqual(released, [True])
 
-    def test_nonwaiting_key_is_discarded(self):
+    def test_typeahead_fifo_preserves_rapid_text(self):
         display = TkDisplay(new_screen())
-        self.assertFalse(display._offer_key(ord("x")))
-        got = []
-        thread = threading.Thread(
-            target=lambda: got.append(display.input_char())
-        )
-        thread.start()
-        wait_for(display._waiting_for_key)
-        self.assertTrue(display._offer_key(ord("a")))
-        self.assertFalse(display._offer_key(ord("b")))
-        thread.join(1.0)
-        self.assertFalse(thread.is_alive())
-        self.assertEqual(got, [ord("a")])
-        self.assertFalse(display._offer_key(ord("c")))
+        expected = b"rapid text\n"
+        for value in expected:
+            self.assertTrue(display._offer_key(value))
+        actual = bytes(display.input_char() for _ in expected)
+        self.assertEqual(actual, expected)
 
     def test_close_releases_waiting_getchar(self):
         display = TkDisplay(new_screen())

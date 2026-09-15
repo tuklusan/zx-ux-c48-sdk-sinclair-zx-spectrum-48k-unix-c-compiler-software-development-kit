@@ -18,7 +18,7 @@ int ai_readfull(unsigned char *p, unsigned int n)
     while (done < n) {
         ask = n - done;
         if (ask > 64) ask = 64;
-        got = ai_mread(&p[done], ask);
+        got = read(ai_mfd, &p[done], ask);
         ai_mreads = ai_mreads + 1;
         if (got <= 0) return -1;
         if ((unsigned int)got > ask) return -1;
