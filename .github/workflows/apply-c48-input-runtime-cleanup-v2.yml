@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Apply C48 input runtime cleanup v5
+name: Apply C48 input runtime cleanup v6
 
 "on":
   push:
