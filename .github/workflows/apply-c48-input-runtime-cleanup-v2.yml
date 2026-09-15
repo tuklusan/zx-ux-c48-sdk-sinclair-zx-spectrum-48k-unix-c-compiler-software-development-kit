@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Apply C48 input runtime cleanup v17
+name: Apply C48 input runtime cleanup v18
 
 "on":
   push:
@@ -95,21 +95,28 @@ jobs:
           status = json.loads(status_path.read_text(encoding="utf-8"))
           old_source = status["source_sha256"]
           old_binary = status["sdk_c48b_sha256"]
+          old_design = status["design_sha256"]
           new_source = digest("usr/src/ailmzx48/ailmzx48.c")
           new_binary = digest("usr/bin/ailmzx48/ailmzx48.c48b")
+          new_design = digest("usr/src/ailmzx48/AILMZX48-DETAILED-DESIGN.md")
           status["source_sha256"] = new_source
           status["sdk_c48b_sha256"] = new_binary
+          status["design_sha256"] = new_design
           status_path.write_text(
               json.dumps(status, indent=2, sort_keys=True) + "\n",
               encoding="utf-8",
           )
           cert = cert_path.read_text(encoding="utf-8")
-          if cert.count(old_source) != 1 or cert.count(old_binary) != 1:
-              raise SystemExit("certificate identity anchors are not unique")
-          cert = cert.replace(old_source, new_source).replace(old_binary, new_binary)
+          for old in (old_source, old_binary, old_design):
+              if cert.count(old) != 1:
+                  raise SystemExit("certificate identity anchor is not unique")
+          cert = cert.replace(old_source, new_source)
+          cert = cert.replace(old_binary, new_binary)
+          cert = cert.replace(old_design, new_design)
           cert_path.write_text(cert, encoding="utf-8", newline="\n")
           print(f"AILMZX48_SOURCE_SHA256={new_source}")
           print(f"AILMZX48_C48B_SHA256={new_binary}")
+          print(f"AILMZX48_DESIGN_SHA256={new_design}")
           PY
       - name: Run focused input and runtime tests
         shell: bash
