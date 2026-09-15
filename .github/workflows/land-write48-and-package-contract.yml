@@ -1,0 +1,200 @@
+name: Land write48 and package contract
+
+on:
+  push:
+    paths:
+      - '.github/workflows/land-write48-and-package-contract.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  land:
+    runs-on: ubuntu-latest
+    timeout-minutes: 210
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Apply scoped product changes and rebuild write48
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_one(path, old, new):
+              p = Path(path)
+              text = p.read_text(encoding='utf-8')
+              if text.count(old) != 1:
+                  raise SystemExit(f'{path}: expected exactly one replacement, found {text.count(old)}')
+              p.write_text(text.replace(old, new), encoding='utf-8', newline='\n')
+
+          replace_one(
+              'usr/src/apps/write48.c',
+              '    wr_status();\n    yield();\n}\n',
+              '    wr_status();\n}\n',
+          )
+
+          replace_one(
+              'compiler/app_expectations.json',
+              '"source_sha256": "531ae0d65a8320b097191ebd619dd4b41fd5684bb09a47ed4c39e59a51fac72e",\n      "binary_sha256": "2f82ce848a592f3cbeb52fcd0be5ed1ede006351bc5076eb967a1c7d994f86c1",',
+              '"source_sha256": "3f034337eeb12972253701607e3daa415085c84bfc4c3c982eaee3d0870466cc",\n      "binary_sha256": "bcc6b92e6512c1f756995fc9398b32ea20ccdce43e0a92bdf575d306b66ed52c",',
+          )
+
+          replace_one(
+              'compiler/build_release_candidate.py',
+              'OBSOLETE_SPEC = "docs/C48 Language Specification Rev 0.11.docx"\n',
+              'OBSOLETE_SPEC = "docs/C48 Language Specification Rev 0.11.docx"\nLOCAL_SPEC_STUB = "docs/ZX-UX C48 Language Specification.md"\n',
+          )
+          replace_one(
+              'compiler/build_release_candidate.py',
+              '    entries: list[tuple[str, int]] = []\n    for record in raw.split(b"\\0"):\n',
+              '    entries: list[tuple[str, int]] = []\n    stub_seen = False\n    for record in raw.split(b"\\0"):\n',
+          )
+          replace_one(
+              'compiler/build_release_candidate.py',
+              '        if path == OBSOLETE_SPEC:\n            fail(f"obsolete local C48 specification is still tracked: {path}")\n',
+              '        if path == LOCAL_SPEC_STUB:\n            stub_seen = True\n            continue\n        if path == OBSOLETE_SPEC:\n            fail(f"obsolete local C48 specification is still tracked: {path}")\n',
+          )
+          replace_one(
+              'compiler/build_release_candidate.py',
+              '        entries.append((path, int(mode[-3:], 8)))\n    return sorted(entries)\n',
+              '        entries.append((path, int(mode[-3:], 8)))\n    if not stub_seen:\n        fail(f"source-tree C48 specification stub is not tracked: {LOCAL_SPEC_STUB}")\n    return sorted(entries)\n',
+          )
+
+          replace_one(
+              'compiler/verify_release.py',
+              '    provenance = SDK / "C48-SPECIFICATION.json"\n    require_packaged = os.environ.get("C48_REQUIRE_PACKAGED_SPEC") == "1"\n',
+              '    provenance = SDK / "C48-SPECIFICATION.json"\n    local_stub = SDK / "docs/ZX-UX C48 Language Specification.md"\n    require_packaged = os.environ.get("C48_REQUIRE_PACKAGED_SPEC") == "1"\n',
+          )
+          replace_one(
+              'compiler/verify_release.py',
+              '    if not require_packaged:\n        if packaged:\n',
+              '    if not require_packaged:\n        if not local_stub.is_file():\n            fail("source-tree C48 specification stub is missing")\n        if packaged:\n',
+          )
+          replace_one(
+              'compiler/verify_release.py',
+              '        return\n\n    if len(packaged) != 1:\n',
+              '        return\n\n    if local_stub.exists():\n        fail("release package must not contain the local C48 specification stub")\n    if len(packaged) != 1:\n',
+          )
+          PY
+
+          python -B compiler/c48.py usr/src/apps/write48.c -o usr/bin/apps/write48.c48b
+          echo '3f034337eeb12972253701607e3daa415085c84bfc4c3c982eaee3d0870466cc  usr/src/apps/write48.c' | sha256sum -c -
+          echo 'bcc6b92e6512c1f756995fc9398b32ea20ccdce43e0a92bdf575d306b66ed52c  usr/bin/apps/write48.c48b' | sha256sum -c -
+          python -B compiler/c48run.py --headless usr/bin/apps/write48.c48b verify
+          printf 'iabc\033q' | python -B compiler/c48run.py --headless usr/bin/apps/write48.c48b
+
+      - name: Commit prospective final tree without one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/land-write48-and-package-contract.yml
+          git add \
+            usr/src/apps/write48.c \
+            usr/bin/apps/write48.c48b \
+            compiler/app_expectations.json \
+            compiler/build_release_candidate.py \
+            compiler/verify_release.py
+          git commit -m 'write48: remove per-key yield and tighten release spec packaging'
+          mapfile -t changed < <(git diff --name-only 6371501c5a090135796d225b6a35e2a3551b4df8 HEAD | sort)
+          printf '%s\n' "${changed[@]}"
+          test "${#changed[@]}" -eq 5
+          test "${changed[0]}" = 'compiler/app_expectations.json'
+          test "${changed[1]}" = 'compiler/build_release_candidate.py'
+          test "${changed[2]}" = 'compiler/verify_release.py'
+          test "${changed[3]}" = 'usr/bin/apps/write48.c48b'
+          test "${changed[4]}" = 'usr/src/apps/write48.c'
+          test -z "$(git status --porcelain)"
+
+      - name: Run full source-tree verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_release.py
+          git diff --check 6371501c5a090135796d225b6a35e2a3551b4df8 HEAD
+
+      - name: Prove formal ZIP contains upstream DOCX and excludes local stub
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/c48-formal.zip"
+          prefix='zx-ux-c48-sdk-formal/'
+          python -B compiler/build_release_candidate.py --archive "$archive" --prefix "$prefix"
+          names="$RUNNER_TEMP/zip-names.txt"
+          unzip -Z1 "$archive" > "$names"
+          test "$(grep -Ec '^zx-ux-c48-sdk-formal/docs/04-C48 Language Specification Rev [0-9]+(\.[0-9]+)*\.docx$' "$names")" -eq 1
+          if grep -Fqx 'zx-ux-c48-sdk-formal/docs/ZX-UX C48 Language Specification.md' "$names"; then
+            echo 'local specification stub leaked into formal ZIP' >&2
+            exit 1
+          fi
+          mkdir "$RUNNER_TEMP/virgin"
+          unzip -q "$archive" -d "$RUNNER_TEMP/virgin"
+          C48_REQUIRE_PACKAGED_SPEC=1 python -B "$RUNNER_TEMP/virgin/zx-ux-c48-sdk-formal/compiler/verify_release.py"
+          rm -f C48-SPECIFICATION.json
+          test -z "$(git status --porcelain)"
+
+      - name: SoP three fresh byte-level scans
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import shutil
+          import subprocess
+          import tempfile
+
+          root = Path.cwd()
+          raw = subprocess.check_output(['git', 'ls-files', '-z'])
+          paths = [Path(p.decode('utf-8', 'surrogateescape')) for p in raw.split(b'\0') if p]
+          text_suffixes = {'.py','.c','.h','.md','.txt','.json','.yml','.yaml','.bat','.sh'}
+          manifests = []
+          for pass_no in (1, 2, 3):
+              fresh = Path(tempfile.mkdtemp(prefix=f'c48-sop-{pass_no}-'))
+              file_count = byte_count = line_count = 0
+              whole = hashlib.sha256()
+              defects = []
+              for rel in paths:
+                  src = root / rel
+                  dst = fresh / rel
+                  dst.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copyfile(src, dst)
+                  data = dst.read_bytes()
+                  if data.startswith(b'version https://git-lfs.github.com/spec/v1\n'):
+                      defects.append(f'LFS pointer: {rel.as_posix()}')
+                  file_count += 1
+                  byte_count += len(data)
+                  lines = data.splitlines(keepends=True)
+                  line_count += len(lines)
+                  if rel.suffix.lower() in text_suffixes:
+                      for lineno, line in enumerate(lines, 1):
+                          body = line.rstrip(b'\r\n')
+                          if body.startswith(b'<<<<<<< ') or body == b'=======' or body.startswith(b'>>>>>>> '):
+                              defects.append(f'conflict marker: {rel.as_posix()}:{lineno}')
+                  digest = hashlib.sha256(data).digest()
+                  relb = rel.as_posix().encode('utf-8', 'surrogateescape')
+                  whole.update(len(relb).to_bytes(4, 'big'))
+                  whole.update(relb)
+                  whole.update(digest)
+              manifest = whole.hexdigest()
+              manifests.append(manifest)
+              print(f'SOP_PASS_{pass_no}: files={file_count} bytes={byte_count} lines={line_count} defects={len(defects)} manifest={manifest}')
+              if defects:
+                  raise SystemExit('\n'.join(defects))
+              shutil.rmtree(fresh)
+          if len(set(manifests)) != 1:
+              raise SystemExit(f'SoP fresh-copy manifests differ: {manifests}')
+          PY
+
+      - name: Push verified final tree
+        shell: bash
+        run: git push origin HEAD:main
