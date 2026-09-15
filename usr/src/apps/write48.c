@@ -10,7 +10,6 @@
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
 #include "appapi.h"
-void *memset(void *d, int c, unsigned int n);
 
 char wr_doc[1900];
 char wr_prev[1140];
@@ -20,6 +19,8 @@ int wr_pcursor;
 int wr_ncursor;
 int wr_rowsafe[19];
 int wr_rowlen[19];
+int wr_rowpos[19];
+int wr_after;
 int wr_fast;
 int wr_len;
 int wr_cur;
@@ -112,26 +113,27 @@ void wr_blank(void)
     int i;
     memset(wr_next, ' ', 1140u);
     wr_ncursor = -1;
+    wr_after = wr_view;
     for (i = 0; i < 19; i++) {
         wr_rowsafe[i] = 0;
         wr_rowlen[i] = 0;
+        wr_rowpos[i] = -1;
     }
 }
 
-void wr_build(void)
+void wr_layout(int first, int pos)
 {
     int row;
     int col;
-    int pos;
     int n;
     int c;
     int cell;
     int fresh;
-    wr_blank();
-    row = 0;
+    row = first;
     col = 0;
-    pos = wr_view;
-    fresh = (wr_view == 0 || wr_doc[wr_view - 1] == '\n');
+    fresh = (pos == 0 || wr_doc[pos - 1] == '\n');
+    if (row < 19)
+        wr_rowpos[row] = pos;
     while (row < 19 && pos <= wr_len) {
         if (pos == wr_len) {
             wr_rowlen[row] = col;
@@ -152,10 +154,11 @@ void wr_build(void)
             col = 0;
             pos++;
             fresh = 1;
+            if (row < 19)
+                wr_rowpos[row] = pos;
         } else {
             if (c != ' ' && col > 0 &&
-                (pos == wr_view || pos == 0 ||
-                 wr_doc[pos - 1] == ' ' ||
+                (pos == 0 || wr_doc[pos - 1] == ' ' ||
                  wr_doc[pos - 1] == '\n')) {
                 n = wr_word_len(pos);
                 if (col + n > 60) {
@@ -164,6 +167,7 @@ void wr_build(void)
                     fresh = 0;
                     if (row >= 19)
                         break;
+                    wr_rowpos[row] = pos;
                 }
             }
             cell = row * 60 + col;
@@ -177,9 +181,18 @@ void wr_build(void)
                 row++;
                 col = 0;
                 fresh = 0;
+                if (row < 19)
+                    wr_rowpos[row] = pos;
             }
         }
     }
+    wr_after = pos;
+}
+
+void wr_build(void)
+{
+    wr_blank();
+    wr_layout(0, wr_view);
 }
 
 void wr_diff(void)
@@ -224,6 +237,54 @@ void wr_diff(void)
     wr_drawn = 1;
 }
 
+void wr_diff_from(int first)
+{
+    int row;
+    int col;
+    int base;
+    int dirty;
+    int cc;
+    int count;
+    for (row = first; row < 19; row++) {
+        base = row * 60;
+        dirty = !wr_drawn;
+        col = 0;
+        while (!dirty && col < 60) {
+            if (wr_prev[base + col] != wr_next[base + col])
+                dirty = 1;
+            col++;
+        }
+        if (!dirty && wr_pcursor >= base &&
+            wr_pcursor < base + 60)
+            dirty = 1;
+        if (!dirty && wr_ncursor >= base &&
+            wr_ncursor < base + 60)
+            dirty = 1;
+        if (dirty) {
+            memmove(wr_line, wr_next + base, 60u);
+            wr_line[60] = 0;
+            inverse(0);
+            print_at(row + 2, 2, wr_line);
+            if (wr_ncursor >= base &&
+                wr_ncursor < base + 60) {
+                cc = wr_next[wr_ncursor];
+                if (cc == ' ')
+                    cc = '_';
+                inverse(1);
+                app_putc(row + 2,
+                         wr_ncursor - base + 2, cc);
+                inverse(0);
+            }
+        }
+    }
+    base = first * 60;
+    count = 1140 - base;
+    memmove(wr_prev + base, wr_next + base,
+            (unsigned int)count);
+    wr_pcursor = wr_ncursor;
+    wr_drawn = 1;
+}
+
 void wr_status(void)
 {
     if (wr_stat == wr_insert)
@@ -232,7 +293,7 @@ void wr_status(void)
     app_clear_row(22);
     app_clear_row(23);
     if (wr_insert) {
-        print_at(21, 1, "INSERT: ESC CMD  BS DEL  ENTER NL");
+        print_at(21, 1, "INSERT: CAPS+7 CMD  BS DEL  ENTER NL");
     } else {
         print_at(21, 1, "CMD: I INS  5/8 MOVE  7/6 PG  X DEL");
         print_at(22, 1, "F FIND  G TOP  Q QUIT");
@@ -241,10 +302,42 @@ void wr_status(void)
     wr_stat = wr_insert;
 }
 
+int wr_tail(int first)
+{
+    int i;
+    int base;
+    int count;
+    int start;
+    if (first < 0)
+        first = 0;
+    if (first >= 19 || wr_rowpos[first] < 0)
+        return 0;
+    start = wr_rowpos[first];
+    base = first * 60;
+    if (base > 0)
+        memmove(wr_next, wr_prev, (unsigned int)base);
+    count = 1140 - base;
+    memset(wr_next + base, ' ', (unsigned int)count);
+    wr_ncursor = -1;
+    for (i = first; i < 19; i++) {
+        wr_rowsafe[i] = 0;
+        wr_rowlen[i] = 0;
+        wr_rowpos[i] = -1;
+    }
+    wr_layout(first, start);
+    if (wr_ncursor < 0)
+        return 0;
+    wr_diff_from(first);
+    wr_status();
+    return 1;
+}
+
 int wr_down_view(void)
 {
     int next;
-    next = wr_view + wr_rowlen[0];
+    next = wr_rowpos[1];
+    if (next < 0 || next <= wr_view)
+        next = wr_view + wr_rowlen[0];
     if (next < wr_len && wr_doc[next] == '\n')
         next++;
     if (next <= wr_view && wr_view < wr_len)
@@ -314,6 +407,68 @@ void wr_ensure(void)
     }
 }
 
+int wr_nextrow(int pos)
+{
+    int col;
+    int n;
+    int c;
+    col = 0;
+    while (pos < wr_len) {
+        c = wr_doc[pos];
+        if (c == '\n')
+            return pos + 1;
+        if (c != ' ' && col > 0 &&
+            (pos == 0 || wr_doc[pos - 1] == ' ' ||
+             wr_doc[pos - 1] == '\n')) {
+            n = wr_word_len(pos);
+            if (col + n > 60)
+                return pos;
+        }
+        col++;
+        pos++;
+        if (col >= 60)
+            return pos;
+    }
+    return pos;
+}
+
+void wr_page(int down)
+{
+    int p;
+    int rows;
+    int goal;
+    if (down) {
+        if (wr_after < wr_len) {
+            wr_view = wr_after;
+            wr_cur = wr_view;
+        } else {
+            wr_cur = wr_len;
+        }
+        return;
+    }
+    if (wr_view <= 0) {
+        wr_view = 0;
+        wr_cur = 0;
+        return;
+    }
+    p = 0;
+    rows = 0;
+    while (p < wr_view && p < wr_len) {
+        p = wr_nextrow(p);
+        rows++;
+    }
+    goal = rows - 19;
+    if (goal < 0)
+        goal = 0;
+    p = 0;
+    while (goal > 0 && p < wr_len) {
+        p = wr_nextrow(p);
+        goal--;
+    }
+    wr_view = p;
+    wr_cur = p;
+}
+
 int wr_match(int pos, char *q)
 {
     int i;
@@ -333,8 +488,8 @@ void wr_find(void)
     char q[24];
     int p;
     app_clear_row(23);
-    print_at(23, 1, "FIND> ");
-    if (!app_readline(23, 7, q, 24)) {
+    print_at(23, 1, "FIND CAPS+7 CANCEL> ");
+    if (!app_readline(23, 21, q, 24)) {
         wr_stat = -1;
         return;
     }
@@ -343,8 +498,11 @@ void wr_find(void)
         p++;
     if (p >= wr_len) {
         p = 0;
-        while (p < wr_cur && !wr_match(p, q))
+        while (p <= wr_cur && p < wr_len &&
+               !wr_match(p, q))
             p++;
+        if (p > wr_cur)
+            p = wr_len;
     }
     if (p < wr_len)
         wr_cur = p;
@@ -460,15 +618,22 @@ int wr_fins(int c)
     int base;
     int n;
     int len;
+    int end;
+    int i;
     if (!wr_drawn || wr_pcursor < 0 || wr_len >= 1899)
         return 0;
     row = wr_pcursor / 60;
     col = wr_pcursor % 60;
-    if (!wr_rowsafe[row])
-        return 0;
     len = wr_rowlen[row];
-    if (len >= 59 || col > len)
+    end = wr_rowpos[row] + len;
+    if (col > len)
         return 0;
+    if (end >= wr_len || wr_doc[end] == '\n') {
+        if (len >= 59)
+            return 0;
+    } else if (len >= 60) {
+        return 0;
+    }
     n = wr_len - wr_cur;
     if (n > 0)
         memmove(wr_doc + wr_cur + 1,
@@ -484,7 +649,13 @@ int wr_fins(int c)
                 (unsigned int)(len - col));
     wr_prev[base + col] = (char)c;
     wr_rowlen[row] = len + 1;
+    for (i = row + 1; i < 19; i++) {
+        if (wr_rowpos[i] >= 0)
+            wr_rowpos[i]++;
+    }
+    wr_after++;
     wr_pcursor = base + col + 1;
+    wr_ncursor = wr_pcursor;
     wr_frow(row);
     return 1;
 }
@@ -496,13 +667,34 @@ int wr_fbs(void)
     int base;
     int n;
     int len;
+    int end;
+    int start;
+    int firstlen;
+    int nextlen;
+    int i;
     if (!wr_drawn || wr_pcursor < 0 || wr_cur <= 0)
         return 0;
     row = wr_pcursor / 60;
     col = wr_pcursor % 60;
-    if (!wr_rowsafe[row] || col <= 0)
+    if (col <= 0)
         return 0;
     len = wr_rowlen[row];
+    start = wr_rowpos[row];
+    end = start + len;
+    if (!wr_rowsafe[row] && row > 0 && start > 0 &&
+        wr_doc[start - 1] == ' ') {
+        firstlen = wr_word_len(start);
+        if (wr_cur - 1 < start + firstlen &&
+            wr_rowlen[row - 1] + firstlen - 1 <= 60)
+            return 0;
+    }
+    if (end < wr_len && wr_doc[end] != '\n') {
+        if (len >= 60)
+            return 0;
+        nextlen = wr_word_len(end);
+        if (len - 1 + nextlen <= 60)
+            return 0;
+    }
     n = wr_len - (wr_cur - 1);
     memmove(wr_doc + wr_cur - 1,
             wr_doc + wr_cur, (unsigned int)n);
@@ -515,7 +707,13 @@ int wr_fbs(void)
                 (unsigned int)(len - col));
     wr_prev[base + len - 1] = ' ';
     wr_rowlen[row] = len - 1;
+    for (i = row + 1; i < 19; i++) {
+        if (wr_rowpos[i] >= 0)
+            wr_rowpos[i]--;
+    }
+    wr_after--;
     wr_pcursor = base + col - 1;
+    wr_ncursor = wr_pcursor;
     wr_frow(row);
     return 1;
 }
@@ -523,32 +721,47 @@ int wr_fbs(void)
 void wr_insert_key(void)
 {
     int c;
+    int row;
+    int first;
     wr_fast = 0;
     c = getchar();
-    if (c == 27) {
+    if (c == 11 || c == 27) {
         wr_insert = 0;
         return;
     }
+    row = 0;
+    if (wr_pcursor >= 0)
+        row = wr_pcursor / 60;
     if (c == 8) {
         if (wr_cur > 0) {
-            if (wr_fbs())
+            if (wr_fbs()) {
                 wr_fast = 1;
-            else {
+            } else {
+                first = row;
+                if (first > 0)
+                    first--;
                 wr_cur--;
                 wr_delete_at(wr_cur);
+                if (wr_tail(first))
+                    wr_fast = 1;
             }
         }
         return;
     }
     if (c == 10 || c == 13) {
         wr_insert_char('\n');
+        if (wr_tail(row))
+            wr_fast = 1;
         return;
     }
     if (c >= 32 && c <= 126) {
-        if (wr_fins(c))
+        if (wr_fins(c)) {
             wr_fast = 1;
-        else
+        } else {
             wr_insert_char(c);
+            if (wr_tail(row))
+                wr_fast = 1;
+        }
     }
 }
 
@@ -583,16 +796,10 @@ int main(int argc, char **argv)
                 else
                     wr_cur--;
             }
-            if (key == '6') {
-                wr_cur = wr_cur + 60;
-                if (wr_cur > wr_len)
-                    wr_cur = wr_len;
-            }
-            if (key == '7') {
-                wr_cur = wr_cur - 60;
-                if (wr_cur < 0)
-                    wr_cur = 0;
-            }
+            if (key == '6')
+                wr_page(1);
+            if (key == '7')
+                wr_page(0);
             if (key == 'i')
                 wr_insert = 1;
             if (key == 'x')

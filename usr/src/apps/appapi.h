@@ -10,6 +10,9 @@
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
 /* Shared helpers for interactive C48 applications. */
+/* C48 has no include guards: include this once per app. */
+/* Runtime declarations are intentional. Normal SDK builds */
+/* do not inject declarations through <c48.h>. */
 int getchar(void);
 int cls(void);
 int print_at(int row, int col, char *text);
@@ -24,6 +27,7 @@ int yield(void);
 int strcmp(char *a, char *b);
 unsigned int strlen(char *s);
 void *memmove(void *d, void *s, unsigned int n);
+void *memset(void *d, int c, unsigned int n);
 
 static int app_key(void)
 {
@@ -124,7 +128,7 @@ static int app_readline(int row, int col,
     out[0] = 0;
     while (1) {
         c = getchar();
-        if (c == 27)
+        if (c == 11 || c == 27)
             return 0;
         if (c == 10 || c == 13) {
             out[n] = 0;
