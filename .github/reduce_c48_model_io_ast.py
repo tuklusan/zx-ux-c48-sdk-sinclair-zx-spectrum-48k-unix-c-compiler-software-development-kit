@@ -11,10 +11,11 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-"""Remove avoidable C wrapper AST after the primary one-shot transform."""
+"""Compact the C48 model-I/O/input changes under the C48B1 AST ceiling."""
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 
@@ -33,8 +34,8 @@ def once(value: str, old: str, new: str, label: str) -> str:
     return value.replace(old, new)
 
 
-# The private ai_m* C wrappers are unnecessary. ai_readfull can use the
-# generic read primitive and the main model scanner can open/seek directly.
+# The private ai_m* wrappers are unnecessary. The shared exact-read helper can
+# use the generic read primitive directly.
 p = Path("usr/src/ailmzx48/aimatch.h")
 s = p.read_text(encoding="ascii")
 s = section(
@@ -53,25 +54,107 @@ s = once(
 p.write_text(s, encoding="ascii", newline="\n")
 
 
-# Replace application-private host declarations with the ordinary object API.
 p = Path("usr/src/ailmzx48/ailmzx48.c")
 s = p.read_text(encoding="ascii")
+
+# Generic target object API only; no AI-specific host externals.
 s = once(
     s,
     "unsigned int ai_mstat(void);\nint ai_mseek(unsigned int pos);\nint ai_mread(unsigned char *p, unsigned int n);\n",
-    "int open(char *path, int flags);\nint close(int h);\nint read(int h, unsigned char *p, unsigned int n);\nint seek(int h, unsigned int pos);\nint ai_mfd;\n",
+    "int open(char *path, int flags);\n"
+    "int read(int h, unsigned char *p, unsigned int n);\n"
+    "int seek(int h, unsigned int pos);\n"
+    "unsigned int strlen(char *s);\n"
+    "int ai_mfd;\n",
     "generic object declarations",
 )
+
+# Open the immutable model once per process. Each scan rewinds the same handle.
 s = once(
     s,
     "    actual = ai_mstat();\n    if (actual < 40) return -1;\n    if (ai_mseek(0) != 0) return -1;\n",
-    "    if (ai_mfd >= 3) close(ai_mfd);\n    ai_mfd = open(\"ailm.dat\", 1);\n    if (ai_mfd < 0) return -1;\n    actual = ai_clen;\n    if (actual < 40) return -1;\n    if (seek(ai_mfd, 0) != 0) return -1;\n",
-    "model scan generic open",
+    "    if (ai_mfd < 3) return -1;\n"
+    "    actual = AI_CLEN;\n"
+    "    if (actual < 40) return -1;\n"
+    "    if (seek(ai_mfd, 0) != 0) return -1;\n",
+    "model scan generic rewind",
 )
+s = once(
+    s,
+    "    ai_l0wire = 1;\n    ai_start();\n",
+    "    ai_l0wire = 1;\n"
+    "    ai_mfd = open(\"ailm.dat\", 1);\n"
+    "    ai_start();\n",
+    "model open at process start",
+)
+
+# ai_has and ai_find previously carried two copies of the same substring scan.
+# Keep ai_find as the single implementation and make ai_has a tiny predicate.
+s = section(
+    s,
+    "int ai_has(char *s)\n",
+    "int ai_find(char *s)\n",
+    "int ai_find(char *s);\n\n"
+    "int ai_has(char *s)\n"
+    "{\n"
+    "    return ai_find(s) >= 0;\n"
+    "}\n\n",
+    "deduplicate substring search",
+)
+
+# The runtime already supplies strlen; remove a private copy.
+s = section(
+    s,
+    "unsigned int ai_strlen(char *s)\n",
+    "unsigned char ai_l0char(unsigned int d, unsigned int n)\n",
+    "",
+    "remove private strlen",
+)
+s = once(s, "    sl = ai_strlen(s);\n", "    sl = strlen(s);\n", "use runtime strlen")
+
+# Main has several byte-identical yield/counter pairs. One helper preserves the
+# same accounting while reducing serialized AST duplication.
+give = '''void ai_give(void)
+{
+    yield();
+    ai_yields = ai_yields + 1;
+}
+
+'''
+s = once(s, "int main(void)\n", give + "int main(void)\n", "yield helper insertion")
+pattern = re.compile(r"yield\(\);\n(?P<i> +)ai_yields = ai_yields \+ 1;")
+s, replaced = pattern.subn("ai_give();", s)
+if replaced != 7:
+    raise SystemExit(f"yield pair compaction: expected 7, got {replaced}")
+
+# Normalize CR to LF before the shared Enter path, avoiding a duplicate output
+# branch while preserving CRLF suppression and visible newline behavior.
+old = '''        if (c == 13) {
+            ai_drop_lf = 1;
+            putchar(10);
+            break;
+        }
+        if (c == 10) {
+            putchar(10);
+            break;
+        }
+'''
+new = '''        if (c == 13) {
+            ai_drop_lf = 1;
+            c = 10;
+        }
+        if (c == 10) {
+            putchar(10);
+            break;
+        }
+'''
+s = once(s, old, new, "compact Enter handling")
+
 p.write_text(s, encoding="ascii", newline="\n")
 
 
-# Freeze the actual accepted logical length alongside the generated identities.
+# Freeze the accepted model logical length as a generated preprocessing
+# constant; it costs no runtime object or AST declaration.
 meta = json.loads(
     Path("usr/src/ailmzx48/model/cold-seed.json").read_text(encoding="utf-8")
 )
@@ -83,9 +166,9 @@ s = p.read_text(encoding="ascii")
 s = once(
     s,
     "// ============================================================\nunsigned char ai_cvid[8] = {\n",
-    "// ============================================================\nunsigned int ai_clen = " + str(length) + ";\nunsigned char ai_cvid[8] = {\n",
+    "// ============================================================\n#define AI_CLEN " + str(length) + "\nunsigned char ai_cvid[8] = {\n",
     "aicold logical length",
 )
 p.write_text(s, encoding="ascii", newline="\n")
 
-print("C48 MODEL I/O AST REDUCTION PASS", length)
+print("C48 MODEL I/O AST COMPACTION PASS", length)
