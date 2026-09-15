@@ -1,0 +1,92 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: Apply C48 input runtime cleanup v2
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/apply-c48-input-runtime-cleanup-v2.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apply-c48-input-runtime-cleanup-main
+  cancel-in-progress: false
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Apply instrumented source transformation
+        run: python -B .github/apply_c48_input_cleanup.py
+      - name: Compile updated ailmzx48 artifact
+        run: >-
+          python -B compiler/c48.py
+          usr/src/ailmzx48/ailmzx48.c
+          -o usr/bin/ailmzx48/ailmzx48.c48b
+      - name: Run focused input and runtime tests
+        shell: bash
+        run: |
+          python -B -m unittest \
+            compiler.tests.test_gui_framebuffer.GuiFramebufferRegressions.test_typeahead_fifo_preserves_rapid_text \
+            compiler.tests.test_release_regressions.ReleaseRuntimeRegressions.test_rommath_read_only_object_io \
+            compiler.tests.test_release_regressions.ReleaseRuntimeRegressions.test_ailmzx48_normal_runner_prompt_and_line_editing
+          git diff --check
+      - name: Requalify retained ailmzx48 scenarios
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in learned-bridge architecture-routing literal-context final-a final-b final-c; do
+            req="usr/src/ailmzx48/evaluation/sdk-conformance/$name/request.json"
+            iter=$(python -c 'import json,sys;print(json.load(open(sys.argv[1]))["iteration"])' "$req")
+            tag=$(printf 'iter-%04d' "$iter")
+            rm -rf "usr/src/ailmzx48/conversations/$tag"
+            rm -f "usr/src/ailmzx48/model/iterations/$tag.json"
+            python -B usr/src/ailmzx48/tooling/run_iteration.py \
+              --request "$req" --max-seconds 1200
+            python -B usr/src/ailmzx48/evaluation/check_iteration_score.py \
+              --request "$req"
+            cp "usr/src/ailmzx48/conversations/$tag/run.json" \
+              "usr/src/ailmzx48/evaluation/sdk-conformance/$name/run.json"
+            cp "usr/src/ailmzx48/conversations/$tag/score.json" \
+              "usr/src/ailmzx48/evaluation/sdk-conformance/$name/score.json"
+          done
+          python -B usr/src/ailmzx48/evaluation/check_exit_criteria.py \
+            --write-status usr/src/ailmzx48/training/goal-status.json
+      - name: Run complete release verifier
+        shell: bash
+        run: |
+          python -B compiler/verify_release.py
+          git diff --check
+      - name: Commit tested checkpoint and remove one-shot machinery
+        shell: bash
+        run: |
+          git rm .github/apply_c48_input_cleanup.py
+          git rm .github/workflows/apply-c48-input-runtime-cleanup-v2.yml
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Fix C48 text input and ailmzx48 model I/O"
+          git push origin HEAD:main
