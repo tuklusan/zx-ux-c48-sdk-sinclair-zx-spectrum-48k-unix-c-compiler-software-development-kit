@@ -18,78 +18,51 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - name: Benchmark current and optimized variants
+      - name: Benchmark current versus row-buffered candidate
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          import subprocess, time, shutil
+          import re, subprocess, time
 
-          root = Path.cwd()
-          src = root / 'usr/src/apps/write48.c'
-          original = src.read_text(encoding='utf-8')
-          payloads = {
-              '1char': b'ia\x1bq',
-              '10char': b'iabcdefghij\x1bq',
-              '40char': b'iabcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN\x1bq',
-          }
+          root=Path.cwd(); src=root/'usr/src/apps/write48.c'
+          original=src.read_text(encoding='utf-8')
 
-          def compile_to(name):
-              out = root / f'usr/bin/apps/{name}.c48b'
-              cp = subprocess.run(['python','-B','compiler/c48.py',str(src),'-o',str(out)], text=True, capture_output=True)
-              if cp.returncode:
-                  print(cp.stdout); print(cp.stderr); raise SystemExit(cp.returncode)
+          def build(name):
+              out=root/f'usr/bin/apps/{name}.c48b'
+              subprocess.run(['python','-B','compiler/c48.py',str(src),'-o',str(out)],check=True)
               return out
 
-          def bench(label, binary):
-              print(f'=== {label} ===')
-              for pname, data in payloads.items():
-                  samples=[]
-                  for _ in range(3):
-                      t0=time.perf_counter()
-                      cp=subprocess.run(['python','-B','compiler/c48run.py','--headless',str(binary)], input=data, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=60)
-                      dt=time.perf_counter()-t0
-                      if cp.returncode:
-                          print(cp.stderr.decode(errors='replace')); raise SystemExit(cp.returncode)
-                      samples.append(dt)
-                  print(pname, ' '.join(f'{x:.4f}' for x in samples), 'best', f'{min(samples):.4f}')
+          def run(label,binary,data):
+              t0=time.perf_counter()
+              cp=subprocess.run(['python','-B','compiler/c48run.py','--headless',str(binary)],input=data,stdout=subprocess.DEVNULL,stderr=subprocess.PIPE,timeout=60)
+              dt=time.perf_counter()-t0
+              if cp.returncode: raise SystemExit(cp.stderr.decode(errors='replace'))
+              print(f'{label}: {dt:.4f}s for {len(data)-3} inserted chars')
 
-          current = compile_to('write48-current-diag')
-          bench('current', current)
+          current=build('write48-current-diag2')
+          run('current-1',current,b'ia\x1bq')
+          run('current-5',current,b'iabcde\x1bq')
 
-          text = original.replace(
-              "    i = wr_len;\n    while (i > wr_cur) {\n        wr_doc[i] = wr_doc[i - 1];\n        i--;\n    }\n    wr_doc[wr_cur] = (char)c;\n",
-              "    i = wr_len - wr_cur;\n    if (i > 0)\n        memmove(wr_doc + wr_cur + 1, wr_doc + wr_cur, (unsigned int)i);\n    wr_doc[wr_cur] = (char)c;\n",
-          ).replace(
-              "    i = pos;\n    while (i < wr_len) {\n        wr_doc[i] = wr_doc[i + 1];\n        i++;\n    }\n    wr_len--;\n",
-              "    i = wr_len - pos;\n    memmove(wr_doc + pos, wr_doc + pos + 1, (unsigned int)i);\n    wr_len--;\n",
-          )
-          if text == original:
-              raise SystemExit('memmove transformation did not apply')
-          src.write_text(text, encoding='utf-8', newline='\n')
-          memmove_bin = compile_to('write48-memmove-diag')
-          bench('memmove', memmove_bin)
-
-          text2 = text.replace('#include "appapi.h"\n', '#include "appapi.h"\nvoid *memset(void *d, int c, unsigned int n);\n')
-          text2 = text2.replace(
-              "    int i;\n    for (i = 0; i < 1140; i++) {\n        wr_next[i] = ' ';\n        wr_ninv[i] = 0;\n    }\n",
-              "    memset(wr_next, ' ', 1140u);\n    memset(wr_ninv, 0, 1140u);\n",
-          )
-          if text2 == text:
-              raise SystemExit('memset transformation did not apply')
-          src.write_text(text2, encoding='utf-8', newline='\n')
-          memset_bin = compile_to('write48-memmove-memset-diag')
-          bench('memmove+memset', memset_bin)
-
-          # Renderer cost, independent of Tk.
-          from compiler.c48.gui import render_snapshot_frame_rgb
-          from compiler.c48.screen import ZXScreen
-          screen=ZXScreen(); snap=screen.bytes()
-          n=200
-          t0=time.perf_counter()
-          for _ in range(n):
-              render_snapshot_frame_rgb(snap, 0, False)
-          dt=time.perf_counter()-t0
-          print('renderer_ms_per_frame', f'{dt*1000/n:.3f}')
+          text=original
+          text=text.replace('#include "appapi.h"\n','#include "appapi.h"\nvoid *memset(void *d, int c, unsigned int n);\n')
+          text=text.replace('unsigned char wr_pinv[1140];\nunsigned char wr_ninv[1140];\n','char wr_line[61];\nint wr_pcursor;\nint wr_ncursor;\n')
+          text=re.sub(r'void wr_insert_char\(int c\)\n\{.*?\n\}\n\nvoid wr_delete_at', '''void wr_insert_char(int c)\n{\n    int n;\n    if (wr_len >= 1899)\n        return;\n    n = wr_len - wr_cur;\n    if (n > 0)\n        memmove(wr_doc + wr_cur + 1, wr_doc + wr_cur, (unsigned int)n);\n    wr_doc[wr_cur] = (char)c;\n    wr_len++;\n    wr_cur++;\n    wr_doc[wr_len] = 0;\n}\n\nvoid wr_delete_at''',text,flags=re.S)
+          text=re.sub(r'void wr_delete_at\(int pos\)\n\{.*?\n\}\n\nint wr_word_len', '''void wr_delete_at(int pos)\n{\n    int n;\n    if (pos < 0 || pos >= wr_len)\n        return;\n    n = wr_len - pos;\n    memmove(wr_doc + pos, wr_doc + pos + 1, (unsigned int)n);\n    wr_len--;\n    if (wr_cur > wr_len)\n        wr_cur = wr_len;\n}\n\nint wr_word_len''',text,flags=re.S)
+          text=re.sub(r'void wr_blank\(void\)\n\{.*?\n\}', '''void wr_blank(void)\n{\n    memset(wr_next, ' ', 1140u);\n    wr_ncursor = -1;\n}''',text,flags=re.S)
+          text=text.replace("                wr_ninv[cell] = 1;\n","                wr_ncursor = cell;\n")
+          text=text.replace("                wr_ninv[cell] = 1;\n","                wr_ncursor = cell;\n")
+          text=text.replace("            if (c != ' ' && col > 0) {\n", "            if (c != ' ' && col > 0 &&\n                (pos == wr_view || pos == 0 || wr_doc[pos - 1] == ' ' ||\n                 wr_doc[pos - 1] == '\\n')) {\n")
+          text=re.sub(r'void wr_diff\(void\)\n\{.*?\n\}\n\nvoid wr_status', '''void wr_diff(void)\n{\n    int row;\n    int col;\n    int base;\n    int dirty;\n    for (row = 0; row < 19; row++) {\n        base = row * 60;\n        dirty = !wr_drawn;\n        col = 0;\n        while (!dirty && col < 60) {\n            if (wr_prev[base + col] != wr_next[base + col])\n                dirty = 1;\n            col++;\n        }\n        if (!dirty && wr_pcursor >= base && wr_pcursor < base + 60)\n            dirty = 1;\n        if (!dirty && wr_ncursor >= base && wr_ncursor < base + 60)\n            dirty = 1;\n        if (dirty) {\n            memmove(wr_line, wr_next + base, 60u);\n            wr_line[60] = 0;\n            inverse(0);\n            print_at(row + 2, 2, wr_line);\n            if (wr_ncursor >= base && wr_ncursor < base + 60) {\n                col = wr_ncursor - base;\n                inverse(1);\n                app_putc(row + 2, col + 2, wr_next[wr_ncursor]);\n                inverse(0);\n            }\n        }\n    }\n    memmove(wr_prev, wr_next, 1140u);\n    wr_pcursor = wr_ncursor;\n    wr_drawn = 1;\n}\n\nvoid wr_status''',text,flags=re.S)
+          text=re.sub(r'    for \(i = 0; i < 1140; i\+\+\) \{\n        wr_prev\[i\] = 0;\n        wr_pinv\[i\] = 0;\n    \}\n    wr_drawn = 0;', "    memset(wr_prev, 0, 1140u);\n    wr_pcursor = -1;\n    wr_ncursor = -1;\n    wr_drawn = 0;",text)
+          if 'wr_pinv' in text or 'wr_ninv' in text:
+              raise SystemExit('inverse-array references remain')
+          src.write_text(text,encoding='utf-8',newline='\n')
+          candidate=build('write48-row-diag')
+          run('candidate-1',candidate,b'ia\x1bq')
+          run('candidate-5',candidate,b'iabcde\x1bq')
+          run('candidate-20',candidate,b'iabcdefghijklmnopqrst\x1bq')
+          subprocess.run(['python','-B','compiler/c48run.py','--headless',str(candidate),'verify'],check=True)
+          print('candidate verify PASS')
           PY
