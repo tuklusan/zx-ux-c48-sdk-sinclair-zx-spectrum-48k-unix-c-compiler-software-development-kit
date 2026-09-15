@@ -54,6 +54,12 @@ jobs:
           python -B compiler/verify_release.py
           git diff --check 0c2cb0f9bf661c8b8c69b736906e201ac2f0c2ce HEAD
       - name: SoP three fresh byte scans
-        run: python -B /tmp/patch_write48_wrapped.py sop
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp /tmp/patch_write48_wrapped.py .github/.sop_write48.py
+          python -B .github/.sop_write48.py sop
+          rm -f .github/.sop_write48.py
+          test -z "$(git status --porcelain)"
       - name: Push verified final tree
         run: git push origin HEAD:main
