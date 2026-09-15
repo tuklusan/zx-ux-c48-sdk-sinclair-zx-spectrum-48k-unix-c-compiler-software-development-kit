@@ -241,9 +241,44 @@ void wr_status(void)
     wr_stat = wr_insert;
 }
 
+int wr_down_view(void)
+{
+    int next;
+    next = wr_view + wr_rowlen[0];
+    if (next < wr_len && wr_doc[next] == '\n')
+        next++;
+    if (next <= wr_view && wr_view < wr_len)
+        next = wr_view + 1;
+    if (next > wr_len)
+        next = wr_len;
+    if (next <= wr_view)
+        return 0;
+    wr_view = next;
+    return 1;
+}
+
 void wr_render(void)
 {
+    int n;
     wr_build();
+    n = 0;
+    while (wr_ncursor < 0 && wr_cur > wr_view &&
+           n < 19) {
+        if (!wr_down_view())
+            break;
+        wr_build();
+        n++;
+    }
+    if (wr_ncursor < 0 && wr_cur < wr_view) {
+        wr_view = wr_cur - 120;
+        if (wr_view < 0)
+            wr_view = 0;
+        wr_build();
+    }
+    if (wr_ncursor < 0) {
+        wr_view = wr_cur;
+        wr_build();
+    }
     wr_diff();
     wr_status();
 }
@@ -351,28 +386,36 @@ int wr_fmove(int d)
         if (wr_cur >= wr_len)
             return 1;
         if (wr_doc[wr_cur] == '\n') {
-            if (row >= 18)
+            if (row >= 18) {
+                wr_down_view();
                 return 0;
+            }
             next = (row + 1) * 60;
         } else if (wr_cur + 1 >= wr_len) {
             if (col >= 59) {
-                if (row >= 18)
+                if (row >= 18) {
+                    wr_down_view();
                     return 0;
+                }
                 next = (row + 1) * 60;
             } else {
                 next = old + 1;
             }
         } else if (wr_doc[wr_cur + 1] == '\n') {
             if (col >= 59) {
-                if (row >= 18)
+                if (row >= 18) {
+                    wr_down_view();
                     return 0;
+                }
                 next = (row + 1) * 60;
             } else {
                 next = old + 1;
             }
         } else if (col + 1 >= wr_rowlen[row]) {
-            if (row >= 18)
+            if (row >= 18) {
+                wr_down_view();
                 return 0;
+            }
             next = (row + 1) * 60;
         } else {
             next = old + 1;
