@@ -58,14 +58,12 @@ jobs:
           from pathlib import Path
           import subprocess, time
           binary = Path('usr/bin/apps/write48.c48b')
-          def run(name, payload, limit=12.0):
+          def run(name, payload, limit):
               t0 = time.perf_counter()
               cp = subprocess.run(
                   ['python','-B','compiler/c48run.py','--headless',str(binary)],
-                  input=payload,
-                  stdout=subprocess.DEVNULL,
-                  stderr=subprocess.PIPE,
-                  timeout=20,
+                  input=payload, stdout=subprocess.DEVNULL,
+                  stderr=subprocess.PIPE, timeout=20,
               )
               dt = time.perf_counter() - t0
               if cp.returncode != 0:
@@ -74,16 +72,13 @@ jobs:
                   raise SystemExit(f'{name}: too slow: {dt:.3f}s > {limit:.3f}s')
               print(f'{name}: PASS {dt:.4f}s')
               return dt
-
-          run('verify-mode', b'', 3.0) if False else None
           cp = subprocess.run(
               ['python','-B','compiler/c48run.py','--headless',str(binary),'verify'],
               stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=10,
           )
-          if cp.returncode != 0:
+          if cp.returncode:
               raise SystemExit('verify mode failed: ' + cp.stderr.decode(errors='replace'))
           print('verify-mode: PASS')
-
           dt = run('typing-20', b'iabcdefghijklmnopqrst\x1bq', 2.0)
           run('backspace-fast', b'iabc\x08Z\x1bq', 2.0)
           run('newline-fallback', b'iabc\nxyz\x1bq', 5.0)
@@ -92,15 +87,7 @@ jobs:
           print(f'PERF_GATE typing-20={dt:.4f}s')
           PY
 
-      - name: Full repository verifier
-        shell: bash
-        run: |
-          set -euo pipefail
-          python -B compiler/verify_release.py
-          git diff --check 976083b3fe78380e6314e134a40b3b591f9c2c79 -- \
-            usr/src/apps/write48.c usr/bin/apps/write48.c48b compiler/app_expectations.json
-
-      - name: Commit prospective final tree and remove diagnostics
+      - name: Commit clean prospective final tree
         shell: bash
         run: |
           set -euo pipefail
@@ -120,7 +107,7 @@ jobs:
           test "${changed[2]}" = 'usr/src/apps/write48.c'
           test -z "$(git status --porcelain)"
 
-      - name: Verify prospective final commit again
+      - name: Full repository verifier on clean final tree
         shell: bash
         run: |
           set -euo pipefail
@@ -160,7 +147,8 @@ jobs:
                               defects.append(f'conflict marker: {rel.as_posix()}:{lineno}')
                   digest=hashlib.sha256(data).digest()
                   relb=rel.as_posix().encode('utf-8','surrogateescape')
-                  whole.update(len(relb).to_bytes(4,'big')); whole.update(relb); whole.update(digest)
+                  whole.update(len(relb).to_bytes(4,'big'))
+                  whole.update(relb); whole.update(digest)
               manifest=whole.hexdigest(); manifests.append(manifest)
               print(f'SOP_PASS_{pass_no}: files={files} bytes={bytes_n} lines={lines_n} defects={len(defects)} manifest={manifest}')
               if defects:
