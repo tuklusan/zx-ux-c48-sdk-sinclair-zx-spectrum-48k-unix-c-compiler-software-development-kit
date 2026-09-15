@@ -488,7 +488,7 @@ void wr_find(void)
     char q[24];
     int p;
     app_clear_row(23);
-    print_at(23, 1, "FIND CAPS+7 CANCEL> ");
+    print_at(23, 1, "FIND CAPS+1 CANCEL> ");
     if (!app_readline(23, 21, q, 24)) {
         wr_stat = -1;
         return;

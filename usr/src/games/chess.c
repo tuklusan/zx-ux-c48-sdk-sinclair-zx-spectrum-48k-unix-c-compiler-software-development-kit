@@ -538,7 +538,7 @@ void ch_draw(void)
     int col;
     cls();
     print_at(0, 0, "C48 CHESS - type e2e4 then Enter");
-    print_at(1, 0, "Backspace edits; q quits at empty prompt.");
+    print_at(1, 0, "DELETE edits; q quits at empty prompt.");
     for (row = 0; row < 8; row++) {
         for (col = 0; col < 8; col++)
             text[col] = ch_board[row * 8 + col];
@@ -594,7 +594,7 @@ int ch_readmove(char *move)
             move[len] = 0;
             continue;
         }
-        print_at(20, 0, "Use e2e4; Backspace edits.");
+        print_at(20, 0, "Use e2e4; DELETE edits.");
     }
 }
 
