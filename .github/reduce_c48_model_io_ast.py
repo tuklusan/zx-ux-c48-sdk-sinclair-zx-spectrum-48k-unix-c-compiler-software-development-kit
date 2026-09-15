@@ -41,13 +41,13 @@ s = section(
     s,
     "int open(char *path, int flags);\n",
     "int ai_readfull(unsigned char *p, unsigned int n)\n",
-    "int ai_readfull(unsigned char *p, unsigned int n)\n",
+    "",
     "remove model I/O wrappers",
 )
 s = once(
     s,
-    "        got = ai_mread(&p[used], take);\n",
-    "        got = read(ai_mfd, &p[used], take);\n",
+    "        got = ai_mread(&p[done], ask);\n",
+    "        got = read(ai_mfd, &p[done], ask);\n",
     "ai_readfull generic read",
 )
 p.write_text(s, encoding="ascii", newline="\n")
