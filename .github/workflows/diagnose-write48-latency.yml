@@ -20,4 +20,12 @@ jobs:
         with:
           python-version: '3.13'
       - name: Benchmark incremental typing candidate
-        run: python -B .github/diag_write48_fast.py
+        shell: bash
+        run: |
+          set -euo pipefail
+          sed -i \
+            -e 's/wr_draw_fast_row/wr_frow/g' \
+            -e 's/wr_fast_insert_char/wr_fins/g' \
+            -e 's/wr_fast_backspace/wr_fbs/g' \
+            .github/diag_write48_fast.py
+          python -B .github/diag_write48_fast.py
