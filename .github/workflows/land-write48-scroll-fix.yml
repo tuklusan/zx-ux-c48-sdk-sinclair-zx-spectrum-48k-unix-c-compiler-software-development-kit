@@ -128,3 +128,5 @@ jobs:
 
       - name: Push verified final tree
         run: git push origin HEAD:main
+
+# rerun corrected helper
