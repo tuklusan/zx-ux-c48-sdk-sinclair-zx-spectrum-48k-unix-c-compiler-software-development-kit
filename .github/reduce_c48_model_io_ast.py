@@ -34,8 +34,6 @@ def once(value: str, old: str, new: str, label: str) -> str:
     return value.replace(old, new)
 
 
-# The private ai_m* wrappers are unnecessary. The shared exact-read helper can
-# use the generic read primitive directly.
 p = Path("usr/src/ailmzx48/aimatch.h")
 s = p.read_text(encoding="ascii")
 s = section(
@@ -56,8 +54,6 @@ p.write_text(s, encoding="ascii", newline="\n")
 
 p = Path("usr/src/ailmzx48/ailmzx48.c")
 s = p.read_text(encoding="ascii")
-
-# Generic target object API only; no AI-specific host externals.
 s = once(
     s,
     "unsigned int ai_mstat(void);\nint ai_mseek(unsigned int pos);\nint ai_mread(unsigned char *p, unsigned int n);\n",
@@ -68,8 +64,6 @@ s = once(
     "int ai_mfd;\n",
     "generic object declarations",
 )
-
-# Open the immutable model once per process. Each scan rewinds the same handle.
 s = once(
     s,
     "    actual = ai_mstat();\n    if (actual < 40) return -1;\n    if (ai_mseek(0) != 0) return -1;\n",
@@ -87,9 +81,6 @@ s = once(
     "    ai_start();\n",
     "model open at process start",
 )
-
-# ai_has and ai_find previously carried two copies of the same substring scan.
-# Keep ai_find as the single implementation and make ai_has a tiny predicate.
 s = section(
     s,
     "int ai_has(char *s)\n",
@@ -101,8 +92,6 @@ s = section(
     "}\n\n",
     "deduplicate substring search",
 )
-
-# The runtime already supplies strlen; remove a private copy.
 s = section(
     s,
     "unsigned int ai_strlen(char *s)\n",
@@ -111,9 +100,6 @@ s = section(
     "remove private strlen",
 )
 s = once(s, "    sl = ai_strlen(s);\n", "    sl = strlen(s);\n", "use runtime strlen")
-
-# Main has several byte-identical yield/counter pairs. One helper preserves the
-# same accounting while reducing serialized AST duplication.
 give = '''void ai_give(void)
 {
     yield();
@@ -124,11 +110,8 @@ give = '''void ai_give(void)
 s = once(s, "int main(void)\n", give + "int main(void)\n", "yield helper insertion")
 pattern = re.compile(r"yield\(\);\n(?P<i> +)ai_yields = ai_yields \+ 1;")
 s, replaced = pattern.subn("ai_give();", s)
-if replaced != 7:
-    raise SystemExit(f"yield pair compaction: expected 7, got {replaced}")
-
-# Normalize CR to LF before the shared Enter path, avoiding a duplicate output
-# branch while preserving CRLF suppression and visible newline behavior.
+if replaced != 8:
+    raise SystemExit(f"yield pair compaction: expected 8, got {replaced}")
 old = '''        if (c == 13) {
             ai_drop_lf = 1;
             putchar(10);
@@ -149,12 +132,9 @@ new = '''        if (c == 13) {
         }
 '''
 s = once(s, old, new, "compact Enter handling")
-
 p.write_text(s, encoding="ascii", newline="\n")
 
 
-# Freeze the accepted model logical length as a generated preprocessing
-# constant; it costs no runtime object or AST declaration.
 meta = json.loads(
     Path("usr/src/ailmzx48/model/cold-seed.json").read_text(encoding="utf-8")
 )
