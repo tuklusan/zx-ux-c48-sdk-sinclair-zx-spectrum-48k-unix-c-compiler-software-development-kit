@@ -1,0 +1,1040 @@
+name: Land Batch-1 app review fixes
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/land-app-batch1.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+
+jobs:
+  land:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out exact landing base
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Guard parent and one-shot delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=c86d9d1c8b0b121e55334bc342ad6f21e4b8fb59
+          test "$(git rev-parse HEAD^)" = "$base"
+          test "$(git diff --name-only "$base" HEAD)" = ".github/workflows/land-app-batch1.yml"
+
+      - name: Apply guarded source and verifier fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from pathlib import Path
+
+          def rep(path, old, new, label):
+              p = Path(path)
+              text = p.read_text(encoding="ascii")
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: expected one anchor, got {count}")
+              p.write_text(text.replace(old, new), encoding="ascii", newline="\n")
+
+          rep(
+              "usr/src/apps/appapi.h",
+              """    char buf[33];
+    int i;
+    i = 0;
+""",
+              """    char buf[33];
+    int i;
+    if (width < 0)
+        width = 0;
+    if (width > 32)
+        width = 32;
+    i = 0;
+""",
+              "app_field width clamp",
+          )
+
+          rep(
+              "usr/src/apps/sheet48.c",
+              """unsigned int sh_ref(char *s, int *used, int depth)
+{
+    int col;
+    int row;
+    int i;
+    col = sh_colno(s[0]);
+    if (col < 0) {
+        *used = 0;
+        return 0u;
+    }
+    i = 1;
+    row = 0;
+    while (s[i] >= '0' && s[i] <= '9') {
+        row = row * 10 + s[i] - '0';
+        i++;
+    }
+    *used = i;
+    if (row < 1 || row > 8)
+        return 0u;
+    return sh_value(row - 1, col, depth + 1);
+}
+""",
+              """unsigned int sh_ref(char *s, int *used, int depth)
+{
+    int col;
+    int row;
+    col = sh_colno(s[0]);
+    if (col < 0 || s[1] < '1' || s[1] > '8') {
+        *used = 0;
+        return 0u;
+    }
+    if (s[2] >= '0' && s[2] <= '9') {
+        *used = 0;
+        return 0u;
+    }
+    row = s[1] - '1';
+    *used = 2;
+    return sh_value(row, col, depth + 1);
+}
+""",
+              "sheet strict cell reference",
+          )
+
+          rep(
+              "usr/src/apps/sheet48.c",
+              """unsigned int sh_formula(char *s, int depth)
+{
+    unsigned int a;
+    unsigned int b;
+    unsigned int total;
+    int used;
+    int used2;
+    int r1;
+    int r2;
+    int c;
+    int i;
+    if (depth > 6)
+        return 0u;
+    if (s[1] == 'S' && s[2] == 'U' && s[3] == 'M' &&
+        s[4] == '(') {
+        c = sh_colno(s[5]);
+        r1 = s[6] - '0';
+        r2 = s[9] - '0';
+        if (c < 0 || s[7] != ':' || s[8] != s[5])
+            return 0u;
+        total = 0u;
+        for (i = r1; i <= r2; i++)
+            total = total + sh_value(i - 1, c, depth + 1);
+        return total;
+    }
+    a = sh_ref(s + 1, &used, depth);
+    if (used == 0)
+        return 0u;
+    i = 1 + used;
+    b = sh_ref(s + i + 1, &used2, depth);
+    if (used2 == 0)
+        return 0u;
+    if (s[i] == '+')
+        return a + b;
+    if (s[i] == '-')
+        return a - b;
+    if (s[i] == '*')
+        return a * b;
+    if (s[i] == '/' && b != 0u)
+        return a / b;
+    return 0u;
+}
+""",
+              """unsigned int sh_formula(char *s, int depth)
+{
+    unsigned int a;
+    unsigned int b;
+    unsigned int total;
+    int used;
+    int used2;
+    int r1;
+    int r2;
+    int c;
+    int c2;
+    int i;
+    if (depth > 6)
+        return 0u;
+    if (s[1] == 'S' && s[2] == 'U' && s[3] == 'M' &&
+        s[4] == '(') {
+        c = sh_colno(s[5]);
+        c2 = sh_colno(s[8]);
+        if (c < 0 || c2 != c || s[6] < '1' || s[6] > '8')
+            return 0u;
+        if (s[7] != ':' || s[9] < '1' || s[9] > '8')
+            return 0u;
+        if (s[10] != ')' || s[11] != 0)
+            return 0u;
+        r1 = s[6] - '0';
+        r2 = s[9] - '0';
+        if (r1 > r2)
+            return 0u;
+        total = 0u;
+        for (i = r1; i <= r2; i++)
+            total = total + sh_value(i - 1, c, depth + 1);
+        return total;
+    }
+    a = sh_ref(s + 1, &used, depth);
+    if (used == 0)
+        return 0u;
+    i = 1 + used;
+    if (s[i] != '+' && s[i] != '-' &&
+        s[i] != '*' && s[i] != '/')
+        return 0u;
+    b = sh_ref(s + i + 1, &used2, depth);
+    if (used2 == 0 || s[i + 1 + used2] != 0)
+        return 0u;
+    if (s[i] == '+')
+        return a + b;
+    if (s[i] == '-')
+        return a - b;
+    if (s[i] == '*')
+        return a * b;
+    if (b != 0u)
+        return a / b;
+    return 0u;
+}
+""",
+              "sheet strict formula grammar",
+          )
+
+          rep(
+              "usr/src/apps/sheet48.c",
+              """unsigned int sh_value(int row, int col, int depth)
+{
+    char *p;
+    p = sh_cell(row, col);
+""",
+              """unsigned int sh_value(int row, int col, int depth)
+{
+    char *p;
+    if (row < 0 || row > 7 || col < 0 || col > 3)
+        return 0u;
+    p = sh_cell(row, col);
+""",
+              "sheet value bounds guard",
+          )
+
+          rep(
+              "usr/src/apps/write48.c",
+              """void wr_page(int down)
+{
+""",
+              """int wr_prevrow(int pos)
+{
+    int p;
+    int prev;
+    int next;
+    if (pos <= 0)
+        return 0;
+    p = 0;
+    prev = 0;
+    while (p < pos && p < wr_len) {
+        next = wr_nextrow(p);
+        if (next <= p)
+            break;
+        if (next >= pos)
+            return p;
+        prev = p;
+        p = next;
+    }
+    return prev;
+}
+
+void wr_page(int down)
+{
+""",
+              "write previous logical row",
+          )
+
+          old_insert = """void wr_insert_key(void)
+{
+    int c;
+    int row;
+    int first;
+    wr_fast = 0;
+    c = getchar();
+    if (c == 7) {
+        wr_insert = 0;
+        return;
+    }
+    row = 0;
+    if (wr_pcursor >= 0)
+        row = wr_pcursor / 60;
+    if (c == 8) {
+        if (wr_cur > 0) {
+            if (wr_fbs()) {
+                wr_fast = 1;
+            } else {
+                first = row;
+                if (first > 0)
+                    first--;
+                wr_cur--;
+                wr_delete_at(wr_cur);
+                if (wr_tail(first))
+                    wr_fast = 1;
+            }
+        }
+        return;
+    }
+    if (c == 10 || c == 13) {
+        wr_insert_char('\\n');
+        if (wr_tail(row))
+            wr_fast = 1;
+        return;
+    }
+    if (c >= 32 && c <= 126) {
+        if (wr_fins(c)) {
+            wr_fast = 1;
+        } else {
+            wr_insert_char(c);
+            if (wr_tail(row))
+                wr_fast = 1;
+        }
+    }
+}
+
+int main(int argc, char **argv)
+{
+    int key;
+"""
+          new_insert = """int wr_insert_key(void)
+{
+    int c;
+    int row;
+    int first;
+    wr_fast = 0;
+    c = getchar();
+    if (c == 7) {
+        wr_insert = 0;
+        return 1;
+    }
+    row = 0;
+    if (wr_pcursor >= 0)
+        row = wr_pcursor / 60;
+    if (c == 8) {
+        if (wr_cur <= 0)
+            return 0;
+        if (wr_fbs()) {
+            wr_fast = 1;
+        } else {
+            first = row;
+            if (first > 0)
+                first--;
+            wr_cur--;
+            wr_delete_at(wr_cur);
+            if (wr_tail(first))
+                wr_fast = 1;
+        }
+        return 1;
+    }
+    if (c == 10 || c == 13) {
+        if (wr_len >= 1899)
+            return 0;
+        wr_insert_char('\\n');
+        if (wr_tail(row))
+            wr_fast = 1;
+        return 1;
+    }
+    if (c >= 32 && c <= 126) {
+        if (wr_len >= 1899)
+            return 0;
+        if (wr_fins(c)) {
+            wr_fast = 1;
+        } else {
+            wr_insert_char(c);
+            if (wr_tail(row))
+                wr_fast = 1;
+        }
+        return 1;
+    }
+    return 0;
+}
+
+int wr_command(int key)
+{
+    int old_cur;
+    int old_view;
+    if (key == 'q')
+        return -1;
+    if ((key == '8' || key == 'l') && wr_cur < wr_len) {
+        if (wr_fmove(1))
+            wr_fast = 1;
+        else
+            wr_cur++;
+        return 1;
+    }
+    if ((key == '5' || key == 'h') && wr_cur > 0) {
+        if (wr_fmove(-1)) {
+            wr_fast = 1;
+        } else {
+            wr_cur--;
+            if (wr_cur < wr_view)
+                wr_view = wr_prevrow(wr_view);
+        }
+        return 1;
+    }
+    if (key == '6' || key == '7') {
+        old_cur = wr_cur;
+        old_view = wr_view;
+        wr_page(key == '6');
+        if (wr_cur != old_cur || wr_view != old_view)
+            return 1;
+        return 0;
+    }
+    if (key == 'i') {
+        wr_insert = 1;
+        return 1;
+    }
+    if (key == 'x' && wr_cur < wr_len) {
+        wr_delete_at(wr_cur);
+        return 1;
+    }
+    if (key == 'f') {
+        wr_find();
+        return 1;
+    }
+    if (key == 'g' && (wr_cur != 0 || wr_view != 0)) {
+        wr_cur = 0;
+        wr_view = 0;
+        return 1;
+    }
+    return 0;
+}
+
+int main(int argc, char **argv)
+{
+    int key;
+    int changed;
+"""
+          rep(
+              "usr/src/apps/write48.c",
+              old_insert,
+              new_insert,
+              "write input change reporting and command handler",
+          )
+
+          old_loop = """    while (1) {
+        wr_fast = 0;
+        if (wr_insert) {
+            wr_insert_key();
+        } else {
+            key = app_key();
+            if (key == 'q')
+                return 0;
+            if ((key == '8' || key == 'l') && wr_cur < wr_len) {
+                if (wr_fmove(1))
+                    wr_fast = 1;
+                else
+                    wr_cur++;
+            }
+            if ((key == '5' || key == 'h') && wr_cur > 0) {
+                if (wr_fmove(-1))
+                    wr_fast = 1;
+                else
+                    wr_cur--;
+            }
+            if (key == '6')
+                wr_page(1);
+            if (key == '7')
+                wr_page(0);
+            if (key == 'i')
+                wr_insert = 1;
+            if (key == 'x')
+                wr_delete_at(wr_cur);
+            if (key == 'f')
+                wr_find();
+            if (key == 'g') {
+                wr_cur = 0;
+                wr_view = 0;
+            }
+        }
+        {
+            int old_view;
+            old_view = wr_view;
+            wr_ensure();
+            if (!wr_fast || wr_view != old_view)
+                wr_render();
+        }
+    }
+"""
+          new_loop = """    while (1) {
+        wr_fast = 0;
+        if (wr_insert) {
+            changed = wr_insert_key();
+        } else {
+            key = app_key();
+            changed = wr_command(key);
+            if (changed < 0)
+                return 0;
+        }
+        if (!changed)
+            continue;
+        {
+            int old_view;
+            old_view = wr_view;
+            wr_ensure();
+            if (!wr_fast || wr_view != old_view)
+                wr_render();
+        }
+    }
+"""
+          rep(
+              "usr/src/apps/write48.c",
+              old_loop,
+              new_loop,
+              "write skip no-op render",
+          )
+
+          rep(
+              "usr/src/apps/wire3d.c",
+              """int w_cos(int a)
+{
+    return w_sin(a + 64);
+}
+
+void w_reset(void)
+""",
+              """int w_cos(int a)
+{
+    return w_sin(a + 64);
+}
+
+int w_muldiv(int value, int scale, int div)
+{
+    int neg;
+    int n;
+    int chunk;
+    int rem;
+    int out;
+    int prod;
+    if (div <= 0 || scale < 0)
+        return 0;
+    neg = 0;
+    if (value < 0) {
+        neg = 1;
+        n = -value;
+    } else {
+        n = value;
+    }
+    rem = 0;
+    out = 0;
+    while (n > 0) {
+        chunk = n;
+        if (chunk > 16)
+            chunk = 16;
+        prod = chunk * scale + rem;
+        out = out + prod / div;
+        rem = prod % div;
+        n = n - chunk;
+    }
+    if (neg)
+        return -out;
+    return out;
+}
+
+void w_reset(void)
+""",
+              "wire overflow-safe multiply/divide",
+          )
+
+          rep(
+              "usr/src/apps/wire3d.c",
+              """    *sx = 128 + x * w_zoom / q;
+    *sy = 100 + y * w_zoom / q;
+""",
+              """    *sx = 128 + w_muldiv(x, w_zoom, q);
+    *sy = 100 + w_muldiv(y, w_zoom, q);
+""",
+              "wire safe projection",
+          )
+
+          old_edit = """    if (key == 'a' && w_w[w_sel] > 3)
+        w_w[w_sel] = w_w[w_sel] - 2;
+    if (key == 'd' && w_w[w_sel] < 78)
+        w_w[w_sel] = w_w[w_sel] + 2;
+    if (key == 's' && w_h[w_sel] > 3)
+        w_h[w_sel] = w_h[w_sel] - 2;
+    if (key == 'w' && w_h[w_sel] < 30)
+        w_h[w_sel] = w_h[w_sel] + 2;
+    if (key == 'z' && w_z[w_sel] > -110)
+        w_z[w_sel] = w_z[w_sel] - 3;
+    if (key == 'x' && w_z[w_sel] < 110)
+        w_z[w_sel] = w_z[w_sel] + 3;
+"""
+          new_edit = """    if (key == 'a' && w_w[w_sel] > 2) {
+        w_w[w_sel] = w_w[w_sel] - 2;
+        if (w_w[w_sel] < 2)
+            w_w[w_sel] = 2;
+    }
+    if (key == 'd' && w_w[w_sel] < 78) {
+        w_w[w_sel] = w_w[w_sel] + 2;
+        if (w_w[w_sel] > 78)
+            w_w[w_sel] = 78;
+    }
+    if (key == 's' && w_h[w_sel] > 2) {
+        w_h[w_sel] = w_h[w_sel] - 2;
+        if (w_h[w_sel] < 2)
+            w_h[w_sel] = 2;
+    }
+    if (key == 'w' && w_h[w_sel] < 30) {
+        w_h[w_sel] = w_h[w_sel] + 2;
+        if (w_h[w_sel] > 30)
+            w_h[w_sel] = 30;
+    }
+    if (key == 'z' && w_z[w_sel] > -110) {
+        w_z[w_sel] = w_z[w_sel] - 3;
+        if (w_z[w_sel] < -110)
+            w_z[w_sel] = -110;
+    }
+    if (key == 'x' && w_z[w_sel] < 110) {
+        w_z[w_sel] = w_z[w_sel] + 3;
+        if (w_z[w_sel] > 110)
+            w_z[w_sel] = 110;
+    }
+"""
+          rep(
+              "usr/src/apps/wire3d.c",
+              old_edit,
+              new_edit,
+              "wire edit bounds",
+          )
+
+          rep(
+              "usr/src/apps/wire3d.c",
+              """    if (key == '+' && w_zoom < 360)
+        w_zoom = w_zoom + 12;
+    if (key == '-' && w_zoom > 150)
+        w_zoom = w_zoom - 12;
+""",
+              """    if (key == '+' && w_zoom < 360) {
+        w_zoom = w_zoom + 12;
+        if (w_zoom > 360)
+            w_zoom = 360;
+    }
+    if (key == '-' && w_zoom > 150) {
+        w_zoom = w_zoom - 12;
+        if (w_zoom < 150)
+            w_zoom = 150;
+    }
+""",
+              "wire zoom bounds",
+          )
+
+          rep(
+              "compiler/verify_apps.py",
+              "from c48.compiler import compile_file\n",
+              "from c48.compiler import compile_bytes as compile_source, compile_file\n",
+              "app verifier compile-source import",
+          )
+
+          verifier_anchor = """def main() -> int:
+    expect = json.loads(EXPECT_PATH.read_text(encoding=\"ascii\"))
+"""
+          verifier_insert = r'''def run_probe(name: str, main_text: str) -> None:
+    source = (SRC / f"{name}.c").read_text(encoding="ascii")
+    cut = source.rfind("int main(")
+    if cut < 0:
+        fail(f"{name}: probe could not find main")
+    probe = source[:cut] + main_text
+    program = compile_source(
+        probe.encode("ascii"),
+        source_name=f"{name}-probe.c",
+        base_dir=SRC,
+    )
+    screen = ZXScreen(FONT)
+    status = C48VM(
+        program,
+        screen,
+        argv=[f"{name}-probe"],
+        max_steps=10000000,
+    ).run()
+    if status != 0:
+        fail(f"{name}: regression probe status {status}")
+
+
+def check_regressions() -> None:
+    run_probe(
+        "sheet48",
+        r'''int main(void)
+{
+    sh_seed();
+    app_field(0, 0, "X", 40, 0);
+    sh_set(0, 1, "=SUM(B0:B7)");
+    if (sh_value(0, 1, 0) != 0u)
+        return 1;
+    sh_set(0, 1, "=B2+B3+X");
+    if (sh_value(0, 1, 0) != 0u)
+        return 2;
+    sh_set(0, 1, "=SUM(B7:B1)");
+    if (sh_value(0, 1, 0) != 0u)
+        return 3;
+    sh_set(0, 1, "=B+B2");
+    if (sh_value(0, 1, 0) != 0u)
+        return 4;
+    sh_set(0, 1, "=B2+B3");
+    if (sh_value(0, 1, 0) != 15000u)
+        return 5;
+    sh_set(0, 1, "=SUM(B2:B7)");
+    if (sh_value(0, 1, 0) != 41000u)
+        return 6;
+    if (sh_value(-1, 0, 0) != 0u)
+        return 7;
+    if (sh_value(0, 4, 0) != 0u)
+        return 8;
+    return 0;
+}
+''',
+    )
+    run_probe(
+        "write48",
+        r'''int main(void)
+{
+    int next;
+    wr_seed();
+    next = wr_nextrow(0);
+    if (next <= 0)
+        return 1;
+    if (wr_prevrow(next) != 0)
+        return 2;
+    wr_cur = next;
+    wr_view = next;
+    wr_insert = 0;
+    wr_start();
+    wr_render();
+    if (wr_command('5') != 1)
+        return 3;
+    if (wr_view != 0)
+        return 4;
+    if (wr_cur != next - 1)
+        return 5;
+    if (wr_command('?') != 0)
+        return 6;
+    wr_cur = 0;
+    wr_view = 0;
+    if (wr_command('7') != 0)
+        return 7;
+    return 0;
+}
+''',
+    )
+    run_probe(
+        "wire3d",
+        r'''int main(void)
+{
+    int sx;
+    int sy;
+    w_yaw = 0;
+    w_pitch = 0;
+    w_zoom = 360;
+    if (!w_project(100, 0, 100, &sx, &sy))
+        return 1;
+    if (sx != 252 || sy != 100)
+        return 2;
+    w_sel = 0;
+    w_w[0] = 77;
+    w_h[0] = 29;
+    w_z[0] = 109;
+    w_zoom = 354;
+    w_edit('d');
+    w_edit('w');
+    w_edit('x');
+    w_edit('+');
+    if (w_w[0] != 78 || w_h[0] != 30)
+        return 3;
+    if (w_z[0] != 110 || w_zoom != 360)
+        return 4;
+    w_w[0] = 3;
+    w_h[0] = 3;
+    w_z[0] = -109;
+    w_edit('a');
+    w_edit('s');
+    w_edit('z');
+    if (w_w[0] != 2 || w_h[0] != 2)
+        return 5;
+    if (w_z[0] != -110)
+        return 6;
+    return 0;
+}
+''',
+    )
+    print("APP REGRESSION PROBES PASS", flush=True)
+
+
+'''
+          rep(
+              "compiler/verify_apps.py",
+              verifier_anchor,
+              verifier_insert + verifier_anchor,
+              "app verifier regression helpers",
+          )
+
+          rep(
+              "compiler/verify_apps.py",
+              """    print("APP VERIFY PASS: 3 apps", flush=True)
+    return 0
+""",
+              """    check_regressions()
+    print("APP VERIFY PASS: 3 apps", flush=True)
+    return 0
+""",
+              "app verifier regression call",
+          )
+          PY
+
+      - name: Enforce C48 source-column contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from pathlib import Path
+          bad = []
+          for p in sorted(Path("usr/src").rglob("*")):
+              if not p.is_file() or p.suffix not in {".c", ".h"}:
+                  continue
+              data = p.read_bytes()
+              try:
+                  text = data.decode("ascii")
+              except UnicodeDecodeError as exc:
+                  raise SystemExit(f"non-ASCII C48 source {p}: {exc}")
+              for n, line in enumerate(text.splitlines(), 1):
+                  if len(line) > 64:
+                      bad.append(f"{p}:{n}:{len(line)}")
+          if bad:
+              raise SystemExit("64-column violations: " + ", ".join(bad))
+          print("C48 SOURCE COLUMN SCAN PASS")
+          PY
+
+      - name: Rebuild all application binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in sheet48 write48 wire3d; do
+            python -B compiler/c48.py "usr/src/apps/${name}.c" -o "usr/bin/apps/${name}.c48b"
+          done
+
+      - name: Refresh application expectations from rebuilt bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+          import sys
+
+          ROOT = Path.cwd()
+          sys.path.insert(0, str(ROOT / "compiler"))
+          from c48.format import read
+          from c48.screen import Font4x8, ZXScreen
+          from c48.vm import C48VM
+
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          path = ROOT / "compiler/app_expectations.json"
+          data = json.loads(path.read_text(encoding="ascii"))
+          data["helper_sha256"] = sha(ROOT / "usr/src/apps/appapi.h")
+          font = Font4x8.load(ROOT / "compiler/assets/font4x8-tasword.bin")
+          for name in ("sheet48", "write48", "wire3d"):
+              src = ROOT / f"usr/src/apps/{name}.c"
+              binary = ROOT / f"usr/bin/apps/{name}.c48b"
+              item = data["apps"][name]
+              item["source_sha256"] = sha(src)
+              item["binary_sha256"] = sha(binary)
+              screen = ZXScreen(font)
+              vm = C48VM(
+                  read(binary), screen, argv=[name, "verify"],
+                  max_steps=10000000,
+              )
+              status = vm.run()
+              if status != 0:
+                  raise SystemExit(f"{name}: startup status {status}")
+              item["screen_sha256"] = hashlib.sha256(
+                  screen.bytes()
+              ).hexdigest()
+          path.write_text(
+              json.dumps(data, indent=2) + "\n",
+              encoding="ascii",
+              newline="\n",
+          )
+          print("APP EXPECTATIONS REFRESHED")
+          PY
+
+      - name: Run application verifier with permanent probes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_apps.py
+
+      - name: Remove one-shot harness before final verification
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm .github/workflows/land-app-batch1.yml
+
+      - name: Assert exact final delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          base=c86d9d1c8b0b121e55334bc342ad6f21e4b8fb59
+          git diff --check
+          python -B - <<'PY'
+          import subprocess
+          expected = {
+              "compiler/app_expectations.json",
+              "compiler/verify_apps.py",
+              "usr/bin/apps/sheet48.c48b",
+              "usr/bin/apps/wire3d.c48b",
+              "usr/bin/apps/write48.c48b",
+              "usr/src/apps/appapi.h",
+              "usr/src/apps/sheet48.c",
+              "usr/src/apps/wire3d.c",
+              "usr/src/apps/write48.c",
+          }
+          raw = subprocess.check_output(
+              ["git", "diff", "--name-only", "c86d9d1c8b0b121e55334bc342ad6f21e4b8fb59"],
+              text=True,
+          )
+          actual = {line for line in raw.splitlines() if line}
+          if actual != expected:
+              raise SystemExit(
+                  f"unexpected final delta: expected={sorted(expected)!r} actual={sorted(actual)!r}"
+              )
+          print("FINAL DELTA GUARD PASS")
+          PY
+
+      - name: Run complete release verifier on final tree bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_release.py
+
+      - name: Three successive fresh-copy byte-line SoP scans
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import shutil
+          import tempfile
+
+          ROOT = Path.cwd().resolve()
+          TEXT_SUFFIXES = {
+              ".c", ".h", ".py", ".md", ".txt", ".json", ".yml",
+              ".yaml", ".bat",
+          }
+
+          def tree_files(root):
+              return sorted(
+                  p for p in root.rglob("*")
+                  if p.is_file() and ".git" not in p.relative_to(root).parts
+              )
+
+          def manifest(root):
+              h = hashlib.sha256()
+              for p in tree_files(root):
+                  rel = p.relative_to(root).as_posix().encode("utf-8")
+                  data = p.read_bytes()
+                  h.update(rel + b"\0" + hashlib.sha256(data).digest())
+              return h.hexdigest()
+
+          expected_manifest = manifest(ROOT)
+          for pass_no in range(1, 4):
+              with tempfile.TemporaryDirectory(prefix=f"sop-pass-{pass_no}-") as td:
+                  fresh = Path(td) / "repo"
+                  shutil.copytree(
+                      ROOT,
+                      fresh,
+                      ignore=shutil.ignore_patterns(
+                          ".git", "__pycache__", "*.pyc", "*.pyo", ".coverage"
+                      ),
+                  )
+                  if manifest(fresh) != expected_manifest:
+                      raise SystemExit(f"SoP pass {pass_no}: fresh-copy manifest mismatch")
+                  for p in tree_files(fresh):
+                      rel = p.relative_to(fresh)
+                      data = p.read_bytes()
+                      rebuilt = b"".join(data.splitlines(keepends=True))
+                      if rebuilt != data:
+                          raise SystemExit(f"SoP pass {pass_no}: byte-line reconstruction failed: {rel}")
+                      for line_no, line in enumerate(data.splitlines(keepends=True), 1):
+                          if p.suffix.lower() in TEXT_SUFFIXES:
+                              if b"<<<<<<<" in line or b">>>>>>>" in line:
+                                  raise SystemExit(
+                                      f"SoP pass {pass_no}: conflict marker {rel}:{line_no}"
+                                  )
+                          if p.suffix.lower() in {".c", ".h"}:
+                              if b"\r" in line:
+                                  raise SystemExit(
+                                      f"SoP pass {pass_no}: CR in C48 source {rel}:{line_no}"
+                                  )
+                              body = line.rstrip(b"\n")
+                              try:
+                                  body.decode("ascii")
+                              except UnicodeDecodeError:
+                                  raise SystemExit(
+                                      f"SoP pass {pass_no}: non-ASCII C48 source {rel}:{line_no}"
+                                  )
+                              if len(body) > 64:
+                                  raise SystemExit(
+                                      f"SoP pass {pass_no}: >64 cols {rel}:{line_no}"
+                                  )
+                  checks = {
+                      "usr/src/apps/appapi.h": [
+                          b"if (width > 32)", b"width = 32;"
+                      ],
+                      "usr/src/apps/sheet48.c": [
+                          b"s[10] != ')' || s[11] != 0",
+                          b"row < 0 || row > 7",
+                      ],
+                      "usr/src/apps/write48.c": [
+                          b"int wr_prevrow(int pos)",
+                          b"int wr_command(int key)",
+                          b"int wr_insert_key(void)",
+                      ],
+                      "usr/src/apps/wire3d.c": [
+                          b"int w_muldiv(int value, int scale, int div)",
+                          b"w_muldiv(x, w_zoom, q)",
+                          b"w_zoom = 360;",
+                      ],
+                      "compiler/verify_apps.py": [
+                          b"APP REGRESSION PROBES PASS",
+                          b"check_regressions()",
+                      ],
+                  }
+                  for rel, needles in checks.items():
+                      data = (fresh / rel).read_bytes()
+                      for needle in needles:
+                          if data.count(needle) < 1:
+                              raise SystemExit(
+                                  f"SoP pass {pass_no}: invariant missing {rel}: {needle!r}"
+                              )
+                  print(
+                      f"SOP PASS {pass_no}: ZERO NEW DEFECTS manifest={expected_manifest}"
+                  )
+          PY
+
+      - name: Commit and push accepted Batch-1 fixes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: harden Batch-1 application review findings"
+          git push origin HEAD:main
