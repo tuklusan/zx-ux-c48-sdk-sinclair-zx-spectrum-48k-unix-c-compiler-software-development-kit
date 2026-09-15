@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Apply C48 input runtime cleanup v16
+name: Apply C48 input runtime cleanup v17
 
 "on":
   push:
@@ -82,6 +82,35 @@ jobs:
           python -B compiler/c48.py \
             usr/src/ailmzx48/ailmzx48.c \
             -o usr/bin/ailmzx48/ailmzx48.c48b
+          python -B - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          def digest(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          status_path = Path("usr/src/ailmzx48/evaluation/DESIGN-COMPLIANCE-STATUS.json")
+          cert_path = Path("usr/src/ailmzx48/evaluation/DESIGN-REVIEW-CERTIFICATE.md")
+          status = json.loads(status_path.read_text(encoding="utf-8"))
+          old_source = status["source_sha256"]
+          old_binary = status["sdk_c48b_sha256"]
+          new_source = digest("usr/src/ailmzx48/ailmzx48.c")
+          new_binary = digest("usr/bin/ailmzx48/ailmzx48.c48b")
+          status["source_sha256"] = new_source
+          status["sdk_c48b_sha256"] = new_binary
+          status_path.write_text(
+              json.dumps(status, indent=2, sort_keys=True) + "\n",
+              encoding="utf-8",
+          )
+          cert = cert_path.read_text(encoding="utf-8")
+          if cert.count(old_source) != 1 or cert.count(old_binary) != 1:
+              raise SystemExit("certificate identity anchors are not unique")
+          cert = cert.replace(old_source, new_source).replace(old_binary, new_binary)
+          cert_path.write_text(cert, encoding="utf-8", newline="\n")
+          print(f"AILMZX48_SOURCE_SHA256={new_source}")
+          print(f"AILMZX48_C48B_SHA256={new_binary}")
+          PY
       - name: Run focused input and runtime tests
         shell: bash
         run: |
