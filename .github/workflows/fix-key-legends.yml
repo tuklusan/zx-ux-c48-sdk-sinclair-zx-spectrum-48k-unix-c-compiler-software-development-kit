@@ -18,17 +18,18 @@ jobs:
       - name: Check out exact repair base
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 3
           lfs: true
 
       - name: Guard exact parent and one-shot delta
         shell: bash
         run: |
           set -euo pipefail
-          expected=0becde32de9d6690cc64327965d70d99b388e416
+          base=0becde32de9d6690cc64327965d70d99b388e416
+          expected_parent=21dd04feceeaaff48a9b01063e4c8d21e8d755e4
           parent="$(git rev-parse HEAD^)"
-          test "$parent" = "$expected"
-          actual="$(git diff --name-only HEAD^ HEAD)"
+          test "$parent" = "$expected_parent"
+          actual="$(git diff --name-only "$base" HEAD)"
           test "$actual" = ".github/workflows/fix-key-legends.yml"
 
       - name: Set up Python
@@ -46,18 +47,18 @@ jobs:
           changes = (
               (
                   Path("usr/src/apps/write48.c"),
-                  b'puts("FIND CAPS+7 CANCEL>");',
-                  b'puts("FIND CAPS+1 CANCEL>");',
+                  b'print_at(23, 1, "FIND CAPS+7 CANCEL> ");',
+                  b'print_at(23, 1, "FIND CAPS+1 CANCEL> ");',
               ),
               (
                   Path("usr/src/games/chess.c"),
-                  b'puts("Backspace edits; q quits at empty prompt.");',
-                  b'puts("DELETE edits; q quits at empty prompt.");',
+                  b'print_at(1, 0, "Backspace edits; q quits at empty prompt.");',
+                  b'print_at(1, 0, "DELETE edits; q quits at empty prompt.");',
               ),
               (
                   Path("usr/src/games/chess.c"),
-                  b'puts("Use e2e4; Backspace edits.");',
-                  b'puts("Use e2e4; DELETE edits.");',
+                  b'print_at(20, 0, "Use e2e4; Backspace edits.");',
+                  b'print_at(20, 0, "Use e2e4; DELETE edits.");',
               ),
           )
           for path, old, new in changes:
