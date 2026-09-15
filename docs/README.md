@@ -4,6 +4,8 @@ This directory contains documentation for the **ZX-UX C48 SDK**, the portable ho
 
 ## Full C48 Language Specification
 
+For a dedicated pointer from this SDK repository, see [ZX-UX C48 Language Specification.md](ZX-UX%20C48%20Language%20Specification.md).
+
 The complete, normative **C48 Language Specification** is maintained in the upstream **ZX-UX — The ZX Spectrum 48K Unix Project** repository, alongside the native ZX-UX environment for the Sinclair ZX Spectrum 48K.
 
 **Current specification:** [04-C48 Language Specification Rev 0.11.docx](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx)
