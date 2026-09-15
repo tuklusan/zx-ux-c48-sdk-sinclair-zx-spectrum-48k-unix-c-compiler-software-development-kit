@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: One-shot font 0 screenshot diagnostic
+name: One-shot font 0 screenshot publisher
 
 "on":
   push:
@@ -20,10 +20,10 @@ name: One-shot font 0 screenshot diagnostic
       - ".github/workflows/font0-screenshot-once.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  diagnose:
+  publish:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository with LFS objects
@@ -36,129 +36,224 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Verify LFS routing and existing screenshot
+      - name: Verify font-test PNGs are routed through LFS
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git check-attr filter -- docs/images/font-tests/SANYALnet-Labs-4x8-font-0.png | awk '{print $3}')" = "lfs"
+          attr="$(git check-attr filter -- docs/images/font-tests/SANYALnet-Labs-4x8-font-0.png | awk '{print $3}')"
+          test "$attr" = "lfs"
           git lfs ls-files | grep 'docs/images/font-tests/'
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib, struct
-          p = Path('docs/images/font-tests/SANYALnet-Labs-4x8-font-1.png')
-          d = p.read_bytes()
-          assert d[:8] == b'\x89PNG\r\n\x1a\n'
-          w, h = struct.unpack('>II', d[16:24])
-          print(f'EXISTING_FONT1 bytes={len(d)} sha256={hashlib.sha256(d).hexdigest()} width={w} height={h}')
-          PY
 
-      - name: Build the current argv font specimen
+      - name: Build the argv font specimen at its established display path
         shell: bash
         run: |
           set -euo pipefail
           python -B compiler/c48.py usr/src/examples/argv.c -o usr/bin/argv.c48b
 
-      - name: Render font 1 control and font 0 candidate
+      - name: Render font 1 control and font 0 with the same VM invocation pattern
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p font0-diagnostic
+          mkdir -p font0-publish
+          program="$PWD/usr/bin/argv.c48b"
           python -B compiler/c48run.py \
             --headless \
             --font compiler/assets/SANYALnet-Labs-4x8-font-1.bin \
-            --ppm font0-diagnostic/font1-paper.ppm \
-            --frame-ppm font0-diagnostic/font1-frame.ppm \
-            usr/bin/argv.c48b \
+            --frame-ppm font0-publish/font1-control.ppm \
+            "$program" \
             SANYALnet-Labs-4x8-font-1.bin
           python -B compiler/c48run.py \
             --headless \
             --font compiler/assets/SANYALnet-Labs-4x8-font-0.bin \
-            --ppm font0-diagnostic/font0-paper.ppm \
-            --frame-ppm font0-diagnostic/font0-frame.ppm \
-            usr/bin/argv.c48b \
+            --frame-ppm font0-publish/font0.ppm \
+            "$program" \
             SANYALnet-Labs-4x8-font-0.bin
 
-      - name: Convert diagnostic frames to PNG at the existing screenshot dimensions
+      - name: Validate the historical capture convention and write the new PNG
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-          import hashlib, struct, zlib
+          import hashlib
+          import struct
+          import zlib
 
-          out = Path('font0-diagnostic')
-          existing = Path('docs/images/font-tests/SANYALnet-Labs-4x8-font-1.png').read_bytes()
-          ew, eh = struct.unpack('>II', existing[16:24])
-          (out / 'existing-font1.png').write_bytes(existing)
+          existing_path = Path('docs/images/font-tests/SANYALnet-Labs-4x8-font-1.png')
+          output_path = Path('docs/images/font-tests/SANYALnet-Labs-4x8-font-0.png')
 
           def read_ppm(path):
               data = Path(path).read_bytes()
               if not data.startswith(b'P6\n'):
-                  raise SystemExit(f'not P6 PPM: {path}')
+                  raise SystemExit(f'not a P6 PPM: {path}')
               header, pixels = data.split(b'\n255\n', 1)
               lines = header.splitlines()
               w, h = map(int, lines[1].split())
               if len(pixels) != w * h * 3:
-                  raise SystemExit(f'bad PPM length: {path}')
+                  raise SystemExit(f'bad PPM payload length: {path}')
               return w, h, pixels
 
-          def nearest(pixels, w, h, ow, oh):
-              if ow % w or oh % h or ow // w != oh // h:
-                  raise ValueError
-              s = ow // w
-              if s < 1:
-                  raise ValueError
+          def nearest2(rgb, w, h):
               rows = []
               for y in range(h):
-                  src = pixels[y*w*3:(y+1)*w*3]
-                  row = b''.join(src[x:x+3] * s for x in range(0, len(src), 3))
-                  rows.extend([row] * s)
-              return ow, oh, b''.join(rows), s
+                  src = rgb[y*w*3:(y+1)*w*3]
+                  row = b''.join(src[x:x+3] * 2 for x in range(0, len(src), 3))
+                  rows.extend((row, row))
+              return w * 2, h * 2, b''.join(rows)
+
+          def paeth(a, b, c):
+              p = a + b - c
+              pa = abs(p - a)
+              pb = abs(p - b)
+              pc = abs(p - c)
+              if pa <= pb and pa <= pc:
+                  return a
+              if pb <= pc:
+                  return b
+              return c
+
+          def decode_rgb_png(path):
+              data = Path(path).read_bytes()
+              if data[:8] != b'\x89PNG\r\n\x1a\n':
+                  raise SystemExit(f'not a PNG: {path}')
+              pos = 8
+              idat = bytearray()
+              width = height = bit_depth = color_type = None
+              while pos < len(data):
+                  length = struct.unpack('>I', data[pos:pos+4])[0]
+                  kind = data[pos+4:pos+8]
+                  payload = data[pos+8:pos+8+length]
+                  crc = struct.unpack('>I', data[pos+8+length:pos+12+length])[0]
+                  if zlib.crc32(kind + payload) & 0xffffffff != crc:
+                      raise SystemExit(f'PNG CRC failure in {path}: {kind!r}')
+                  pos += 12 + length
+                  if kind == b'IHDR':
+                      width, height, bit_depth, color_type, comp, filt, interlace = struct.unpack('>IIBBBBB', payload)
+                      if (bit_depth, color_type, comp, filt, interlace) != (8, 2, 0, 0, 0):
+                          raise SystemExit(f'unexpected PNG format in {path}')
+                  elif kind == b'IDAT':
+                      idat.extend(payload)
+                  elif kind == b'IEND':
+                      break
+              if width is None or height is None:
+                  raise SystemExit(f'missing PNG IHDR: {path}')
+              raw = zlib.decompress(bytes(idat))
+              bpp = 3
+              stride = width * bpp
+              expected = height * (stride + 1)
+              if len(raw) != expected:
+                  raise SystemExit(f'unexpected PNG decompressed size in {path}')
+              rows = []
+              prev = bytearray(stride)
+              off = 0
+              for _ in range(height):
+                  filter_type = raw[off]
+                  scan = bytearray(raw[off+1:off+1+stride])
+                  off += stride + 1
+                  for x in range(stride):
+                      left = scan[x-bpp] if x >= bpp else 0
+                      up = prev[x]
+                      up_left = prev[x-bpp] if x >= bpp else 0
+                      if filter_type == 0:
+                          value = scan[x]
+                      elif filter_type == 1:
+                          value = (scan[x] + left) & 0xff
+                      elif filter_type == 2:
+                          value = (scan[x] + up) & 0xff
+                      elif filter_type == 3:
+                          value = (scan[x] + ((left + up) // 2)) & 0xff
+                      elif filter_type == 4:
+                          value = (scan[x] + paeth(left, up, up_left)) & 0xff
+                      else:
+                          raise SystemExit(f'unknown PNG filter {filter_type} in {path}')
+                      scan[x] = value
+                  rows.append(bytes(scan))
+                  prev = scan
+              return width, height, b''.join(rows)
 
           def chunk(kind, payload):
-              return struct.pack('>I', len(payload)) + kind + payload + struct.pack('>I', zlib.crc32(kind + payload) & 0xffffffff)
+              return (struct.pack('>I', len(payload)) + kind + payload
+                      + struct.pack('>I', zlib.crc32(kind + payload) & 0xffffffff))
 
-          def png_bytes(w, h, rgb):
-              stride = w * 3
-              raw = b''.join(b'\x00' + rgb[y*stride:(y+1)*stride] for y in range(h))
+          def encode_rgb_png(width, height, rgb):
+              stride = width * 3
+              raw = b''.join(b'\x00' + rgb[y*stride:(y+1)*stride] for y in range(height))
               return (b'\x89PNG\r\n\x1a\n'
-                      + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0))
+                      + chunk(b'IHDR', struct.pack('>IIBBBBB', width, height, 8, 2, 0, 0, 0))
                       + chunk(b'IDAT', zlib.compress(raw, 9))
                       + chunk(b'IEND', b''))
 
-          matches = []
-          for label in ('font1-paper', 'font1-frame'):
-              w, h, pix = read_ppm(out / f'{label}.ppm')
-              try:
-                  ow, oh, scaled, scale = nearest(pix, w, h, ew, eh)
-              except ValueError:
-                  print(f'{label}: existing dimensions {ew}x{eh} are not an integer scale of {w}x{h}')
-                  continue
-              candidate = png_bytes(ow, oh, scaled)
-              path = out / f'{label}-candidate.png'
-              path.write_bytes(candidate)
-              print(f'{label}: candidate {ow}x{oh} scale={scale} bytes={len(candidate)} sha256={hashlib.sha256(candidate).hexdigest()}')
-              matches.append((label, scale))
+          cw, ch, control = read_ppm('font0-publish/font1-control.ppm')
+          if (cw, ch) != (320, 240):
+              raise SystemExit(f'unexpected C48 frame size: {cw}x{ch}')
+          cw, ch, control = nearest2(control, cw, ch)
+          ew, eh, existing = decode_rgb_png(existing_path)
+          if (ew, eh) != (640, 480):
+              raise SystemExit(f'unexpected existing font screenshot size: {ew}x{eh}')
+          if control != existing:
+              mismatch = next(i for i, (a, b) in enumerate(zip(control, existing)) if a != b)
+              pixel = mismatch // 3
+              x = pixel % ew
+              y = pixel // ew
+              raise SystemExit(f'font-1 control does not reproduce existing screenshot pixels; first mismatch at {x},{y}')
+          print('FONT1_PIXEL_CONTROL_PASS sha256=' + hashlib.sha256(existing_path.read_bytes()).hexdigest())
 
-          for source_kind in ('paper', 'frame'):
-              w, h, pix = read_ppm(out / f'font0-{source_kind}.ppm')
-              try:
-                  ow, oh, scaled, scale = nearest(pix, w, h, ew, eh)
-              except ValueError:
-                  continue
-              candidate = png_bytes(ow, oh, scaled)
-              path = out / f'SANYALnet-Labs-4x8-font-0-{source_kind}.png'
-              path.write_bytes(candidate)
-              print(f'font0-{source_kind}: {ow}x{oh} scale={scale} bytes={len(candidate)} sha256={hashlib.sha256(candidate).hexdigest()}')
-
-          print(f'DIMENSION_COMPATIBLE={matches}')
+          nw, nh, new_rgb = read_ppm('font0-publish/font0.ppm')
+          if (nw, nh) != (320, 240):
+              raise SystemExit(f'unexpected font-0 frame size: {nw}x{nh}')
+          nw, nh, new_rgb = nearest2(new_rgb, nw, nh)
+          png = encode_rgb_png(nw, nh, new_rgb)
+          output_path.write_bytes(png)
+          check_w, check_h, check_rgb = decode_rgb_png(output_path)
+          if (check_w, check_h, check_rgb) != (nw, nh, new_rgb):
+              raise SystemExit('font-0 PNG round-trip verification failed')
+          print(f'FONT0_PNG bytes={len(png)} sha256={hashlib.sha256(png).hexdigest()} width={nw} height={nh}')
           PY
 
-      - name: Upload diagnostic images
+      - name: Make three fresh byte-for-byte QA copies
+        shell: bash
+        run: |
+          set -euo pipefail
+          src=docs/images/font-tests/SANYALnet-Labs-4x8-font-0.png
+          mkdir -p font0-publish/sop/pass1 font0-publish/sop/pass2 font0-publish/sop/pass3
+          for n in 1 2 3; do
+            cp --reflink=never "$src" "font0-publish/sop/pass$n/SANYALnet-Labs-4x8-font-0.png"
+            sync "font0-publish/sop/pass$n/SANYALnet-Labs-4x8-font-0.png"
+            sha256sum "font0-publish/sop/pass$n/SANYALnet-Labs-4x8-font-0.png"
+          done
+
+      - name: Stage through Git LFS and verify the staged pointer
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f usr/bin/argv.c48b
+          git add -- docs/images/font-tests/SANYALnet-Labs-4x8-font-0.png
+          pointer="$(git show :docs/images/font-tests/SANYALnet-Labs-4x8-font-0.png)"
+          printf '%s\n' "$pointer"
+          grep -q '^version https://git-lfs.github.com/spec/v1$' <<<"$pointer"
+          grep -q '^oid sha256:' <<<"$pointer"
+          grep -q '^size ' <<<"$pointer"
+          git lfs ls-files | grep 'docs/images/font-tests/SANYALnet-Labs-4x8-font-0.png'
+          test "$(git diff --cached --name-only)" = "docs/images/font-tests/SANYALnet-Labs-4x8-font-0.png"
+
+      - name: Commit and push the LFS-backed screenshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          test "$(git rev-parse HEAD)" = "$(git rev-parse origin/main)"
+          git commit -m 'docs: add font 0 screenshot'
+          git push origin HEAD:main
+
+      - name: Upload the exact font-0 PNG and QA copies
         uses: actions/upload-artifact@v4
         with:
-          name: font0-screenshot-diagnostic-${{ github.sha }}
-          path: font0-diagnostic/
+          name: font0-screenshot-published-${{ github.sha }}
+          path: |
+            docs/images/font-tests/SANYALnet-Labs-4x8-font-0.png
+            font0-publish/sop/
           if-no-files-found: error
           retention-days: 7
           compression-level: 9
