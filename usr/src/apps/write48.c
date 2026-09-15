@@ -134,20 +134,18 @@ void wr_build(void)
     fresh = (wr_view == 0 || wr_doc[wr_view - 1] == '\n');
     while (row < 19 && pos <= wr_len) {
         if (pos == wr_len) {
-            if (fresh && col < 60) {
+            wr_rowlen[row] = col;
+            if (fresh && col < 60)
                 wr_rowsafe[row] = 1;
-                wr_rowlen[row] = col;
-            }
             if (pos == wr_cur)
                 wr_ncursor = row * 60 + col;
             break;
         }
         c = wr_doc[pos];
         if (c == '\n') {
-            if (fresh && col < 60) {
+            wr_rowlen[row] = col;
+            if (fresh && col < 60)
                 wr_rowsafe[row] = 1;
-                wr_rowlen[row] = col;
-            }
             if (pos == wr_cur)
                 wr_ncursor = row * 60 + col;
             row++;
@@ -174,6 +172,7 @@ void wr_build(void)
                 wr_ncursor = cell;
             col++;
             pos++;
+            wr_rowlen[row] = col;
             if (col >= 60) {
                 row++;
                 col = 0;
@@ -352,13 +351,30 @@ int wr_fmove(int d)
         if (wr_cur >= wr_len)
             return 1;
         if (wr_doc[wr_cur] == '\n') {
-            if (row >= 18 || !wr_rowsafe[row] ||
-                !wr_rowsafe[row + 1])
+            if (row >= 18)
+                return 0;
+            next = (row + 1) * 60;
+        } else if (wr_cur + 1 >= wr_len) {
+            if (col >= 59) {
+                if (row >= 18)
+                    return 0;
+                next = (row + 1) * 60;
+            } else {
+                next = old + 1;
+            }
+        } else if (wr_doc[wr_cur + 1] == '\n') {
+            if (col >= 59) {
+                if (row >= 18)
+                    return 0;
+                next = (row + 1) * 60;
+            } else {
+                next = old + 1;
+            }
+        } else if (col + 1 >= wr_rowlen[row]) {
+            if (row >= 18)
                 return 0;
             next = (row + 1) * 60;
         } else {
-            if (!wr_rowsafe[row] || col >= wr_rowlen[row])
-                return 0;
             next = old + 1;
         }
         wr_cur++;
@@ -366,14 +382,17 @@ int wr_fmove(int d)
         if (wr_cur <= 0)
             return 1;
         if (wr_doc[wr_cur - 1] == '\n') {
-            if (row <= 0 || !wr_rowsafe[row] ||
-                !wr_rowsafe[row - 1])
+            if (row <= 0)
                 return 0;
-            next = (row - 1) * 60 + wr_rowlen[row - 1];
-        } else {
-            if (!wr_rowsafe[row] || col <= 0)
-                return 0;
+            next = (row - 1) * 60;
+            next = next + wr_rowlen[row - 1];
+        } else if (col > 0) {
             next = old - 1;
+        } else {
+            if (row <= 0 || wr_rowlen[row - 1] <= 0)
+                return 0;
+            next = (row - 1) * 60;
+            next = next + wr_rowlen[row - 1] - 1;
         }
         wr_cur--;
     }
