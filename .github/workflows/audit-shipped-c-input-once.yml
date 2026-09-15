@@ -1,0 +1,96 @@
+name: Audit shipped C keyboard semantics once
+
+on:
+  push:
+    paths:
+      - '.github/workflows/audit-shipped-c-input-once.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Deep scan shipped C input semantics
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, re
+
+          cfiles = sorted(Path('usr/src').rglob('*.c'))
+          hfiles = sorted(Path('usr/src').rglob('*.h'))
+          print(f'C_AUDIT_COUNT={len(cfiles)}')
+          print(f'HEADER_AUDIT_COUNT={len(hfiles)}')
+
+          whole = hashlib.sha256()
+          total_lines = 0
+          for p in cfiles:
+              data = p.read_bytes()
+              whole.update(p.as_posix().encode() + b'\0' + hashlib.sha256(data).digest())
+              lines = data.splitlines()
+              total_lines += len(lines)
+              print(f'C_FILE {p.as_posix()} lines={len(lines)} sha256={hashlib.sha256(data).hexdigest()}')
+          print(f'C_TOTAL_LINES={total_lines}')
+          print(f'C_MANIFEST={whole.hexdigest()}')
+
+          rx = re.compile(
+              r'getchar\s*\(|\b(?:key|readline|input)\w*\s*\(|'
+              r'==\s*(?:7|8|9|10|11|12|13|27)\b|'
+              r'!=\s*(?:7|8|9|10|11|12|13|27)\b|'
+              r'\\x(?:07|08|09|0a|0b|0c|0d|1b)|\\0(?:07|10|11|12|13|14|15|33)|'
+              r'\b(?:ESC|CAPS|SHIFT|BREAK|EDIT|CANCEL|BACKSPACE|ENTER|DELETE|DEL|KEY|PAGE|PG)\b',
+              re.I,
+          )
+          print('--- FLAGGED C LINES ---')
+          flagged_files = set()
+          for p in cfiles:
+              text = p.read_text(encoding='utf-8')
+              for n, line in enumerate(text.splitlines(), 1):
+                  if rx.search(line):
+                      flagged_files.add(p.as_posix())
+                      print(f'{p.as_posix()}:{n}: {line}')
+          print(f'FLAGGED_C_FILES={len(flagged_files)}')
+
+          print('--- FLAGGED SHARED HEADER LINES ---')
+          flagged_headers = set()
+          for p in hfiles:
+              text = p.read_text(encoding='utf-8')
+              for n, line in enumerate(text.splitlines(), 1):
+                  if rx.search(line):
+                      flagged_headers.add(p.as_posix())
+                      print(f'{p.as_posix()}:{n}: {line}')
+          print(f'FLAGGED_HEADERS={len(flagged_headers)}')
+
+          # Explicit stale/host-only assumptions that should never survive unnoticed.
+          stale = []
+          stale_rx = re.compile(r'CAPS\+7|CAPS SHIFT \+ 7|\bESC(?:APE)?\b|==\s*27\b|==\s*11\b')
+          for p in cfiles + hfiles:
+              for n, line in enumerate(p.read_text(encoding='utf-8').splitlines(), 1):
+                  if stale_rx.search(line):
+                      stale.append(f'{p.as_posix()}:{n}: {line}')
+          print('--- STALE/REVIEW-REQUIRED ASSUMPTIONS ---')
+          if stale:
+              print('\n'.join(stale))
+          else:
+              print('NONE')
+          print(f'STALE_COUNT={len(stale)}')
+          PY
+
+      - name: Remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/workflows/audit-shipped-c-input-once.yml
+          git commit -m 'ci: remove shipped C keyboard audit harness'
+          git push origin HEAD:main
