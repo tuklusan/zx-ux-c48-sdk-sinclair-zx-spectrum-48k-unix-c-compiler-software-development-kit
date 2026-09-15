@@ -33,9 +33,31 @@ jobs:
           python -B .github/review_write48.py patch
           python -B compiler/c48.py usr/src/apps/sheet48.c \
             -o usr/bin/apps/sheet48.c48b
+          python -B compiler/c48.py usr/src/apps/wire3d.c \
+            -o usr/bin/apps/wire3d.c48b
           python -B compiler/c48.py usr/src/apps/write48.c \
             -o usr/bin/apps/write48.c48b
           python -B .github/review_write48.py hash
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+
+          path = Path('compiler/app_expectations.json')
+          data = json.loads(path.read_text(encoding='ascii'))
+          binary = Path('usr/bin/apps/wire3d.c48b')
+          data['apps']['wire3d']['binary_sha256'] = hashlib.sha256(
+              binary.read_bytes()
+          ).hexdigest()
+          path.write_text(
+              json.dumps(data, indent=2) + '\n',
+              encoding='ascii', newline='\n'
+          )
+          print(
+              'wire3d binary',
+              data['apps']['wire3d']['binary_sha256']
+          )
+          PY
           python -B .github/review_write48.py after
 
       - name: Commit clean prospective tree
@@ -48,19 +70,20 @@ jobs:
           git rm .github/review_write48.py
           git rm .github/workflows/land-write48-review-fixes.yml
           git add usr/src/apps/appapi.h usr/src/apps/write48.c \
-            usr/bin/apps/sheet48.c48b usr/bin/apps/write48.c48b \
-            compiler/app_expectations.json
+            usr/bin/apps/sheet48.c48b usr/bin/apps/wire3d.c48b \
+            usr/bin/apps/write48.c48b compiler/app_expectations.json
           git commit -m \
             'write48: fix target input, wrapped edits, and paging'
           mapfile -t changed < <(git diff --name-only \
             396e2df947cdb3ba8af2c55b4c134c109d89bf5f HEAD | sort)
           printf 'FINAL_DIFF %s\n' "${changed[@]}"
-          test "${#changed[@]}" -eq 5
+          test "${#changed[@]}" -eq 6
           test "${changed[0]}" = 'compiler/app_expectations.json'
           test "${changed[1]}" = 'usr/bin/apps/sheet48.c48b'
-          test "${changed[2]}" = 'usr/bin/apps/write48.c48b'
-          test "${changed[3]}" = 'usr/src/apps/appapi.h'
-          test "${changed[4]}" = 'usr/src/apps/write48.c'
+          test "${changed[2]}" = 'usr/bin/apps/wire3d.c48b'
+          test "${changed[3]}" = 'usr/bin/apps/write48.c48b'
+          test "${changed[4]}" = 'usr/src/apps/appapi.h'
+          test "${changed[5]}" = 'usr/src/apps/write48.c'
           test -z "$(git status --porcelain)"
 
       - name: Full repository verifier
