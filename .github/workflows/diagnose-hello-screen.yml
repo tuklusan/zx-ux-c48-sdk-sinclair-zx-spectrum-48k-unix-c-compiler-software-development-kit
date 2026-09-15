@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Diagnose hello screen delta
+name: Diagnose deterministic screen baselines
 
 "on":
   push:
@@ -25,7 +25,7 @@ permissions:
 jobs:
   diagnose:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -33,38 +33,48 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - name: Capture baseline and transformed hello screens
+      - name: Render every deterministic demo twice
         shell: bash
         run: |
           set -euo pipefail
-          mkdir -p /tmp/hello-before /tmp/hello-after
-          cp usr/bin/examples/hello.c48b /tmp/hello-before/hello.c48b
-          (
-            cd /tmp/hello-before
-            python -B "$GITHUB_WORKSPACE/compiler/c48run.py" --headless \
-              --time-quota 15 --dump-screen hello.scr hello.c48b
-          )
-          python -B .github/apply_c48_input_cleanup.py
-          cp usr/bin/examples/hello.c48b /tmp/hello-after/hello.c48b
-          (
-            cd /tmp/hello-after
-            python -B "$GITHUB_WORKSPACE/compiler/c48run.py" --headless \
-              --time-quota 15 --dump-screen hello.scr hello.c48b
-          )
           python -B - <<'PY'
           import hashlib
+          import json
+          import subprocess
+          import sys
+          import tempfile
           from pathlib import Path
-          a = Path('/tmp/hello-before/hello.scr').read_bytes()
-          b = Path('/tmp/hello-after/hello.scr').read_bytes()
-          print('BEFORE_SHA256=' + hashlib.sha256(a).hexdigest())
-          print('AFTER_SHA256=' + hashlib.sha256(b).hexdigest())
-          print('SIZE_BEFORE=' + str(len(a)))
-          print('SIZE_AFTER=' + str(len(b)))
-          diffs = [i for i, (x, y) in enumerate(zip(a, b)) if x != y]
-          print('DIFF_COUNT=' + str(len(diffs)))
-          print('FIRST_DIFFS=' + ','.join(str(i) for i in diffs[:64]))
-          for i in diffs[:32]:
-              print(f'DIFF {i}: {a[i]:02x}->{b[i]:02x}')
-          if a != b:
-              raise SystemExit('HELLO SCREEN DELTA DETECTED')
+
+          root = Path.cwd()
+          exp = json.loads((root / 'compiler/release_expectations.json').read_text())['demos']
+          for name, cfg in exp.items():
+              hashes = []
+              for attempt in (1, 2):
+                  with tempfile.TemporaryDirectory(prefix=f'demo-{name}-{attempt}-') as td:
+                      d = Path(td)
+                      rebuilt = d / f'{name}.c48b'
+                      cp = subprocess.run([
+                          sys.executable, '-B', str(root / 'compiler/c48.py'),
+                          str(root / f'usr/src/examples/{name}.c'), '-o', str(rebuilt),
+                      ], cwd=root, check=False, capture_output=True, text=True)
+                      if cp.returncode:
+                          raise SystemExit(f'{name}: rebuild failed: {cp.stderr}')
+                      screen = d / f'{name}.scr'
+                      rp = subprocess.run([
+                          sys.executable, '-B', str(root / 'compiler/c48run.py'),
+                          '--headless', '--time-quota', '15',
+                          '--dump-screen', screen.name, rebuilt.name, *cfg['args'],
+                      ], cwd=d, check=False, capture_output=True, text=True)
+                      if rp.returncode:
+                          raise SystemExit(f'{name}: run failed: {rp.stderr}')
+                      data = screen.read_bytes()
+                      hashes.append(hashlib.sha256(data).hexdigest())
+                      if len(data) != 6912:
+                          raise SystemExit(f'{name}: bad screen size {len(data)}')
+              print(
+                  f'{name}: expected={cfg["screen_sha256"]} '
+                  f'actual1={hashes[0]} actual2={hashes[1]} '
+                  f'stable={hashes[0] == hashes[1]} '
+                  f'match={hashes[0] == cfg["screen_sha256"]}'
+              )
           PY
