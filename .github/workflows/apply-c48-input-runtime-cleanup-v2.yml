@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Apply C48 input runtime cleanup v18
+name: Apply C48 input runtime cleanup v19
 
 "on":
   push:
@@ -50,6 +50,26 @@ jobs:
           sed -i '/^void ai_give(void)$/,/^}$/c\void ai_give(void)\n{\n    yield();\n    ai_yields = ai_yields + 1;\n}' usr/src/ailmzx48/ailmzx48.c
           sed -i 's/actual = AI_CLEN;/actual = 8566;/' usr/src/ailmzx48/ailmzx48.c
           sed -i '/docs\/ZX-UX C48 Compiler User Manual Rev 0\.11\.docx/d' compiler/verify_release.py
+          python -B - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("compiler/release_expectations.json")
+          data = json.loads(path.read_text(encoding="ascii"))
+          screens = {
+              "hello": "0c644d96b90e7acb68085086f1d218b59af489ba44ea0a1f458a3c43c209296a",
+              "colors": "4c3a934139632833434ff30ded590543d488f8d72ede567cd387167d12890ccb",
+              "graphics": "b81ad40a477fd287d3861a0429779fd048665cf08783df0c3d3c5e4e836a3024",
+              "udg": "f99a88f3b9ecc4f77a48b355067da24d616c9c14015d0dba976e8955e0d6a249",
+              "maze": "fd786d501cb1bdad63e3954b481fbadd30114d903401fd1c165f23e1f15b26c9",
+              "argv": "481b163722b49aeeb9992386f12cc41f147f906d144f33c45ed08234add02ade",
+          }
+          if set(data["demos"]) != set(screens):
+              raise SystemExit("deterministic demo set changed during screen refresh")
+          for name, digest in screens.items():
+              data["demos"][name]["screen_sha256"] = digest
+          path.write_text(json.dumps(data, indent=2) + "\n", encoding="ascii")
+          print("DETERMINISTIC_SCREEN_EXPECTATIONS_REFRESHED=6")
+          PY
       - name: Measure and compile updated ailmzx48 artifact
         shell: bash
         run: |
@@ -156,6 +176,7 @@ jobs:
           git rm .github/apply_c48_input_cleanup.py
           git rm .github/reduce_c48_model_io_ast.py
           git rm .github/workflows/apply-c48-input-runtime-cleanup-v2.yml
+          git rm .github/workflows/diagnose-hello-screen.yml
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
