@@ -30,16 +30,16 @@ def patch() -> None:
     body = s[start:end]
     needle = """if (row >= 18)\n                    return 0;"""
     count = body.count(needle)
-    if count != 3:
-        raise SystemExit(f"expected 3 indented bottom guards, found {count}")
+    if count != 2:
+        raise SystemExit(f"expected 2 deep bottom guards, found {count}")
     body = body.replace(
         needle,
         """if (row >= 18) {\n                    wr_down_view();\n                    return 0;\n                }""",
     )
     needle = """if (row >= 18)\n                return 0;"""
     count = body.count(needle)
-    if count != 1:
-        raise SystemExit(f"expected 1 bottom guard, found {count}")
+    if count != 2:
+        raise SystemExit(f"expected 2 bottom guards, found {count}")
     body = body.replace(
         needle,
         """if (row >= 18) {\n                wr_down_view();\n                return 0;\n            }""",
