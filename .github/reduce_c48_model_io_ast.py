@@ -55,7 +55,8 @@ p.write_text(s, encoding="ascii", newline="\n")
 
 # Replace application-private host declarations with the ordinary object API.
 p = Path("usr/src/ailmzx48/ailmzx48.c")
-s = p.read_text(encoding="ascii")ns = once(
+s = p.read_text(encoding="ascii")
+s = once(
     s,
     "unsigned int ai_mstat(void);\nint ai_mseek(unsigned int pos);\nint ai_mread(unsigned char *p, unsigned int n);\n",
     "int open(char *path, int flags);\nint close(int h);\nint read(int h, unsigned char *p, unsigned int n);\nint seek(int h, unsigned int pos);\nint ai_mfd;\n",
