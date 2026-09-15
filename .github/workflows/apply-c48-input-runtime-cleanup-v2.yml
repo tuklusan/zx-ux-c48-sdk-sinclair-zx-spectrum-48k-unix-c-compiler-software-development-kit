@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Apply C48 input runtime cleanup v4
+name: Apply C48 input runtime cleanup v5
 
 "on":
   push:
@@ -42,11 +42,38 @@ jobs:
         run: |
           python -B .github/apply_c48_input_cleanup.py
           python -B .github/reduce_c48_model_io_ast.py
-      - name: Compile updated ailmzx48 artifact
-        run: >-
-          python -B compiler/c48.py
-          usr/src/ailmzx48/ailmzx48.c
-          -o usr/bin/ailmzx48/ailmzx48.c48b
+      - name: Measure and compile updated ailmzx48 artifact
+        shell: bash
+        run: |
+          python -B - <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "compiler")
+          from c48.compiler import compile_file
+          program = compile_file(Path("usr/src/ailmzx48/ailmzx48.c"))
+          stack = [program]
+          nodes = 0
+          containers = 0
+          while stack:
+              value = stack.pop()
+              if isinstance(value, dict):
+                  containers += 1
+                  if isinstance(value.get("kind"), str):
+                      nodes += 1
+                  for child in value.values():
+                      if isinstance(child, (dict, list)):
+                          stack.append(child)
+              elif isinstance(value, list):
+                  containers += 1
+                  for child in value:
+                      if isinstance(child, (dict, list)):
+                          stack.append(child)
+          print(f"AILMZX48_SERIALIZED_AST_NODES={nodes}")
+          print(f"AILMZX48_SERIALIZED_CONTAINERS={containers}")
+          PY
+          python -B compiler/c48.py \
+            usr/src/ailmzx48/ailmzx48.c \
+            -o usr/bin/ailmzx48/ailmzx48.c48b
       - name: Run focused input and runtime tests
         shell: bash
         run: |
