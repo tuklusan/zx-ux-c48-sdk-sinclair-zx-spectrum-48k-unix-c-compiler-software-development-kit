@@ -220,11 +220,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--font",
         type=Path,
-        default=ROOT / "assets" / "font4x8-tasword.bin",
+        default=ROOT / "assets" / "SANYALnet-Labs-4x8-font-FINAL.bin",
         metavar="PATH",
         help=(
             "F4X8 font resource to use for the ZX display "
-            "(default: compiler/assets/font4x8-tasword.bin)"
+            "(default: compiler/assets/SANYALnet-Labs-4x8-font-FINAL.bin)"
         ),
     )
     ap.add_argument("--allow-approx-rom-math", action="store_true",

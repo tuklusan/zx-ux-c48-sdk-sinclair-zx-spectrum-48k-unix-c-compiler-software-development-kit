@@ -59,8 +59,9 @@ Glyph 0x7F preview:
 .##.
 
 Runtime-selectable F4X8 assets:
-  compiler/assets/font4x8-tasword.bin   default runtime font
-  compiler/assets/font4x8-zxux.bin      alternate selectable font slot
+  compiler/assets/SANYALnet-Labs-4x8-font-FINAL.bin  default runtime font
+  compiler/assets/font4x8-tasword.bin                 selectable Tasword font
+  compiler/assets/font4x8-zxux.bin                    alternate selectable font slot
 
 Select a font explicitly with:
   c48run --font PATH program.c48b
