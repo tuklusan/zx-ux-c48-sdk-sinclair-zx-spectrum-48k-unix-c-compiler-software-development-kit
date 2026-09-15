@@ -1,0 +1,174 @@
+name: Land incremental write48 typing
+
+on:
+  push:
+    paths:
+      - '.github/workflows/land-write48-incremental.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  land:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Materialize incremental write48 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git lfs fsck
+          sed -i \
+            -e 's/wr_draw_fast_row/wr_frow/g' \
+            -e 's/wr_fast_insert_char/wr_fins/g' \
+            -e 's/wr_fast_backspace/wr_fbs/g' \
+            .github/diag_write48_fast.py
+          python -B .github/diag_write48_fast.py
+          rm -f usr/bin/apps/write48-fast-diag.c48b
+          python -B compiler/c48.py usr/src/apps/write48.c -o usr/bin/apps/write48.c48b
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, json
+          p = Path('compiler/app_expectations.json')
+          data = json.loads(p.read_text(encoding='ascii'))
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+          app = data['apps']['write48']
+          app['source_sha256'] = sha('usr/src/apps/write48.c')
+          app['binary_sha256'] = sha('usr/bin/apps/write48.c48b')
+          p.write_text(json.dumps(data, indent=2) + '\n', encoding='ascii', newline='\n')
+          print('write48 source sha256', app['source_sha256'])
+          print('write48 binary sha256', app['binary_sha256'])
+          print('write48 screen sha256 retained', app['screen_sha256'])
+          PY
+
+      - name: Exercise editor fast and fallback paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, time
+          binary = Path('usr/bin/apps/write48.c48b')
+          def run(name, payload, limit=12.0):
+              t0 = time.perf_counter()
+              cp = subprocess.run(
+                  ['python','-B','compiler/c48run.py','--headless',str(binary)],
+                  input=payload,
+                  stdout=subprocess.DEVNULL,
+                  stderr=subprocess.PIPE,
+                  timeout=20,
+              )
+              dt = time.perf_counter() - t0
+              if cp.returncode != 0:
+                  raise SystemExit(f'{name}: rc={cp.returncode}: {cp.stderr.decode(errors="replace")}')
+              if dt > limit:
+                  raise SystemExit(f'{name}: too slow: {dt:.3f}s > {limit:.3f}s')
+              print(f'{name}: PASS {dt:.4f}s')
+              return dt
+
+          run('verify-mode', b'', 3.0) if False else None
+          cp = subprocess.run(
+              ['python','-B','compiler/c48run.py','--headless',str(binary),'verify'],
+              stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=10,
+          )
+          if cp.returncode != 0:
+              raise SystemExit('verify mode failed: ' + cp.stderr.decode(errors='replace'))
+          print('verify-mode: PASS')
+
+          dt = run('typing-20', b'iabcdefghijklmnopqrst\x1bq', 2.0)
+          run('backspace-fast', b'iabc\x08Z\x1bq', 2.0)
+          run('newline-fallback', b'iabc\nxyz\x1bq', 5.0)
+          run('wrap-fallback', b'i' + b'x' * 48 + b'\x1bq', 8.0)
+          run('navigate-reinsert', b'88888iZ\x1bq', 5.0)
+          print(f'PERF_GATE typing-20={dt:.4f}s')
+          PY
+
+      - name: Full repository verifier
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_release.py
+          git diff --check 976083b3fe78380e6314e134a40b3b591f9c2c79 -- \
+            usr/src/apps/write48.c usr/bin/apps/write48.c48b compiler/app_expectations.json
+
+      - name: Commit prospective final tree and remove diagnostics
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm \
+            .github/diag_write48_fast.py \
+            .github/workflows/diagnose-write48-latency.yml \
+            .github/workflows/land-write48-incremental.yml
+          git add usr/src/apps/write48.c usr/bin/apps/write48.c48b compiler/app_expectations.json
+          git commit -m 'write48: make typing incremental'
+          mapfile -t changed < <(git diff --name-only 976083b3fe78380e6314e134a40b3b591f9c2c79 HEAD | sort)
+          printf 'FINAL_DIFF %s\n' "${changed[@]}"
+          test "${#changed[@]}" -eq 3
+          test "${changed[0]}" = 'compiler/app_expectations.json'
+          test "${changed[1]}" = 'usr/bin/apps/write48.c48b'
+          test "${changed[2]}" = 'usr/src/apps/write48.c'
+          test -z "$(git status --porcelain)"
+
+      - name: Verify prospective final commit again
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_release.py
+          git diff --check 976083b3fe78380e6314e134a40b3b591f9c2c79 HEAD
+
+      - name: SoP three fresh byte-level scans
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, shutil, subprocess, tempfile
+          root = Path.cwd()
+          raw = subprocess.check_output(['git','ls-files','-z'])
+          paths = [Path(p.decode('utf-8','surrogateescape')) for p in raw.split(b'\0') if p]
+          text_suffixes = {'.py','.c','.h','.md','.txt','.json','.yml','.yaml','.bat','.sh'}
+          manifests=[]
+          for pass_no in (1,2,3):
+              fresh=Path(tempfile.mkdtemp(prefix=f'write48-sop-{pass_no}-'))
+              files=bytes_n=lines_n=0
+              defects=[]
+              whole=hashlib.sha256()
+              for rel in paths:
+                  src=root/rel; dst=fresh/rel
+                  dst.parent.mkdir(parents=True,exist_ok=True)
+                  shutil.copyfile(src,dst)
+                  data=dst.read_bytes()
+                  files += 1; bytes_n += len(data)
+                  lines=data.splitlines(keepends=True); lines_n += len(lines)
+                  if data.startswith(b'version https://git-lfs.github.com/spec/v1\n'):
+                      defects.append(f'LFS pointer: {rel.as_posix()}')
+                  if rel.suffix.lower() in text_suffixes:
+                      for lineno,line in enumerate(lines,1):
+                          body=line.rstrip(b'\r\n')
+                          if body.startswith(b'<<<<<<< ') or body == b'=======' or body.startswith(b'>>>>>>> '):
+                              defects.append(f'conflict marker: {rel.as_posix()}:{lineno}')
+                  digest=hashlib.sha256(data).digest()
+                  relb=rel.as_posix().encode('utf-8','surrogateescape')
+                  whole.update(len(relb).to_bytes(4,'big')); whole.update(relb); whole.update(digest)
+              manifest=whole.hexdigest(); manifests.append(manifest)
+              print(f'SOP_PASS_{pass_no}: files={files} bytes={bytes_n} lines={lines_n} defects={len(defects)} manifest={manifest}')
+              if defects:
+                  raise SystemExit('\n'.join(defects))
+              shutil.rmtree(fresh)
+          if len(set(manifests)) != 1:
+              raise SystemExit(f'SoP manifests differ: {manifests}')
+          PY
+
+      - name: Push verified final tree
+        run: git push origin HEAD:main
