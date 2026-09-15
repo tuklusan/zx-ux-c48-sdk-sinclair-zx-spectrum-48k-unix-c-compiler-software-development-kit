@@ -1,0 +1,185 @@
+# Temporary one-shot repair harness. It removes itself before the repair commit.
+name: One-shot native key legend repair
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fix-key-legends.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact repair base
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          lfs: true
+
+      - name: Guard exact parent and one-shot delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected=0becde32de9d6690cc64327965d70d99b388e416
+          parent="$(git rev-parse HEAD^)"
+          test "$parent" = "$expected"
+          actual="$(git diff --name-only HEAD^ HEAD)"
+          test "$actual" = ".github/workflows/fix-key-legends.yml"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Apply exact native-key legend edits
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from pathlib import Path
+
+          changes = (
+              (
+                  Path("usr/src/apps/write48.c"),
+                  b'puts("FIND CAPS+7 CANCEL>");',
+                  b'puts("FIND CAPS+1 CANCEL>");',
+              ),
+              (
+                  Path("usr/src/games/chess.c"),
+                  b'puts("Backspace edits; q quits at empty prompt.");',
+                  b'puts("DELETE edits; q quits at empty prompt.");',
+              ),
+              (
+                  Path("usr/src/games/chess.c"),
+                  b'puts("Use e2e4; Backspace edits.");',
+                  b'puts("Use e2e4; DELETE edits.");',
+              ),
+          )
+          for path, old, new in changes:
+              data = path.read_bytes()
+              count = data.count(old)
+              if count != 1:
+                  raise SystemExit(
+                      f"repair guard failed: {path}: expected one {old!r}, got {count}"
+                  )
+              path.write_bytes(data.replace(old, new, 1))
+          PY
+
+      - name: Rebuild affected C48B1 binaries
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/c48.py usr/src/apps/write48.c -o usr/bin/apps/write48.c48b
+          python -B compiler/c48.py usr/src/games/chess.c -o usr/bin/games/chess.c48b
+
+      - name: Refresh only affected expectation hashes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import json
+
+          def digest(path: str) -> str:
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          app_path = Path("compiler/app_expectations.json")
+          apps = json.loads(app_path.read_text(encoding="ascii"))
+          apps["apps"]["write48"]["source_sha256"] = digest(
+              "usr/src/apps/write48.c"
+          )
+          apps["apps"]["write48"]["binary_sha256"] = digest(
+              "usr/bin/apps/write48.c48b"
+          )
+          app_path.write_text(
+              json.dumps(apps, indent=2) + "\n", encoding="ascii"
+          )
+
+          release_path = Path("compiler/release_expectations.json")
+          release = json.loads(release_path.read_text(encoding="ascii"))
+          release["games"]["chess"]["source_sha256"] = digest(
+              "usr/src/games/chess.c"
+          )
+          release["games"]["chess"]["binary_sha256"] = digest(
+              "usr/bin/games/chess.c48b"
+          )
+          release_path.write_text(
+              json.dumps(release, indent=2) + "\n", encoding="ascii"
+          )
+          PY
+
+      - name: Remove one-shot harness before verification
+        shell: bash
+        run: git rm .github/workflows/fix-key-legends.yml
+
+      - name: Run complete release verifier on final tree bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_release.py
+
+      - name: Assert exact final delta
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          python -B - <<'PY'
+          import subprocess
+
+          expected = {
+              ".github/workflows/fix-key-legends.yml",
+              "compiler/app_expectations.json",
+              "compiler/release_expectations.json",
+              "usr/bin/apps/write48.c48b",
+              "usr/bin/games/chess.c48b",
+              "usr/src/apps/write48.c",
+              "usr/src/games/chess.c",
+          }
+          raw = subprocess.check_output(
+              ["git", "status", "--porcelain=v1"], text=True
+          )
+          actual = set()
+          for line in raw.splitlines():
+              if not line:
+                  continue
+              path = line[3:]
+              if " -> " in path:
+                  path = path.split(" -> ", 1)[1]
+              actual.add(path)
+          if actual != expected:
+              raise SystemExit(
+                  f"unexpected repair delta: expected={sorted(expected)!r} "
+                  f"actual={sorted(actual)!r}"
+              )
+          PY
+          git status --short
+
+      - name: Commit and push repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: correct native ZX Spectrum key legends"
+          git push origin HEAD:main
+
+      - name: Dispatch full verification matrix on repaired main
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl --fail-with-body --silent --show-error \
+            -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/verify.yml/dispatches" \
+            -d '{"ref":"main"}'
