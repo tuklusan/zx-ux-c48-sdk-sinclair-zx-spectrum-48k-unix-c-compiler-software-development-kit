@@ -1,0 +1,166 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: One-shot font 0 screenshot diagnostic
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/font0-screenshot-once.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository with LFS objects
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Verify LFS routing and existing screenshot
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git check-attr filter -- docs/images/font-tests/SANYALnet-Labs-4x8-font-0.png | awk '{print $3}')" = "lfs"
+          git lfs ls-files docs/images/font-tests
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, struct
+          p = Path('docs/images/font-tests/SANYALnet-Labs-4x8-font-1.png')
+          d = p.read_bytes()
+          assert d[:8] == b'\x89PNG\r\n\x1a\n'
+          w, h = struct.unpack('>II', d[16:24])
+          print(f'EXISTING_FONT1 bytes={len(d)} sha256={hashlib.sha256(d).hexdigest()} width={w} height={h}')
+          PY
+
+      - name: Build the current argv font specimen
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/c48.py usr/src/examples/argv.c -o usr/bin/argv.c48b
+
+      - name: Render font 1 control and font 0 candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p font0-diagnostic
+          python -B compiler/c48run.py \
+            --headless \
+            --font compiler/assets/SANYALnet-Labs-4x8-font-1.bin \
+            --ppm font0-diagnostic/font1-paper.ppm \
+            --frame-ppm font0-diagnostic/font1-frame.ppm \
+            usr/bin/argv.c48b \
+            SANYALnet-Labs-4x8-font-1.bin
+          python -B compiler/c48run.py \
+            --headless \
+            --font compiler/assets/SANYALnet-Labs-4x8-font-0.bin \
+            --ppm font0-diagnostic/font0-paper.ppm \
+            --frame-ppm font0-diagnostic/font0-frame.ppm \
+            usr/bin/argv.c48b \
+            SANYALnet-Labs-4x8-font-0.bin
+
+      - name: Convert diagnostic frames to PNG at the existing screenshot dimensions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, struct, zlib
+
+          out = Path('font0-diagnostic')
+          existing = Path('docs/images/font-tests/SANYALnet-Labs-4x8-font-1.png').read_bytes()
+          ew, eh = struct.unpack('>II', existing[16:24])
+          (out / 'existing-font1.png').write_bytes(existing)
+
+          def read_ppm(path):
+              data = Path(path).read_bytes()
+              if not data.startswith(b'P6\n'):
+                  raise SystemExit(f'not P6 PPM: {path}')
+              header, pixels = data.split(b'\n255\n', 1)
+              lines = header.splitlines()
+              w, h = map(int, lines[1].split())
+              if len(pixels) != w * h * 3:
+                  raise SystemExit(f'bad PPM length: {path}')
+              return w, h, pixels
+
+          def nearest(pixels, w, h, ow, oh):
+              if ow % w or oh % h or ow // w != oh // h:
+                  raise ValueError
+              s = ow // w
+              if s < 1:
+                  raise ValueError
+              rows = []
+              for y in range(h):
+                  src = pixels[y*w*3:(y+1)*w*3]
+                  row = b''.join(src[x:x+3] * s for x in range(0, len(src), 3))
+                  rows.extend([row] * s)
+              return ow, oh, b''.join(rows), s
+
+          def chunk(kind, payload):
+              return struct.pack('>I', len(payload)) + kind + payload + struct.pack('>I', zlib.crc32(kind + payload) & 0xffffffff)
+
+          def png_bytes(w, h, rgb):
+              stride = w * 3
+              raw = b''.join(b'\x00' + rgb[y*stride:(y+1)*stride] for y in range(h))
+              return (b'\x89PNG\r\n\x1a\n'
+                      + chunk(b'IHDR', struct.pack('>IIBBBBB', w, h, 8, 2, 0, 0, 0))
+                      + chunk(b'IDAT', zlib.compress(raw, 9))
+                      + chunk(b'IEND', b''))
+
+          matches = []
+          for label in ('font1-paper', 'font1-frame'):
+              w, h, pix = read_ppm(out / f'{label}.ppm')
+              try:
+                  ow, oh, scaled, scale = nearest(pix, w, h, ew, eh)
+              except ValueError:
+                  print(f'{label}: existing dimensions {ew}x{eh} are not an integer scale of {w}x{h}')
+                  continue
+              candidate = png_bytes(ow, oh, scaled)
+              path = out / f'{label}-candidate.png'
+              path.write_bytes(candidate)
+              print(f'{label}: candidate {ow}x{oh} scale={scale} bytes={len(candidate)} sha256={hashlib.sha256(candidate).hexdigest()}')
+              matches.append((label, scale))
+
+          # Produce the font-0 candidates corresponding to every dimension-compatible
+          # control. Visual inspection chooses the exact existing screenshot convention.
+          for source_kind in ('paper', 'frame'):
+              w, h, pix = read_ppm(out / f'font0-{source_kind}.ppm')
+              try:
+                  ow, oh, scaled, scale = nearest(pix, w, h, ew, eh)
+              except ValueError:
+                  continue
+              candidate = png_bytes(ow, oh, scaled)
+              path = out / f'SANYALnet-Labs-4x8-font-0-{source_kind}.png'
+              path.write_bytes(candidate)
+              print(f'font0-{source_kind}: {ow}x{oh} scale={scale} bytes={len(candidate)} sha256={hashlib.sha256(candidate).hexdigest()}')
+
+          print(f'DIMENSION_COMPATIBLE={matches}')
+          PY
+
+      - name: Upload diagnostic images
+        uses: actions/upload-artifact@v4
+        with:
+          name: font0-screenshot-diagnostic-${{ github.sha }}
+          path: font0-diagnostic/
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
