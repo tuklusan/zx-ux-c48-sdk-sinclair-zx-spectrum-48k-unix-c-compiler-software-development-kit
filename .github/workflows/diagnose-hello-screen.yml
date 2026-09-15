@@ -1,0 +1,70 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: Diagnose hello screen delta
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/diagnose-hello-screen.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Capture baseline and transformed hello screens
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/hello-before /tmp/hello-after
+          cp usr/bin/examples/hello.c48b /tmp/hello-before/hello.c48b
+          (
+            cd /tmp/hello-before
+            python -B "$GITHUB_WORKSPACE/compiler/c48run.py" --headless \
+              --time-quota 15 --dump-screen hello.scr hello.c48b
+          )
+          python -B .github/apply_c48_input_cleanup.py
+          cp usr/bin/examples/hello.c48b /tmp/hello-after/hello.c48b
+          (
+            cd /tmp/hello-after
+            python -B "$GITHUB_WORKSPACE/compiler/c48run.py" --headless \
+              --time-quota 15 --dump-screen hello.scr hello.c48b
+          )
+          python -B - <<'PY'
+          import hashlib
+          from pathlib import Path
+          a = Path('/tmp/hello-before/hello.scr').read_bytes()
+          b = Path('/tmp/hello-after/hello.scr').read_bytes()
+          print('BEFORE_SHA256=' + hashlib.sha256(a).hexdigest())
+          print('AFTER_SHA256=' + hashlib.sha256(b).hexdigest())
+          print('SIZE_BEFORE=' + str(len(a)))
+          print('SIZE_AFTER=' + str(len(b)))
+          diffs = [i for i, (x, y) in enumerate(zip(a, b)) if x != y]
+          print('DIFF_COUNT=' + str(len(diffs)))
+          print('FIRST_DIFFS=' + ','.join(str(i) for i in diffs[:64]))
+          for i in diffs[:32]:
+              print(f'DIFF {i}: {a[i]:02x}->{b[i]:02x}')
+          if a != b:
+              raise SystemExit('HELLO SCREEN DELTA DETECTED')
+          PY
