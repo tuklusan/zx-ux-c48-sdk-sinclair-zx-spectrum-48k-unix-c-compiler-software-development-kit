@@ -26,7 +26,7 @@ jobs:
           python -B .github/patch_write48_wrapped.py before
       - name: Build wrapped-row cursor fix
         run: |
-          python -B .github/patch_write48_wrapped.py patch
+          python -B .github/patch_write48_wrapped_fix.py
           python -B compiler/c48.py usr/src/apps/write48.c -o usr/bin/apps/write48.c48b
           python -B .github/patch_write48_wrapped.py hash
           python -B .github/patch_write48_wrapped.py after
@@ -38,6 +38,7 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git rm -f .github/patch_write48_wrapped.py
+          git rm -f .github/patch_write48_wrapped_fix.py
           git rm -f .github/workflows/land-write48-wrapped-cursor-fast.yml
           git add usr/src/apps/write48.c usr/bin/apps/write48.c48b compiler/app_expectations.json
           git commit -m 'write48: make wrapped cursor movement incremental'
