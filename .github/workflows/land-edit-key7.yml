@@ -40,6 +40,7 @@ jobs:
           python -B .github/editkey7.py hash
           python -B .github/editkey7.py after
           python -B compiler/tests/test_gui_framebuffer.py
+          python -B compiler/tests/test_release_regressions.py
 
       - name: Commit clean prospective tree
         shell: bash
@@ -53,6 +54,7 @@ jobs:
           git add \
             compiler/c48/gui.py \
             compiler/tests/test_gui_framebuffer.py \
+            compiler/tests/test_release_regressions.py \
             compiler/app_expectations.json \
             usr/src/apps/appapi.h \
             usr/src/apps/write48.c \
@@ -67,6 +69,7 @@ jobs:
             'compiler/app_expectations.json'
             'compiler/c48/gui.py'
             'compiler/tests/test_gui_framebuffer.py'
+            'compiler/tests/test_release_regressions.py'
             'usr/bin/apps/sheet48.c48b'
             'usr/bin/apps/wire3d.c48b'
             'usr/bin/apps/write48.c48b'
