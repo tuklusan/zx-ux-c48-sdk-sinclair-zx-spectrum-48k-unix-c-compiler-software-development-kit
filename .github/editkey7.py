@@ -42,10 +42,14 @@ def before() -> None:
     gui = (ROOT / "compiler/c48/gui.py").read_text(encoding="utf-8")
     api = (ROOT / "usr/src/apps/appapi.h").read_text(encoding="utf-8")
     wr = (ROOT / "usr/src/apps/write48.c").read_text(encoding="utf-8")
+    reg = (ROOT / "compiler/tests/test_release_regressions.py").read_text(
+        encoding="utf-8"
+    )
     assert 'if keysym == "Escape":\n        return (27,)' in gui
     assert "if (c == 11 || c == 27)" in api
     assert "CAPS+7 CMD" in wr
     assert "if (c == 11 || c == 27)" in wr
+    assert 'key_event_bytes("Escape", "\\x1b"), (27,)' in reg
     print("BEFORE: host Esc=27, app cancel=11/27, WRITE48 label=CAPS+7")
 
 
@@ -67,6 +71,11 @@ def patch() -> None:
         "    def test_typeahead_fifo_preserves_rapid_text(self):\n"
         "        self.assertEqual(key_event_bytes(\"Escape\", \"\"), (7,))\n"
         "        display = TkDisplay(new_screen())",
+    )
+    exact(
+        "compiler/tests/test_release_regressions.py",
+        'self.assertEqual(key_event_bytes("Escape", "\\x1b"), (27,))',
+        'self.assertEqual(key_event_bytes("Escape", "\\x1b"), (7,))',
     )
     exact(
         "usr/src/apps/appapi.h",
