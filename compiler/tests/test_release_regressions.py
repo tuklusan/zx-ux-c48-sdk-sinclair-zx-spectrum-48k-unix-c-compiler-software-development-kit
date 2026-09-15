@@ -126,7 +126,7 @@ class ReleaseRuntimeRegressions(unittest.TestCase):
     def test_gui_control_key_mapping_prefers_keysym(self):
         self.assertEqual(key_event_bytes("Return", "\r"), (10,))
         self.assertEqual(key_event_bytes("BackSpace", "\x08"), (8,))
-        self.assertEqual(key_event_bytes("Escape", "\x1b"), (27,))
+        self.assertEqual(key_event_bytes("Escape", "\x1b"), (7,))
         self.assertEqual(key_event_bytes("a", "a"), (97,))
         self.assertEqual(key_event_bytes("Left", ""), ())
         self.assertEqual(key_event_bytes("eacute", "é"), ())

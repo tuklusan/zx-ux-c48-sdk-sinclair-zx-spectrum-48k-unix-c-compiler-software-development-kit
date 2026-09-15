@@ -128,7 +128,7 @@ static int app_readline(int row, int col,
     out[0] = 0;
     while (1) {
         c = getchar();
-        if (c == 11 || c == 27)
+        if (c == 7)
             return 0;
         if (c == 10 || c == 13) {
             out[n] = 0;

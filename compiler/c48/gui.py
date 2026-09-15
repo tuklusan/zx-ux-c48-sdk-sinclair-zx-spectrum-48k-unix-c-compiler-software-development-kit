@@ -106,7 +106,7 @@ def key_event_bytes(keysym: str, text: str) -> tuple[int, ...]:
     if keysym == "BackSpace":
         return (8,)
     if keysym == "Escape":
-        return (27,)
+        return (7,)
     if len(keysym) == 4 and keysym.startswith("KP_"):
         digit = keysym[3]
         if "0" <= digit <= "9":

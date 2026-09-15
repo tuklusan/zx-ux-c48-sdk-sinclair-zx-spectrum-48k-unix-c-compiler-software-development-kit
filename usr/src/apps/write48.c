@@ -293,7 +293,7 @@ void wr_status(void)
     app_clear_row(22);
     app_clear_row(23);
     if (wr_insert) {
-        print_at(21, 1, "INSERT: CAPS+7 CMD  BS DEL  ENTER NL");
+        print_at(21, 1, "INSERT: CAPS+1 CMD  BS DEL  ENTER NL");
     } else {
         print_at(21, 1, "CMD: I INS  5/8 MOVE  7/6 PG  X DEL");
         print_at(22, 1, "F FIND  G TOP  Q QUIT");
@@ -725,7 +725,7 @@ void wr_insert_key(void)
     int first;
     wr_fast = 0;
     c = getchar();
-    if (c == 11 || c == 27) {
+    if (c == 7) {
         wr_insert = 0;
         return;
     }

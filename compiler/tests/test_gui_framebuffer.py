@@ -32,6 +32,7 @@ from c48.gui import (
     FRAME_WIDTH,
     TkDisplay,
     VISUAL_FRAME_DWELL_MS,
+    key_event_bytes,
     fit_footer_font_size,
     largest_fully_mapped_scale,
     render_snapshot_frame_rgb,
@@ -173,6 +174,7 @@ class GuiFramebufferRegressions(unittest.TestCase):
         self.assertEqual(released, [True])
 
     def test_typeahead_fifo_preserves_rapid_text(self):
+        self.assertEqual(key_event_bytes("Escape", ""), (7,))
         display = TkDisplay(new_screen())
         expected = b"rapid text\n"
         for value in expected:
