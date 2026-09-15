@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Apply C48 input runtime cleanup v10
+name: Apply C48 input runtime cleanup v11
 
 "on":
   push:
@@ -42,6 +42,7 @@ jobs:
         run: |
           python -B .github/apply_c48_input_cleanup.py
           sed -i '189,190c\    prefix = prompt + "\\n"' usr/src/ailmzx48/tooling/run_iteration.py
+          sed -i 's/len(feeder.events) != len(prompts) + 1/len(feeder.events) != len(prompts) + 2/' usr/src/ailmzx48/tooling/run_iteration.py
           python -B -m py_compile usr/src/ailmzx48/tooling/run_iteration.py
           python -B .github/reduce_c48_model_io_ast.py
           sed -i '/^void ai_give(void)$/,/^}$/c\void ai_give(void)\n{\n    yield();\n    ai_yields = ai_yields + 1;\n}' usr/src/ailmzx48/ailmzx48.c
