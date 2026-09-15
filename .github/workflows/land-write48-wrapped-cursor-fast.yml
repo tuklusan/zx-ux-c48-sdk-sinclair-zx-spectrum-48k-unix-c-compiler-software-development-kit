@@ -20,301 +20,39 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-
-      - name: Diagnose wrapped-row cursor path
-        shell: bash
+      - name: Diagnose current wrapped-row path
         run: |
-          set -euo pipefail
           git lfs fsck
-          python - <<'PY'
-          import subprocess, time
-          cmd = ['python','-B','compiler/c48run.py','--headless',
-                 'usr/bin/apps/write48.c48b']
-          payload = b'66' + b'8' * 20 + b'q'
-          t0 = time.perf_counter()
-          try:
-              cp = subprocess.run(cmd, input=payload,
-                                  stdout=subprocess.DEVNULL,
-                                  stderr=subprocess.PIPE,
-                                  timeout=20)
-              dt = time.perf_counter() - t0
-              print(f'WRAPPED_BEFORE {dt:.4f}s rc={cp.returncode}')
-          except subprocess.TimeoutExpired:
-              print('WRAPPED_BEFORE >20s TIMEOUT')
-          PY
-
-      - name: Patch wrapped-row cursor movement
-        shell: bash
+          python -B .github/patch_write48_wrapped.py before
+      - name: Build wrapped-row cursor fix
         run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          p = Path('usr/src/apps/write48.c')
-          s = p.read_text(encoding='utf-8')
-
-          old = '''        if (pos == wr_len) {
-            if (fresh && col < 60) {
-                wr_rowsafe[row] = 1;
-                wr_rowlen[row] = col;
-            }
-'''
-          new = '''        if (pos == wr_len) {
-            wr_rowlen[row] = col;
-            if (fresh && col < 60)
-                wr_rowsafe[row] = 1;
-'''
-          if s.count(old) != 1:
-              raise SystemExit('EOF row metadata anchor mismatch')
-          s = s.replace(old, new)
-
-          old = '''        if (c == '\\n') {
-            if (fresh && col < 60) {
-                wr_rowsafe[row] = 1;
-                wr_rowlen[row] = col;
-            }
-'''
-          new = '''        if (c == '\\n') {
-            wr_rowlen[row] = col;
-            if (fresh && col < 60)
-                wr_rowsafe[row] = 1;
-'''
-          if s.count(old) != 1:
-              raise SystemExit('newline row metadata anchor mismatch')
-          s = s.replace(old, new)
-
-          old = '''            col++;
-            pos++;
-            if (col >= 60) {
-'''
-          new = '''            col++;
-            pos++;
-            wr_rowlen[row] = col;
-            if (col >= 60) {
-'''
-          if s.count(old) != 1:
-              raise SystemExit('character row metadata anchor mismatch')
-          s = s.replace(old, new)
-
-          start = s.index('int wr_fmove(int d)\n')
-          end = s.index('\nint wr_fins(int c)\n', start)
-          repl = '''int wr_fmove(int d)
-{
-    int old;
-    int next;
-    int row;
-    int col;
-    int cc;
-    if (!wr_drawn || wr_pcursor < 0)
-        return 0;
-    old = wr_pcursor;
-    row = old / 60;
-    col = old % 60;
-    if (d > 0) {
-        if (wr_cur >= wr_len)
-            return 1;
-        if (wr_doc[wr_cur] == '\\n') {
-            if (row >= 18)
-                return 0;
-            next = (row + 1) * 60;
-        } else {
-            wr_cur++;
-            if (wr_cur >= wr_len) {
-                if (col >= 59) {
-                    if (row >= 18)
-                        return 0;
-                    next = (row + 1) * 60;
-                } else {
-                    next = old + 1;
-                }
-                wr_cur--;
-            } else if (wr_doc[wr_cur] == '\\n') {
-                if (col >= 59) {
-                    if (row >= 18)
-                        return 0;
-                    next = (row + 1) * 60;
-                } else {
-                    next = old + 1;
-                }
-                wr_cur--;
-            } else if (col + 1 >= wr_rowlen[row]) {
-                if (row >= 18)
-                    return 0;
-                next = (row + 1) * 60;
-                wr_cur--;
-            } else {
-                next = old + 1;
-                wr_cur--;
-            }
-        }
-        wr_cur++;
-    } else {
-        if (wr_cur <= 0)
-            return 1;
-        if (wr_doc[wr_cur - 1] == '\\n') {
-            if (row <= 0)
-                return 0;
-            next = (row - 1) * 60;
-            next = next + wr_rowlen[row - 1];
-        } else if (col > 0) {
-            next = old - 1;
-        } else {
-            if (row <= 0 || wr_rowlen[row - 1] <= 0)
-                return 0;
-            next = (row - 1) * 60;
-            next = next + wr_rowlen[row - 1] - 1;
-        }
-        wr_cur--;
-    }
-    cc = wr_prev[old];
-    inverse(0);
-    app_putc(old / 60 + 2, old % 60 + 2, cc);
-    cc = wr_prev[next];
-    if (cc == ' ')
-        cc = '_';
-    inverse(1);
-    app_putc(next / 60 + 2, next % 60 + 2, cc);
-    inverse(0);
-    wr_pcursor = next;
-    wr_ncursor = next;
-    return 1;
-}
-'''
-          s = s[:start] + repl + s[end:]
-          bad = [(i, len(line))
-                 for i, line in enumerate(s.splitlines(), 1)
-                 if len(line) > 64]
-          if bad:
-              raise SystemExit('64-column violations: ' + repr(bad))
-          p.write_text(s, encoding='utf-8', newline='\n')
-          PY
-          python -B compiler/c48.py usr/src/apps/write48.c \
-            -o usr/bin/apps/write48.c48b
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib, json
-          p = Path('compiler/app_expectations.json')
-          data = json.loads(p.read_text(encoding='ascii'))
-          def sha(path):
-              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
-          app = data['apps']['write48']
-          app['source_sha256'] = sha('usr/src/apps/write48.c')
-          app['binary_sha256'] = sha('usr/bin/apps/write48.c48b')
-          p.write_text(json.dumps(data, indent=2) + '\n',
-                       encoding='ascii', newline='\n')
-          print('source', app['source_sha256'])
-          print('binary', app['binary_sha256'])
-          print('screen', app['screen_sha256'])
-          PY
-
-      - name: Exercise wrapped and short cursor paths
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          import subprocess, time
-          binary = 'usr/bin/apps/write48.c48b'
-          def run(name, payload, limit):
-              t0 = time.perf_counter()
-              cp = subprocess.run(
-                  ['python','-B','compiler/c48run.py','--headless',binary],
-                  input=payload, stdout=subprocess.DEVNULL,
-                  stderr=subprocess.PIPE, timeout=20)
-              dt = time.perf_counter() - t0
-              if cp.returncode:
-                  raise SystemExit(
-                      f'{name}: rc={cp.returncode}: ' +
-                      cp.stderr.decode(errors='replace'))
-              if dt > limit:
-                  raise SystemExit(
-                      f'{name}: too slow {dt:.3f}s > {limit:.3f}s')
-              print(f'{name}: PASS {dt:.4f}s')
-          run('short-row-20', b'8' * 20 + b'q', 2.0)
-          run('wrapped-profile', b'66' + b'8' * 20 + b'q', 4.0)
-          run('deep-wrapped', b'6' * 5 + b'8' * 20 + b'q', 7.0)
-          run('wrapped-roundtrip',
-              b'66' + b'8' * 20 + b'5' * 20 + b'q', 4.5)
-          run('typing-20', b'iabcdefghijklmnopqrst\x1bq', 2.0)
-          PY
-
+          python -B .github/patch_write48_wrapped.py patch
+          python -B compiler/c48.py usr/src/apps/write48.c -o usr/bin/apps/write48.c48b
+          python -B .github/patch_write48_wrapped.py hash
+          python -B .github/patch_write48_wrapped.py after
+          cp .github/patch_write48_wrapped.py /tmp/patch_write48_wrapped.py
       - name: Commit clean prospective tree
         shell: bash
         run: |
           set -euo pipefail
           git config user.name 'github-actions[bot]'
-          git config user.email \
-            '41898282+github-actions[bot]@users.noreply.github.com'
-          git rm .github/workflows/land-write48-wrapped-cursor-fast.yml
-          git add usr/src/apps/write48.c usr/bin/apps/write48.c48b \
-            compiler/app_expectations.json
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm -f .github/patch_write48_wrapped.py
+          git rm -f .github/workflows/land-write48-wrapped-cursor-fast.yml
+          git add usr/src/apps/write48.c usr/bin/apps/write48.c48b compiler/app_expectations.json
           git commit -m 'write48: make wrapped cursor movement incremental'
-          mapfile -t changed < <(git diff --name-only \
-            0c2cb0f9bf661c8b8c69b736906e201ac2f0c2ce HEAD | sort)
+          mapfile -t changed < <(git diff --name-only 0c2cb0f9bf661c8b8c69b736906e201ac2f0c2ce HEAD | sort)
           printf 'FINAL_DIFF %s\n' "${changed[@]}"
           test "${#changed[@]}" -eq 3
           test "${changed[0]}" = 'compiler/app_expectations.json'
           test "${changed[1]}" = 'usr/bin/apps/write48.c48b'
           test "${changed[2]}" = 'usr/src/apps/write48.c'
           test -z "$(git status --porcelain)"
-
       - name: Full repository verifier
-        shell: bash
         run: |
-          set -euo pipefail
           python -B compiler/verify_release.py
-          git diff --check \
-            0c2cb0f9bf661c8b8c69b736906e201ac2f0c2ce HEAD
-
+          git diff --check 0c2cb0f9bf661c8b8c69b736906e201ac2f0c2ce HEAD
       - name: SoP three fresh byte scans
-        shell: bash
-        run: |
-          set -euo pipefail
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib, shutil, subprocess, tempfile
-          root = Path.cwd()
-          raw = subprocess.check_output(['git','ls-files','-z'])
-          paths = [Path(x.decode('utf-8','surrogateescape'))
-                   for x in raw.split(b'\0') if x]
-          text = {'.py','.c','.h','.md','.txt','.json','.yml',
-                  '.yaml','.bat','.sh'}
-          manifests=[]
-          for pass_no in (1,2,3):
-              fresh=Path(tempfile.mkdtemp(prefix=f'w48-wrap-{pass_no}-'))
-              defects=[]; files=bytes_n=lines_n=0
-              whole=hashlib.sha256()
-              for rel in paths:
-                  dst=fresh/rel
-                  dst.parent.mkdir(parents=True, exist_ok=True)
-                  shutil.copyfile(root/rel, dst)
-                  data=dst.read_bytes()
-                  files += 1; bytes_n += len(data)
-                  lines=data.splitlines(keepends=True)
-                  lines_n += len(lines)
-                  if data.startswith(
-                      b'version https://git-lfs.github.com/spec/v1\n'):
-                      defects.append('LFS pointer: ' + rel.as_posix())
-                  if rel.suffix.lower() in text:
-                      for lineno,line in enumerate(lines,1):
-                          body=line.rstrip(b'\r\n')
-                          if (body.startswith(b'<<<<<<< ') or
-                              body == b'=======' or
-                              body.startswith(b'>>>>>>> ')):
-                              defects.append(
-                                  f'conflict: {rel.as_posix()}:{lineno}')
-                  rb=rel.as_posix().encode('utf-8','surrogateescape')
-                  whole.update(len(rb).to_bytes(4,'big'))
-                  whole.update(rb)
-                  whole.update(hashlib.sha256(data).digest())
-              manifest=whole.hexdigest(); manifests.append(manifest)
-              print(f'SOP_PASS_{pass_no}: files={files} bytes={bytes_n} '
-                    f'lines={lines_n} defects={len(defects)} '
-                    f'manifest={manifest}')
-              if defects:
-                  raise SystemExit('\n'.join(defects))
-              shutil.rmtree(fresh)
-          if len(set(manifests)) != 1:
-              raise SystemExit('SoP manifests differ: ' + repr(manifests))
-          PY
-
+        run: python -B /tmp/patch_write48_wrapped.py sop
       - name: Push verified final tree
         run: git push origin HEAD:main
