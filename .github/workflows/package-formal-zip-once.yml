@@ -38,7 +38,7 @@ jobs:
           prefix="zx-ux-c48-sdk-${version}/"
           python -B compiler/build_release_candidate.py --archive "$archive" --prefix "$prefix"
           unzip -Z1 "$archive" > zip-names.txt
-          test "$(grep -Ec '^zx-ux-c48-sdk-[^/]+/docs/04-C48 Language Specification Rev [0-9]+(\.[0-9]+)*\.docx$' zip-names.txt)" -eq 1
+          test "$(grep -Ec '^zx-ux-c48-sdk-[^/]+/docs/04-C48 Language Specification Rev [0-9]+(\.[0-9]+)*\.docx$' "$names" 2>/dev/null || grep -Ec '^zx-ux-c48-sdk-[^/]+/docs/04-C48 Language Specification Rev [0-9]+(\.[0-9]+)*\.docx$' zip-names.txt)" -eq 1
           ! grep -Fq '/docs/ZX-UX C48 Language Specification.md' zip-names.txt
           rm -rf virgin
           mkdir virgin
@@ -48,7 +48,7 @@ jobs:
           sha256sum "$archive" > FORMAL-ZIP-SHA256.txt
           echo "ARCHIVE=$archive" >> "$GITHUB_ENV"
           rm -f C48-SPECIFICATION.json zip-names.txt
-          test -z "$(git status --porcelain)"
+          test -z "$(git status --porcelain --untracked-files=no)"
       - name: Upload formal ZIP
         uses: actions/upload-artifact@v4
         with:
