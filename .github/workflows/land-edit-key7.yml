@@ -1,0 +1,169 @@
+name: Land Spectrum EDIT key contract
+
+on:
+  push:
+    paths:
+      - '.github/workflows/land-edit-key7.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  land:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Confirm old key contract
+        run: |
+          set -euo pipefail
+          git lfs fsck
+          python -B .github/editkey7.py before
+
+      - name: Implement EDIT code 7
+        run: |
+          set -euo pipefail
+          python -B .github/editkey7.py patch
+          python -B compiler/c48.py usr/src/apps/sheet48.c \
+            -o usr/bin/apps/sheet48.c48b
+          python -B compiler/c48.py usr/src/apps/wire3d.c \
+            -o usr/bin/apps/wire3d.c48b
+          python -B compiler/c48.py usr/src/apps/write48.c \
+            -o usr/bin/apps/write48.c48b
+          python -B .github/editkey7.py hash
+          python -B .github/editkey7.py after
+          python -B compiler/tests/test_gui_framebuffer.py
+
+      - name: Commit clean prospective tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email \
+            '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/editkey7.py
+          git rm .github/workflows/land-edit-key7.yml
+          git add \
+            compiler/c48/gui.py \
+            compiler/tests/test_gui_framebuffer.py \
+            compiler/app_expectations.json \
+            usr/src/apps/appapi.h \
+            usr/src/apps/write48.c \
+            usr/bin/apps/sheet48.c48b \
+            usr/bin/apps/wire3d.c48b \
+            usr/bin/apps/write48.c48b
+          git commit -m 'write48: use Spectrum EDIT key to leave insert mode'
+          mapfile -t changed < <(git diff --name-only \
+            9997eaf01507f53f50799c451e5623b97aef5d38 HEAD | sort)
+          printf 'FINAL_DIFF %s\n' "${changed[@]}"
+          expected=(
+            'compiler/app_expectations.json'
+            'compiler/c48/gui.py'
+            'compiler/tests/test_gui_framebuffer.py'
+            'usr/bin/apps/sheet48.c48b'
+            'usr/bin/apps/wire3d.c48b'
+            'usr/bin/apps/write48.c48b'
+            'usr/src/apps/appapi.h'
+            'usr/src/apps/write48.c'
+          )
+          test "${#changed[@]}" -eq "${#expected[@]}"
+          for i in "${!expected[@]}"; do
+            test "${changed[$i]}" = "${expected[$i]}"
+          done
+          test -z "$(git status --porcelain)"
+
+      - name: Full repository verifier
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_release.py
+          git diff --check \
+            9997eaf01507f53f50799c451e5623b97aef5d38 HEAD
+
+      - name: SoP three fresh byte scans
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import shutil
+          import subprocess
+          import tempfile
+
+          root = Path.cwd()
+          raw = subprocess.check_output(['git', 'ls-files', '-z'])
+          paths = [
+              Path(x.decode('utf-8', 'surrogateescape'))
+              for x in raw.split(b'\0') if x
+          ]
+          text = {
+              '.py', '.c', '.h', '.md', '.txt', '.json',
+              '.yml', '.yaml', '.bat', '.sh',
+          }
+          manifests = []
+          for pass_no in (1, 2, 3):
+              fresh = Path(tempfile.mkdtemp(
+                  prefix=f'edit-key7-{pass_no}-'
+              ))
+              defects = []
+              files = bytes_n = lines_n = 0
+              whole = hashlib.sha256()
+              for rel in paths:
+                  dst = fresh / rel
+                  dst.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copyfile(root / rel, dst)
+                  data = dst.read_bytes()
+                  files += 1
+                  bytes_n += len(data)
+                  lines = data.splitlines(keepends=True)
+                  lines_n += len(lines)
+                  if data.startswith(
+                      b'version https://git-lfs.github.com/spec/v1\n'
+                  ):
+                      defects.append('LFS pointer: ' + rel.as_posix())
+                  if rel.suffix.lower() in text:
+                      try:
+                          data.decode('utf-8')
+                      except UnicodeDecodeError:
+                          defects.append('UTF-8: ' + rel.as_posix())
+                      if b'\x00' in data:
+                          defects.append('NUL: ' + rel.as_posix())
+                      for lineno, line in enumerate(lines, 1):
+                          body = line.rstrip(b'\r\n')
+                          if (
+                              body.startswith(b'<<<<<<< ')
+                              or body == b'======='
+                              or body.startswith(b'>>>>>>> ')
+                          ):
+                              defects.append(
+                                  f'conflict: {rel.as_posix()}:{lineno}'
+                              )
+                  rb = rel.as_posix().encode(
+                      'utf-8', 'surrogateescape'
+                  )
+                  whole.update(len(rb).to_bytes(4, 'big'))
+                  whole.update(rb)
+                  whole.update(hashlib.sha256(data).digest())
+              manifest = whole.hexdigest()
+              manifests.append(manifest)
+              print(
+                  f'SOP_PASS_{pass_no}: files={files} '
+                  f'bytes={bytes_n} lines={lines_n} '
+                  f'defects={len(defects)} manifest={manifest}'
+              )
+              if defects:
+                  raise SystemExit('\n'.join(defects))
+              shutil.rmtree(fresh)
+          if len(set(manifests)) != 1:
+              raise SystemExit('SoP manifests differ: ' + repr(manifests))
+          PY
+
+      - name: Push verified final tree
+        run: git push origin HEAD:main
