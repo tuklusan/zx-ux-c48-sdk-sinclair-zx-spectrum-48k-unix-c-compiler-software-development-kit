@@ -1,0 +1,130 @@
+name: Land write48 bottom-page cursor fix
+
+on:
+  push:
+    paths:
+      - '.github/workflows/land-write48-scroll-fix.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  land:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Reproduce first-page cursor loss
+        run: |
+          set -euo pipefail
+          git lfs fsck
+          python -B .github/fix_write48_scroll.py before
+
+      - name: Build scroll-safe write48
+        run: |
+          set -euo pipefail
+          python -B .github/fix_write48_scroll.py patch
+          python -B compiler/c48.py usr/src/apps/write48.c \
+            -o usr/bin/apps/write48.c48b
+          python -B .github/fix_write48_scroll.py hash
+          python -B .github/fix_write48_scroll.py after
+
+      - name: Commit clean prospective tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email \
+            '41898282+github-actions[bot]@users.noreply.github.com'
+          git rm .github/fix_write48_scroll.py
+          git rm .github/workflows/land-write48-scroll-fix.yml
+          git add usr/src/apps/write48.c usr/bin/apps/write48.c48b \
+            compiler/app_expectations.json
+          git commit -m 'write48: keep cursor visible across screen boundaries'
+          mapfile -t changed < <(git diff --name-only \
+            4cc4a6d0b600fcfe890ae6031b8116d948f5a79b HEAD | sort)
+          printf 'FINAL_DIFF %s\n' "${changed[@]}"
+          test "${#changed[@]}" -eq 3
+          test "${changed[0]}" = 'compiler/app_expectations.json'
+          test "${changed[1]}" = 'usr/bin/apps/write48.c48b'
+          test "${changed[2]}" = 'usr/src/apps/write48.c'
+          test -z "$(git status --porcelain)"
+
+      - name: Full repository verifier
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_release.py
+          git diff --check \
+            4cc4a6d0b600fcfe890ae6031b8116d948f5a79b HEAD
+
+      - name: SoP three fresh byte scans
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, shutil, subprocess, tempfile
+
+          root = Path.cwd()
+          raw = subprocess.check_output(['git', 'ls-files', '-z'])
+          paths = [Path(x.decode('utf-8', 'surrogateescape'))
+                   for x in raw.split(b'\0') if x]
+          text = {'.py', '.c', '.h', '.md', '.txt', '.json',
+                  '.yml', '.yaml', '.bat', '.sh'}
+          manifests = []
+          for pass_no in (1, 2, 3):
+              fresh = Path(tempfile.mkdtemp(prefix=f'w48-scroll-{pass_no}-'))
+              defects = []
+              files = bytes_n = lines_n = 0
+              whole = hashlib.sha256()
+              for rel in paths:
+                  dst = fresh / rel
+                  dst.parent.mkdir(parents=True, exist_ok=True)
+                  shutil.copyfile(root / rel, dst)
+                  data = dst.read_bytes()
+                  files += 1
+                  bytes_n += len(data)
+                  lines = data.splitlines(keepends=True)
+                  lines_n += len(lines)
+                  if data.startswith(
+                      b'version https://git-lfs.github.com/spec/v1\n'):
+                      defects.append('LFS pointer: ' + rel.as_posix())
+                  if rel.suffix.lower() in text:
+                      try:
+                          data.decode('utf-8')
+                      except UnicodeDecodeError:
+                          defects.append('UTF-8: ' + rel.as_posix())
+                      if b'\x00' in data:
+                          defects.append('NUL: ' + rel.as_posix())
+                      for lineno, line in enumerate(lines, 1):
+                          body = line.rstrip(b'\r\n')
+                          if (body.startswith(b'<<<<<<< ') or
+                              body == b'=======' or
+                              body.startswith(b'>>>>>>> ')):
+                              defects.append(
+                                  f'conflict: {rel.as_posix()}:{lineno}')
+                  rb = rel.as_posix().encode('utf-8', 'surrogateescape')
+                  whole.update(len(rb).to_bytes(4, 'big'))
+                  whole.update(rb)
+                  whole.update(hashlib.sha256(data).digest())
+              manifest = whole.hexdigest()
+              manifests.append(manifest)
+              print(f'SOP_PASS_{pass_no}: files={files} bytes={bytes_n} '
+                    f'lines={lines_n} defects={len(defects)} '
+                    f'manifest={manifest}')
+              if defects:
+                  raise SystemExit('\n'.join(defects))
+              shutil.rmtree(fresh)
+          if len(set(manifests)) != 1:
+              raise SystemExit('SoP manifests differ: ' + repr(manifests))
+          PY
+
+      - name: Push verified final tree
+        run: git push origin HEAD:main
