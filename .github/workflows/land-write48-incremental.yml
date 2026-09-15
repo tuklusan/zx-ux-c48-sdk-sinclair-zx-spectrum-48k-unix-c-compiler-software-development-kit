@@ -33,6 +33,48 @@ jobs:
             .github/diag_write48_fast.py
           python -B .github/diag_write48_fast.py
           rm -f usr/bin/apps/write48-fast-diag.c48b
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('usr/src/apps/write48.c')
+          s = p.read_text(encoding='utf-8')
+          replacements = [
+              (
+                  "        memmove(wr_doc + wr_cur + 1, wr_doc + wr_cur, (unsigned int)n);\n",
+                  "        memmove(wr_doc + wr_cur + 1,\n"
+                  "                wr_doc + wr_cur, (unsigned int)n);\n",
+              ),
+              (
+                  "                (pos == wr_view || pos == 0 || wr_doc[pos - 1] == ' ' ||\n"
+                  "                 wr_doc[pos - 1] == '\\n')) {\n",
+                  "                (pos == wr_view || pos == 0 ||\n"
+                  "                 wr_doc[pos - 1] == ' ' ||\n"
+                  "                 wr_doc[pos - 1] == '\\n')) {\n",
+              ),
+              (
+                  "        if (!dirty && wr_pcursor >= base && wr_pcursor < base + 60)\n",
+                  "        if (!dirty && wr_pcursor >= base &&\n"
+                  "            wr_pcursor < base + 60)\n",
+              ),
+              (
+                  "        if (!dirty && wr_ncursor >= base && wr_ncursor < base + 60)\n",
+                  "        if (!dirty && wr_ncursor >= base &&\n"
+                  "            wr_ncursor < base + 60)\n",
+              ),
+              (
+                  "    memmove(wr_doc + wr_cur - 1, wr_doc + wr_cur, (unsigned int)n);\n",
+                  "    memmove(wr_doc + wr_cur - 1,\n"
+                  "            wr_doc + wr_cur, (unsigned int)n);\n",
+              ),
+          ]
+          for old, new in replacements:
+              if old not in s:
+                  raise SystemExit('expected write48 wrap target missing: ' + repr(old))
+              s = s.replace(old, new)
+          bad = [(i, len(line)) for i, line in enumerate(s.splitlines(), 1) if len(line) > 64]
+          if bad:
+              raise SystemExit('write48 lines still exceed 64 columns: ' + repr(bad))
+          p.write_text(s, encoding='utf-8', newline='\n')
+          PY
           python -B compiler/c48.py usr/src/apps/write48.c -o usr/bin/apps/write48.c48b
           python - <<'PY'
           from pathlib import Path
