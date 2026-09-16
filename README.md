@@ -23,38 +23,6 @@ patent, trademark, and governing-law provisions.
 |---|---|---|
 | ![Torus Reactor](docs/images/demos/torus.png)<br>**Torus Reactor** | ![Sprite Storm](docs/images/demos/sprites.png)<br>**Sprite Storm** | ![Spectrum Plasma](docs/images/demos/plasma.png)<br>**Spectrum Plasma** |
 
-## Install and quick start
-
-**Requires Python 3.10 or newer.**
-
-**Release ZIP — simplest:** open the [latest release](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/latest), download the `zx-ux-c48-sdk-...zip` asset, extract it, and run from the extracted SDK directory.
-
-**GitHub:** clone the repository. To reproduce a published stable release rather than follow later `main` changes, check out the tag shown on the [latest release](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/latest).
-
-```text
-git clone https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit.git
-cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit
-git checkout <release-tag>
-```
-
-Windows Command Prompt:
-
-```bat
-c48 --version
-c48 usr\src\examples\hello.c
-c48run usr\bin\examples\hello.c48b
-```
-
-Linux / macOS:
-
-```sh
-./c48 --version
-./c48 usr/src/examples/hello.c
-./c48run usr/bin/examples/hello.c48b
-```
-
-Tkinter is needed only for the graphical display window. The compiler and non-audio headless runtime need no third-party Python packages. Audible `beep()` uses standard-library `winsound` on Windows; Linux/macOS can use the optional `playsound3==3.3.2` adapter.
-
 ## Graphics showcase — 18 more C48 demos
 
 These and the three hero images above are rendered from the exact 6912-byte ZX Spectrum screen state produced by the C48 VM. The automated graphics gate runs all 21 demos independently across GitHub-hosted Windows, Linux and macOS runners.
@@ -74,7 +42,7 @@ The combined [21-demo contact sheet](docs/images/demos/contact-sheet.png) and th
 
 The language authority is upstream: the [**C48 Language Specification for native ZX-UX**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) defines the C language implemented by this portable SDK. The SDK documentation describes the host compiler/runtime implementation and its deliberate boundaries from native ZX-UX.
 
-- [`ZX-UX C48 SDK User Manual`](docs/ZX-UX%20C48%20SDK%20User%20Manual.docx) — install, compile and run C48 programs on Windows, Linux and macOS.
+- [`ZX-UX C48 SDK User Manual`](docs/ZX-UX%20C48%20SDK%20User%20Manual.docx) — command-line workflow and day-to-day SDK usage.
 - [`ZX-UX C48 SDK Technical Reference`](docs/ZX-UX%20C48%20SDK%20Technical%20Reference.docx) — implementation architecture, runtime behavior, graphics, Float5, verification and host/native boundaries.
 - [`ZX-UX C48 SDK Adversarial Security Review`](docs/ZX-UX%20C48%20SDK%20Adversarial%20Security%20Review.docx) — hostile-input and memory-boundary assessment.
 
