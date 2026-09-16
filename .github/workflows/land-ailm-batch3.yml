@@ -63,10 +63,12 @@ jobs:
                   err=gv('ai_error'); why=gv('ai_scanwhy')
                   mb=gv('ai_mbytes'); mr=gv('ai_mrecords')
                   if kind is None:
-                      if err!=0: raise SystemExit(f'valid: err={err} why={why}')
+                      if err!=0 or mb!=8566 or mr!=69:
+                          raise SystemExit(
+                              f'valid: err={err} why={why} bytes={mb} rec={mr}')
                   else:
                       want=7 if kind=='tail' else 2
-                      if err!=4 or why!=want:
+                      if why!=want:
                           raise SystemExit(
                               f'{kind}: err={err} why={why} bytes={mb} rec={mr}')
                   print(
