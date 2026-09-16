@@ -1,0 +1,301 @@
+name: README repetition audit
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/readme-repetition-audit.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  audit-rewrite:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Rewrite and audit README
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object README.md)" = "35678855a29344a8db5062541cda4aec3a005fd7"
+          python -B - <<'PY'
+          from pathlib import Path
+          from collections import Counter
+          import hashlib
+          import re
+          import shutil
+
+          path = Path("README.md")
+          original = path.read_bytes()
+          text = original.decode("utf-8", errors="strict")
+          native_url = "https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project"
+          techref = "docs/ZX-UX%20C48%20SDK%20Technical%20Reference.docx"
+
+          replacements = [
+              (
+                  "![Torus Reactor — C48 graphics demo for Sinclair ZX Spectrum 48K](docs/images/demos/torus.png)",
+                  "![Torus Reactor wireframe torus demo screen](docs/images/demos/torus.png)",
+              ),
+              (
+                  "![Sprite Storm — C48 graphics demo for Sinclair ZX Spectrum 48K](docs/images/demos/sprites.png)",
+                  "![Sprite Storm animated sprite demo screen](docs/images/demos/sprites.png)",
+              ),
+              (
+                  "![Spectrum Plasma — C48 graphics demo for Sinclair ZX Spectrum 48K](docs/images/demos/plasma.png)",
+                  "![Spectrum Plasma color plasma demo screen](docs/images/demos/plasma.png)",
+              ),
+              (
+                  f"**ZX-UX C48 SDK** is a portable, host-side **C compiler, virtual machine and software development kit** for writing and testing C48 programs for **ZX-UX Unix on the Sinclair ZX Spectrum 48K**. It runs on Windows, Linux and macOS, on Intel and Arm hosts, providing the desktop compiler/runtime and Spectrum-facing development services needed away from the original machine. It remains separate from the actual [**ZX-UX Unix for the Sinclair ZX Spectrum 48K**]({native_url}): this SDK is not the native ZX-UX operating system, Z80 compiler, linker, runtime or final native ABI.",
+                  f"**ZX-UX C48 SDK** is a portable, host-side **C compiler, virtual machine and software development kit** for writing and testing C48 programs for [**ZX-UX Unix on the Sinclair ZX Spectrum 48K**]({native_url}). It runs on Windows, Linux and macOS, on Intel and Arm hosts, providing the desktop toolchain and Spectrum-facing services needed away from the original machine. It remains separate from native ZX-UX: this SDK is not the operating system, native Z80 compiler, linker, runtime or final ABI.",
+              ),
+              (
+                  "The three hero images above and 18 demos below are rendered from the exact 6912-byte ZX Spectrum 48K screen state produced by the C48 VM. The automated graphics gate runs all 21 C48 demos independently across GitHub-hosted Windows, Linux and macOS runners.",
+                  "The three hero images above and 18 demos below are rendered from the C48 VM's exact ZX Spectrum 48K bitmap/attribute screen state. Automated graphics verification renders every demo independently on GitHub-hosted Windows, Linux and macOS runners.",
+              ),
+              (
+                  "The combined [21-demo ZX Spectrum graphics contact sheet](docs/images/demos/contact-sheet.png) and the individual C48 demo outputs are covered by automated verification.",
+                  "A [combined contact sheet of all 21 ZX Spectrum graphics demos](docs/images/demos/contact-sheet.png) is covered by the same automated verification.",
+              ),
+              (
+                  "The **C48 SDK document library** covers the portable compiler/runtime, user workflow, technical architecture and security review; the authoritative C48 language definition remains upstream in the native ZX-UX project.",
+                  "These documents cover portable compiler/runtime usage, technical architecture and security; the authoritative C48 language definition remains upstream in the native ZX-UX project.",
+              ),
+              (
+                  "The SDK is a cross-platform, host-side C development environment for C48 programs intended for ZX-UX on the Sinclair ZX Spectrum 48K. Its Python compiler and VM are portable development tools; they are **not** the native ZX-UX Z80 compiler or runtime.",
+                  "The host toolchain provides the compiler, VM, Spectrum-facing runtime services and deterministic tooling summarized below.",
+              ),
+              (
+                  "- `c48` / `c48.bat`: command-line C48 C compiler for host development.",
+                  "- `c48` / `c48.bat`: command-line C48 compiler.",
+              ),
+              (
+                  "The portable pipeline is deliberately separate from native ZX-UX formats:",
+                  "Programs run through an SDK-specific host executable format:",
+              ),
+              (
+                  "These games are included as a small cultural time capsule of what “computer games” meant around 1982—not as replicas of any one historical software library, but as a playable cross-section of the ideas and stories already circulating through terminals, schools, books, magazines, clubs and homes.",
+                  "These games form a small cultural time capsule of what “computer games” meant around 1982—not replicas of any one historical library, but a compact cross-section of ideas and stories moving through mainframes, school labs, clubs and homes.",
+              ),
+              (
+                  "The combined [14-game contact sheet](docs/images/games/contact-sheet.png) is generated from the same certified captures.",
+                  "The [14-game contact sheet](docs/images/games/contact-sheet.png) assembles those certified captures in one image.",
+              ),
+              (
+                  "Together, they give the SDK a playable connection to the folklore and nostalgia surrounding early personal computing, and to the imagination that greeted machines like the ZX Spectrum when it arrived in 1982.",
+                  "Together, the selection connects the SDK to the cultural memory and nostalgia of early personal computing, and to the imagination that greeted machines like the ZX Spectrum when it arrived in 1982.",
+              ),
+              (
+                  "## Relationship to native ZX-UX on Sinclair ZX Spectrum 48K",
+                  "## Relationship to native ZX-UX",
+              ),
+              (
+                  f"[ZX-UX]({native_url}) is the actual Unix-like operating and development environment for the original unexpanded 48K Sinclair ZX Spectrum. This SDK exists so C48 software can be developed and tested on modern computers while native ZX-UX compiler, linker, ABI, ROM-bridge, persistence, and process facilities remain separately implemented and verified.",
+                  f"[ZX-UX]({native_url}) is the actual Unix-like operating and development environment for the original unexpanded 48K Sinclair ZX Spectrum. Its native compiler, linker, ABI, ROM bridge, persistence and process facilities are separate from this host SDK, whose role is C48 development and testing on modern computers.",
+              ),
+              (
+                  "The authoritative [C48 language specification](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) lives upstream and is the language baseline implemented by the SDK. `usr/src/c48host.h` is explicitly a **development-only Host Game API profile** and is not the final native ZX-UX `<c48.h>` ABI.",
+                  "The authoritative [C48 language specification](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) lives upstream and defines the language baseline implemented here. `usr/src/c48host.h` is explicitly a **development-only Host Game API profile** and is not the final native ZX-UX `<c48.h>` ABI.",
+              ),
+              (
+                  "The games above remember the period when a computer was something to explore, program and play with; these applications remember the other half of the same story—the moment personal computers were expected to be useful. Word processing and spreadsheets became symbols of the shift from hobby machine to everyday work tool, while interactive graphics turned the screen into a place to design and manipulate things rather than merely print results. By the early 1990s, that mixture of writing, personal finance and visual experimentation had become part of the culture of serious home computing.",
+                  "The games above capture the exploratory, playful side of early computing; these applications tell the other half of the story—the point at which personal computers were expected to be useful. Word processing and spreadsheets symbolized the shift from hobby machine to everyday work tool, while interactive graphics turned the screen into a place to design and manipulate rather than merely print results. By the early 1990s, writing, personal finance and visual experimentation were established parts of serious home computing.",
+              ),
+              (
+                  "The combined [3-application contact sheet](docs/images/apps/contact-sheet.png) is generated from the same certified captures.",
+                  "A [three-application contact sheet](docs/images/apps/contact-sheet.png) presents the verified screenshots together.",
+              ),
+              (
+                  "## C48 runtime notes",
+                  "## Runtime notes",
+              ),
+              (
+                  "```sh\n./c48run --font compiler/assets/font4x8-zxux.bin usr/bin/examples/hello.c48b\n```\n\nFont selection stays explicit through the same `--font PATH` command-line contract.",
+                  "```sh\n./c48run --font compiler/assets/font4x8-zxux.bin usr/bin/examples/hello.c48b\n```",
+              ),
+              (
+                  "- The Spectrum screen is always represented by the underlying 6912-byte bitmap/attribute state; Tk is a host visualizer over that state.",
+                  "- Tk visualizes the VM's bitmap/attribute screen state rather than maintaining a separate display model.",
+              ),
+              (
+                  "- The host heap defaults to **1024 bytes**; `--heap` accepts even values from `0` through `8192`.",
+                  "- The runtime heap defaults to **1024 bytes**; `--heap` accepts even values from `0` through `8192`.",
+              ),
+              (
+                  "- `--max-steps` and `--time-quota` provide bounded host execution for testing hostile or runaway programs.",
+                  "- `--max-steps` and `--time-quota` bound execution when testing hostile or runaway programs.",
+              ),
+              (
+                  "- `--allow-approx-rom-math` selects an explicitly non-certified host approximation fallback; the normal runtime uses the checked-in 48K-ROM-derived math path.",
+                  "- `--allow-approx-rom-math` selects an explicitly non-certified approximation fallback; normal execution uses the checked-in 48K-ROM-derived math path.",
+              ),
+              (
+                  f"For exact host/native boundaries, Float5 status, BEEP behavior and error conventions, use the [ZX-UX C48 SDK Technical Reference]({techref}) rather than treating host behavior as a promise about the future native ABI.",
+                  f"For detailed Float5 and BEEP behavior, error conventions and host/native boundaries, see the [ZX-UX C48 SDK Technical Reference]({techref}).",
+              ),
+              (
+                  "## C48 SDK source tree",
+                  "## Source tree",
+              ),
+          ]
+
+          candidate = text
+          for old, new in replacements:
+              count = candidate.count(old)
+              if count != 1:
+                  raise SystemExit(f"replacement source count {count}, expected 1: {old[:100]!r}")
+              candidate = candidate.replace(old, new, 1)
+
+          # Reversal guard: the only content changes must be the enumerated replacements.
+          reversed_text = candidate
+          for old, new in reversed(replacements):
+              count = reversed_text.count(new)
+              if count != 1:
+                  raise SystemExit(f"replacement target count {count}, expected 1: {new[:100]!r}")
+              reversed_text = reversed_text.replace(new, old, 1)
+          if reversed_text.encode("utf-8") != original:
+              raise SystemExit("replacement-only guard failed")
+
+          path.write_bytes(candidate.encode("utf-8"))
+
+          # Prose repetition audit. Exclude the license comment, code blocks and tables,
+          # where repeated syntax/names are structural rather than prose defects.
+          visible = re.sub(r"<!--.*?-->", " ", candidate, flags=re.S)
+          visible = re.sub(r"```.*?```", " ", visible, flags=re.S)
+          visible = "\n".join(
+              line for line in visible.splitlines()
+              if not line.lstrip().startswith("|") and not line.startswith("#")
+          )
+          visible = re.sub(r"<[^>]+>", " ", visible)
+          visible = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", visible)
+          visible = visible.replace("**", "").replace("`", "")
+          tokens = re.findall(r"[A-Za-z0-9]+(?:[-+][A-Za-z0-9]+)*", visible.lower())
+          grams = Counter(tuple(tokens[i:i+8]) for i in range(max(0, len(tokens)-7)))
+          repeated8 = [(g, c) for g, c in grams.items() if c > 1]
+          if repeated8:
+              for g, c in repeated8[:20]:
+                  print("REPEATED 8-GRAM", c, " ".join(g))
+              raise SystemExit("repeated 8-word prose phrase detected")
+
+          prose = re.sub(r"\s+", " ", visible).strip()
+          sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", prose) if len(s.split()) >= 9]
+          scored = []
+          for i in range(len(sentences)):
+              a = set(re.findall(r"[a-z0-9]+", sentences[i].lower()))
+              for j in range(i+1, len(sentences)):
+                  b = set(re.findall(r"[a-z0-9]+", sentences[j].lower()))
+                  union = a | b
+                  if not union:
+                      continue
+                  score = len(a & b) / len(union)
+                  if score >= 0.35:
+                      scored.append((score, i, j, sentences[i], sentences[j]))
+          for score, i, j, a, b in sorted(scored, reverse=True)[:12]:
+              print(f"SEMANTIC-OVERLAP {score:.3f} S{i+1}/S{j+1}: {a} || {b}")
+          if scored and max(x[0] for x in scored) >= 0.78:
+              raise SystemExit("very high sentence-level semantic overlap detected")
+
+          demos = ["torus", "sprites", "plasma", "spriteanim", "raymaze", "goblet", "tunnel", "city", "terrain", "ocean", "mobius", "morph3d", "warp", "galaxy", "orrery", "firework", "kaleido", "moire", "mandel", "julia", "forest"]
+          games = ["advent", "arith", "bgammon", "chess", "cribbage", "fish", "fortune", "hangman", "maze", "quiz", "rogue", "snake", "trek", "wump"]
+          apps = ["write48", "sheet48", "wire3d"]
+
+          def validate(data: bytes, pass_no: int) -> None:
+              lines = data.splitlines(keepends=True)
+              walked = 0
+              for line_no, line in enumerate(lines, 1):
+                  if b"\x00" in line:
+                      raise SystemExit(f"pass {pass_no}: NUL at line {line_no}")
+                  for _byte in line:
+                      walked += 1
+              if walked != len(data):
+                  raise SystemExit(f"pass {pass_no}: byte walk mismatch")
+              decoded = data.decode("utf-8", errors="strict")
+
+              linked_first = f"for [**ZX-UX Unix on the Sinclair ZX Spectrum 48K**]({native_url})."
+              if decoded.count(linked_first) != 1:
+                  raise SystemExit(f"pass {pass_no}: first native project occurrence is not uniquely linked")
+              if decoded.count("**ZX-UX Unix on the Sinclair ZX Spectrum 48K**") != 1:
+                  raise SystemExit(f"pass {pass_no}: duplicated long native-project phrase remains")
+              intro_end = decoded.index("## Download and install")
+              intro = decoded[:intro_end]
+              if intro.index(linked_first) > intro.index("It remains separate from native ZX-UX"):
+                  raise SystemExit(f"pass {pass_no}: link placement/order incorrect")
+
+              for heading in (
+                  "## Download and install",
+                  "## ZX Spectrum 48K graphics showcase — 21 C48 demos",
+                  "## Document Library",
+                  "## C48 compiler and runtime features",
+                  "## Games gallery — 14 C48 games",
+                  "## Relationship to native ZX-UX",
+                  "## Applications gallery — 3 C48 applications",
+                  "## Runtime notes",
+                  "## Source tree",
+                  "## License and author",
+              ):
+                  if decoded.count(heading) != 1:
+                      raise SystemExit(f"pass {pass_no}: heading mismatch: {heading}")
+
+              for name in demos:
+                  if decoded.count(f"usr/src/demos/{name}.c") != 1:
+                      raise SystemExit(f"pass {pass_no}: demo source mismatch {name}")
+              for name in games:
+                  if decoded.count(f"usr/src/games/{name}.c") != 1:
+                      raise SystemExit(f"pass {pass_no}: game source mismatch {name}")
+              for name in apps:
+                  if decoded.count(f"usr/src/apps/{name}.c") != 1:
+                      raise SystemExit(f"pass {pass_no}: app source mismatch {name}")
+
+              g0 = decoded.index("## Games gallery — 14 C48 games")
+              r0 = decoded.index("## Relationship to native ZX-UX", g0)
+              a0 = decoded.index("## Applications gallery — 3 C48 applications", r0)
+              rt0 = decoded.index("## Runtime notes", a0)
+              if not (decoded[g0:r0].index("By then **Adventure**") < decoded[g0:r0].index("| ![C48 Adventure]") < decoded[g0:r0].index("The quieter side of that culture")):
+                  raise SystemExit(f"pass {pass_no}: games prose/gallery order changed")
+              if not (decoded[a0:rt0].index("The games above capture") < decoded[a0:rt0].index("| ![WRITE48]") < decoded[a0:rt0].index("**WRITE48** evokes")):
+                  raise SystemExit(f"pass {pass_no}: apps prose/gallery order changed")
+              if "Ubuntu 24.04/x64" in decoded[g0:r0] or "Ubuntu 24.04/x64" in decoded[a0:rt0]:
+                  raise SystemExit(f"pass {pass_no}: game/app architecture labels returned")
+              for arch in ("Ubuntu 24.04/x64", "Windows Server 2025/x64", "macOS 26/Arm64"):
+                  if arch not in decoded[:g0]:
+                      raise SystemExit(f"pass {pass_no}: demo architecture evidence missing {arch}")
+
+              stale = [
+                  "C48 graphics demo for Sinclair ZX Spectrum 48K",
+                  "The **C48 SDK document library**",
+                  "cross-platform, host-side C development environment",
+                  "## Relationship to native ZX-UX on Sinclair ZX Spectrum 48K",
+                  "## C48 runtime notes",
+                  "Font selection stays explicit through the same",
+                  "## C48 SDK source tree",
+              ]
+              for phrase in stale:
+                  if phrase in decoded:
+                      raise SystemExit(f"pass {pass_no}: stale repetitive wording remains: {phrase}")
+
+              print(f"README SOP PASS {pass_no}: {len(data)} bytes, {len(lines)} lines, sha256={hashlib.sha256(data).hexdigest()}")
+
+          for pass_no in (1, 2, 3):
+              root = Path(f"/tmp/readme-repetition-sop-{pass_no}")
+              shutil.rmtree(root, ignore_errors=True)
+              root.mkdir(parents=True)
+              fresh = root / "README.md"
+              fresh.write_bytes(path.read_bytes())
+              validate(fresh.read_bytes(), pass_no)
+          PY
+          git diff --check -- README.md
+
+      - name: Commit README and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/readme-repetition-audit.yml
+          git add README.md
+          git diff --cached --check
+          git commit -m "README: remove repetitive phrasing"
+          git push origin HEAD:main
