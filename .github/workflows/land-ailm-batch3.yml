@@ -33,7 +33,7 @@ jobs:
           new = '''def probe(kind):
               from c48.format import read as read_program
               from c48.screen import Font4x8, ZXScreen
-              from c48.vm import C48VM
+              from c48.romvm import RomMathVM
               import os
               with tempfile.TemporaryDirectory(prefix='ailm-b3-probe-') as td:
                   td=Path(td); shutil.copy2(ROOT/BIN,td/'ailmzx48.c48b')
@@ -45,12 +45,13 @@ jobs:
                   font=Font4x8.load(ROOT/'compiler/assets/font4x8-tasword.bin')
                   screen=ZXScreen(font)
                   keys=iter(ord(c) for c in 'spectrum\\nq\\n')
-                  vm=C48VM(program,screen,argv=['ailmzx48'],
-                      input_provider=lambda: next(keys,-1),
-                      sound_player=lambda _path: None,
-                      tick_provider=lambda: 1000,max_steps=2000000)
                   old=os.getcwd(); os.chdir(td)
                   try:
+                      vm=RomMathVM(program,screen,
+                          argv=['ailmzx48.c48b'],
+                          input_provider=lambda: next(keys,-1),
+                          sound_player=lambda _path: None,
+                          tick_provider=lambda: 1000,max_steps=2000000)
                       status=vm.run()
                   finally:
                       os.chdir(old)
