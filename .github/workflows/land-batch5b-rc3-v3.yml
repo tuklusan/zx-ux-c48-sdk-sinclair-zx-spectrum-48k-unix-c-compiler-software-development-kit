@@ -84,6 +84,9 @@ jobs:
               for line in source[run:]:
                   if line.startswith("      - name: "):
                       break
+                  if line == "":
+                      out.append("")
+                      continue
                   if not line.startswith("          "):
                       raise SystemExit(
                           f"unexpected v2 run indentation in {name}: {line!r}"
