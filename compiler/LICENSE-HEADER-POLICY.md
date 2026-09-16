@@ -39,13 +39,24 @@ would corrupt or semantically change the file:
 - `VERSION` - exact machine-readable version value;
 - `MANIFEST.sha256` - exact machine-readable hash manifest;
 - `*.json` - JSON has no comment syntax and is consumed as strict machine data;
-- `*.bin` - binary F4X8/font payloads;
+- `*.bin`, `*.dat`, and `*.rom` - binary runtime/reference payloads;
+- `*.png` - binary image format;
 - `*.c48b` - canonical deterministic C48B1 executable format;
 - `*.docx` - ZIP/container document format;
 - `*.zip` - ZIP/TAP and other archive containers.
 
+Two exemptions are deliberately path-scoped rather than suffix-wide:
+
+- `docs/reference/` is imported third-party reference material preserved byte-for-byte
+  under its own provenance/licensing;
+- generated files under `screenshots/gui-desktop/` may include `SHA256SUMS`, `*.json`,
+  `*.jsonl`, `*.png`, and `*.ppm`. These are release evidence and are retained exactly
+  as generated. In particular, `.jsonl` and `.ppm` are not globally exempt elsewhere
+  in the repository.
+
 The exemption is fail-closed: a new artifact with an unknown suffix/name causes the gate
-to fail until it is explicitly classified as header-safe or format-exempt.
+to fail until it is explicitly classified as header-safe or format-exempt. Path-scoped
+exceptions stay narrow so a new file of the same suffix elsewhere is still reviewed.
 
 ## Attribution scope
 
