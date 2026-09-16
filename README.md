@@ -45,11 +45,26 @@ The combined [21-demo contact sheet](docs/images/demos/contact-sheet.png) and th
 
 ## Documentation
 
-The language authority is upstream: the [**C48 Language Specification for native ZX-UX**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) defines the C language implemented by this portable SDK. The SDK documentation describes the host compiler/runtime implementation and its deliberate boundaries from native ZX-UX.
+The language authority lives upstream in the native ZX-UX project; the SDK documents describe the portable host compiler/runtime implementation and its deliberate boundaries from native ZX-UX.
 
-- [`ZX-UX C48 SDK User Manual`](docs/ZX-UX%20C48%20SDK%20User%20Manual.docx) — command-line workflow and day-to-day SDK usage.
-- [`ZX-UX C48 SDK Technical Reference`](docs/ZX-UX%20C48%20SDK%20Technical%20Reference.docx) — implementation architecture, runtime behavior, graphics, Float5, verification and host/native boundaries.
-- [`ZX-UX C48 SDK Adversarial Security Review`](docs/ZX-UX%20C48%20SDK%20Adversarial%20Security%20Review.docx) — hostile-input and memory-boundary assessment.
+<table>
+  <tr>
+    <td width="84" valign="top"><a href="https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx"><img src="docs/images/doc-thumbs/c48-language-specification.png" width="72" alt="C48 Language Specification cover"></a></td>
+    <td valign="middle"><a href="https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx"><strong>C48 Language Specification for native ZX-UX</strong></a><br>Authoritative definition of the C language implemented by this portable SDK.</td>
+  </tr>
+  <tr>
+    <td width="84" valign="top"><a href="docs/ZX-UX%20C48%20SDK%20User%20Manual.docx"><img src="docs/images/doc-thumbs/user-manual.png" width="72" alt="ZX-UX C48 SDK User Manual cover"></a></td>
+    <td valign="middle"><a href="docs/ZX-UX%20C48%20SDK%20User%20Manual.docx"><strong>ZX-UX C48 SDK User Manual</strong></a><br>Command-line workflow and day-to-day SDK usage.</td>
+  </tr>
+  <tr>
+    <td width="84" valign="top"><a href="docs/ZX-UX%20C48%20SDK%20Technical%20Reference.docx"><img src="docs/images/doc-thumbs/technical-reference.png" width="72" alt="ZX-UX C48 SDK Technical Reference cover"></a></td>
+    <td valign="middle"><a href="docs/ZX-UX%20C48%20SDK%20Technical%20Reference.docx"><strong>ZX-UX C48 SDK Technical Reference</strong></a><br>Implementation architecture, runtime behavior, graphics, Float5, verification and host/native boundaries.</td>
+  </tr>
+  <tr>
+    <td width="84" valign="top"><a href="docs/ZX-UX%20C48%20SDK%20Adversarial%20Security%20Review.docx"><img src="docs/images/doc-thumbs/adversarial-security-review.png" width="72" alt="ZX-UX C48 SDK Adversarial Security Review cover"></a></td>
+    <td valign="middle"><a href="docs/ZX-UX%20C48%20SDK%20Adversarial%20Security%20Review.docx"><strong>ZX-UX C48 SDK Adversarial Security Review</strong></a><br>Hostile-input and memory-boundary assessment.</td>
+  </tr>
+</table>
 
 The repository also keeps a stable [`C48 specification pointer`](docs/ZX-UX%20C48%20Language%20Specification.md) to the authoritative upstream document.
 
