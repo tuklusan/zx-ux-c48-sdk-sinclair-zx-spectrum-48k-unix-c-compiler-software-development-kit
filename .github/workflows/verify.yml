@@ -68,6 +68,9 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
+      - name: Run forensic review regressions
+        run: python -B compiler/tests/forensic_review_regression.py
+
       - name: Run complete C48 SDK verifier
         run: python -B compiler/verify_release.py
 
