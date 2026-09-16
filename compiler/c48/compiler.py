@@ -16,10 +16,26 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from .errors import TypeC48Error
 from .limits import ResourceBudget
 from .parser import Parser
 from .preprocessor import Preprocessor
-from .semantics import SemanticAnalyzer
+from .semantics import SemanticAnalyzer, spos
+
+
+def _analyze(tree: dict[str, Any], budget: ResourceBudget) -> dict[str, Any]:
+    program = SemanticAnalyzer(budget=budget).analyze(tree)
+    # File-scope extern objects do not pass through initializer validation, so
+    # assert the language invariant here as a final compiler postcondition.
+    for item in program["items"]:
+        if item["kind"] != "declaration":
+            continue
+        for idecl in item["declarators"]:
+            if idecl["ctype"]["kind"] == "void":
+                raise TypeC48Error(
+                    "void object is invalid", spos(idecl["declarator"])
+                )
+    return program
 
 
 def compile_bytes(data: bytes, *, source_name: str = "<source>", base_dir: Path | None = None,
@@ -34,7 +50,7 @@ def compile_bytes(data: bytes, *, source_name: str = "<source>", base_dir: Path 
     )
     tree = Parser(tokens, budget=budget).parse()
     budget.check_ast(tree, tokens[0].pos if tokens else None)
-    return SemanticAnalyzer(budget=budget).analyze(tree)
+    return _analyze(tree, budget)
 
 
 def compile_file(path: Path, *, builtin_header: str = "") -> dict[str, Any]:
@@ -44,4 +60,4 @@ def compile_file(path: Path, *, builtin_header: str = "") -> dict[str, Any]:
     tokens = pp.preprocess_file(path)
     tree = Parser(tokens, budget=budget).parse()
     budget.check_ast(tree, tokens[0].pos if tokens else None)
-    return SemanticAnalyzer(budget=budget).analyze(tree)
+    return _analyze(tree, budget)
