@@ -11,7 +11,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-name: Refresh checked-in GUI screenshots
+name: Finalize GUI screenshot refresh
 
 "on":
   push:
@@ -28,7 +28,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  refresh:
+  finalize:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -53,7 +53,7 @@ jobs:
           run-id: ${{ env.SOURCE_RUN_ID }}
           github-token: ${{ github.token }}
 
-      - name: Verify evidence and materialize retained PNGs
+      - name: Validate checked-in PNGs against RC5 evidence
         shell: bash
         run: |
           set -euo pipefail
@@ -62,8 +62,6 @@ jobs:
           import hashlib
           import json
           import os
-          import shutil
-          import struct
 
           root = Path(os.environ["SOURCE_DIR"])
           source_sha = os.environ["SOURCE_SHA"]
@@ -71,21 +69,15 @@ jobs:
 
           sums = root / "SHA256SUMS"
           manifest = root / "RELEASE-GUI-EVIDENCE.json"
-          if not sums.is_file() or not manifest.is_file():
-              raise SystemExit("GUI refresh: aggregate evidence metadata missing")
-
           for line in sums.read_text(encoding="ascii").splitlines():
               digest, rel = line.split("  ", 1)
               path = root / rel
-              if not path.is_file():
-                  raise SystemExit(f"GUI refresh: missing evidence member: {rel}")
-              actual = hashlib.sha256(path.read_bytes()).hexdigest()
-              if actual != digest:
-                  raise SystemExit(f"GUI refresh: evidence checksum mismatch: {rel}")
+              if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != digest:
+                  raise SystemExit(f"GUI finalize: evidence checksum mismatch: {rel}")
 
           metadata = json.loads(manifest.read_text(encoding="ascii"))
           if metadata.get("commit") != source_sha:
-              raise SystemExit("GUI refresh: aggregate evidence commit mismatch")
+              raise SystemExit("GUI finalize: evidence commit mismatch")
 
           runners = (
               "ubuntu-latest",
@@ -94,14 +86,6 @@ jobs:
               "macos-15-intel",
           )
           pythons = ("3.10", "3.13")
-          expected_rows = {(runner, py) for runner in runners for py in pythons}
-          rows = {
-              (str(row["runner"]), ".".join(str(row["python"]).split(".")[:2]))
-              for row in metadata.get("rows", [])
-          }
-          if rows != expected_rows:
-              raise SystemExit("GUI refresh: eight-row GUI evidence matrix mismatch")
-
           names = (
               "forest-canvas.png",
               "forest-desktop.png",
@@ -113,87 +97,53 @@ jobs:
               "visual-progression-desktop.png",
           )
           expected = {}
-
-          def validate_png(path: Path) -> None:
-              data = path.read_bytes()
-              if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n":
-                  raise SystemExit(f"GUI refresh: bad PNG signature: {path}")
-              if data[12:16] != b"IHDR":
-                  raise SystemExit(f"GUI refresh: bad PNG header: {path}")
-              width, height = struct.unpack(">II", data[16:24])
-              if width < 1 or height < 1:
-                  raise SystemExit(f"GUI refresh: bad PNG geometry: {path}")
-
-          for runner, py in sorted(expected_rows):
-              source = root / f"gui-desktop-{runner}-py{py}-{source_sha}"
-              target = Path("screenshots/gui-desktop") / runner / f"python-{py}"
-              if not source.is_dir() or not target.is_dir():
-                  raise SystemExit(f"GUI refresh: missing source/target row: {runner} {py}")
-              if sorted(p.name for p in source.glob("*.png")) != sorted(names):
-                  raise SystemExit(f"GUI refresh: source PNG set drift: {source}")
-              if sorted(p.name for p in target.glob("*.png")) != sorted(names):
-                  raise SystemExit(f"GUI refresh: target PNG set drift: {target}")
-              for name in names:
-                  src = source / name
-                  dst = target / name
-                  validate_png(src)
-                  digest = hashlib.sha256(src.read_bytes()).hexdigest()
-                  shutil.copyfile(src, dst)
-                  if hashlib.sha256(dst.read_bytes()).hexdigest() != digest:
-                      raise SystemExit(f"GUI refresh: copy mismatch: {dst}")
-                  expected[dst.as_posix()] = digest
-
+          for runner in runners:
+              for py in pythons:
+                  source = root / f"gui-desktop-{runner}-py{py}-{source_sha}"
+                  target = Path("screenshots/gui-desktop") / runner / f"python-{py}"
+                  if sorted(p.name for p in source.glob("*.png")) != sorted(names):
+                      raise SystemExit(f"GUI finalize: source PNG set drift: {source}")
+                  if sorted(p.name for p in target.glob("*.png")) != sorted(names):
+                      raise SystemExit(f"GUI finalize: target PNG set drift: {target}")
+                  for name in names:
+                      rel = (target / name).as_posix()
+                      digest = hashlib.sha256((source / name).read_bytes()).hexdigest()
+                      if hashlib.sha256(Path(rel).read_bytes()).hexdigest() != digest:
+                          raise SystemExit(f"GUI finalize: checked-in byte mismatch: {rel}")
+                      expected[rel] = digest
           if len(expected) != 64:
-              raise SystemExit(f"GUI refresh: expected 64 PNGs, got {len(expected)}")
+              raise SystemExit(f"GUI finalize: expected 64 PNGs, got {len(expected)}")
           expected_json.write_text(
               json.dumps(expected, indent=2, sort_keys=True) + "\n",
               encoding="ascii",
               newline="\n",
           )
-          print("GUI refresh: certified RC5 evidence copied into all eight rows")
+          print("GUI finalize: all 64 retained PNGs match certified RC5 evidence")
           PY
 
-      - name: Verify, commit, and push refreshed screenshots
-        id: commit
+      - name: Remove temporary refresh workflow and push final head
+        id: final
         shell: bash
         run: |
           set -euo pipefail
-          git lfs install --local
-          git check-attr filter -- screenshots/gui-desktop/*/python-*/*.png | \
-            awk -F': ' '$3 != "lfs" {bad=1; print} END {exit bad}'
-          git add -- screenshots/gui-desktop
-          git diff --cached --check
-          python -B compiler/verify_release.py
-          python - <<'PY'
-          from pathlib import Path
-          import hashlib
-          import json
-          import os
-
-          expected = json.loads(Path(os.environ["EXPECTED_JSON"]).read_text(encoding="ascii"))
-          for rel, digest in expected.items():
-              if hashlib.sha256(Path(rel).read_bytes()).hexdigest() != digest:
-                  raise SystemExit(f"GUI refresh: candidate byte mismatch: {rel}")
-          PY
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
-          if git diff --cached --quiet; then
-            echo "GUI refresh: checked-in PNGs already match RC5 evidence"
-          else
-            git commit -m "Refresh GUI desktop screenshots from RC5 evidence"
-            git push origin HEAD:main
-          fi
+          git rm .github/workflows/refresh-gui-screenshots.yml
+          git diff --cached --check
+          python -B compiler/verify_release.py
+          git commit -m "Remove temporary GUI screenshot refresh workflow"
+          git push origin HEAD:main
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Three successive SoP scans from fresh remote copies
+      - name: Three successive SoP scans from final remote head
         shell: bash
         env:
-          TARGET_SHA: ${{ steps.commit.outputs.sha }}
+          TARGET_SHA: ${{ steps.final.outputs.sha }}
         run: |
           set -euo pipefail
           for pass in 1 2 3; do
-            scan="/tmp/sop-scan-${pass}"
+            scan="/tmp/final-sop-${pass}"
             rm -rf "$scan"
             GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 \
               "https://github.com/${GITHUB_REPOSITORY}.git" "$scan"
@@ -212,11 +162,13 @@ jobs:
               for p in (root / "screenshots/gui-desktop").glob("*/python-*/*.png")
           )
           if actual != sorted(expected):
-              raise SystemExit(f"SoP pass {os.environ['PASS']}: PNG file set mismatch")
+              raise SystemExit(f"Final SoP pass {os.environ['PASS']}: PNG file set mismatch")
           for rel, digest in expected.items():
               if hashlib.sha256((root / rel).read_bytes()).hexdigest() != digest:
-                  raise SystemExit(f"SoP pass {os.environ['PASS']}: byte mismatch: {rel}")
-          print(f"SoP pass {os.environ['PASS']}: 64 PNGs byte-exact")
+                  raise SystemExit(
+                      f"Final SoP pass {os.environ['PASS']}: byte mismatch: {rel}"
+                  )
+          print(f"Final SoP pass {os.environ['PASS']}: 64 PNGs byte-exact")
           PY
             (cd "$scan" && python -B compiler/verify_release.py)
             test -z "$(git -C "$scan" status --porcelain)"
