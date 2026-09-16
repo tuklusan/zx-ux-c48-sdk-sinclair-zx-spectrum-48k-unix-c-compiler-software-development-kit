@@ -292,7 +292,7 @@ class Preprocessor:
                 self.budget.add_source_object(
                     len(header_bytes), SourcePos("<c48.h>", 1, 1)
                 )
-                toks=self._preprocess_text(self.builtin_header,source_name="<c48.h>",base_dir=base_dir,include_depth=include_depth)
+                toks=self._preprocess_text(self.builtin_header,source_name="<c48.h>",base_dir=base_dir,include_depth=include_depth+1)
                 out.extend(toks[:-1])
             return
         m=re.fullmatch(r'"([^"\n]+)"',s)
