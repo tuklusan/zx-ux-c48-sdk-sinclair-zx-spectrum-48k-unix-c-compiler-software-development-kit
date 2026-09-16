@@ -95,10 +95,6 @@ These games are included as a small cultural time capsule of what “computer ga
 
 By then **Adventure** had turned caves, maps and magic words into mainframe folklore; **Hunt the Wumpus** had made pits, superbats and a monster lurking in a graph of rooms a shared BASIC-era legend; **Star Trek** had travelled through time-sharing systems, schools, magazines and books in endlessly rewritten listings; **Rogue** was carrying that tradition into Unix terminals with a different dungeon every run; and **Chess** remained computing’s classic public test of whether a machine could appear to think.
 
-The quieter side of that culture mattered just as much. **Backgammon**, **Cribbage**, **Go Fish**, **Hangman**, **Maze**, **Quiz**, **Arithmetic**, **Fortune** and **Snake** evoke the compact programs people typed in, copied, traded, ported, altered and understood by reading the code—part game, part programming lesson, part social currency in a school lab or terminal room.
-
-Together, they give the SDK a playable connection to the folklore and nostalgia surrounding early personal computing, and to the imagination that greeted machines like the ZX Spectrum when it arrived in 1982.
-
 | ![C48 Adventure](docs/images/games/advent.png)<br>**Adventure** | ![C48 Arithmetic](docs/images/games/arith.png)<br>**Arithmetic** | ![C48 Backgammon](docs/images/games/bgammon.png)<br>**Backgammon** |
 |---|---|---|
 | <sub><a href="usr/src/games/advent.c">advent.c</a></sub> | <sub><a href="usr/src/games/arith.c">arith.c</a></sub> | <sub><a href="usr/src/games/bgammon.c">bgammon.c</a></sub> |
@@ -113,6 +109,10 @@ Together, they give the SDK a playable connection to the folklore and nostalgia 
 
 The combined [14-game contact sheet](docs/images/games/contact-sheet.png) is generated from the same certified captures.
 
+The quieter side of that culture mattered just as much. **Backgammon**, **Cribbage**, **Go Fish**, **Hangman**, **Maze**, **Quiz**, **Arithmetic**, **Fortune** and **Snake** evoke the compact programs people typed in, copied, traded, ported, altered and understood by reading the code—part game, part programming lesson, part social currency in a school lab or terminal room.
+
+Together, they give the SDK a playable connection to the folklore and nostalgia surrounding early personal computing, and to the imagination that greeted machines like the ZX Spectrum when it arrived in 1982.
+
 ## Relationship to native ZX-UX
 
 [ZX-UX](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project) is the actual Unix-like operating and development environment for the original unexpanded 48K Sinclair ZX Spectrum. This SDK exists so C48 software can be developed and tested on modern computers while native ZX-UX compiler, linker, ABI, ROM-bridge, persistence, and process facilities remain separately implemented and verified.
@@ -123,13 +123,13 @@ The authoritative [C48 language specification](https://github.com/tuklusan/ZX-UX
 
 The games above remember the period when a computer was something to explore, program and play with; these applications remember the other half of the same story—the moment personal computers were expected to be useful. Word processing and spreadsheets became symbols of the shift from hobby machine to everyday work tool, while interactive graphics turned the screen into a place to design and manipulate things rather than merely print results. By the early 1990s, that mixture of writing, personal finance and visual experimentation had become part of the culture of serious home computing.
 
-**WRITE48** evokes the word processors that turned a keyboard-and-screen micro into a practical writing desk; **SHEET48** recalls the spreadsheet tradition that helped establish personal computers as tools for planning, modelling and finance; and **WIRE3D** nods to the much older lineage of interactive computer graphics and CAD, compressed here into a tiny wireframe modeler. They are not replicas of particular historical products. Like the games, they are deliberately legible C48 programs: compact enough to read, but substantial enough to exercise editing, formulas, screen handling, geometry and interaction under severe constraints.
-
 | ![WRITE48](docs/images/apps/write48.png)<br>**WRITE48 — Resume Editor** | ![SHEET48](docs/images/apps/sheet48.png)<br>**SHEET48 — Home Brokerage** | ![WIRE3D](docs/images/apps/wire3d.png)<br>**WIRE3D — Imperial Cruiser** |
 |---|---|---|
 | <sub><a href="usr/src/apps/write48.c">write48.c</a></sub> | <sub><a href="usr/src/apps/sheet48.c">sheet48.c</a></sub> | <sub><a href="usr/src/apps/wire3d.c">wire3d.c</a></sub> |
 
 The combined [3-application contact sheet](docs/images/apps/contact-sheet.png) is generated from the same certified captures.
+
+**WRITE48** evokes the word processors that turned a keyboard-and-screen micro into a practical writing desk; **SHEET48** recalls the spreadsheet tradition that helped establish personal computers as tools for planning, modelling and finance; and **WIRE3D** nods to the much older lineage of interactive computer graphics and CAD, compressed here into a tiny wireframe modeler. They are not replicas of particular historical products. Like the games, they are deliberately legible C48 programs: compact enough to read, but substantial enough to exercise editing, formulas, screen handling, geometry and interaction under severe constraints.
 
 ## Runtime notes
 
