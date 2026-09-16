@@ -82,7 +82,7 @@ void scene(int f)
     ink(7);
     for (i = 0; i < 44; i++) {
         x = (i * 47 + f * 3) & 255;
-        y = (i * 29 + f * 2) % 176;
+        y = 16 + (i * 29 + f * 2) % 160;
         plot(x, y);
     }
     ink(6);

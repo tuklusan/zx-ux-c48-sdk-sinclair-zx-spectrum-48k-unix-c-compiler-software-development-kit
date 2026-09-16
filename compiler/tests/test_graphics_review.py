@@ -67,5 +67,38 @@ class GraphicsReviewBatch5ATests(unittest.TestCase):
             self.assertEqual(vm.run(), 0)
 
 
+class GraphicsReviewBatch5BTests(unittest.TestCase):
+    def test_sprites_preserves_top_label_band(self):
+        src = (SRC / "sprites.c").read_text(encoding="ascii")
+        self.assertIn("y = 16 + (i * 29 + f * 2) % 160;", src)
+        self.assertNotIn("y = (i * 29 + f * 2) % 176;", src)
+
+    def test_warp_preserves_top_label_band(self):
+        src = (SRC / "warp.c").read_text(encoding="ascii")
+        self.assertIn("y1 >= 16 && y1 < 184", src)
+        self.assertIn("y2 >= 16 && y2 < 184", src)
+
+    def test_muldiv_large_divisor_and_small_divisor(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            shutil.copy2(SRC / "demoapi.h", root / "demoapi.h")
+            source = root / "probe.c"
+            source.write_text(
+                '#include "demoapi.h"\n'
+                'int main(void)\n'
+                '{\n'
+                '    if (d_muldiv(160, 220, 32767) != 1) return 1;\n'
+                '    if (d_muldiv(-160, 220, 32767) != -1) return 2;\n'
+                '    if (d_muldiv(100, 220, 1) != 22000) return 3;\n'
+                '    return 0;\n'
+                '}\n',
+                encoding="ascii",
+                newline="\n",
+            )
+            program = compile_file(source)
+            vm = C48VM(program, ZXScreen(FONT), argv=["probe"])
+            self.assertEqual(vm.run(), 0)
+
+
 if __name__ == "__main__":
     unittest.main()

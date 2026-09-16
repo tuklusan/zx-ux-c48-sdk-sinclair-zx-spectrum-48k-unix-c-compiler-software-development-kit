@@ -123,30 +123,50 @@ int d_muldiv(int value, int scale, int div)
     int whole;
     int rem;
     int n;
-    int chunk;
+    int q;
+    int acc;
+    int mask;
     int out;
-    int prod;
     if (div <= 0 || scale != 220) return 0;
     if (value >= -2978 && value <= 2978 &&
         div <= 1638) {
         p = value * 11;
         whole = p / div;
         rem = p % div;
-        return whole * 20 + rem * 20 / div;
+        if (whole >= -1637 && whole <= 1637)
+            return whole * 20 + rem * 20 / div;
     }
-    n = value;
-    rem = 0;
-    out = 0;
-    while (n != 0) {
-        if (n > 16) chunk = 16;
-        else if (n < -16) chunk = -16;
-        else chunk = n;
-        prod = chunk * scale + rem;
-        out = out + prod / div;
-        rem = prod % div;
-        n = n - chunk;
+    whole = value / div;
+    rem = value % div;
+    if (whole > 148 || whole < -148) return 0;
+    if (rem < 0) n = -rem;
+    else n = rem;
+    q = 0;
+    acc = 0;
+    mask = 128;
+    while (mask != 0) {
+        q = q * 2;
+        if (acc >= div - acc) {
+            acc = acc - (div - acc);
+            q = q + 1;
+        }
+        else
+            acc = acc + acc;
+        if ((scale & mask) != 0) {
+            if (acc >= div - n) {
+                acc = acc - (div - n);
+                q = q + 1;
+            }
+            else
+                acc = acc + n;
+        }
+        mask = mask >> 1;
     }
-    return out;
+    if (rem < 0) q = -q;
+    out = whole * scale;
+    if (out > 0 && q > 32767 - out) return 0;
+    if (out < 0 && q < -32767 - 1 - out) return 0;
+    return out + q;
 }
 
 int d_px(int x, int z)

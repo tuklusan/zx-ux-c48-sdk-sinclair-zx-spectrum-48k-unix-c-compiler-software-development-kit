@@ -79,7 +79,8 @@ void scene(int f)
         ink(1 + ((z2 >> 4) % 7));
         bright(z2 < 70);
         if (d_ok(x1, y1) && d_ok(x2, y2) &&
-            y1 < 184 && y2 < 184) {
+            y1 >= 16 && y1 < 184 &&
+            y2 >= 16 && y2 < 184) {
             draw(x1, y1, x2, y2);
         }
         wz[i] = z2;
