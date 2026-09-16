@@ -46,43 +46,39 @@ jobs:
 
           path = Path("README.md")
           text = path.read_text(encoding="utf-8")
-          old = """## Clone and quick start
-
-```text
-git clone https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit.git
-cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit
-```
-"""
-          new = """## Download, clone, and quick start
-
-### Download the packaged SDK ZIP
-
-If you want to use the SDK without Git, the packaged release ZIP is the simplest route. It is one platform-neutral archive containing both the Windows batch launchers and the POSIX shell launchers.
-
-- **[Latest published release or release candidate](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases)** - this page is always current, with the newest published release at the top. Download the asset whose name starts with `zx-ux-c48-sdk-` and ends in `.zip`.
-- **[Direct download: current certified 1.0.0-RC5 ZIP](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/download/1.0.0-RC5/zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip)** - one-click download of the current certified package.
-
-GitHub's `/releases/latest` shortcut deliberately excludes prereleases, so the Releases page above is the durable link to the newest available package while release candidates are active.
-
-After downloading, extract the ZIP to a directory of your choice and run the commands below from the extracted SDK directory.
-
-### Clone with Git
-
-If you prefer to track the repository directly:
-
-```text
-git clone https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit.git
-cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit
-```
-"""
+          old = (
+              "## Clone and quick start\n\n"
+              "```text\n"
+              "git clone https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit.git\n"
+              "cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit\n"
+              "```\n"
+          )
+          new = (
+              "## Download, clone, and quick start\n\n"
+              "### Download the packaged SDK ZIP\n\n"
+              "If you want to use the SDK without Git, the packaged release ZIP is the simplest route. "
+              "It is one platform-neutral archive containing both the Windows batch launchers and the POSIX shell launchers.\n\n"
+              "- **[Latest published release or release candidate](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases)** "
+              "- this page is always current, with the newest published release at the top. Download the asset whose name starts with "
+              "`zx-ux-c48-sdk-` and ends in `.zip`.\n"
+              "- **[Direct download: current certified 1.0.0-RC5 ZIP](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/download/1.0.0-RC5/zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip)** "
+              "- one-click download of the current certified package.\n\n"
+              "GitHub's `/releases/latest` shortcut deliberately excludes prereleases, so the Releases page above is the durable link to the newest available package while release candidates are active.\n\n"
+              "After downloading, extract the ZIP to a directory of your choice and run the commands below from the extracted SDK directory.\n\n"
+              "### Clone with Git\n\n"
+              "If you prefer to track the repository directly:\n\n"
+              "```text\n"
+              "git clone https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit.git\n"
+              "cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit\n"
+              "```\n"
+          )
           if text.count(old) != 1:
               raise SystemExit(
                   f"README update: expected exactly one clone/quick-start block, found {text.count(old)}"
               )
           if "Direct download: current certified 1.0.0-RC5 ZIP" in text:
               raise SystemExit("README update: release-install text is already present")
-          text = text.replace(old, new)
-          path.write_text(text, encoding="utf-8", newline="\n")
+          path.write_text(text.replace(old, new), encoding="utf-8", newline="\n")
           PY
 
       - name: Verify, commit, and push README update
@@ -127,9 +123,10 @@ cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-k
               "### Clone with Git",
           )
           for item in required:
-              if text.count(item) != 1:
+              count = text.count(item)
+              if count != 1:
                   raise SystemExit(
-                      f"SoP pass {os.environ['PASS']}: README marker count for {item!r} is {text.count(item)}"
+                      f"SoP pass {os.environ['PASS']}: README marker count for {item!r} is {count}"
                   )
           if (root / ".github/workflows/readme-release-install.yml").exists():
               raise SystemExit(f"SoP pass {os.environ['PASS']}: temporary workflow still present")
