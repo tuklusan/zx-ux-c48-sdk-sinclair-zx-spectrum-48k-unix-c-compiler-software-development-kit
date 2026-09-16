@@ -39,6 +39,7 @@ from c48.screen import PALETTE_BRIGHT, PALETTE_NORMAL
 
 TIMEOUT = 90.0
 VM_TIME_QUOTA = 15.0
+HOST_COMMAND_TIMEOUT = 30.0
 
 
 def _records(path: Path) -> list[dict]:
@@ -92,14 +93,35 @@ def _launcher_command(*args: str) -> list[str]:
     return [str(ROOT / "c48run"), *args]
 
 
+def _run_host_command(
+    cmd: list[str],
+    *,
+    label: str,
+    cwd: Path | None = None,
+) -> subprocess.CompletedProcess[str]:
+    """Run a short host helper and turn hangs into clean verifier failures."""
+    try:
+        return subprocess.run(
+            cmd,
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            check=False,
+            timeout=HOST_COMMAND_TIMEOUT,
+        )
+    except subprocess.TimeoutExpired as exc:
+        raise AssertionError(
+            f"{label} timed out after {HOST_COMMAND_TIMEOUT:g}s"
+        ) from exc
+    except OSError as exc:
+        raise AssertionError(f"{label} could not start: {exc}") from exc
+
+
 def _check_version() -> str:
-    result = subprocess.run(
+    result = _run_host_command(
         _launcher_command("--version"),
+        label="c48run --version",
         cwd=ROOT,
-        text=True,
-        capture_output=True,
-        check=False,
-        timeout=30,
     )
     if result.returncode != 0:
         raise AssertionError(
@@ -263,12 +285,9 @@ def _mac_activate(pid: int) -> None:
         'tell application "System Events" to set frontmost of '
         f'(first process whose unix id is {pid}) to true'
     )
-    result = subprocess.run(
+    result = _run_host_command(
         ["osascript", "-e", script],
-        text=True,
-        capture_output=True,
-        check=False,
-        timeout=30,
+        label="macOS Tk activation",
     )
     if result.returncode != 0:
         raise AssertionError(f"macOS could not focus Tk process: {result.stderr}")
@@ -284,12 +303,9 @@ def _mac_key(pid: int, key: str, *, shift: bool = False) -> None:
     else:
         raise AssertionError(f"unsupported macOS injected key: {key}")
     script = f'tell application "System Events" to {action}'
-    result = subprocess.run(
+    result = _run_host_command(
         ["osascript", "-e", script],
-        text=True,
-        capture_output=True,
-        check=False,
-        timeout=30,
+        label=f"macOS key injection {key!r}",
     )
     if result.returncode != 0:
         raise AssertionError(f"macOS key injection failed: {result.stderr}")
