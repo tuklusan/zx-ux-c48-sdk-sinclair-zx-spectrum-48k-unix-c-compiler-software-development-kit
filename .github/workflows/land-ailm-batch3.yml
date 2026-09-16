@@ -24,5 +24,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Fresh run after C48 64-column byte-scan correction.
+          # Keep target diagnostics inside the frozen C48B1 ceiling.
           python -B .github/land_batch3.py
