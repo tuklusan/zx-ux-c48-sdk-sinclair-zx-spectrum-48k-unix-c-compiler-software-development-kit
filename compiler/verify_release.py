@@ -106,6 +106,7 @@ def check_required_files() -> None:
         "compiler/graphics_demo_expectations.json",
         "compiler/GUI-SMOKE-TESTS.md",
         "compiler/LICENSE-HEADER-POLICY.md",
+        "compiler/assets/SANYALnet-Labs-4x8-font-FINAL.bin",
         "compiler/assets/font4x8-tasword.bin", "compiler/assets/font4x8-zxux.bin",
         "docs/ZX-UX C48 SDK User Manual.docx",
         "docs/ZX-UX C48 SDK Technical Reference.docx",
@@ -226,6 +227,9 @@ def check_python_source() -> None:
                     broad.append((p.relative_to(SDK).as_posix(), "bare"))
                 elif isinstance(node.type, ast.Name) and node.type.id in {"Exception", "BaseException"}:
                     broad.append((p.relative_to(SDK).as_posix(), node.type.id))
+    # This is deliberately fail-closed.  A new broad exception boundary must be
+    # reviewed here and justified before it can enter a release.  The two GUI
+    # boundaries are the currently approved host/GUI containment points.
     allowed = {
         ("compiler/c48/gui.py", "Exception"),
         ("compiler/c48/gui.py", "BaseException"),
@@ -235,10 +239,12 @@ def check_python_source() -> None:
 
 
 def check_font() -> None:
+    final = SDK / "compiler/assets/SANYALnet-Labs-4x8-font-FINAL.bin"
     tasword = SDK / "compiler/assets/font4x8-tasword.bin"
     zxux = SDK / "compiler/assets/font4x8-zxux.bin"
     raw = SDK / "compiler/tasword2-font4x8-raw-768.bin"
     for label, path, key in (
+        ("FINAL", final, "final_sha256"),
         ("Tasword", tasword, "tasword_sha256"),
         ("ZX-UX", zxux, "zxux_sha256"),
     ):
@@ -374,14 +380,14 @@ def check_graphics_demos() -> None:
             sys.executable,
             "-B",
             str(ROOT / "verify_graphics_demos.py"),
-            "--static",
+            "--release",
         ],
         timeout=600,
     )
     if cp.returncode != 0:
         sys.stderr.write(cp.stdout + cp.stderr)
         fail("graphics demo verification failed")
-    if "GRAPHICS DEMO STATIC PASS: 21 demos" not in cp.stdout:
+    if "GRAPHICS DEMO VERIFY PASS: 21 demos" not in cp.stdout:
         fail("graphics demo completion marker missing")
 
 
