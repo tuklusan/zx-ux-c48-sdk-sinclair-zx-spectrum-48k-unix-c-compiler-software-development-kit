@@ -1,0 +1,137 @@
+name: Update 1.0.0 release notes
+
+on:
+  push:
+    paths:
+      - .github/workflows/update-release-notes-1.0.0.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    if: "${{ github.event.head_commit.message == 'release: polish 1.0.0 release notes' }}"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify release identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/${{ github.repository }}/releases/389451145 > /tmp/before.json
+          test "$(jq -r .tag_name /tmp/before.json)" = "1.0.0"
+          test "$(jq -r .target_commitish /tmp/before.json)" = "41d130e489638dd07ba3305eea41517e0ec3b32f"
+          test "$(jq -r .draft /tmp/before.json)" = "false"
+          test "$(jq -r .prerelease /tmp/before.json)" = "false"
+          jq -r '.assets[] | [.name,.digest] | @tsv' /tmp/before.json | sort > /tmp/assets.before
+          cat > /tmp/assets.expected <<'EOF'
+          RC5-RELEASE-METADATA.json	sha256:641f62a977b77ca525e3dce1a6530d734468184493783507a89b2bf598e7528d
+          SHA256SUMS-1.0.0-RC5.txt	sha256:d56de780c6c46c96d763e6a0914a0f2bc37ba205ee8ab064e09f0b28a1ab80d5
+          c48-1.0.0-RC5-gui-evidence-41d130e489638dd07ba3305eea41517e0ec3b32f.zip	sha256:b16d871474823a81b5baad9a7fea219b6ff544bae670f149e9e39b3c117283cf
+          zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip	sha256:c1367dc18e1a442c2b9230e2c19c1fda0f545977ed191b73f4adafe75fb4ea9b
+          EOF
+          diff -u /tmp/assets.expected /tmp/assets.before
+
+      - name: Patch release body only
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/release-body.md <<'RELEASE_BODY'
+          # C48 SDK 1.0.0
+          
+          This is the final **1.0.0** release, promoted **byte-for-byte from the fully certified 1.0.0-RC5 package**. The compiler, runtime, packaged SDK ZIP, GUI evidence, release metadata, and checksum asset were not rebuilt for the promotion. The RC5-labelled asset filenames are intentionally retained so the published files remain exactly the certified bytes.
+          
+          ## Install from the release ZIP
+          
+          Requires **Python 3.10 or newer**. Download `zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip` from the Assets section below, extract it, and open a terminal in the extracted SDK directory.
+          
+          Windows Command Prompt:
+          
+          ```bat
+          c48 --version
+          c48 usr\src\examples\hello.c
+          c48run usr\bin\examples\hello.c48b
+          ```
+          
+          Linux/macOS:
+          
+          ```sh
+          ./c48 --version
+          ./c48 usr/src/examples/hello.c
+          ./c48run usr/bin/examples/hello.c48b
+          ```
+          
+          Tkinter is needed only for the graphical display window. The compiler and non-audio headless runtime need no third-party Python packages.
+          
+          ## Install from GitHub
+          
+          Clone the repository and check out this release tag so later `main` changes do not alter your SDK copy:
+          
+          ```sh
+          git clone https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit.git
+          cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit
+          git checkout 1.0.0
+          ```
+          
+          Then use `c48` / `c48run` on Windows or `./c48` / `./c48run` on Linux and macOS as shown above.
+          
+          ## Certified release identity
+          
+          - Commit: `41d130e489638dd07ba3305eea41517e0ec3b32f`
+          - Tree: `953c2385096b41cd7b63e4abaca52441174e49a6`
+          - Packaged SDK SHA-256: `c1367dc18e1a442c2b9230e2c19c1fda0f545977ed191b73f4adafe75fb4ea9b`
+          - GUI evidence SHA-256: `b16d871474823a81b5baad9a7fea219b6ff544bae670f149e9e39b3c117283cf`
+          - Release metadata SHA-256: `641f62a977b77ca525e3dce1a6530d734468184493783507a89b2bf598e7528d`
+          - SHA256SUMS asset SHA-256: `d56de780c6c46c96d763e6a0914a0f2bc37ba205ee8ab064e09f0b28a1ab80d5`
+          
+          `SHA256SUMS-1.0.0-RC5.txt` and `RC5-RELEASE-METADATA.json` are retained as the original certification records for the promoted bytes.
+          
+          ## Verification and release discipline
+          
+          The final package was admitted only after the release gates and the promotion SoP agreed on the exact source and asset bytes. The certification chain is retained here with the release, rather than in the release-agnostic project README.
+          
+          - SDK verification workflow: `35112496729`
+          - BEEP numerical proof workflow: `35112499914`
+          - Host-native GUI certification workflow: `35112503533`
+          - Graphics certification workflow: `35112506780`
+          - Release-candidate packaging workflow: `35112510328`
+          - Packaged-document recertification workflow: `35112485121`
+          - Final promotion workflow: `35128968322`
+          
+          The verification envelope covers the compiler/runtime conformance and regression corpus, deterministic C48B1 rebuilds, ROM-derived BEEP numerical proof, host-native Tk behavior, all 21 graphics demos, packaged documentation, adversarial security fixtures, fresh-filesystem checks, and virgin-ZIP verification.
+          
+          An initial promotion attempt stopped after instrumentation exposed a pre-existing `1.0.0` tag/release identity that had to be handled explicitly. No final promotion was accepted from that attempt. After the workflow was corrected, the SoP restarted from pass 1.
+          
+          For the successful final promotion, the candidate assets were freshly downloaded and independently checked through **three successive zero-defect passes**. Each pass verified the published SHA-256 values, ZIP integrity, extracted package bytes, `VERSION`, and the complete packaged release verifier. Each verifier pass reported:
+          
+          - **348 tests**
+          - **6 deterministic demos**
+          - **14 games**
+          
+          Only after all three fresh passes were clean was the `1.0.0` tag moved to the certified commit and the final release updated in place. A subsequent GitHub read-back verified the tag, release metadata, exact four-asset set, and published asset digests.
+          RELEASE_BODY
+          jq -n --rawfile body /tmp/release-body.md '{body:$body}' > /tmp/payload.json
+          gh api --method PATCH repos/${{ github.repository }}/releases/389451145 --input /tmp/payload.json > /tmp/after.json
+
+      - name: Post-patch zero-defect verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/${{ github.repository }}/releases/389451145 > /tmp/readback.json
+          test "$(jq -r .tag_name /tmp/readback.json)" = "1.0.0"
+          test "$(jq -r .target_commitish /tmp/readback.json)" = "41d130e489638dd07ba3305eea41517e0ec3b32f"
+          test "$(jq -r .name /tmp/readback.json)" = "C48 SDK 1.0.0"
+          test "$(jq -r .draft /tmp/readback.json)" = "false"
+          test "$(jq -r .prerelease /tmp/readback.json)" = "false"
+          jq -r '.assets[] | [.name,.digest] | @tsv' /tmp/readback.json | sort > /tmp/assets.after
+          diff -u /tmp/assets.expected /tmp/assets.after
+          python - <<'PYBODY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('/tmp/readback.json').read_text())
+          Path('/tmp/body.after').write_text(data['body'])
+          PYBODY
+          cmp /tmp/release-body.md /tmp/body.after
+          echo "Release body updated; tag, target, flags, name, asset set, and asset digests unchanged."
