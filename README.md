@@ -43,7 +43,7 @@ These and the three hero images above are rendered from the exact 6912-byte ZX S
 
 The combined [21-demo contact sheet](docs/images/demos/contact-sheet.png) and the individual demo outputs are covered by automated verification.
 
-## Documentation
+## Document Library
 
 The language authority lives upstream in the native ZX-UX project; the SDK documents describe the portable host compiler/runtime implementation and its deliberate boundaries from native ZX-UX.
 
@@ -88,6 +88,24 @@ C48 source -> portable C48 compiler -> C48B1 -> c48run -> C48 VM
 ```
 
 `C48B1` is an SDK-only host executable representation. It is not Z80 machine code, ZX-UX `OBJ1`, or ZX-UX `MEX1`.
+
+## Games gallery — 14 C48 games
+
+These snapshots are captured at each game's first interactive input boundary on an Ubuntu 24.04/x64 runner. Before capture, every checked-in C48B1 game is rebuilt from its C source and byte-compared; the complete gallery was then rendered three times with fixed runtime ticks and produced byte-identical images.
+
+| ![C48 Adventure](docs/images/games/advent.png)<br>**Adventure** | ![C48 Arithmetic](docs/images/games/arith.png)<br>**Arithmetic** | ![C48 Backgammon](docs/images/games/bgammon.png)<br>**Backgammon** |
+|---|---|---|
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/advent.c">advent.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/arith.c">arith.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/bgammon.c">bgammon.c</a></sub> |
+| ![C48 Chess](docs/images/games/chess.png)<br>**Chess** | ![C48 Cribbage](docs/images/games/cribbage.png)<br>**Cribbage** | ![C48 Go Fish](docs/images/games/fish.png)<br>**Go Fish** |
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/chess.c">chess.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/cribbage.c">cribbage.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/fish.c">fish.c</a></sub> |
+| ![C48 Fortune](docs/images/games/fortune.png)<br>**Fortune** | ![C48 Hangman](docs/images/games/hangman.png)<br>**Hangman** | ![C48 Maze](docs/images/games/maze.png)<br>**Maze** |
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/fortune.c">fortune.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/hangman.c">hangman.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/maze.c">maze.c</a></sub> |
+| ![C48 Quiz](docs/images/games/quiz.png)<br>**Quiz** | ![C48 Rogue](docs/images/games/rogue.png)<br>**Rogue** | ![C48 Snake](docs/images/games/snake.png)<br>**Snake** |
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/quiz.c">quiz.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/rogue.c">rogue.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/snake.c">snake.c</a></sub> |
+| ![C48 Star Trek](docs/images/games/trek.png)<br>**Star Trek** | ![C48 Hunt the Wumpus](docs/images/games/wump.png)<br>**Hunt the Wumpus** | |
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/trek.c">trek.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/wump.c">wump.c</a></sub> | |
+
+The combined [14-game contact sheet](docs/images/games/contact-sheet.png) is generated from the same certified captures.
 
 ## Relationship to native ZX-UX
 
