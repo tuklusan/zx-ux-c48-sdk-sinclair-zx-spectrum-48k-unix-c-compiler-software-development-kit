@@ -26,77 +26,23 @@ def gout(*a): return subprocess.check_output(['git',*a],cwd=ROOT,text=True).stri
 def patch():
     rep(SRC,'unsigned char ai_mstage[64];\n',
 '''unsigned char ai_mstage[64];
-unsigned int ai_scanwhy;
+char ai_scanwhy;
 unsigned int ai_scanat;
 unsigned int ai_scanrec;
-unsigned int ai_readerr;
 ''','scan diagnostic globals')
     old='''int ai_modelscan(unsigned int topic)
 {
     unsigned int actual;
     unsigned int logical;
 '''
-    new='''void ai_puts0(char *s)
+    new='''void ai_scanhex(unsigned int v)
 {
-    unsigned int i;
-    i = 0;
-    while (s[i] != 0) {
-        putchar(s[i]);
-        i = i + 1;
-    }
-}
-
-void ai_putu(unsigned int v)
-{
-    char d[5];
-    unsigned int n;
-    if (v == 0) {
-        putchar('0');
-        return;
-    }
-    n = 0;
-    while (v != 0 && n < 5) {
-        d[n] = '0' + (v % 10);
-        v = v / 10;
-        n = n + 1;
-    }
-    while (n != 0) {
-        n = n - 1;
-        putchar(d[n]);
-    }
-}
-
-void ai_scandiag(void)
-{
-    ai_puts0("Model scan: ");
-    if (ai_readerr == 1) ai_puts0("io");
-    else if (ai_readerr == 2) ai_puts0("eof");
-    else if (ai_scanwhy == 2) ai_puts0("header");
-    else if (ai_scanwhy == 3) ai_puts0("identity");
-    else if (ai_scanwhy == 4) ai_puts0("length");
-    else if (ai_scanwhy == 5) ai_puts0("record");
-    else if (ai_scanwhy == 6) ai_puts0("payload");
-    else if (ai_scanwhy == 7) ai_puts0("checksum");
-    else ai_puts0("io");
-    ai_puts0(" b=");
-    ai_putu(ai_scanat);
-    ai_puts0(" r=");
-    ai_putu(ai_scanrec);
-    putchar(10);
-}
-
-int ai_readeof(void)
-{
-    int got;
-    ai_readerr = 0;
-    got = read(ai_mfd, ai_mstage, 1);
-    ai_mreads = ai_mreads + 1;
-    if (got < 0) {
-        ai_readerr = 1;
-        return -1;
-    }
-    if (got == 0) return 0;
-    return 1;
+    char *h;
+    h = "0123456789ABCDEF";
+    putchar(h[(v >> 12) & 15]);
+    putchar(h[(v >> 8) & 15]);
+    putchar(h[(v >> 4) & 15]);
+    putchar(h[v & 15]);
 }
 
 int ai_modelscan(unsigned int topic)
@@ -108,43 +54,42 @@ int ai_modelscan(unsigned int topic)
         '    int score;\n    int slot;\n    int rc;\n','scanner rc')
     rep(SRC,'    ai_mtopic = ai_t_id;\n    if (ai_mfd < 3) return -1;\n    actual = 8566;\n    if (actual < 40) return -1;\n',
 '''    ai_mtopic = ai_t_id;
-    ai_scanwhy = 1;
+    ai_scanwhy = 'I';
     ai_scanat = 0;
     ai_scanrec = 0;
-    ai_readerr = 0;
     if (ai_mfd < 3) return -1;
 ''','remove hard length')
     rep(SRC,'    if (ai_readfull(ai_mhead, 40) != 0) return -1;\n',
 '''    if (ai_readfull(ai_mhead, 40) != 0) return -1;
-    ai_scanwhy = 2;
+    ai_scanwhy = 'H';
     ai_scanat = 0;
 ''','header phase')
     rep(SRC,'    i=0;\n    while(i<8){\n',
-'''    ai_scanwhy = 3;
+'''    ai_scanwhy = 'D';
     ai_scanat = 8;
     i=0;
     while(i<8){
 ''','identity phase')
     rep(SRC,'    ai_mtsalt=ai_getu16(ai_mhead,34);\n',
-'''    ai_scanwhy = 2;
+'''    ai_scanwhy = 'H';
     ai_scanat = 24;
     ai_mtsalt=ai_getu16(ai_mhead,34);
 ''','header structural phase')
     rep(SRC,'    logical = ai_getu16(ai_mhead, 30);\n    if (logical != actual) return -1;\n    if (logical < 40) return -1;\n',
 '''    logical = ai_getu16(ai_mhead, 30);
-    ai_scanwhy = 4;
+    ai_scanwhy = 'L';
     ai_scanat = 30;
     if (logical < 40) return -1;
 ''','logical length phase')
     rep(SRC,'    while (rn < rcount) {\n        if (used > rbytes) return -1;\n',
 '''    while (rn < rcount) {
-        ai_scanwhy = 5;
+        ai_scanwhy = 'R';
         ai_scanrec = rn;
         ai_scanat = 40 + used;
         if (used > rbytes) return -1;
 ''','record phase')
     rep(SRC,'        while (pos < plen) {\n            take = plen - pos;\n',
-'''        ai_scanwhy = 6;
+'''        ai_scanwhy = 'P';
         while (pos < plen) {
             ai_scanat = 40 + used + hlen + pos;
             take = plen - pos;
@@ -155,20 +100,31 @@ int ai_modelscan(unsigned int topic)
                 ai_scanat = 40 + used + hlen + at;
 ''','payload offset')
     rep(SRC,'    if (used != rbytes) return -1;\n    calc = ai_fs1 + (ai_fs2 * 256);\n    if (calc != ai_getu16(ai_mhead, 32)) return -1;\n    if (ai_mbytes != logical) return -1;\n',
-'''    ai_scanwhy = 4;
+'''    ai_scanwhy = 'L';
     ai_scanat = 40 + used;
     if (used != rbytes) return -1;
     if (ai_mbytes != logical) return -1;
-    rc = ai_readeof();
-    if (rc != 0) return -1;
-    ai_scanwhy = 7;
+    rc = read(ai_mfd, ai_mstage, 1);
+    ai_mreads = ai_mreads + 1;
+    if (rc < 0) {
+        ai_scanwhy = 'I';
+        return -1;
+    }
+    if (rc > 0) return -1;
+    ai_scanwhy = 'C';
     ai_scanat = 32;
     calc = ai_fs1 + (ai_fs2 * 256);
     if (calc != ai_getu16(ai_mhead, 32)) return -1;
 ''','tail and checksum')
     rep(SRC,'        if (rc < 0) {\n            ai_error = 4;\n',
 '''        if (rc < 0) {
-            ai_scandiag();
+            puts("Model scan: code byte record");
+            putchar(ai_scanwhy);
+            putchar(' ');
+            ai_scanhex(ai_scanat);
+            putchar(' ');
+            ai_scanhex(ai_scanrec);
+            putchar(10);
             ai_error = 4;
 ''','print diagnostic')
 
@@ -178,15 +134,14 @@ int ai_modelscan(unsigned int topic)
         if ((unsigned int)got > ask) return -1;
         done = done + (unsigned int)got;
 '''
-    new='''        ai_readerr = 0;
-        got = read(ai_mfd, &p[done], ask);
+    new='''        got = read(ai_mfd, &p[done], ask);
         ai_mreads = ai_mreads + 1;
         if (got < 0) {
-            ai_readerr = 1;
+            ai_scanwhy = 'I';
             return -1;
         }
         if (got == 0) {
-            ai_readerr = 2;
+            ai_scanwhy = 'E';
             return -2;
         }
         /* SDK read() returns at most the requested count. */
@@ -220,9 +175,9 @@ def probe(corrupt):
             if 'Model scan:' in out: raise SystemExit('valid model scan failed')
         else:
             if 'Model scan:' not in out: raise SystemExit(f'{corrupt}: no diagnostic')
-            if corrupt=='tail' and 'length' not in out:
+            if corrupt=='tail' and 'L ' not in out:
                 raise SystemExit('tail: not length diagnostic')
-            if corrupt=='trunc' and 'eof' not in out:
+            if corrupt=='trunc' and 'E ' not in out:
                 raise SystemExit('trunc: not eof diagnostic')
         print(f'AILM PROBE {corrupt or "valid"} PASS',flush=True)
 
@@ -230,7 +185,7 @@ def target_tests():
     s=text(SRC); m=text(MATCH)
     for bad in ('actual = 8566','logical != actual'):
         if bad in s: raise SystemExit(f'stale hard length: {bad}')
-    if 'rc = ai_readeof();' not in s: raise SystemExit('missing eof probe')
+    if 'rc = read(ai_mfd, ai_mstage, 1);' not in s: raise SystemExit('missing eof probe')
     if 'if (got < 0)' not in m or 'if (got == 0)' not in m:
         raise SystemExit('readfull split missing')
     if 'got > ask' in m: raise SystemExit('unreachable post-write check remains')
@@ -278,14 +233,13 @@ def sop():
                         if b'\r' in line or len(body)>64:
                             raise SystemExit(f'C48 bytes {p}:{n}')
             ss=(fresh/SRC).read_bytes(); mm=(fresh/MATCH).read_bytes()
-            for needle in (b'ai_readeof',b'Model scan: ',b'ai_scanat'):
+            for needle in (b'ai_scanhex',b'Model scan: ',b'ai_scanat'):
                 if needle not in ss: raise SystemExit(f'missing {needle!r}')
             if b'got == 0' not in mm: raise SystemExit('missing EOF split')
             print(f'SOP PASS {k}: ZERO NEW DEFECTS manifest={expected}',flush=True)
 
 def main():
-    if gout('rev-parse','HEAD^^') != BASE:
-        raise SystemExit('landing base moved')
+    run(['git','merge-base','--is-ancestor',BASE,'HEAD'])
     patch(); c48_scan(); rebuild(); target_tests(); remove_harness(); delta_guard()
     run([sys.executable,'-B','compiler/verify_release.py'],timeout=1800)
     sop()
