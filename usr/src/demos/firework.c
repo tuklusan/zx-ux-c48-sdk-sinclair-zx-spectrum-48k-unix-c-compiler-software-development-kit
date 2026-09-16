@@ -56,7 +56,8 @@ void burst(int cx, int cy, int t, int col)
         y1 = cy + d_sin(a) * sp * (t - 2) / 128;
         y1 = y1 - (t - 2) * (t - 2) / 18;
         if (d_ok(x1, y1) && d_ok(x2, y2) &&
-            y1 < 184 && y2 < 184) {
+            y1 >= 16 && y1 < 184 &&
+            y2 >= 16 && y2 < 184) {
             draw(x1, y1, x2, y2);
         }
     }
@@ -68,7 +69,7 @@ void sky(void)
     ink(1);
     bright(0);
     for (x = 0; x < 256; x = x + 16) {
-        draw(x, 0, x, 18 + ((x * 7) % 30));
+        draw(x, 16, x, 18 + ((x * 7) % 30));
         draw(x, 18 + ((x * 7) % 30),
              x + 14, 18 + ((x * 7) % 30));
     }

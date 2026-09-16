@@ -99,7 +99,6 @@ void scene(int f)
     for (i = 0; i < 20; i++) {
         u1 = i * 256 / 20;
         u2 = (i + 1) * 256 / 20;
-        if (i == 19) u2 = 0;
         ink(2 + (i % 6));
         bright(i & 1);
         edge(u1, u2, -1, f);

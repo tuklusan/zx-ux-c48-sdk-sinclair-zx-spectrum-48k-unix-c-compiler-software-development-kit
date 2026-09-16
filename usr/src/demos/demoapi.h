@@ -117,12 +117,44 @@ void d_scene_break(void)
     beep(0.25, 0.0);
 }
 
+int d_muldiv(int value, int scale, int div)
+{
+    int p;
+    int whole;
+    int rem;
+    int n;
+    int chunk;
+    int out;
+    int prod;
+    if (div <= 0 || scale != 220) return 0;
+    if (value >= -2978 && value <= 2978 &&
+        div <= 1638) {
+        p = value * 11;
+        whole = p / div;
+        rem = p % div;
+        return whole * 20 + rem * 20 / div;
+    }
+    n = value;
+    rem = 0;
+    out = 0;
+    while (n != 0) {
+        if (n > 16) chunk = 16;
+        else if (n < -16) chunk = -16;
+        else chunk = n;
+        prod = chunk * scale + rem;
+        out = out + prod / div;
+        rem = prod % div;
+        n = n - chunk;
+    }
+    return out;
+}
+
 int d_px(int x, int z)
 {
     int q;
     q = z + 176;
     if (q < 32) q = 32;
-    return 128 + x * 220 / q;
+    return 128 + d_muldiv(x, 220, q);
 }
 
 int d_py(int y, int z)
@@ -130,7 +162,7 @@ int d_py(int y, int z)
     int q;
     q = z + 176;
     if (q < 32) q = 32;
-    return 96 + y * 220 / q;
+    return 96 + d_muldiv(y, 220, q);
 }
 
 int d_ok(int x, int y)
