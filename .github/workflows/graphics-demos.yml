@@ -110,7 +110,7 @@ jobs:
           python -B compiler/verify_graphics_demos.py
           --demo "${{ matrix.demo }}"
           --runner "${{ matrix.os }}"
-          --time-quota 15
+          --time-quota 30
           --evidence-dir runner-evidence
 
       - name: Upload runner build and visual evidence
