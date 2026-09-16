@@ -159,6 +159,7 @@ c48run --font compiler\assets\font4x8-zxux.bin usr\bin\examples\hello.c48b
 
 - Tk visualizes the VM's bitmap/attribute screen state rather than maintaining a separate display model.
 - **Shift+Space** is the host BREAK chord while a graphical program is running.
+- **Host `Esc` maps to ZX `CAPS+1` (console byte `7`).** In **WRITE48**, while editing text, press `Esc` to leave INSERT mode and return to CMD mode; from there `I` re-enters insert mode, `5`/`8` move, `7`/`6` page, `X` deletes, `F` finds, `G` jumps to top, and `Q` quits.
 - The runtime heap defaults to **1024 bytes**; `--heap` accepts even values from `0` through `8192`.
 - `--max-steps` and `--time-quota` bound execution when testing hostile or runaway programs.
 - `--allow-approx-rom-math` selects an explicitly non-certified approximation fallback; normal execution uses the checked-in 48K-ROM-derived math path.
