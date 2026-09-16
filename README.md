@@ -25,7 +25,7 @@ patent, trademark, and governing-law provisions.
 
 ## Install and quick start
 
-**Current stable release: 1.0.0.** Requires **Python 3.10 or newer**.
+**Requires Python 3.10 or newer.**
 
 **Release ZIP — simplest:** open the [latest release](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/latest), download the `zx-ux-c48-sdk-...zip` asset, extract it, and run from the extracted SDK directory.
 
@@ -57,7 +57,7 @@ Tkinter is needed only for the graphical display window. The compiler and non-au
 
 ## Graphics showcase — 18 more C48 demos
 
-These and the three hero images above are rendered from the exact 6912-byte ZX Spectrum screen state produced by the C48 VM. The release gate runs all 21 demos independently across GitHub-hosted Windows, Linux and macOS runners.
+These and the three hero images above are rendered from the exact 6912-byte ZX Spectrum screen state produced by the C48 VM. The automated graphics gate runs all 21 demos independently across GitHub-hosted Windows, Linux and macOS runners.
 
 | Demo | Demo | Demo |
 |---|---|---|
@@ -68,7 +68,7 @@ These and the three hero images above are rendered from the exact 6912-byte ZX S
 | ![Firework Night](docs/images/demos/firework.png)<br>**Firework Night** | ![Kaleidoscope](docs/images/demos/kaleido.png)<br>**Kaleidoscope** | ![Moire Engine](docs/images/demos/moire.png)<br>**Moire Engine** |
 | ![Mandelbrot Dive](docs/images/demos/mandel.png)<br>**Mandelbrot Dive** | ![Julia Ballet](docs/images/demos/julia.png)<br>**Julia Ballet** | ![Fractal Forest](docs/images/demos/forest.png)<br>**Fractal Forest** |
 
-The combined [21-demo contact sheet](docs/images/demos/contact-sheet.png) and the individual demo outputs are part of the release verification envelope.
+The combined [21-demo contact sheet](docs/images/demos/contact-sheet.png) and the individual demo outputs are covered by automated verification.
 
 ## Documentation
 
@@ -107,17 +107,17 @@ C48 source -> portable C48 compiler -> C48B1 -> c48run -> C48 VM
 
 The authoritative C48 language specification lives upstream and is the language baseline implemented by the SDK. `usr/src/c48host.h` is explicitly a **development-only Host Game API profile** and is not the final native ZX-UX `<c48.h>` ABI.
 
-## 1.0.0 runtime notes
+## Runtime notes
 
 ### Fonts
 
-The 1.0.0 runtime defaults to the distinct SANYALnet Labs final 4x8 font:
+The runtime defaults to the SANYALnet Labs final 4x8 font:
 
 ```text
 compiler/assets/SANYALnet-Labs-4x8-font-FINAL.bin
 ```
 
-Select another supplied F4X8 font with `--font`, including the ZX-UX font slot shipped with the release:
+Select another supplied F4X8 font with `--font`, including the ZX-UX font slot shipped with the SDK:
 
 ```bat
 c48run --font compiler\assets\font4x8-zxux.bin usr\bin\examples\hello.c48b
@@ -127,7 +127,7 @@ c48run --font compiler\assets\font4x8-zxux.bin usr\bin\examples\hello.c48b
 ./c48run --font compiler/assets/font4x8-zxux.bin usr/bin/examples/hello.c48b
 ```
 
-The release also includes `font4x8-tasword.bin`. In 1.0.0 the Tasword and ZX-UX selectable slots are byte-identical but keep independent names so either slot can diverge later without changing the command-line contract. The default `SANYALnet-Labs-4x8-font-FINAL.bin` is a separate resource.
+The SDK also includes `font4x8-tasword.bin`. Font selection stays explicit through the same `--font PATH` command-line contract.
 
 ### Screen, input, heap and execution controls
 
@@ -157,22 +157,6 @@ docs/                         manuals, technical reference and images
 ```
 
 Sources under `usr/src/` compile by default to the matching relative path under `usr/bin/`. Other sources compile beside the input as `.c48b` unless `-o` is supplied.
-
-## Verification and release discipline
-
-The 1.0.0 release was certified from exact commit `41d130e489638dd07ba3305eea41517e0ec3b32f`. The release gate covers the compiler/runtime test corpus, deterministic rebuilds, BEEP numerical proof, host-native Tk behavior, the 21 graphics demos, packaged documentation, security fixtures, fresh-filesystem verification, and virgin-ZIP verification.
-
-Run the complete verifier locally:
-
-```bat
-python -B compiler\verify_release.py
-```
-
-```sh
-python3 -B compiler/verify_release.py
-```
-
-The repository also carries targeted test and maintenance gates under `.github/workflows/` and `compiler/`.
 
 ## License and author
 
