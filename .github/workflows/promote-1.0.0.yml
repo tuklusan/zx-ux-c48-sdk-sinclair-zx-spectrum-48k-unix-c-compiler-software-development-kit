@@ -1,0 +1,321 @@
+# One-shot promotion of the already-certified 1.0.0-RC5 bytes to final 1.0.0.
+# No compiler/runtime/package rebuild occurs here.
+name: Promote certified RC5 to 1.0.0
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/promote-1.0.0.yml"
+
+concurrency:
+  group: promote-certified-1.0.0
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+env:
+  SOURCE_TAG: 1.0.0-RC5
+  FINAL_TAG: 1.0.0
+  CERTIFIED_COMMIT: 41d130e489638dd07ba3305eea41517e0ec3b32f
+  CERTIFIED_TREE: 953c2385096b41cd7b63e4abaca52441174e49a6
+  MAIN_ASSET: zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip
+  GUI_ASSET: c48-1.0.0-RC5-gui-evidence-41d130e489638dd07ba3305eea41517e0ec3b32f.zip
+  METADATA_ASSET: RC5-RELEASE-METADATA.json
+  SUMS_ASSET: SHA256SUMS-1.0.0-RC5.txt
+  MAIN_SHA256: c1367dc18e1a442c2b9230e2c19c1fda0f545977ed191b73f4adafe75fb4ea9b
+  GUI_SHA256: b16d871474823a81b5baad9a7fea219b6ff544bae670f149e9e39b3c117283cf
+  METADATA_SHA256: 641f62a977b77ca525e3dce1a6530d734468184493783507a89b2bf598e7528d
+  SUMS_SHA256: d56de780c6c46c96d763e6a0914a0f2bc37ba205ee8ab064e09f0b28a1ab80d5
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Verify source release identity and published asset digests
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${SOURCE_TAG}" > rc5-release.json
+          gh api "repos/${GITHUB_REPOSITORY}/commits/${SOURCE_TAG}" --jq .sha > rc5-commit.txt
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          release = json.loads(Path("rc5-release.json").read_text(encoding="utf-8"))
+          resolved = Path("rc5-commit.txt").read_text(encoding="ascii").strip()
+          expected_commit = os.environ["CERTIFIED_COMMIT"]
+          if resolved != expected_commit:
+              raise SystemExit(f"RC5 tag resolves to {resolved}, expected {expected_commit}")
+          if release.get("tag_name") != os.environ["SOURCE_TAG"]:
+              raise SystemExit("source release tag mismatch")
+          if release.get("target_commitish") != expected_commit:
+              raise SystemExit("source release target_commitish mismatch")
+          if release.get("draft"):
+              raise SystemExit("source RC5 release is unexpectedly a draft")
+          if not release.get("prerelease"):
+              raise SystemExit("source RC5 release is unexpectedly not a prerelease")
+
+          expected = {
+              os.environ["MAIN_ASSET"]: os.environ["MAIN_SHA256"],
+              os.environ["GUI_ASSET"]: os.environ["GUI_SHA256"],
+              os.environ["METADATA_ASSET"]: os.environ["METADATA_SHA256"],
+              os.environ["SUMS_ASSET"]: os.environ["SUMS_SHA256"],
+          }
+          actual = {}
+          for asset in release.get("assets", []):
+              name = asset.get("name")
+              digest = asset.get("digest") or ""
+              if digest.startswith("sha256:"):
+                  actual[name] = digest.split(":", 1)[1]
+          if set(actual) != set(expected):
+              raise SystemExit(
+                  f"RC5 asset set mismatch: actual={sorted(actual)} expected={sorted(expected)}"
+              )
+          for name, digest in expected.items():
+              if actual.get(name) != digest:
+                  raise SystemExit(
+                      f"published digest mismatch for {name}: {actual.get(name)} != {digest}"
+                  )
+          print("RC5 release identity and all four published asset digests match.")
+          PY
+
+      - name: Three successive fresh-byte SoP scans
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for pass in 1 2 3; do
+            echo "=== SoP fresh-byte scan pass ${pass}/3 ==="
+            rm -rf "scan-${pass}" "extract-${pass}"
+            mkdir "scan-${pass}" "extract-${pass}"
+            gh release download "${SOURCE_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --dir "scan-${pass}" \
+              --pattern "${MAIN_ASSET}" \
+              --pattern "${GUI_ASSET}" \
+              --pattern "${METADATA_ASSET}" \
+              --pattern "${SUMS_ASSET}"
+
+            PASS="${pass}" python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+          import zipfile
+
+          p = Path(f"scan-{os.environ['PASS']}")
+          expected = {
+              os.environ["MAIN_ASSET"]: os.environ["MAIN_SHA256"],
+              os.environ["GUI_ASSET"]: os.environ["GUI_SHA256"],
+              os.environ["METADATA_ASSET"]: os.environ["METADATA_SHA256"],
+              os.environ["SUMS_ASSET"]: os.environ["SUMS_SHA256"],
+          }
+          found = {x.name for x in p.iterdir() if x.is_file()}
+          if found != set(expected):
+              raise SystemExit(f"fresh download file set mismatch: {sorted(found)}")
+          for name in sorted(expected):
+              path = p / name
+              h = hashlib.sha256()
+              line_count = 0
+              byte_count = 0
+              with path.open("rb") as f:
+                  for line in f:
+                      line_count += 1
+                      byte_count += len(line)
+                      h.update(line)
+              digest = h.hexdigest()
+              if digest != expected[name]:
+                  raise SystemExit(f"byte scan digest mismatch for {name}: {digest}")
+              print(f"scanned {name}: bytes={byte_count} byte-lines={line_count} sha256={digest}")
+              if name.endswith(".zip"):
+                  with zipfile.ZipFile(path) as zf:
+                      bad = zf.testzip()
+                      if bad is not None:
+                          raise SystemExit(f"ZIP CRC defect in {name}: {bad}")
+          PY
+
+            unzip -q "scan-${pass}/${MAIN_ASSET}" -d "extract-${pass}"
+            root="$(find "extract-${pass}" -mindepth 1 -maxdepth 1 -type d -print -quit)"
+            test -n "${root}"
+            test "$(tr -d '\r\n' < "${root}/VERSION")" = "1.0.0"
+
+            ROOT="${root}" python - <<'PY'
+          import hashlib
+          import os
+          from pathlib import Path
+
+          root = Path(os.environ["ROOT"])
+          files = sorted(p for p in root.rglob("*") if p.is_file())
+          if not files:
+              raise SystemExit("fresh extraction unexpectedly contains no files")
+          total = 0
+          for path in files:
+              h = hashlib.sha256()
+              lines = 0
+              size = 0
+              with path.open("rb") as f:
+                  for line in f:
+                      lines += 1
+                      size += len(line)
+                      h.update(line)
+              total += size
+          print(f"line-by-line extracted-tree scan: files={len(files)} bytes={total}")
+          PY
+
+            (
+              cd "${root}"
+              C48_REQUIRE_PACKAGED_SPEC=1 python -B compiler/verify_release.py
+            )
+            echo "SoP pass ${pass}/3: zero new gaps/defects"
+          done
+
+      - name: Prepare final release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > release-notes.md <<'EOF'
+          # C48 SDK 1.0.0
+
+          This is the final **1.0.0** release, promoted **byte-for-byte from the fully certified 1.0.0-RC5 package**. The compiler, runtime, packaged SDK ZIP, GUI evidence, release metadata, and checksum asset were **not rebuilt** for this promotion.
+
+          The RC5-labelled asset filenames are intentionally retained so the promoted files remain exactly the certified bytes.
+
+          **Certified source identity**
+
+          - Commit: `41d130e489638dd07ba3305eea41517e0ec3b32f`
+          - Tree: `953c2385096b41cd7b63e4abaca52441174e49a6`
+          - SDK verification workflow: `35112496729`
+          - BEEP proof workflow: `35112499914`
+          - Host-native GUI certification workflow: `35112503533`
+          - Graphics certification workflow: `35112506780`
+          - Release-candidate packaging workflow: `35112510328`
+          - Packaged-document recertification workflow: `35112485121`
+
+          ## Install from the release ZIP
+
+          Requires **Python 3.10 or newer**. Download `zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip` from the Assets section below, extract it, and open a terminal in the extracted SDK directory.
+
+          Windows Command Prompt:
+
+          ```bat
+          c48 --version
+          c48 usr\src\examples\hello.c
+          c48run usr\bin\examples\hello.c48b
+          ```
+
+          Linux/macOS:
+
+          ```sh
+          ./c48 --version
+          ./c48 usr/src/examples/hello.c
+          ./c48run usr/bin/examples/hello.c48b
+          ```
+
+          Tkinter is needed only for the graphical display window. The compiler and non-audio headless runtime need no third-party Python packages.
+
+          ## Install from GitHub
+
+          Clone the repository and check out the `1.0.0` release tag so later `main` changes do not alter your SDK copy:
+
+          ```sh
+          git clone https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit.git
+          cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit
+          git checkout 1.0.0
+          ```
+
+          Then use `c48` / `c48run` on Windows or `./c48` / `./c48run` on Linux and macOS as shown above.
+
+          `SHA256SUMS-1.0.0-RC5.txt` and `RC5-RELEASE-METADATA.json` are retained as the original certification records for the promoted bytes.
+          EOF
+
+      - name: Create or verify final 1.0.0 tag
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${FINAL_TAG}" > final-ref.json 2>/dev/null; then
+            resolved="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${FINAL_TAG}" --jq .sha)"
+            test "${resolved}" = "${CERTIFIED_COMMIT}"
+            echo "Existing ${FINAL_TAG} tag already resolves to certified commit."
+          else
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
+              -f ref="refs/tags/${FINAL_TAG}" \
+              -f sha="${CERTIFIED_COMMIT}" > final-ref.json
+            echo "Created ${FINAL_TAG} at ${CERTIFIED_COMMIT}."
+          fi
+
+      - name: Publish final GitHub release from verified RC5 bytes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}" > final-release.json 2>/dev/null; then
+            release_id="$(python -c 'import json; print(json.load(open("final-release.json"))["id"])')"
+            body="$(cat release-notes.md)"
+            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
+              -f name="C48 SDK 1.0.0" \
+              -f body="${body}" \
+              -F draft=false \
+              -F prerelease=false \
+              -f make_latest=true > final-release.json
+          else
+            body="$(cat release-notes.md)"
+            gh api --method POST "repos/${GITHUB_REPOSITORY}/releases" \
+              -f tag_name="${FINAL_TAG}" \
+              -f target_commitish="${CERTIFIED_COMMIT}" \
+              -f name="C48 SDK 1.0.0" \
+              -f body="${body}" \
+              -F draft=false \
+              -F prerelease=false \
+              -f make_latest=true > final-release.json
+          fi
+
+          gh release upload "${FINAL_TAG}" \
+            "scan-3/${MAIN_ASSET}" \
+            "scan-3/${GUI_ASSET}" \
+            "scan-3/${METADATA_ASSET}" \
+            "scan-3/${SUMS_ASSET}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber
+
+      - name: Post-publish zero-defect verification
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}" > published.json
+          resolved="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${FINAL_TAG}" --jq .sha)"
+          test "${resolved}" = "${CERTIFIED_COMMIT}"
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          r = json.loads(Path("published.json").read_text(encoding="utf-8"))
+          if r.get("draft") or r.get("prerelease"):
+              raise SystemExit("final release is not published as a normal release")
+          if r.get("tag_name") != os.environ["FINAL_TAG"]:
+              raise SystemExit("final release tag mismatch")
+          if r.get("name") != "C48 SDK 1.0.0":
+              raise SystemExit("final release name mismatch")
+          names = {a.get("name") for a in r.get("assets", [])}
+          expected = {
+              os.environ["MAIN_ASSET"],
+              os.environ["GUI_ASSET"],
+              os.environ["METADATA_ASSET"],
+              os.environ["SUMS_ASSET"],
+          }
+          if names != expected:
+              raise SystemExit(f"final release asset set mismatch: {sorted(names)}")
+          print("Final 1.0.0 release is normal (non-prerelease), correctly tagged, and has the exact four promoted assets.")
+          PY
