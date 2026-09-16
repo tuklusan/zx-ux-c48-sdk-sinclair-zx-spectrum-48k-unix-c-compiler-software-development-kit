@@ -24,5 +24,55 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          # Keep target diagnostics inside the frozen C48B1 ceiling.
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.github/land_batch3.py')
+          s = p.read_text()
+          a = s.index('def probe(kind):\n')
+          b = s.index('\ndef target_tests():', a)
+          new = '''def probe(kind):
+              from c48.format import read as read_program
+              from c48.screen import Font4x8, ZXScreen
+              from c48.vm import C48VM
+              import os
+              with tempfile.TemporaryDirectory(prefix='ailm-b3-probe-') as td:
+                  td=Path(td); shutil.copy2(ROOT/BIN,td/'ailmzx48.c48b')
+                  data=(ROOT/MODEL).read_bytes()
+                  if kind=='tail': data+=b'X'
+                  if kind=='trunc': data=data[:-1]
+                  (td/'ailm.dat').write_bytes(data)
+                  program=read_program(td/'ailmzx48.c48b')
+                  font=Font4x8.load(ROOT/'compiler/assets/font4x8-tasword.bin')
+                  screen=ZXScreen(font)
+                  keys=iter(ord(c) for c in 'spectrum\\nq\\n')
+                  vm=C48VM(program,screen,argv=['ailmzx48'],
+                      input_provider=lambda: next(keys,-1),
+                      sound_player=lambda _path: None,
+                      tick_provider=lambda: 1000,max_steps=2000000)
+                  old=os.getcwd(); os.chdir(td)
+                  try:
+                      status=vm.run()
+                  finally:
+                      os.chdir(old)
+                  if status!=0:
+                      raise SystemExit(f'{kind or "valid"}: status {status}')
+                  def gv(name):
+                      lv=vm.global_lvalues[name]
+                      return vm.mem.load_integer(lv.pointer.address,lv.ctype)
+                  err=gv('ai_error'); why=gv('ai_scanwhy')
+                  mb=gv('ai_mbytes'); mr=gv('ai_mrecords')
+                  if kind is None:
+                      if err!=0: raise SystemExit(f'valid: err={err} why={why}')
+                  else:
+                      want=7 if kind=='tail' else 2
+                      if err!=4 or why!=want:
+                          raise SystemExit(
+                              f'{kind}: err={err} why={why} bytes={mb} rec={mr}')
+                  print(
+                      f'AILM PROBE {kind or "valid"} PASS '
+                      f'error={err} reason={why} bytes={mb} records={mr}',
+                      flush=True)
+          '''
+          p.write_text(s[:a] + new + s[b:])
+          PY
           python -B .github/land_batch3.py
