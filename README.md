@@ -119,6 +119,18 @@ The combined [14-game contact sheet](docs/images/games/contact-sheet.png) is gen
 
 The authoritative [C48 language specification](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) lives upstream and is the language baseline implemented by the SDK. `usr/src/c48host.h` is explicitly a **development-only Host Game API profile** and is not the final native ZX-UX `<c48.h>` ABI.
 
+## Applications gallery — 3 C48 applications
+
+The games above remember the period when a computer was something to explore, program and play with; these applications remember the other half of the same story—the moment personal computers were expected to be useful. Word processing and spreadsheets became symbols of the shift from hobby machine to everyday work tool, while interactive graphics turned the screen into a place to design and manipulate things rather than merely print results. By the early 1990s, that mixture of writing, personal finance and visual experimentation had become part of the culture of serious home computing.
+
+**WRITE48** evokes the word processors that turned a keyboard-and-screen micro into a practical writing desk; **SHEET48** recalls the spreadsheet tradition that helped establish personal computers as tools for planning, modelling and finance; and **WIRE3D** nods to the much older lineage of interactive computer graphics and CAD, compressed here into a tiny wireframe modeler. They are not replicas of particular historical products. Like the games, they are deliberately legible C48 programs: compact enough to read, but substantial enough to exercise editing, formulas, screen handling, geometry and interaction under severe constraints.
+
+| ![WRITE48](docs/images/apps/write48.png)<br>**WRITE48 — Resume Editor** | ![SHEET48](docs/images/apps/sheet48.png)<br>**SHEET48 — Home Brokerage** | ![WIRE3D](docs/images/apps/wire3d.png)<br>**WIRE3D — Imperial Cruiser** |
+|---|---|---|
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/apps/write48.c">write48.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/apps/sheet48.c">sheet48.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/apps/wire3d.c">wire3d.c</a></sub> |
+
+The combined [3-application contact sheet](docs/images/apps/contact-sheet.png) is generated from the same certified captures.
+
 ## Runtime notes
 
 ### Fonts
