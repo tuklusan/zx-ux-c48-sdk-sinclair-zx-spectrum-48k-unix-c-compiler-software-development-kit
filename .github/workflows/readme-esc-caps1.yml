@@ -1,0 +1,134 @@
+name: README Esc to CAPS+1 documentation
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/readme-esc-caps1.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  rewrite:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add mapping and certify README
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object README.md)" = "deaba3ffd6ca8c92777af60e9ac559744b49f541"
+          python -B - <<'PY'
+          from pathlib import Path
+          import hashlib, re, shutil
+
+          p = Path('README.md')
+          original = p.read_bytes()
+          text = original.decode('utf-8', errors='strict')
+          anchor = '- **Shift+Space** is the host BREAK chord while a graphical program is running.\n'
+          added = ('- **Host `Esc` maps to ZX `CAPS+1` (console byte `7`).** In **WRITE48**, while editing text, press `Esc` to leave INSERT mode and return to CMD mode; from there `I` re-enters insert mode, `5`/`8` move, `7`/`6` page, `X` deletes, `F` finds, `G` jumps to top, and `Q` quits.\n')
+          if text.count(anchor) != 1:
+              raise SystemExit('Shift+Space anchor mismatch')
+          if added.strip() in text:
+              raise SystemExit('mapping bullet already present')
+          candidate = text.replace(anchor, anchor + added, 1)
+
+          # Exact reversal guard: this must be an insertion-only README edit.
+          if candidate.replace(added, '', 1).encode('utf-8') != original:
+              raise SystemExit('insertion-only guard failed')
+
+          # Mapping/source-derived wording invariants.
+          required = [
+              '**Host `Esc` maps to ZX `CAPS+1` (console byte `7`).**',
+              'press `Esc` to leave INSERT mode and return to CMD mode',
+              '`I` re-enters insert mode',
+              '`5`/`8` move', '`7`/`6` page', '`X` deletes', '`F` finds',
+              '`G` jumps to top', '`Q` quits',
+          ]
+          for phrase in required:
+              if candidate.count(phrase) != 1:
+                  raise SystemExit(f'mapping phrase invariant failed: {phrase}')
+
+          # Preserve the restrained prose/humor pass and critical layout.
+          for heading in [
+              '# ZX-UX C48 SDK — Portable C compiler and runtime for Sinclair ZX Spectrum 48K development',
+              '## Download and install',
+              '## ZX Spectrum 48K graphics showcase — 21 C48 demos',
+              '## Document Library',
+              '## C48 compiler and runtime features',
+              '## Games gallery — 14 C48 games',
+              '## Relationship to native ZX-UX',
+              '## Applications gallery — 3 C48 applications',
+              '## Runtime notes',
+              '### Screen, input, heap and execution controls',
+              '## Source tree',
+              '## License and author',
+          ]:
+              if candidate.count(heading) != 1:
+                  raise SystemExit(f'heading invariant failed: {heading}')
+
+          humor = [
+              'a role for which it was never interviewed',
+              'a remarkably small place in which to keep this much visual ambition',
+              'even a 48K universe eventually develops paperwork',
+              'seems pedantic right up until the moment it saves an afternoon',
+              'nostalgia with source code attached',
+              'without making the terminology do two jobs as well',
+              'the machine had, in effect, acquired a desk job',
+              'every pixel has a job and none has time for decorative flourishes',
+          ]
+          for phrase in humor:
+              if candidate.count(phrase) != 1:
+                  raise SystemExit(f'humor invariant drift: {phrase}')
+
+          p.write_bytes(candidate.encode('utf-8'))
+
+          # Full-file SoP: three fresh disk copies, line-by-line byte walks plus
+          # content/structure checks. Any change requires all three passes anew.
+          expected = p.read_bytes()
+          def scan(data: bytes, n: int):
+              lines = data.splitlines(keepends=True)
+              walked = 0
+              for line_no, line in enumerate(lines, 1):
+                  if b'\x00' in line:
+                      raise SystemExit(f'pass {n}: NUL at line {line_no}')
+                  for _ in line:
+                      walked += 1
+              if walked != len(data):
+                  raise SystemExit(f'pass {n}: byte walk mismatch')
+              d = data.decode('utf-8', errors='strict')
+              if d.count(added.strip()) != 1:
+                  raise SystemExit(f'pass {n}: mapping bullet mismatch')
+              if d.index('- **Shift+Space**') > d.index('- **Host `Esc` maps'):
+                  raise SystemExit(f'pass {n}: mapping placement mismatch')
+              if d.index('- **Host `Esc` maps') > d.index('- The runtime heap defaults'):
+                  raise SystemExit(f'pass {n}: mapping placement mismatch')
+              if d.count('usr/src/apps/write48.c') != 1:
+                  raise SystemExit(f'pass {n}: WRITE48 source link drift')
+              for phrase in humor:
+                  if d.count(phrase) != 1:
+                      raise SystemExit(f'pass {n}: humor drift: {phrase}')
+              print(f'README SOP PASS {n}: {len(data)} bytes, {len(lines)} lines, sha256={hashlib.sha256(data).hexdigest()}')
+
+          for n in (1, 2, 3):
+              root = Path(f'/tmp/readme-esc-caps1-{n}')
+              shutil.rmtree(root, ignore_errors=True)
+              root.mkdir(parents=True)
+              fresh = root / 'README.md'
+              fresh.write_bytes(expected)
+              scan(fresh.read_bytes(), n)
+          PY
+          git diff --check -- README.md
+      - name: Commit README and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/readme-esc-caps1.yml
+          git add README.md
+          git diff --cached --check
+          git commit -m "README: document Esc to CAPS+1 mapping"
+          git push origin HEAD:main
