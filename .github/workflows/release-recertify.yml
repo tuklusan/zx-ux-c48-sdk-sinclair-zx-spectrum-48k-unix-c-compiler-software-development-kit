@@ -23,17 +23,19 @@ name: C48 packaged-document recertification
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
-  contents: read
+  contents: write
   actions: write
 
 jobs:
   recertify:
-    name: Dispatch and require exact-commit release gates
+    name: Recertify exact commit and publish RC5
     runs-on: ubuntu-latest
     timeout-minutes: 240
+    env:
+      RELEASE_TAG: 1.0.0-RC5
     steps:
       - name: Dispatch and wait for exact-commit certification
         shell: bash
@@ -41,11 +43,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           TARGET_SHA: ${{ github.sha }}
           TARGET_REF: ${{ github.ref_name }}
+          RUNS_FILE: ${{ github.workspace }}/.release-runs.json
         run: |
           set -euo pipefail
           python - <<'PY'
           import json
           import os
+          from pathlib import Path
           import time
           import urllib.error
           import urllib.request
@@ -54,6 +58,7 @@ jobs:
           sha = os.environ["TARGET_SHA"]
           ref = os.environ["TARGET_REF"]
           token = os.environ["GH_TOKEN"]
+          runs_file = Path(os.environ["RUNS_FILE"])
           workflows = (
               ("verify.yml", "SDK verification"),
               ("beep.yml", "BEEP proof"),
@@ -122,9 +127,9 @@ jobs:
               else:
                   dispatch(workflow)
 
-          resolved: dict[str, int] = {}
           deadline = time.monotonic() + 3 * 60 * 60
           while time.monotonic() < deadline:
+              resolved: dict[str, int] = {}
               all_done = True
               for workflow, label in workflows:
                   runs = matching_runs(workflow)
@@ -153,9 +158,355 @@ jobs:
                       )
                   resolved[workflow] = run_id
               if all_done and len(resolved) == len(workflows):
+                  runs_file.write_text(
+                      json.dumps(resolved, indent=2, sort_keys=True) + "\n",
+                      encoding="ascii",
+                  )
                   print("exact-commit release recertification succeeded", flush=True)
                   print(json.dumps(resolved, sort_keys=True), flush=True)
-                  raise SystemExit(0)
+                  break
               time.sleep(20)
-          raise SystemExit("timed out waiting for exact-commit release recertification")
+          else:
+              raise SystemExit(
+                  "timed out waiting for exact-commit release recertification"
+              )
+          PY
+
+      - name: Assemble and publish exact RC5 prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ github.sha }}
+          RUNS_FILE: ${{ github.workspace }}/.release-runs.json
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import base64
+          import hashlib
+          import io
+          import json
+          import os
+          from pathlib import Path, PurePosixPath
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          import zipfile
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          sha = os.environ["TARGET_SHA"]
+          token = os.environ["GH_TOKEN"]
+          tag = os.environ["RELEASE_TAG"]
+          runs = json.loads(Path(os.environ["RUNS_FILE"]).read_text(encoding="ascii"))
+          version = tag.split("-RC", 1)[0]
+          rc_marker = tag.rsplit("-", 1)[-1]
+          api = f"https://api.github.com/repos/{repo}"
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "User-Agent": "zx-ux-c48-sdk-release-publisher",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+
+          def sha256(data: bytes) -> str:
+              return hashlib.sha256(data).hexdigest()
+
+          def request_json(
+              url: str,
+              *,
+              method: str = "GET",
+              payload: dict | None = None,
+              allow_404: bool = False,
+          ) -> dict | None:
+              body = None
+              request_headers = dict(headers)
+              if payload is not None:
+                  body = json.dumps(payload).encode("utf-8")
+                  request_headers["Content-Type"] = "application/json"
+              request = urllib.request.Request(
+                  url,
+                  data=body,
+                  headers=request_headers,
+                  method=method,
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=60) as response:
+                      raw = response.read()
+                      return json.loads(raw) if raw else {}
+              except urllib.error.HTTPError as exc:
+                  if allow_404 and exc.code == 404:
+                      return None
+                  detail = exc.read().decode("utf-8", errors="replace")
+                  raise SystemExit(
+                      f"GitHub API {method} {url} failed: HTTP {exc.code}: {detail}"
+                  ) from exc
+
+          def download(url: str) -> bytes:
+              request = urllib.request.Request(url, headers=headers)
+              try:
+                  with urllib.request.urlopen(request, timeout=180) as response:
+                      return response.read()
+              except urllib.error.HTTPError as exc:
+                  detail = exc.read().decode("utf-8", errors="replace")
+                  raise SystemExit(
+                      f"artifact download failed: HTTP {exc.code}: {detail}"
+                  ) from exc
+
+          def artifact(run_id: int, name: str) -> tuple[dict, bytes]:
+              payload = request_json(
+                  f"{api}/actions/runs/{run_id}/artifacts?per_page=100"
+              )
+              assert payload is not None
+              matches = [
+                  item for item in payload.get("artifacts", [])
+                  if item.get("name") == name and not item.get("expired")
+              ]
+              if len(matches) != 1:
+                  raise SystemExit(
+                      f"expected one live artifact {name!r} in run {run_id}; "
+                      f"found {len(matches)}"
+                  )
+              item = matches[0]
+              blob = download(str(item["archive_download_url"]))
+              digest = str(item.get("digest") or "")
+              if digest.startswith("sha256:"):
+                  expected = digest.split(":", 1)[1]
+                  actual = sha256(blob)
+                  if actual != expected:
+                      raise SystemExit(
+                          f"artifact {name} digest mismatch: {actual} != {expected}"
+                      )
+              return item, blob
+
+          version_file = request_json(f"{api}/contents/VERSION?ref={sha}")
+          assert version_file is not None
+          repo_version = base64.b64decode(str(version_file["content"])).decode("ascii").strip()
+          if repo_version != version:
+              raise SystemExit(
+                  f"release tag/version mismatch: tag={tag} VERSION={repo_version}"
+              )
+
+          commit = request_json(f"{api}/git/commits/{sha}")
+          assert commit is not None
+          tree_sha = str(commit["tree"]["sha"])
+
+          candidate_run = int(runs["release-candidate.yml"])
+          gui_run = int(runs["gui-desktop.yml"])
+          candidate_name = f"c48-release-source-{sha}"
+          candidate_artifact, candidate_blob = artifact(candidate_run, candidate_name)
+
+          with zipfile.ZipFile(io.BytesIO(candidate_blob), "r") as package:
+              files = [name for name in package.namelist() if not name.endswith("/")]
+              basenames: dict[str, str] = {}
+              for name in files:
+                  base = PurePosixPath(name).name
+                  if base in basenames:
+                      raise SystemExit(f"duplicate candidate artifact basename: {base}")
+                  basenames[base] = name
+              source_names = [
+                  name for name in files
+                  if PurePosixPath(name).name.startswith("zx-ux-c48-sdk-")
+                  and PurePosixPath(name).suffix == ".zip"
+              ]
+              if len(source_names) != 1:
+                  raise SystemExit(
+                      f"candidate artifact has {len(source_names)} source ZIPs"
+                  )
+              original_source_name = PurePosixPath(source_names[0]).name
+              source_bytes = package.read(source_names[0])
+              for required in ("RELEASE-CANDIDATE.json", "SHA256SUMS.release"):
+                  if required not in basenames:
+                      raise SystemExit(f"candidate artifact lacks {required}")
+              candidate_meta = json.loads(
+                  package.read(basenames["RELEASE-CANDIDATE.json"])
+              )
+              candidate_sums = package.read(
+                  basenames["SHA256SUMS.release"]
+              ).decode("ascii")
+
+          source_digest = sha256(source_bytes)
+          if candidate_meta.get("commit") != sha:
+              raise SystemExit("candidate metadata commit does not match release commit")
+          if candidate_meta.get("version") != version:
+              raise SystemExit("candidate metadata version does not match release version")
+          if candidate_meta.get("archive") != original_source_name:
+              raise SystemExit("candidate metadata archive name mismatch")
+          if candidate_meta.get("archive_sha256") != source_digest:
+              raise SystemExit("candidate metadata source digest mismatch")
+          if source_digest not in candidate_sums:
+              raise SystemExit("candidate checksum file does not cover source ZIP")
+
+          gui_name = f"gui-release-evidence-{sha}"
+          gui_artifact, gui_blob = artifact(gui_run, gui_name)
+          gui_out = io.BytesIO()
+          with zipfile.ZipFile(io.BytesIO(gui_blob), "r") as source_gui:
+              names = sorted(name for name in source_gui.namelist() if not name.endswith("/"))
+              with zipfile.ZipFile(
+                  gui_out,
+                  "w",
+                  compression=zipfile.ZIP_DEFLATED,
+                  compresslevel=9,
+              ) as target_gui:
+                  for name in names:
+                      pure = PurePosixPath(name)
+                      if pure.is_absolute() or ".." in pure.parts:
+                          raise SystemExit(f"unsafe GUI evidence path: {name}")
+                      info = zipfile.ZipInfo(str(pure), date_time=(1980, 1, 1, 0, 0, 0))
+                      info.compress_type = zipfile.ZIP_DEFLATED
+                      info.external_attr = 0o100644 << 16
+                      target_gui.writestr(info, source_gui.read(name))
+          gui_bytes = gui_out.getvalue()
+          gui_digest = sha256(gui_bytes)
+
+          source_asset = f"zx-ux-c48-sdk-{tag}-{sha}.zip"
+          gui_asset = f"c48-{tag}-gui-evidence-{sha}.zip"
+          metadata_asset = f"{rc_marker}-RELEASE-METADATA.json"
+          checksums_asset = f"SHA256SUMS-{tag}.txt"
+
+          metadata = {
+              "schema": 1,
+              "release_tag": tag,
+              "version": version,
+              "commit": sha,
+              "tree": tree_sha,
+              "prerelease": True,
+              "workflows": {
+                  "sdk_verification": int(runs["verify.yml"]),
+                  "beep_proof": int(runs["beep.yml"]),
+                  "host_native_gui": gui_run,
+                  "graphics": int(runs["graphics-demos.yml"]),
+                  "release_candidate": candidate_run,
+                  "recertification": int(os.environ["GITHUB_RUN_ID"]),
+              },
+              "source_package": {
+                  "name": source_asset,
+                  "sha256": source_digest,
+                  "candidate_artifact_id": int(candidate_artifact["id"]),
+                  "candidate_artifact_digest": candidate_artifact.get("digest"),
+              },
+              "gui_evidence": {
+                  "name": gui_asset,
+                  "sha256": gui_digest,
+                  "source_artifact_id": int(gui_artifact["id"]),
+                  "source_artifact_digest": gui_artifact.get("digest"),
+              },
+              "release_candidate": candidate_meta,
+          }
+          metadata_bytes = (
+              json.dumps(metadata, indent=2, sort_keys=True) + "\n"
+          ).encode("ascii")
+          metadata_digest = sha256(metadata_bytes)
+          sums = (
+              f"{gui_digest}  {gui_asset}\n"
+              f"{metadata_digest}  {metadata_asset}\n"
+              f"{source_digest}  {source_asset}\n"
+          ).encode("ascii")
+
+          body = (
+              f"C48 SDK {tag}\n\n"
+              f"Exact certified commit: {sha}\n"
+              f"Exact certified tree: {tree_sha}\n"
+              f"SDK verification workflow: {runs['verify.yml']}\n"
+              f"BEEP proof workflow: {runs['beep.yml']}\n"
+              f"Host-native GUI certification workflow: {gui_run}\n"
+              f"Graphics certification workflow: {runs['graphics-demos.yml']}\n"
+              f"Release-candidate packaging workflow: {candidate_run}\n"
+              f"Packaged-document recertification workflow: {os.environ['GITHUB_RUN_ID']}\n\n"
+              "Release changes:\n"
+              "- document the portable-SDK host Escape mapping to byte 7 and its "
+              "native ZX-UX CAPS+1 equivalent, including write48 insert-mode use;\n"
+              "- correct the host keyboard-input documentation to match the bounded "
+              "FIFO implementation;\n"
+              "- recertify packaged documentation changes through the complete "
+              "exact-commit release gate.\n\n"
+              "Certification: full SDK verification matrix, BEEP numerical proof, "
+              "host-native GUI matrix, 21-demo graphics gate, three fresh-filesystem "
+              "release verifies, exact candidate packaging, and virgin-ZIP verification.\n"
+          )
+
+          release = request_json(f"{api}/releases/tags/{tag}", allow_404=True)
+          if release is None:
+              release = request_json(
+                  f"{api}/releases",
+                  method="POST",
+                  payload={
+                      "tag_name": tag,
+                      "target_commitish": sha,
+                      "name": f"C48 SDK {tag}",
+                      "body": body,
+                      "draft": False,
+                      "prerelease": True,
+                  },
+              )
+              assert release is not None
+              print(f"created prerelease {tag}", flush=True)
+          else:
+              if str(release.get("target_commitish")) != sha:
+                  raise SystemExit(
+                      f"existing {tag} targets {release.get('target_commitish')}, not {sha}"
+                  )
+              if not release.get("prerelease"):
+                  raise SystemExit(f"existing {tag} is not marked prerelease")
+              print(f"reusing existing exact prerelease {tag}", flush=True)
+
+          release_id = int(release["id"])
+          current = request_json(f"{api}/releases/{release_id}/assets?per_page=100")
+          assert isinstance(current, list)
+          existing = {str(item["name"]): item for item in current}
+
+          assets = (
+              (source_asset, source_bytes, "application/zip"),
+              (gui_asset, gui_bytes, "application/zip"),
+              (metadata_asset, metadata_bytes, "application/json"),
+              (checksums_asset, sums, "text/plain; charset=utf-8"),
+          )
+          for name, data, content_type in assets:
+              local_digest = sha256(data)
+              prior = existing.get(name)
+              if prior is not None:
+                  remote_digest = str(prior.get("digest") or "")
+                  if remote_digest and remote_digest != f"sha256:{local_digest}":
+                      raise SystemExit(
+                          f"existing release asset {name} has different digest"
+                      )
+                  print(f"release asset already present: {name}", flush=True)
+                  continue
+              query = urllib.parse.urlencode({"name": name})
+              url = (
+                  f"https://uploads.github.com/repos/{repo}/releases/"
+                  f"{release_id}/assets?{query}"
+              )
+              request = urllib.request.Request(
+                  url,
+                  data=data,
+                  headers={
+                      **headers,
+                      "Content-Type": content_type,
+                      "Content-Length": str(len(data)),
+                  },
+                  method="POST",
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=300) as response:
+                      uploaded = json.load(response)
+              except urllib.error.HTTPError as exc:
+                  detail = exc.read().decode("utf-8", errors="replace")
+                  raise SystemExit(
+                      f"upload {name} failed: HTTP {exc.code}: {detail}"
+                  ) from exc
+              remote_digest = str(uploaded.get("digest") or "")
+              if remote_digest and remote_digest != f"sha256:{local_digest}":
+                  raise SystemExit(f"uploaded release asset digest mismatch: {name}")
+              print(f"uploaded release asset: {name}", flush=True)
+
+          final_release = request_json(f"{api}/releases/{release_id}")
+          assert final_release is not None
+          final_names = {str(item["name"]) for item in final_release.get("assets", [])}
+          missing = {name for name, _data, _type in assets} - final_names
+          if missing:
+              raise SystemExit(f"release is missing assets: {sorted(missing)}")
+          print(
+              f"published {tag} prerelease for exact commit {sha} with four assets",
+              flush=True,
+          )
           PY
