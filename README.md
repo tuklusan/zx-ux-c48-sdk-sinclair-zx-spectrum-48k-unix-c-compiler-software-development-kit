@@ -15,13 +15,13 @@ patent, trademark, and governing-law provisions.
 -->
 # ZX-UX C48 SDK for Windows, Linux and macOS: a portable compiler + runtime for desktop development of C programs for ZX-UX Unix for Sinclair ZX Spectrum 48K
 
+| ![Torus Reactor](docs/images/demos/torus.png)<br>**Torus Reactor** | ![Sprite Storm](docs/images/demos/sprites.png)<br>**Sprite Storm** | ![Spectrum Plasma](docs/images/demos/plasma.png)<br>**Spectrum Plasma** |
+|---|---|---|
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/torus.c">torus.c</a></sub> | <sub>Windows Server 2025/x64 · <a href="usr/src/demos/sprites.c">sprites.c</a></sub> | <sub>macOS 26/Arm64 · <a href="usr/src/demos/plasma.c">plasma.c</a></sub> |
+
 [![C48 SDK verification](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml)
 
 **ZX-UX C48 SDK** is not the full [**ZX-UX Unix for the Sinclair ZX Spectrum 48K**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project). It is a portable C compiler and just enough ZX-UX runtime to let you write and test C48 programs away from the actual ZX-UX environment on a real 48K Spectrum. The SDK runs on Windows, Linux and macOS, on Intel and Arm hosts.
-
-| ![Torus Reactor](docs/images/demos/torus.png)<br>**Torus Reactor** | ![Sprite Storm](docs/images/demos/sprites.png)<br>**Sprite Storm** | ![Spectrum Plasma](docs/images/demos/plasma.png)<br>**Spectrum Plasma** |
-|---|---|---|
-| <sub>Ubuntu 24.04 · x64<br>torus.c</sub> | <sub>Windows Server 2025 · x64<br>sprites.c</sub> | <sub>macOS 26 · Arm64<br>plasma.c</sub> |
 
 ## Graphics showcase — 18 more C48 demos
 
@@ -29,17 +29,17 @@ These and the three hero images above are rendered from the exact 6912-byte ZX S
 
 | ![UDG Walker](docs/images/demos/spriteanim.png)<br>**UDG Walker** | ![Raycast Labyrinth](docs/images/demos/raymaze.png)<br>**Raycast Labyrinth** | ![Crystal Goblet](docs/images/demos/goblet.png)<br>**Crystal Goblet** |
 |---|---|---|
-| <sub>Ubuntu 24.04 · x64<br>spriteanim.c</sub> | <sub>macOS 26 · Arm64<br>raymaze.c</sub> | <sub>Ubuntu 24.04 · x64<br>goblet.c</sub> |
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/spriteanim.c">spriteanim.c</a></sub> | <sub>macOS 26/Arm64 · <a href="usr/src/demos/raymaze.c">raymaze.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/goblet.c">goblet.c</a></sub> |
 | ![Infinity Tunnel](docs/images/demos/tunnel.png)<br>**Infinity Tunnel** | ![Vector Metropolis](docs/images/demos/city.png)<br>**Vector Metropolis** | ![Mountain Flight](docs/images/demos/terrain.png)<br>**Mountain Flight** |
-| <sub>Windows Server 2025 · x64<br>tunnel.c</sub> | <sub>Ubuntu 24.04 · x64<br>city.c</sub> | <sub>Windows Server 2025 · x64<br>terrain.c</sub> |
+| <sub>Windows Server 2025/x64 · <a href="usr/src/demos/tunnel.c">tunnel.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/city.c">city.c</a></sub> | <sub>Windows Server 2025/x64 · <a href="usr/src/demos/terrain.c">terrain.c</a></sub> |
 | ![Ocean Grid](docs/images/demos/ocean.png)<br>**Ocean Grid** | ![Mobius Flight](docs/images/demos/mobius.png)<br>**Mobius Flight** | ![Polyhedron Morph](docs/images/demos/morph3d.png)<br>**Polyhedron Morph** |
-| <sub>macOS 26 · Arm64<br>ocean.c</sub> | <sub>Windows Server 2025 · x64<br>mobius.c</sub> | <sub>macOS 26 · Arm64<br>morph3d.c</sub> |
+| <sub>macOS 26/Arm64 · <a href="usr/src/demos/ocean.c">ocean.c</a></sub> | <sub>Windows Server 2025/x64 · <a href="usr/src/demos/mobius.c">mobius.c</a></sub> | <sub>macOS 26/Arm64 · <a href="usr/src/demos/morph3d.c">morph3d.c</a></sub> |
 | ![Warp Drive](docs/images/demos/warp.png)<br>**Warp Drive** | ![Spiral Galaxy](docs/images/demos/galaxy.png)<br>**Spiral Galaxy** | ![Clockwork Orrery](docs/images/demos/orrery.png)<br>**Clockwork Orrery** |
-| <sub>Ubuntu 24.04 · x64<br>warp.c</sub> | <sub>Windows Server 2025 · x64<br>galaxy.c</sub> | <sub>macOS 26 · Arm64<br>orrery.c</sub> |
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/warp.c">warp.c</a></sub> | <sub>Windows Server 2025/x64 · <a href="usr/src/demos/galaxy.c">galaxy.c</a></sub> | <sub>macOS 26/Arm64 · <a href="usr/src/demos/orrery.c">orrery.c</a></sub> |
 | ![Firework Night](docs/images/demos/firework.png)<br>**Firework Night** | ![Kaleidoscope](docs/images/demos/kaleido.png)<br>**Kaleidoscope** | ![Moire Engine](docs/images/demos/moire.png)<br>**Moire Engine** |
-| <sub>Ubuntu 24.04 · x64<br>firework.c</sub> | <sub>Ubuntu 24.04 · x64<br>kaleido.c</sub> | <sub>Windows Server 2025 · x64<br>moire.c</sub> |
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/firework.c">firework.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/kaleido.c">kaleido.c</a></sub> | <sub>Windows Server 2025/x64 · <a href="usr/src/demos/moire.c">moire.c</a></sub> |
 | ![Mandelbrot Dive](docs/images/demos/mandel.png)<br>**Mandelbrot Dive** | ![Julia Ballet](docs/images/demos/julia.png)<br>**Julia Ballet** | ![Fractal Forest](docs/images/demos/forest.png)<br>**Fractal Forest** |
-| <sub>Ubuntu 24.04 · x64<br>mandel.c</sub> | <sub>Windows Server 2025 · x64<br>julia.c</sub> | <sub>macOS 26 · Arm64<br>forest.c</sub> |
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/mandel.c">mandel.c</a></sub> | <sub>Windows Server 2025/x64 · <a href="usr/src/demos/julia.c">julia.c</a></sub> | <sub>macOS 26/Arm64 · <a href="usr/src/demos/forest.c">forest.c</a></sub> |
 
 The combined [21-demo contact sheet](docs/images/demos/contact-sheet.png) and the individual demo outputs are covered by automated verification.
 
