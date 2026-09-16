@@ -49,7 +49,10 @@ jobs:
           game_contact = "The combined [14-game contact sheet](docs/images/games/contact-sheet.png) is generated from the same certified captures."
           game_gallery_end = games.index(game_contact, game_gallery_start) + len(game_contact)
           game_gallery = games[game_gallery_start:game_gallery_end]
-          games_without = games[:game_gallery_start] + games[game_gallery_end:]
+          game_wrapped = "\n\n" + game_gallery + "\n\n"
+          if games.count(game_wrapped) != 1:
+              raise SystemExit("wrapped game gallery mismatch")
+          games_without = games.replace(game_wrapped, "\n\n", 1)
 
           game_p2 = "By then **Adventure** had turned caves, maps and magic words into mainframe folklore; **Hunt the Wumpus** had made pits, superbats and a monster lurking in a graph of rooms a shared BASIC-era legend; **Star Trek** had travelled through time-sharing systems, schools, magazines and books in endlessly rewritten listings; **Rogue** was carrying that tradition into Unix terminals with a different dungeon every run; and **Chess** remained computing’s classic public test of whether a machine could appear to think."
           marker = game_p2 + "\n\n"
@@ -61,7 +64,10 @@ jobs:
           app_contact = "The combined [3-application contact sheet](docs/images/apps/contact-sheet.png) is generated from the same certified captures."
           app_gallery_end = apps.index(app_contact, app_gallery_start) + len(app_contact)
           app_gallery = apps[app_gallery_start:app_gallery_end]
-          apps_without = apps[:app_gallery_start] + apps[app_gallery_end:]
+          app_wrapped = "\n\n" + app_gallery + "\n\n"
+          if apps.count(app_wrapped) != 1:
+              raise SystemExit("wrapped application gallery mismatch")
+          apps_without = apps.replace(app_wrapped, "\n\n", 1)
 
           app_p1 = "The games above remember the period when a computer was something to explore, program and play with; these applications remember the other half of the same story—the moment personal computers were expected to be useful. Word processing and spreadsheets became symbols of the shift from hobby machine to everyday work tool, while interactive graphics turned the screen into a place to design and manipulate things rather than merely print results. By the early 1990s, that mixture of writing, personal finance and visual experimentation had become part of the culture of serious home computing."
           marker = app_p1 + "\n\n"
@@ -71,9 +77,11 @@ jobs:
 
           candidate = text[:gs] + new_games + text[ge:aps] + new_apps + text[ape:]
 
-          # Movement-only guard: line contents and multiplicities must be identical.
+          # Movement-only guards: identical byte count and identical line multiset.
+          if len(candidate.encode("utf-8")) != len(original):
+              raise SystemExit("movement-only guard failed: byte count changed")
           if Counter(candidate.splitlines()) != Counter(text.splitlines()):
-              raise SystemExit("movement-only guard failed: line content changed")
+              raise SystemExit("movement-only guard failed: line content/multiplicity changed")
           if len(candidate.splitlines()) != len(text.splitlines()):
               raise SystemExit("movement-only guard failed: line count changed")
 
@@ -97,7 +105,6 @@ jobs:
               gsec = decoded[g0:g1]
               asec = decoded[a0:a1]
 
-              # Games: p1, p2, gallery, p3, p4.
               gp1 = gsec.index("These games are included as a small cultural time capsule")
               gp2 = gsec.index("By then **Adventure**", gp1)
               gg = gsec.index("| ![C48 Adventure]", gp2)
@@ -106,7 +113,6 @@ jobs:
               if not (gp1 < gp2 < gg < gp3 < gp4):
                   raise SystemExit(f"pass {pass_no}: games section order incorrect")
 
-              # Apps: p1, gallery, p2.
               ap1 = asec.index("The games above remember the period")
               ag = asec.index("| ![WRITE48]", ap1)
               ap2 = asec.index("**WRITE48** evokes the word processors", ag)
