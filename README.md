@@ -163,7 +163,7 @@ c48run --font compiler\assets\font4x8-zxux.bin usr\bin\examples\hello.c48b
 - `--max-steps` and `--time-quota` bound execution when testing hostile or runaway programs.
 - `--allow-approx-rom-math` selects an explicitly non-certified approximation fallback; normal execution uses the checked-in 48K-ROM-derived math path.
 
-For detailed Float5 and BEEP behavior, error conventions and host/native boundaries, see the [ZX-UX C48 SDK Technical Reference](docs/ZX-UX%20C48%20SDK%20Technical%20Reference.docx).
+For BEEP details and error conventions beyond this summary, see the [ZX-UX C48 SDK Technical Reference](docs/ZX-UX%20C48%20SDK%20Technical%20Reference.docx).
 
 ## Source tree
 
