@@ -37,6 +37,12 @@ paths directly on the hosted runner desktop. A subjective manual desktop check
 remains useful as an optional spot-check, but it is no longer the formal release
 blocker once all eight automated rows and the aggregate evidence job pass.
 
+The injected-key helper is intentionally limited to the keys used by this gate.
+Linux/X11 and Windows can synthesize the tested key names directly. The macOS
+System Events path explicitly supports `Shift+Space`, `q`, and `x`, which are
+exactly the three key forms exercised below; it is not presented as a general
+macOS keyboard-injection API.
+
 ## Required matrix
 
 | Host runner | Python | Required result |
@@ -66,9 +72,9 @@ blocker once all eight automated rows and the aggregate evidence job pass.
    pixels equal the Tk-rendered framebuffer, and Shift+Space close preserving
    process status 0.
 4. Launch `usr/bin/games/fortune.c48b` without `--headless`; require its prompt
-   framebuffer to be rendered before `getchar()` begins waiting, inject an
-   ordinary key through the host window system and observe the VM accepting it,
-   then inject `q`, require normal completion, and close the completed window.
+   framebuffer to be rendered before `getchar()` begins waiting, inject `x`
+   through the host window system and observe the VM accepting it, then inject
+   `q`, require normal completion, and close the completed window.
 5. Launch `usr/bin/games/snake.c48b`; wait until the VM is accepting input, inject
    Shift+Space through the host window system, require the GUI to classify it as
    an active BREAK and return host status 130 with no traceback.
