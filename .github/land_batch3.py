@@ -106,7 +106,7 @@ def patch():
             ai_scanwhy = 2;
             return -1;
         }
-        /* read() cannot return more than the requested count. */
+        /* read() <= requested count. */
         done = done + (unsigned int)got;
 '''
     rep(MATCH,old,new,'readfull eof/error split')
