@@ -1,5 +1,5 @@
-# Temporary game-gallery capture probe. Delete after gallery is finalized.
-name: Probe game gallery captures
+# Temporary game-gallery capture workflow. Delete after successful capture.
+name: Certify game gallery captures
 
 "on":
   push:
@@ -8,7 +8,7 @@ name: Probe game gallery captures
       - ".github/workflows/probe-game-gallery.yml"
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   capture:
@@ -25,20 +25,22 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Capture first interactive state of all games
+      - name: Build, capture and certify all 14 games three times
         shell: bash
         run: |
           set -euo pipefail
           python -B - <<'PY'
           from pathlib import Path
           import hashlib
+          import shutil
           import struct
           import sys
           import zlib
 
           root = Path.cwd()
           sys.path.insert(0, str(root / "compiler"))
-          from c48.format import read
+          from c48.compiler import compile_file
+          from c48.format import encode, read
           from c48.screen import Font4x8, ZXScreen
           from c48.romvm import RomMathVM
           from verify_graphics_demos import png_bytes
@@ -48,91 +50,129 @@ jobs:
               "fortune", "hangman", "maze", "quiz", "rogue", "snake",
               "trek", "wump",
           ]
-          out = root / "game-probe"
-          out.mkdir(exist_ok=True)
-          (root / "game-probe-order.txt").write_text(
-              "3 columns, row-major:\n" + "\n".join(
-                  f"{i + 1:02d} {name}" for i, name in enumerate(games)
-              ) + "\n",
-              encoding="ascii",
-              newline="\n",
-          )
+          src = root / "usr" / "src" / "games"
+          bin_dir = root / "usr" / "bin" / "games"
+          passes_root = root / "game-gallery-passes"
+          final_dir = root / "docs" / "images" / "games"
           font = Font4x8.load(root / "compiler" / "assets" / "SANYALnet-Labs-4x8-font-FINAL.bin")
 
           class CaptureStop(Exception):
               pass
 
-          frames = []
+          def generic_png(width, height, rgb):
+              def chunk(kind, data):
+                  body = kind + data
+                  return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xffffffff)
+              raw = bytearray()
+              stride = width * 3
+              for y in range(height):
+                  off = y * stride
+                  raw.extend(b"\0" + rgb[off:off + stride])
+              head = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+              return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", head) + chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + chunk(b"IEND", b"")
+
+          # First prove every checked-in C48B1 game is the deterministic build of its source.
           for name in games:
-              program_path = root / "usr" / "bin" / "games" / f"{name}.c48b"
-              program = read(program_path)
-              screen = ZXScreen(font)
-              input_requests = [0]
-              def stop_input():
-                  input_requests[0] += 1
-                  raise CaptureStop()
-              vm = RomMathVM(
-                  program,
-                  screen,
-                  argv=[str(program_path)],
-                  input_provider=stop_input,
-                  tick_provider=lambda: 0x1234,
-                  max_steps=2_000_000,
-              )
-              try:
-                  vm.run()
-              except CaptureStop:
-                  pass
-              rgb = screen.render_rgb()
-              frames.append(rgb)
-              png = png_bytes(rgb)
-              path = out / f"{name}.png"
-              path.write_bytes(png)
-              lit = sum(v.bit_count() for v in screen.mem[:6144])
-              attrs = len(set(screen.mem[6144:]))
-              print(
-                  f"{name}: input_requests={input_requests[0]} lit={lit} attrs={attrs} "
-                  f"png_sha256={hashlib.sha256(png).hexdigest()}"
-              )
-              if input_requests[0] != 1 or lit < 20:
-                  raise SystemExit(f"{name}: first-interaction capture failed quality floor")
+              rebuilt = encode(compile_file(src / f"{name}.c"))
+              frozen = (bin_dir / f"{name}.c48b").read_bytes()
+              if rebuilt != frozen:
+                  raise SystemExit(f"{name}: frozen C48B1 does not match deterministic source build")
 
-          # Build a dependency-free 3x5 contact sheet at native 256x192 per cell.
-          cols, rows, gap = 3, 5, 8
-          cell_w, cell_h = 256, 192
-          width = cols * cell_w + (cols - 1) * gap
-          height = rows * cell_h + (rows - 1) * gap
-          canvas = bytearray([32] * (width * height * 3))
-          for idx, rgb in enumerate(frames):
-              row, col = divmod(idx, cols)
-              ox = col * (cell_w + gap)
-              oy = row * (cell_h + gap)
-              for y in range(cell_h):
-                  src = y * cell_w * 3
-                  dst = ((oy + y) * width + ox) * 3
-                  canvas[dst:dst + cell_w * 3] = rgb[src:src + cell_w * 3]
+          def capture_pass(pass_no):
+              out = passes_root / f"pass{pass_no}"
+              out.mkdir(parents=True, exist_ok=True)
+              frames = []
+              manifest = []
+              for name in games:
+                  program_path = bin_dir / f"{name}.c48b"
+                  program = read(program_path)
+                  screen = ZXScreen(font)
+                  requests = [0]
+                  def stop_input():
+                      requests[0] += 1
+                      raise CaptureStop()
+                  vm = RomMathVM(
+                      program,
+                      screen,
+                      argv=[str(program_path)],
+                      input_provider=stop_input,
+                      tick_provider=lambda: 0x1234,
+                      max_steps=2_000_000,
+                  )
+                  try:
+                      vm.run()
+                  except CaptureStop:
+                      pass
+                  if requests[0] != 1:
+                      raise SystemExit(f"{name}: expected exactly one input boundary, got {requests[0]}")
+                  lit = sum(v.bit_count() for v in screen.mem[:6144])
+                  if lit < 20:
+                      raise SystemExit(f"{name}: capture visual-content floor failed ({lit} lit pixels)")
+                  rgb = screen.render_rgb()
+                  frames.append(rgb)
+                  png = png_bytes(rgb)
+                  path = out / f"{name}.png"
+                  path.write_bytes(png)
+                  manifest.append((name, hashlib.sha256(png).hexdigest(), len(png), lit))
 
-          def chunk(kind, data):
-              body = kind + data
-              return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xffffffff)
-          raw = bytearray()
-          for y in range(height):
-              off = y * width * 3
-              raw.extend(b"\0" + canvas[off:off + width * 3])
-          head = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
-          contact = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", head) + chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + chunk(b"IEND", b"")
-          (root / "game-probe-contact-sheet.png").write_bytes(contact)
-          print(f"contact-sheet: {width}x{height} sha256={hashlib.sha256(contact).hexdigest()}")
+              cols, rows, gap = 3, 5, 8
+              cell_w, cell_h = 256, 192
+              width = cols * cell_w + (cols - 1) * gap
+              height = rows * cell_h + (rows - 1) * gap
+              canvas = bytearray([32] * (width * height * 3))
+              for idx, rgb in enumerate(frames):
+                  row, col = divmod(idx, cols)
+                  ox = col * (cell_w + gap)
+                  oy = row * (cell_h + gap)
+                  for y in range(cell_h):
+                      so = y * cell_w * 3
+                      do = ((oy + y) * width + ox) * 3
+                      canvas[do:do + cell_w * 3] = rgb[so:so + cell_w * 3]
+              contact = generic_png(width, height, canvas)
+              (out / "contact-sheet.png").write_bytes(contact)
+              manifest.append(("contact-sheet", hashlib.sha256(contact).hexdigest(), len(contact), -1))
+              return manifest
+
+          manifests = [capture_pass(i) for i in (1, 2, 3)]
+          if not (manifests[0] == manifests[1] == manifests[2]):
+              raise SystemExit("game gallery render passes are not byte-identical")
+
+          expected = {f"{name}.png" for name in games} | {"contact-sheet.png"}
+          pass3 = passes_root / "pass3"
+          actual = {p.name for p in pass3.glob("*.png")}
+          if actual != expected:
+              raise SystemExit(f"game gallery member mismatch: {sorted(actual)}")
+
+          if final_dir.exists():
+              shutil.rmtree(final_dir)
+          final_dir.mkdir(parents=True)
+          for path in sorted(pass3.glob("*.png")):
+              shutil.copy2(path, final_dir / path.name)
+
+          print("GAME GALLERY CERTIFICATION: 3 byte-identical passes, 14 games")
+          for row in manifests[2]:
+              print(f"  {row[0]}: {row[2]} bytes sha256={row[1]} lit={row[3]}")
           PY
 
-      - name: Upload probe
+      - name: Upload certified gallery preview
         uses: actions/upload-artifact@v4
         with:
-          name: game-gallery-probe-${{ github.sha }}
-          path: |
-            game-probe/*.png
-            game-probe-contact-sheet.png
-            game-probe-order.txt
+          name: game-gallery-certified-${{ github.sha }}
+          path: docs/images/games/
           if-no-files-found: error
           retention-days: 7
           compression-level: 9
+
+      - name: Commit certified game gallery images
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/images/games/*.png
+          if git diff --cached --quiet; then
+            echo "Game gallery images already match certified bytes."
+            exit 0
+          fi
+          git commit -m "docs: add certified game gallery screenshots"
+          git push origin HEAD:main
