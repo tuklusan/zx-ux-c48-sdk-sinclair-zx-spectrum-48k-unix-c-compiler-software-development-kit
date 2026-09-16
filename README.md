@@ -13,23 +13,23 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# ZX-UX C48 SDK for Windows, Linux and macOS: a portable compiler + runtime for desktop development of C programs for ZX-UX Unix for Sinclair ZX Spectrum 48K
+# ZX-UX C48 SDK — Portable C compiler and runtime for Sinclair ZX Spectrum 48K development
 
-| ![Torus Reactor](docs/images/demos/torus.png)<br>**Torus Reactor** | ![Sprite Storm](docs/images/demos/sprites.png)<br>**Sprite Storm** | ![Spectrum Plasma](docs/images/demos/plasma.png)<br>**Spectrum Plasma** |
+| ![Torus Reactor — C48 graphics demo for Sinclair ZX Spectrum 48K](docs/images/demos/torus.png)<br>**Torus Reactor** | ![Sprite Storm — C48 graphics demo for Sinclair ZX Spectrum 48K](docs/images/demos/sprites.png)<br>**Sprite Storm** | ![Spectrum Plasma — C48 graphics demo for Sinclair ZX Spectrum 48K](docs/images/demos/plasma.png)<br>**Spectrum Plasma** |
 |---|---|---|
 | <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/torus.c">torus.c</a></sub> | <sub>Windows Server 2025/x64 · <a href="usr/src/demos/sprites.c">sprites.c</a></sub> | <sub>macOS 26/Arm64 · <a href="usr/src/demos/plasma.c">plasma.c</a></sub> |
 
-[![C48 SDK verification](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml)
+[![ZX-UX C48 SDK verification status](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml)
 
-**ZX-UX C48 SDK** is not the full [**ZX-UX Unix for the Sinclair ZX Spectrum 48K**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project). It is a portable C compiler and just enough ZX-UX runtime to let you write and test C48 programs away from the actual ZX-UX environment on a real 48K Spectrum. The SDK runs on Windows, Linux and macOS, on Intel and Arm hosts.
+**ZX-UX C48 SDK** is a portable, host-side **C compiler, virtual machine and software development kit** for writing and testing C48 programs for **ZX-UX Unix on the Sinclair ZX Spectrum 48K**. It runs on Windows, Linux and macOS, on Intel and Arm hosts, providing the desktop compiler/runtime and Spectrum-facing development services needed away from the original machine. It remains separate from the actual [**ZX-UX Unix for the Sinclair ZX Spectrum 48K**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project): this SDK is not the native ZX-UX operating system, Z80 compiler, linker, runtime or final native ABI.
 
 ## Download and install
 
-Download the SDK and see installation instructions on the [Latest release](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/latest).
+Get the [Latest ZX-UX C48 SDK release](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/latest) for the certified download package and installation instructions.
 
-## Graphics showcase — 18 more C48 demos
+## ZX Spectrum 48K graphics showcase — 21 C48 demos
 
-These and the three hero images above are rendered from the exact 6912-byte ZX Spectrum screen state produced by the C48 VM. The automated graphics gate runs all 21 demos independently across GitHub-hosted Windows, Linux and macOS runners.
+The three hero images above and 18 demos below are rendered from the exact 6912-byte ZX Spectrum 48K screen state produced by the C48 VM. The automated graphics gate runs all 21 C48 demos independently across GitHub-hosted Windows, Linux and macOS runners.
 
 | ![UDG Walker](docs/images/demos/spriteanim.png)<br>**UDG Walker** | ![Raycast Labyrinth](docs/images/demos/raymaze.png)<br>**Raycast Labyrinth** | ![Crystal Goblet](docs/images/demos/goblet.png)<br>**Crystal Goblet** |
 |---|---|---|
@@ -45,11 +45,11 @@ These and the three hero images above are rendered from the exact 6912-byte ZX S
 | ![Mandelbrot Dive](docs/images/demos/mandel.png)<br>**Mandelbrot Dive** | ![Julia Ballet](docs/images/demos/julia.png)<br>**Julia Ballet** | ![Fractal Forest](docs/images/demos/forest.png)<br>**Fractal Forest** |
 | <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/mandel.c">mandel.c</a></sub> | <sub>Windows Server 2025/x64 · <a href="usr/src/demos/julia.c">julia.c</a></sub> | <sub>macOS 26/Arm64 · <a href="usr/src/demos/forest.c">forest.c</a></sub> |
 
-The combined [21-demo contact sheet](docs/images/demos/contact-sheet.png) and the individual demo outputs are covered by automated verification.
+The combined [21-demo ZX Spectrum graphics contact sheet](docs/images/demos/contact-sheet.png) and the individual C48 demo outputs are covered by automated verification.
 
 ## Document Library
 
-The language authority lives upstream in the native ZX-UX project; the SDK documents describe the portable host compiler/runtime implementation and its deliberate boundaries from native ZX-UX.
+The **C48 SDK document library** covers the portable compiler/runtime, user workflow, technical architecture and security review; the authoritative C48 language definition remains upstream in the native ZX-UX project.
 
 <table>
   <tr>
@@ -72,11 +72,11 @@ The language authority lives upstream in the native ZX-UX project; the SDK docum
 
 The repository also keeps a stable [`C48 specification pointer`](docs/ZX-UX%20C48%20Language%20Specification.md) to the authoritative upstream document.
 
-## What the SDK provides
+## C48 compiler and runtime features
 
-The SDK is a portable host-side development environment for C48 programs intended for ZX-UX. It does **not** claim that its Python compiler/VM is the native ZX-UX Z80 compiler or runtime.
+The SDK is a cross-platform, host-side C development environment for C48 programs intended for ZX-UX on the Sinclair ZX Spectrum 48K. Its Python compiler and VM are portable development tools; they are **not** the native ZX-UX Z80 compiler or runtime.
 
-- `c48` / `c48.bat`: command-line C48 compiler.
+- `c48` / `c48.bat`: command-line C48 C compiler for host development.
 - `c48run` / `c48run.bat`: C48B1 host runtime and 16-bit VM.
 - C48 preprocessing, lexing, parsing, semantic/type checks, diagnostics, and deterministic output.
 - C48 data model with 16-bit `int`, 16-bit pointers, unsigned plain `char`, a 64 KiB logical address space, and five-byte Spectrum-style `float` storage.
@@ -117,7 +117,7 @@ The quieter side of that culture mattered just as much. **Backgammon**, **Cribba
 
 Together, they give the SDK a playable connection to the folklore and nostalgia surrounding early personal computing, and to the imagination that greeted machines like the ZX Spectrum when it arrived in 1982.
 
-## Relationship to native ZX-UX
+## Relationship to native ZX-UX on Sinclair ZX Spectrum 48K
 
 [ZX-UX](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project) is the actual Unix-like operating and development environment for the original unexpanded 48K Sinclair ZX Spectrum. This SDK exists so C48 software can be developed and tested on modern computers while native ZX-UX compiler, linker, ABI, ROM-bridge, persistence, and process facilities remain separately implemented and verified.
 
@@ -135,7 +135,7 @@ The combined [3-application contact sheet](docs/images/apps/contact-sheet.png) i
 
 **WRITE48** evokes the word processors that turned a keyboard-and-screen micro into a practical writing desk; **SHEET48** recalls the spreadsheet tradition that helped establish personal computers as tools for planning, modelling and finance; and **WIRE3D** nods to the much older lineage of interactive computer graphics and CAD, compressed here into a tiny wireframe modeler. They are not replicas of particular historical products. Like the games, they are deliberately legible C48 programs: compact enough to read, but substantial enough to exercise editing, formulas, screen handling, geometry and interaction under severe constraints.
 
-## Runtime notes
+## C48 runtime notes
 
 ### Fonts
 
@@ -165,9 +165,9 @@ Font selection stays explicit through the same `--font PATH` command-line contra
 - `--max-steps` and `--time-quota` provide bounded host execution for testing hostile or runaway programs.
 - `--allow-approx-rom-math` selects an explicitly non-certified host approximation fallback; the normal runtime uses the checked-in 48K-ROM-derived math path.
 
-For the exact host/native boundaries, Float5 status, BEEP behavior, and error conventions, use the Technical Reference rather than treating host behavior as a promise about the future native ABI.
+For exact host/native boundaries, Float5 status, BEEP behavior and error conventions, use the [ZX-UX C48 SDK Technical Reference](docs/ZX-UX%20C48%20SDK%20Technical%20Reference.docx) rather than treating host behavior as a promise about the future native ABI.
 
-## Source tree
+## C48 SDK source tree
 
 ```text
 c48 / c48.bat                 compiler launchers
@@ -196,4 +196,4 @@ Required attribution:
 
 > Based on original work by Supratim Sanyal of SANYALnet Labs.
 
-Supratim Sanyal / SANYALnet Labs development notes: <https://supratim-sanyal.blogspot.com/>
+[Supratim Sanyal / SANYALnet Labs development notes](https://supratim-sanyal.blogspot.com/)
