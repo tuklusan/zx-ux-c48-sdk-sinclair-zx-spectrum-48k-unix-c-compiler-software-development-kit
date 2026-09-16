@@ -12,7 +12,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-"""Reject the explicitly retired dev/src, dev/bin, dev_src and dev_bin names."""
+"""Reject the explicitly retired dev tree and dev_src/dev_bin spellings."""
 from __future__ import annotations
 
 import argparse
