@@ -39,89 +39,6 @@ from c48.gui import (
 from c48.screen import Font4x8, ZXScreen
 from c48.romvm import RomMathVM
 
-# Fuse 48x48 application icon, data/icons/48x48/fuse.png, from the read-only
-# Fuse emulator repository.  Kept inline so every SDK copy has the same icon
-# without adding a packaging-only binary dependency.
-# Source: https://github.com/trufanov-nok/fuse-emulator/blob/master/data/icons/48x48/fuse.png
-_FUSE_ICON_PNG_BASE64 = """iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c
-6QAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9sIBRYHN1zUEbUAAAz3
-SURBVGje7VhZbxxXdv7OqarurqpuNsmmaFGkqIWydlKi5NiWZzQZzUw0QGbg
-GTsLMsm85ickz3nMW4A85CFIECABHCQ25PG+S+MZ2zKtjRZF0tzErZvdXHpn
-r1V1Th7Y1FDKJHYcO86DPuACt4HbwPed75y651zgIR7iIR7imwT9P+V0AMAQ
-gEEAg6ZpHgJQAPDnvu/P7TxsfsNkuwCcbJHdXscBuDsPqSqICKr6RwD++psQ
-EAZwYkdUh1q/e3by3LGXHW5oSwC1/ouvUwABOLgjmtvRPQSAHyBLDxDm/2ov
-ImBmJaKhr1JA1wMRHQJw7AH7dxLdSUy/ZP0dBhAC0PyfCNhp/xARDanqCQC7
-HcfZCjuR+r6PRqOxTU53OCKfs/+i5whAiJkPi8id3ybgQfsHW+tRwzAoHA5D
-VeG6rtIWBABXKhVUKhX171Lgc/Zf6JyqSovjEIDfCDhz+vH+SmXzb6ZmJn7I
-zK5lWdhezWYTpmmqaZqoVqtgZniep0EQkO/78DwPQRB8rdVv2zZCoQgMw0AQ
-+KjX60ONRv25ewIiYfuvLMN6FoAmEglpqSXf97VSqQAAWZYlnuc9aPcXtf0L
-pZBlWWLbLgyDSRVCRCACNRoNqVTKUFUCoET3f4lMAG1sGAiHwuo4DkciEfT1
-9Ylt2+z7ATyvKSMjI7xDwLat8mXShpnhOK6YpsVbJAlEJJ7X5Fqtgp6eHrlw
-4QKPjo5ibGxMmJlbd4AwM4vqyQcFpIkIjuNCRFAulzE5OYmVlZWvwH4HoVAY
-zNwiCgSBoFarol6v/YaEaaItHodhGjAsCyvrGzBsF7F4HJVy+b5PmgH0W0Bb
-HShtC5gHEDi2y8vLy1+KqGVZaNkPgLZvTTQaDVQqZahBQJcFzXvgpiIeb4cZ
-DqO9owNzU5P40U+fxXJmFZv5HDKpJJy2dngCdHR13ycAAIZFUTUxOObjw20B
-KQBl143GPy9fW/aTaVqy/SUiInhek2qNukjYBTbzBCI5dswFsUfptCvlUh2n
-9z9GkeO2zE5PoSuRoMTuPdLb3Y3U8jJWVlept3+feIlOzEyOk7VZls5yEZOF
-HKmIKBEAkIjKtwzh2af41Nj7ck9ABkDOdaLxnflq2w6Hw2EQsRARb9kfoF6r
-iVdvsq++aE+EDR8wK4FE2jo50b8fUanL/MwM9+z9DupBIAOH2/iVF1+A294u
-hmnyI317kVqYlxNHj3NuYx3hcBjJyQlJjt7klVIJiBjy+i8vswQBOnt2ybH9
-ZzkMxtjtUfF9n586pbh+WAfx/nYNiKwrUca2nQMdHQlstRxb9lcrZbQzI+sH
-AAE94d3YF98PxBkLazM4OXAWPb29mL97F4tzsxga2IeI7yGbzSKVXsHx4bPg
-eg1WKAQU8wjVa5ifX0CpkMdbL/wrSoHCTsThOw7CkQjMeg1/8LOfY3bmLvKp
-JNQ0MHDwUXTt2oWFpUV0rq8jfg740GgbbJUATCUqGIaR9DwPpXJBVPaBuUZE
-JTHZwMDgIA11dcvduVnYjoNEbx/tSSRk5tIUkWVJqVrD3t09NHbrhlgArEaD
-TCJJzU5D56ZpsVYX3zHxyfhtIoFY4RCGL5ynWLkhozPTOHToGDq7H6GowfKL
-X1xCsVSlc9/+ttz4+Combn9K1fSKvHfjGsrFAv1YRK6eAwUjz5xA7DVCeUNN
-IqoEqgvMRGErTCfP7IEdjUl7W5xfffEFdB86IpFahVNuFNmNdRw9fVYKm2V2
-YzHJJ5c5Ypn4YGlJfN/ndy49jyaRRDrjHO/tgZphaU5P8cUf/BheNif1WoVv
-T0+jJ9ErRo/FexoNlEsl7OntleT6OhuGifHLb8sHLz7PZRaEOCS/GrnKTjSG
-/gMDstzeztdLN0CfxdppM9cnwLIZBFo3DFlQoqYdsUPFcgkdu/cg7DiwTAuN
-jXWsNX1Uy2VsZNK49fxzWG40QU4ITa+JjBVCudHAxWd+go1MFtnkEsKui32H
-j6I70Yl0KgU2LAw89hgWF+ZRu3UTmYU5JFMpZNdWoUGAxc8mwG0u2rt3oUEG
-GpUKLly8iM1CGatLi/AkwNknnkSj4eHaZAI0OwJAhwAsm6qBB5hpqBZsx91V
-zKxqsVqlT1dWpOk1cfn9K8SGIZYdwZEzpxCqB7SxOC9Pfee7VK/VJRYJ4/U3
-XiNWU06eOoVURweNXhuRx1WQm56iQAK58vIl1H2fNMRiRyKYGB8ntgw5cvo0
-DBiYn/6Mzn3rvGw2PHREo/T6S5fEcWLo33eQLNOQybHbiM3OUf+zaXkl/xPw
-4husTIMI9DUjlV7WvX37OwD8wPe97lQ6Sal8XqtBwM/+/E8p7rZrLBbjcqlM
-F77/Q+re06P5QpErtZoeOHSYA4NpfnpaHb/JmdFb9MnoTa1WKzw1M01Lxby2
-Jzr5kc5dlMtl9Zk//hlH3Bh1xWJaKJV46MxjNHD4MBUKeS2Xynysfy+5taqO
-z99lf32Vxj/6QKfmZrnRbNBwaU0Xjguv/TKgevKuArSmqpfMVu+zASDt2O7x
-e80JEVaW0zg6fBrFQgETk+PYXFzAwto61jJp1EtFZO/cxroJuNEo5jeyqG6W
-cO73L8LbKGEltYy2zgSGB0+BJUAyk0a+WMa58+exMDONT8fHIKtpjNy6joVk
-EtpsIj15B3U2EO/ohEZsFFDAwaPHcfrMGcT6+uBt5NFTHUFx67Ic3NlOFwEs
-h8MRZWYNgoBUVVKT48jcvEbzpbKwaeCVy+/BskP0yMF9Eue9NDM9LxcvfA9a
-qVDIMOS1995FmG3ad+qg2J2dGB+9Reubm5LL5QAojV55R+bffRMZ8YmiEfnw
-zhjKhQKe/P53qZgtSa1cRjGfpd87dEg8w0KxVqNQJCK79+5DuVGmDdeRrbuJ
-CMARAKFtAVVVzDEzhcMRqlYrwsycWl+HiMj3nv4RG+sFrBbySGfX5dTRYe6I
-hKRQqnFyJY0jJ0+KSsAGMzJ35+T29RHOra0hEJHLr77EwoRde3slQhaXclkc
-OfSo7N7Tx/VqFVffv4yOWEIOHjzKlfIm3n7pkpT6+rlYKMAyDVmYneHozBia
-/16XV1/4CzY/+Ri61QGEiOjRVgqhwYykKip2xHar1cq9NCICGptNDJw6g856
-FZ899y8oFHKYz+VQLOSxsnAXE7euAwYh3BlDJruGYjaHoccfQwAGewHujN7C
-M0//ITayG5iamEB2fQNDv/MkWAWjNz5BemYKzblpzKeSqNdreOOFfwMRoAqQ
-AufPB/jLei8wtnxvEFUVmKZ50gQAz2v44XAkA2jBsaNOFhskIrJdDYuT43Ln
-5jWUCgUwEV298p40m03af/KodHQ9Aq1uUhOQM088iWa5QjdHb4jfFOwdGKDe
-PT1y+9YNFFZSZJSKUsznkE4t00f/9PeSaTZRFcVoPk8KCO3ovVQBBeiEqqwO
-RGjl6mHaX13UthPDiEZjZJoWcrmN3nuD9bnHv3MGwD8Uivnh6dkJAdFW7+5G
-xXZcrpZL6Dt0ELG2DmElvnH113Lx6Z9yOGKjUi7JB1cu89N/8mcIi8jlK++y
-NhrY67oymUpyqV6HBYivytrq7YmId7z7CBHYNE04TkxdN0qxWBui0TZ1o21k
-GJYwtKLQAqBZEc00GrVrzab3tztn4hyAlGM7wwBwfPgsjhw5iu6uLszencfU
-xB3UyhUMnXkciUQC05NjKCSTiNgRzC4vo16t4Ff//I+oiaAoWzN9qvUgBQDN
-HXsihuO4cN0otojGKBqNw7Yjqoq6qhYBzQNYE9EU1F8kg9NMRhrAqmli3TTN
-rGUFuZ0CSgAWLSukpmmSG4tJe6ILhUqFlCCRSATJpXkk33ubXkklpR4IjeRy
-EqiCWranPf8/teLhcFhdN4atqMY1Go3BdWNExB4gJVUUAN1QxYrvB0vMnDIM
-TgOUIaK1lpAyEdVFAu/NN18Ofuu7kKrWiGieiMSOODw99il/+vFHaDYaQgCj
-Fb2rlaVt+0UB5q3uVUzTYseJwnWjGovFORqNIRZrU9O0VFUrqlv2qyIjIkki
-XTIMI81MGQCrRMiqogRQlUibjUY9uHz5Tf28YWqHADSZKaWqZdt24mvrmXtR
-VECgum0/ua6rjhOlWKxNo9EYotE4bdlPdVUpAppXxZqqpnzfX2TmtGEYaQAZ
-ImxsRR0VImoEgee//far8mXH1nsCRq7/Onjqid/NAMjZthMHwJGIDdeNquvG
-uFVUiEajCrAPSFkVeUDXVZHesp9SzEaaiDIA1gC07EddRLy33nr5K3+DMe9/
-BcY6Ea329x84uP/Ao7AsSx60PwhkmUiXW/anW0SzRCipogqg2WjUgitX3lL8
-H+A+AaZl5ayQ9YlpmvVAZCUI/CXD4BVmI3O//VQh0obve/4777wm+AZxn4Cw
-HdkwTf47gEOGaRQAbBJRPQiCr8X+h3iIh3iIh3iI/y3+A0UD+L0NzmN3AAAA
-AElFTkSuQmCC
-"""
-
 
 class _QuotaRomMathVM(RomMathVM):
     """RomMathVM with a low-overhead wall-clock execution quota."""
@@ -165,8 +82,22 @@ def _new_vm(program, screen, *, time_quota: float, **kwargs) -> RomMathVM:
     return RomMathVM(program, screen, **kwargs)
 
 
-def _run_display_with_fuse_icon(display: TkDisplay, target) -> int:
-    """Run TkDisplay with the Fuse Spectrum icon on its root window."""
+def _sdk_icon(tk):
+    """Build the SDK-owned application icon without third-party asset bytes."""
+    icon = tk.PhotoImage(width=32, height=32)
+    icon.put("#101010", to=(0, 0, 32, 32))
+    icon.put("#d0d0d0", to=(2, 2, 30, 4))
+    icon.put("#d0d0d0", to=(2, 28, 30, 30))
+    icon.put("#d0d0d0", to=(2, 4, 4, 28))
+    icon.put("#d0d0d0", to=(28, 4, 30, 28))
+    for x, color in enumerate(("#00c000", "#00c0c0", "#c0c000", "#c00000")):
+        left = 7 + x * 5
+        icon.put(color, to=(left, 8, left + 3, 24))
+    return icon
+
+
+def _run_display_with_sdk_icon(display: TkDisplay, target) -> int:
+    """Run TkDisplay with the generated ZX-UX C48 SDK icon."""
     try:
         import tkinter as tk
     except ImportError as exc:  # pragma: no cover - host-specific
@@ -177,11 +108,11 @@ def _run_display_with_fuse_icon(display: TkDisplay, target) -> int:
     def init_with_icon(root, *args, **kwargs):
         original_init(root, *args, **kwargs)
         try:
-            icon = tk.PhotoImage(data=_FUSE_ICON_PNG_BASE64)
+            icon = _sdk_icon(tk)
             root.iconphoto(True, icon)
             root._zx_ux_app_icon = icon
         except tk.TclError:
-            # Keep the VM usable on old/minimal Tk builds that cannot decode PNG.
+            # Keep the VM usable on old/minimal Tk builds with limited icon APIs.
             root._zx_ux_app_icon = None
 
     tk.Tk.__init__ = init_with_icon
@@ -276,7 +207,7 @@ def main(argv: list[str] | None = None) -> int:
                 display_update=display.update,
                 display_present=display.present,
             )
-            status = _run_display_with_fuse_icon(display, vm.run)
+            status = _run_display_with_sdk_icon(display, vm.run)
         if ns.dump_screen:
             ns.dump_screen.parent.mkdir(parents=True, exist_ok=True)
             ns.dump_screen.write_bytes(screen.bytes())
