@@ -101,15 +101,15 @@ Together, they give the SDK a playable connection to the folklore and nostalgia 
 
 | ![C48 Adventure](docs/images/games/advent.png)<br>**Adventure** | ![C48 Arithmetic](docs/images/games/arith.png)<br>**Arithmetic** | ![C48 Backgammon](docs/images/games/bgammon.png)<br>**Backgammon** |
 |---|---|---|
-| <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/advent.c">advent.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/arith.c">arith.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/bgammon.c">bgammon.c</a></sub> |
+| <sub><a href="usr/src/games/advent.c">advent.c</a></sub> | <sub><a href="usr/src/games/arith.c">arith.c</a></sub> | <sub><a href="usr/src/games/bgammon.c">bgammon.c</a></sub> |
 | ![C48 Chess](docs/images/games/chess.png)<br>**Chess** | ![C48 Cribbage](docs/images/games/cribbage.png)<br>**Cribbage** | ![C48 Go Fish](docs/images/games/fish.png)<br>**Go Fish** |
-| <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/chess.c">chess.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/cribbage.c">cribbage.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/fish.c">fish.c</a></sub> |
+| <sub><a href="usr/src/games/chess.c">chess.c</a></sub> | <sub><a href="usr/src/games/cribbage.c">cribbage.c</a></sub> | <sub><a href="usr/src/games/fish.c">fish.c</a></sub> |
 | ![C48 Fortune](docs/images/games/fortune.png)<br>**Fortune** | ![C48 Hangman](docs/images/games/hangman.png)<br>**Hangman** | ![C48 Maze](docs/images/games/maze.png)<br>**Maze** |
-| <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/fortune.c">fortune.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/hangman.c">hangman.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/maze.c">maze.c</a></sub> |
+| <sub><a href="usr/src/games/fortune.c">fortune.c</a></sub> | <sub><a href="usr/src/games/hangman.c">hangman.c</a></sub> | <sub><a href="usr/src/games/maze.c">maze.c</a></sub> |
 | ![C48 Quiz](docs/images/games/quiz.png)<br>**Quiz** | ![C48 Rogue](docs/images/games/rogue.png)<br>**Rogue** | ![C48 Snake](docs/images/games/snake.png)<br>**Snake** |
-| <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/quiz.c">quiz.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/rogue.c">rogue.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/snake.c">snake.c</a></sub> |
+| <sub><a href="usr/src/games/quiz.c">quiz.c</a></sub> | <sub><a href="usr/src/games/rogue.c">rogue.c</a></sub> | <sub><a href="usr/src/games/snake.c">snake.c</a></sub> |
 | ![C48 Star Trek](docs/images/games/trek.png)<br>**Star Trek** | ![C48 Hunt the Wumpus](docs/images/games/wump.png)<br>**Hunt the Wumpus** | |
-| <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/trek.c">trek.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/games/wump.c">wump.c</a></sub> | |
+| <sub><a href="usr/src/games/trek.c">trek.c</a></sub> | <sub><a href="usr/src/games/wump.c">wump.c</a></sub> | |
 
 The combined [14-game contact sheet](docs/images/games/contact-sheet.png) is generated from the same certified captures.
 
@@ -127,7 +127,7 @@ The games above remember the period when a computer was something to explore, pr
 
 | ![WRITE48](docs/images/apps/write48.png)<br>**WRITE48 — Resume Editor** | ![SHEET48](docs/images/apps/sheet48.png)<br>**SHEET48 — Home Brokerage** | ![WIRE3D](docs/images/apps/wire3d.png)<br>**WIRE3D — Imperial Cruiser** |
 |---|---|---|
-| <sub>Ubuntu 24.04/x64 · <a href="usr/src/apps/write48.c">write48.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/apps/sheet48.c">sheet48.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/apps/wire3d.c">wire3d.c</a></sub> |
+| <sub><a href="usr/src/apps/write48.c">write48.c</a></sub> | <sub><a href="usr/src/apps/sheet48.c">sheet48.c</a></sub> | <sub><a href="usr/src/apps/wire3d.c">wire3d.c</a></sub> |
 
 The combined [3-application contact sheet](docs/images/apps/contact-sheet.png) is generated from the same certified captures.
 
