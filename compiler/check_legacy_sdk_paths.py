@@ -12,7 +12,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-"""Fail closed if retired SDK tree names reappear in shipped text or DOCX XML."""
+"""Reject the explicitly retired dev/src, dev/bin, dev_src and dev_bin names."""
 from __future__ import annotations
 
 import argparse
