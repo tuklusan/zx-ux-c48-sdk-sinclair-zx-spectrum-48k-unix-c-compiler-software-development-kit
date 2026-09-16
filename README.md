@@ -91,7 +91,13 @@ C48 source -> portable C48 compiler -> C48B1 -> c48run -> C48 VM
 
 ## Games gallery — 14 C48 games
 
-These games are included as a small cultural time capsule of what “computer games” meant around 1982, not as replicas of any one historical software library. By then **Adventure** had turned caves, maps and magic words into mainframe folklore; **Hunt the Wumpus** had made pits, superbats and a monster lurking in a graph of rooms a shared BASIC-era legend; **Star Trek** had travelled through time-sharing systems, schools, magazines and books in endlessly rewritten listings; **Rogue** was carrying that tradition into Unix terminals with a different dungeon every run; and **chess** remained computing’s classic public test of whether a machine could appear to think. Backgammon, cribbage, Go Fish, Hangman, mazes, quizzes, arithmetic drills, fortune programs and the growing-line chase behind Snake represent the other, equally nostalgic side of early personal computing: compact games people typed in, copied, traded, ported, altered and understood by reading the code. Together they give the SDK a playable connection to the culture, folklore and home-computer, school-lab and terminal-room imagination surrounding machines like the ZX Spectrum when it arrived in 1982.
+These games are included as a small cultural time capsule of what “computer games” meant around 1982—not as replicas of any one historical software library, but as a playable cross-section of the ideas and stories already circulating through terminals, schools, books, magazines, clubs and homes.
+
+By then **Adventure** had turned caves, maps and magic words into mainframe folklore; **Hunt the Wumpus** had made pits, superbats and a monster lurking in a graph of rooms a shared BASIC-era legend; **Star Trek** had travelled through time-sharing systems, schools, magazines and books in endlessly rewritten listings; **Rogue** was carrying that tradition into Unix terminals with a different dungeon every run; and **Chess** remained computing’s classic public test of whether a machine could appear to think.
+
+The quieter side of that culture mattered just as much. **Backgammon**, **Cribbage**, **Go Fish**, **Hangman**, **Maze**, **Quiz**, **Arithmetic**, **Fortune** and **Snake** evoke the compact programs people typed in, copied, traded, ported, altered and understood by reading the code—part game, part programming lesson, part social currency in a school lab or terminal room.
+
+Together, they give the SDK a playable connection to the folklore and nostalgia surrounding early personal computing, and to the imagination that greeted machines like the ZX Spectrum when it arrived in 1982.
 
 | ![C48 Adventure](docs/images/games/advent.png)<br>**Adventure** | ![C48 Arithmetic](docs/images/games/arith.png)<br>**Arithmetic** | ![C48 Backgammon](docs/images/games/bgammon.png)<br>**Backgammon** |
 |---|---|---|
