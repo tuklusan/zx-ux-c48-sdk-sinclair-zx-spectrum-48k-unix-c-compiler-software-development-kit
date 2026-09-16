@@ -13,7 +13,7 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# ZX-UX C48 SDK for Windows, Linux and macOS: Sinclair ZX Spectrum 48K C Compiler and Portable Unix-Like Development Runtime
+# ZX-UX C48 SDK for Windows, Linux and macOS: a portable compiler + runtime for desktop development of C programs for ZX-UX Unix for Sinclair ZX Spectrum 48K
 
 [![C48 SDK verification](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml)
 
@@ -23,7 +23,9 @@ patent, trademark, and governing-law provisions.
 |---|---|---|
 | ![UDG Walker](docs/images/demos/spriteanim.png)<br>**UDG Walker**<br>Ubuntu / x64 · `ubuntu-latest` · frame 12 | ![Torus Reactor](docs/images/demos/torus.png)<br>**Torus Reactor**<br>Ubuntu / x64 · `ubuntu-latest` · frame 2 | ![Raycast Labyrinth](docs/images/demos/raymaze.png)<br>**Raycast Labyrinth**<br>macOS / arm64 · `macos-latest` · frame 2 |
 
-**ZX-UX C48 SDK** is a portable, Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is the **1.0.0 release line**, frozen for formal release from the fully certified release commit. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows plus POSIX (Linux/macOS) launchers.
+**ZX-UX C48 SDK** is not the full ZX-UX Unix Operating System for the ZX Spectrum 48K. It is a portable C Compiler and just enough ZX-UX runtime that lets you write and test C48 C language programs without working in the actual ZX-UX unix environment on a real ZX Spectrum 48K. The SDK runs on Windows, Linux and MacOS, intel and arm.
+
+The SDK is a Python-based **C compiler and development SDK for the original Sinclair ZX Spectrum 48K programming model**. The repository is the **1.0.0 release line**, frozen for formal release from the fully certified release commit. It provides a command-line C48 compiler, deterministic host executable format, 16-bit C48 virtual machine, authentic 256x192 ZX Spectrum bitmap/attribute display model, Tasword-style 64-column 4x8 text, graphics and UDG support, and Windows plus POSIX (Linux/macOS) launchers. It defaults to a custom SANYALnet Labs 4x8 font, but a command-line parameter lets you choose the ZX-UX native font. See compiler/assets. 
 
 The SDK exists to make C48 programs practical to write, compile, test, and run on a modern **Windows, Linux, or macOS command line** while the native Z80 implementation of the wider **ZX-UX Unix-like operating environment for the 48K ZX Spectrum** continues to evolve.
 
