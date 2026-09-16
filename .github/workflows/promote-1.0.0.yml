@@ -19,6 +19,7 @@ env:
   SOURCE_TAG: 1.0.0-RC5
   FINAL_TAG: 1.0.0
   CERTIFIED_COMMIT: 41d130e489638dd07ba3305eea41517e0ec3b32f
+  PREVIOUS_FINAL_COMMIT: 7b84984930873042d6f43aded35c8b7cc984bc6f
   CERTIFIED_TREE: 953c2385096b41cd7b63e4abaca52441174e49a6
   MAIN_ASSET: zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip
   GUI_ASSET: c48-1.0.0-RC5-gui-evidence-41d130e489638dd07ba3305eea41517e0ec3b32f.zip
@@ -43,7 +44,6 @@ jobs:
           gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${SOURCE_TAG}" > rc5-release.json
           gh api "repos/${GITHUB_REPOSITORY}/commits/${SOURCE_TAG}" --jq .sha > rc5-commit.txt
           python - <<'PY'
-          import hashlib
           import json
           import os
           from pathlib import Path
@@ -185,7 +185,7 @@ jobs:
 
           This is the final **1.0.0** release, promoted **byte-for-byte from the fully certified 1.0.0-RC5 package**. The compiler, runtime, packaged SDK ZIP, GUI evidence, release metadata, and checksum asset were **not rebuilt** for this promotion.
 
-          The RC5-labelled asset filenames are intentionally retained so the promoted files remain exactly the certified bytes.
+          This promotion updates the earlier `1.0.0` publication in place: the `1.0.0` tag now points to the certified RC5 commit below. The RC5-labelled asset filenames are intentionally retained so the promoted files remain exactly the certified bytes.
 
           **Certified source identity**
 
@@ -235,57 +235,63 @@ jobs:
           `SHA256SUMS-1.0.0-RC5.txt` and `RC5-RELEASE-METADATA.json` are retained as the original certification records for the promoted bytes.
           EOF
 
-      - name: Create or verify final 1.0.0 tag
+      - name: Verify existing 1.0.0 release is safe to promote in place
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${FINAL_TAG}" > final-ref.json 2>/dev/null; then
-            resolved="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${FINAL_TAG}" --jq .sha)"
-            test "${resolved}" = "${CERTIFIED_COMMIT}"
-            echo "Existing ${FINAL_TAG} tag already resolves to certified commit."
-          else
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs" \
-              -f ref="refs/tags/${FINAL_TAG}" \
-              -f sha="${CERTIFIED_COMMIT}" > final-ref.json
-            echo "Created ${FINAL_TAG} at ${CERTIFIED_COMMIT}."
-          fi
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}" > final-before.json
+          resolved="$(gh api "repos/${GITHUB_REPOSITORY}/commits/${FINAL_TAG}" --jq .sha)"
+          RESOLVED="${resolved}" python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
 
-      - name: Publish final GitHub release from verified RC5 bytes
+          release = json.loads(Path("final-before.json").read_text(encoding="utf-8"))
+          resolved = os.environ["RESOLVED"]
+          allowed = {os.environ["PREVIOUS_FINAL_COMMIT"], os.environ["CERTIFIED_COMMIT"]}
+          if resolved not in allowed:
+              raise SystemExit(
+                  f"refusing to move unexpected {os.environ['FINAL_TAG']} tag at {resolved}"
+              )
+          if release.get("tag_name") != os.environ["FINAL_TAG"]:
+              raise SystemExit("existing final release tag mismatch")
+          if release.get("draft"):
+              raise SystemExit("existing final release is unexpectedly a draft")
+          print(f"Existing final release is safe to promote from {resolved}.")
+          PY
+
+      - name: Promote verified RC5 bytes into the existing final release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}" > final-release.json 2>/dev/null; then
-            release_id="$(python -c 'import json; print(json.load(open("final-release.json"))["id"])')"
-            body="$(cat release-notes.md)"
-            gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
-              -f name="C48 SDK 1.0.0" \
-              -f body="${body}" \
-              -F draft=false \
-              -F prerelease=false \
-              -f make_latest=true > final-release.json
-          else
-            body="$(cat release-notes.md)"
-            gh api --method POST "repos/${GITHUB_REPOSITORY}/releases" \
-              -f tag_name="${FINAL_TAG}" \
-              -f target_commitish="${CERTIFIED_COMMIT}" \
-              -f name="C48 SDK 1.0.0" \
-              -f body="${body}" \
-              -F draft=false \
-              -F prerelease=false \
-              -f make_latest=true > final-release.json
-          fi
+          release_id="$(python -c 'import json; print(json.load(open("final-before.json"))["id"])')"
 
-          gh release upload "${FINAL_TAG}" \
-            "scan-3/${MAIN_ASSET}" \
-            "scan-3/${GUI_ASSET}" \
-            "scan-3/${METADATA_ASSET}" \
-            "scan-3/${SUMS_ASSET}" \
-            --repo "${GITHUB_REPOSITORY}" \
-            --clobber
+          # Upload the newly verified RC5 bytes first. Old final assets remain available
+          # until these uploads succeed, avoiding a half-empty public release on failure.
+          gh release upload "${FINAL_TAG}"             "scan-3/${MAIN_ASSET}"             "scan-3/${GUI_ASSET}"             "scan-3/${METADATA_ASSET}"             "scan-3/${SUMS_ASSET}"             --repo "${GITHUB_REPOSITORY}"             --clobber
+
+          # Move the existing final tag only after the verified assets are safely attached.
+          gh api --method PATCH             "repos/${GITHUB_REPOSITORY}/git/refs/tags/${FINAL_TAG}"             -f sha="${CERTIFIED_COMMIT}"             -F force=true > final-ref.json
+
+          body="$(cat release-notes.md)"
+          gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}"             -f tag_name="${FINAL_TAG}"             -f target_commitish="${CERTIFIED_COMMIT}"             -f name="C48 SDK 1.0.0"             -f body="${body}"             -F draft=false             -F prerelease=false             -f make_latest=true > final-release.json
+
+          # Remove superseded assets only after the new bytes, tag and release metadata exist.
+          gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?per_page=100"             --paginate --jq '.[] | [.id, .name] | @tsv' > final-assets.tsv
+          while IFS=$'\t' read -r asset_id asset_name; do
+            case "${asset_name}" in
+              "${MAIN_ASSET}"|"${GUI_ASSET}"|"${METADATA_ASSET}"|"${SUMS_ASSET}")
+                ;;
+              *)
+                echo "Removing superseded 1.0.0 asset: ${asset_name}"
+                gh api --method DELETE                   "repos/${GITHUB_REPOSITORY}/releases/assets/${asset_id}"
+                ;;
+            esac
+          done < final-assets.tsv
 
       - name: Post-publish zero-defect verification
         shell: bash
@@ -306,16 +312,27 @@ jobs:
               raise SystemExit("final release is not published as a normal release")
           if r.get("tag_name") != os.environ["FINAL_TAG"]:
               raise SystemExit("final release tag mismatch")
+          if r.get("target_commitish") != os.environ["CERTIFIED_COMMIT"]:
+              raise SystemExit("final release target_commitish mismatch")
           if r.get("name") != "C48 SDK 1.0.0":
               raise SystemExit("final release name mismatch")
-          names = {a.get("name") for a in r.get("assets", [])}
           expected = {
-              os.environ["MAIN_ASSET"],
-              os.environ["GUI_ASSET"],
-              os.environ["METADATA_ASSET"],
-              os.environ["SUMS_ASSET"],
+              os.environ["MAIN_ASSET"]: os.environ["MAIN_SHA256"],
+              os.environ["GUI_ASSET"]: os.environ["GUI_SHA256"],
+              os.environ["METADATA_ASSET"]: os.environ["METADATA_SHA256"],
+              os.environ["SUMS_ASSET"]: os.environ["SUMS_SHA256"],
           }
-          if names != expected:
-              raise SystemExit(f"final release asset set mismatch: {sorted(names)}")
-          print("Final 1.0.0 release is normal (non-prerelease), correctly tagged, and has the exact four promoted assets.")
+          actual = {}
+          for asset in r.get("assets", []):
+              digest = asset.get("digest") or ""
+              if digest.startswith("sha256:"):
+                  actual[asset.get("name")] = digest.split(":", 1)[1]
+          if actual != expected:
+              raise SystemExit(
+                  f"final release asset/digest mismatch: actual={actual} expected={expected}"
+              )
+          print(
+              "Final 1.0.0 release is normal, points to the certified RC5 commit, "
+              "and contains exactly the four byte-identical promoted assets."
+          )
           PY
