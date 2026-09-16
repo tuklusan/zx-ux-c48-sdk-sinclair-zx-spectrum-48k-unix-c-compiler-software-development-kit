@@ -21,7 +21,7 @@ patent, trademark, and governing-law provisions.
 
 [![ZX-UX C48 SDK verification status](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml)
 
-**ZX-UX C48 SDK** is a portable, host-side **C compiler, virtual machine and software development kit** for writing and testing C48 programs for [**ZX-UX Unix on the Sinclair ZX Spectrum 48K**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project). It runs on Windows, Linux and macOS, on Intel and Arm hosts, providing the desktop toolchain and Spectrum-facing services needed away from the original machine. It remains separate from native ZX-UX: this SDK is not the operating system, native Z80 compiler, linker, runtime or final ABI.
+**ZX-UX C48 SDK** is a portable, host-side **C compiler, virtual machine and software development kit** for writing and testing C48 programs for [**ZX-UX Unix on the Sinclair ZX Spectrum 48K**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project). It runs on Windows, Linux and macOS, on Intel and Arm hosts, providing the desktop toolchain and Spectrum-facing services needed away from the original machine. This saves the 48K Spectrum from having to impersonate a modern workstation (a role for which it was never interviewed). The SDK remains separate from native ZX-UX: it is not the operating system, native Z80 compiler, linker, runtime or final ABI.
 
 ## Download and install
 
@@ -29,7 +29,7 @@ Get the [Latest ZX-UX C48 SDK release](https://github.com/tuklusan/zx-ux-c48-sdk
 
 ## ZX Spectrum 48K graphics showcase — 21 C48 demos
 
-The three hero images above and 18 demos below are rendered from the C48 VM's exact ZX Spectrum 48K bitmap/attribute screen state. Automated graphics verification renders every demo independently on GitHub-hosted Windows, Linux and macOS runners.
+The three hero images above and 18 demos below are rendered from the C48 VM's exact ZX Spectrum 48K bitmap/attribute screen state—a remarkably small place in which to keep this much visual ambition. Automated graphics verification renders every demo independently on GitHub-hosted Windows, Linux and macOS runners.
 
 | ![UDG Walker](docs/images/demos/spriteanim.png)<br>**UDG Walker** | ![Raycast Labyrinth](docs/images/demos/raymaze.png)<br>**Raycast Labyrinth** | ![Crystal Goblet](docs/images/demos/goblet.png)<br>**Crystal Goblet** |
 |---|---|---|
@@ -49,7 +49,7 @@ A [combined contact sheet of all 21 ZX Spectrum graphics demos](docs/images/demo
 
 ## Document Library
 
-These documents cover portable compiler/runtime usage, technical architecture and security; the authoritative C48 language definition remains upstream in the native ZX-UX project.
+These documents cover portable compiler/runtime usage, technical architecture and security, because even a 48K universe eventually develops paperwork.
 
 <table>
   <tr>
@@ -91,11 +91,11 @@ Programs run through an SDK-specific host executable format:
 C48 source -> portable C48 compiler -> C48B1 -> c48run -> C48 VM
 ```
 
-`C48B1` is an SDK-only host executable representation. It is not Z80 machine code, ZX-UX `OBJ1`, or ZX-UX `MEX1`.
+`C48B1` is an SDK-only host executable representation. It is not Z80 machine code, ZX-UX `OBJ1`, or ZX-UX `MEX1`—a distinction of the sort that seems pedantic right up until the moment it saves an afternoon.
 
 ## Games gallery — 14 C48 games
 
-These games form a small cultural time capsule of what “computer games” meant around 1982—not replicas of any one historical library, but a compact cross-section of ideas and stories moving through mainframes, school labs, clubs and homes.
+These games form a small cultural time capsule of what “computer games” meant around 1982—not replicas of any one historical library, but a compact cross-section of ideas and stories moving through mainframes, school labs, clubs and homes. It is nostalgia with source code attached, which is generally the more useful kind.
 
 By then **Adventure** had turned caves, maps and magic words into mainframe folklore; **Hunt the Wumpus** had made pits, superbats and a monster lurking in a graph of rooms a shared BASIC-era legend; **Star Trek** had travelled through time-sharing systems, schools, magazines and books in endlessly rewritten listings; **Rogue** was carrying that tradition into Unix terminals with a different dungeon every run; and **Chess** remained computing’s classic public test of whether a machine could appear to think.
 
@@ -119,13 +119,13 @@ Together, the selection connects the SDK to the cultural memory and nostalgia of
 
 ## Relationship to native ZX-UX
 
-[ZX-UX](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project) is the actual Unix-like operating and development environment for the original unexpanded 48K Sinclair ZX Spectrum. Its native compiler, linker, ABI, ROM bridge, persistence and process facilities are separate from this host SDK, whose role is C48 development and testing on modern computers.
+[ZX-UX](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project) is the actual Unix-like operating and development environment for the original unexpanded 48K Sinclair ZX Spectrum. Its native compiler, linker, ABI, ROM bridge, persistence and process facilities are separate from this host SDK, whose role is C48 development and testing on modern computers. The distinction is deliberate; the machine is already constrained enough without making the terminology do two jobs as well.
 
 The authoritative [C48 language specification](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) lives upstream and defines the language baseline implemented here. `usr/src/c48host.h` is explicitly a **development-only Host Game API profile** and is not the final native ZX-UX `<c48.h>` ABI.
 
 ## Applications gallery — 3 C48 applications
 
-The games above capture the exploratory, playful side of early computing; these applications tell the other half of the story—the point at which personal computers were expected to be useful. Word processing and spreadsheets symbolized the shift from hobby machine to everyday work tool, while interactive graphics turned the screen into a place to design and manipulate rather than merely print results. By the early 1990s, writing, personal finance and visual experimentation were established parts of serious home computing.
+The games above capture the exploratory, playful side of early computing; these applications tell the other half of the story—the point at which personal computers were expected to earn their keep. Word processing and spreadsheets symbolized the shift from hobby machine to everyday work tool, while interactive graphics turned the screen into a place to design and manipulate rather than merely print results. By the early 1990s, writing, personal finance and visual experimentation were established parts of serious home computing; the machine had, in effect, acquired a desk job.
 
 | ![WRITE48](docs/images/apps/write48.png)<br>**WRITE48 — Resume Editor** | ![SHEET48](docs/images/apps/sheet48.png)<br>**SHEET48 — Home Brokerage** | ![WIRE3D](docs/images/apps/wire3d.png)<br>**WIRE3D — Imperial Cruiser** |
 |---|---|---|
@@ -139,7 +139,7 @@ A [three-application contact sheet](docs/images/apps/contact-sheet.png) presents
 
 ### Fonts
 
-The runtime defaults to the SANYALnet Labs final 4x8 font:
+The runtime defaults to the SANYALnet Labs final 4x8 font, where every pixel has a job and none has time for decorative flourishes:
 
 ```text
 compiler/assets/SANYALnet-Labs-4x8-font-FINAL.bin
