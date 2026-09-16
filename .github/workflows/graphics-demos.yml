@@ -33,6 +33,8 @@ name: C48 graphics demo reel
       - "c48run"
       - "c48run.bat"
       - ".github/workflows/graphics-demos.yml"
+      - ".github/workflows/gui-desktop.yml"
+      - ".github/workflows/release-candidate.yml"
   pull_request:
     paths:
       - "VERSION"
@@ -49,6 +51,8 @@ name: C48 graphics demo reel
       - "c48run"
       - "c48run.bat"
       - ".github/workflows/graphics-demos.yml"
+      - ".github/workflows/gui-desktop.yml"
+      - ".github/workflows/release-candidate.yml"
   workflow_dispatch:
 
 concurrency:
