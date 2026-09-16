@@ -18,6 +18,7 @@ name: Land Batch-5A graphics fixes v2
     branches: [main]
     paths:
       - ".github/land_batch5a_v2.py"
+      - ".github/land_batch5a_fast.py"
       - ".github/workflows/land-batch5a-v2.yml"
   workflow_dispatch:
 
@@ -74,7 +75,7 @@ jobs:
 
       - name: Build and replay assigned patched demo
         run: >-
-          python -B .github/land_batch5a_v2.py
+          python -B .github/land_batch5a_fast.py
           evidence "${{ matrix.demo }}" "${{ matrix.os }}" runner-evidence
 
       - name: Upload certified patched demo evidence
@@ -112,4 +113,4 @@ jobs:
           merge-multiple: true
 
       - name: Aggregate, verify, SoP-certify, and land Batch-5A
-        run: python -B .github/land_batch5a_v2.py land batch5a-evidence
+        run: python -B .github/land_batch5a_fast.py land batch5a-evidence
