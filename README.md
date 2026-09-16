@@ -95,7 +95,7 @@ c48run --font compiler\assets\font4x8-zxux.bin usr\bin\examples\hello.c48b
 ./c48run --font compiler/assets/font4x8-zxux.bin usr/bin/examples/hello.c48b
 ```
 
-The SDK also includes `font4x8-tasword.bin`. Font selection stays explicit through the same `--font PATH` command-line contract.
+Font selection stays explicit through the same `--font PATH` command-line contract.
 
 ### Screen, input, heap and execution controls
 
