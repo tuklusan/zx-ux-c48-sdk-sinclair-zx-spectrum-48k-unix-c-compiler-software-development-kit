@@ -55,6 +55,13 @@ jobs:
           ]
           out = root / "game-probe"
           out.mkdir(exist_ok=True)
+          (root / "game-probe-order.txt").write_text(
+              "3 columns, row-major:\n" + "\n".join(
+                  f"{i + 1:02d} {name}" for i, name in enumerate(games)
+              ) + "\n",
+              encoding="ascii",
+              newline="\n",
+          )
           font = Font4x8.load(root / "compiler" / "assets" / "SANYALnet-Labs-4x8-font-FINAL.bin")
 
           class CaptureStop(Exception):
@@ -64,11 +71,10 @@ jobs:
               program_path = root / "usr" / "bin" / "games" / f"{name}.c48b"
               program = read(program_path)
               screen = ZXScreen(font)
-              calls = 0
+              input_requests = [0]
               def stop_input():
-                  nonlocal_calls[0] += 1
+                  input_requests[0] += 1
                   raise CaptureStop()
-              nonlocal_calls = [0]
               vm = RomMathVM(
                   program,
                   screen,
@@ -87,17 +93,20 @@ jobs:
               lit = sum(v.bit_count() for v in screen.mem[:6144])
               attrs = len(set(screen.mem[6144:]))
               print(
-                  f"{name}: input_requests={nonlocal_calls[0]} lit={lit} attrs={attrs} "
+                  f"{name}: input_requests={input_requests[0]} lit={lit} attrs={attrs} "
                   f"png_sha256={hashlib.sha256(png).hexdigest()}"
               )
-              if nonlocal_calls[0] != 1 or lit < 20:
+              if input_requests[0] != 1 or lit < 20:
                   raise SystemExit(f"{name}: first-interaction capture failed quality floor")
           PY
 
-          montage game-probe/*.png \
-            -thumbnail 384x288 \
-            -tile 3x5 -geometry +8+24 \
-            -set label '%t' \
+          montage \
+            game-probe/advent.png game-probe/arith.png game-probe/bgammon.png \
+            game-probe/chess.png game-probe/cribbage.png game-probe/fish.png \
+            game-probe/fortune.png game-probe/hangman.png game-probe/maze.png \
+            game-probe/quiz.png game-probe/rogue.png game-probe/snake.png \
+            game-probe/trek.png game-probe/wump.png \
+            -thumbnail 384x288 -tile 3x5 -geometry +8+8 \
             game-probe-contact-sheet.png
           test -s game-probe-contact-sheet.png
 
@@ -108,6 +117,7 @@ jobs:
           path: |
             game-probe/*.png
             game-probe-contact-sheet.png
+            game-probe-order.txt
           if-no-files-found: error
           retention-days: 7
           compression-level: 9
