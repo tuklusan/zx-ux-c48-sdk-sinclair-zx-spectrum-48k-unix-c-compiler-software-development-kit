@@ -24,4 +24,44 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.github/land_batch3.py')
+          s = p.read_text()
+          old = '''                    if b"<<<<<<<" in line or b">>>>>>>" in line:
+                        raise SystemExit(f"SOP {k}: conflict {p}:{n}")
+'''
+          new = '''                    marker = line.rstrip(b"\\r\\n")
+                    if (
+                        marker.startswith(b"<<<<<<< ")
+                        or marker == b"======="
+                        or marker.startswith(b">>>>>>> ")
+                    ):
+                        raise SystemExit(f"SOP {k}: conflict {p}:{n}")
+'''
+          if s.count(old) != 1:
+              raise SystemExit('SoP conflict-marker anchor mismatch')
+          s = s.replace(old, new, 1)
+          old = '''                    if p.suffix.lower() in {".c", ".h"}:
+                        body = line.rstrip(b"\\n")
+                        body.decode("ascii")
+                        if b"\\r" in line or len(body) > 64:
+                            raise SystemExit(f"SOP {k}: C48 bytes {p}:{n}")
+'''
+          new = '''                    rel = p.relative_to(fresh)
+                    is_c48 = (
+                        len(rel.parts) >= 2
+                        and rel.parts[:2] == ("usr", "src")
+                        and p.suffix.lower() in {".c", ".h"}
+                    )
+                    if is_c48:
+                        body = line.rstrip(b"\\n")
+                        body.decode("ascii")
+                        if b"\\r" in line or len(body) > 64:
+                            raise SystemExit(f"SOP {k}: C48 bytes {p}:{n}")
+'''
+          if s.count(old) != 1:
+              raise SystemExit('SoP C48-scope anchor mismatch')
+          p.write_text(s.replace(old, new, 1), encoding='utf-8', newline='\n')
+          PY
           python -B .github/land_batch3.py
