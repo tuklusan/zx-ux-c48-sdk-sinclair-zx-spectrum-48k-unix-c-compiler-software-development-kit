@@ -1,0 +1,27 @@
+name: Land Batch-3 ailmzx48 fixes
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/land-ailm-batch3.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  land:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out guarded landing head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Apply, verify, certify, commit, and push
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B .github/land_batch3.py
