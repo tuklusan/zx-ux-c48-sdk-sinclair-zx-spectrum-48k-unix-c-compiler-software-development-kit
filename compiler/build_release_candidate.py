@@ -218,7 +218,6 @@ def build_archive(archive: Path, prefix: str) -> dict[str, object]:
                 info, data, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9
             )
 
-    (SDK / PROVENANCE_NAME).write_bytes(provenance_bytes)
     return spec_meta
 
 
@@ -228,12 +227,30 @@ def main() -> int:
     )
     parser.add_argument("--archive", required=True)
     parser.add_argument("--prefix", required=True)
+    parser.add_argument(
+        "--provenance-out",
+        type=Path,
+        help=(
+            "optionally write C48 specification provenance outside the ZIP; "
+            "omitted by default so a local packaging run does not dirty the SDK tree"
+        ),
+    )
     args = parser.parse_args()
 
     archive = Path(args.archive)
     if not archive.is_absolute():
         archive = SDK / archive
     spec_meta = build_archive(archive, args.prefix)
+    if args.provenance_out is not None:
+        provenance_out = args.provenance_out
+        if not provenance_out.is_absolute():
+            provenance_out = SDK / provenance_out
+        provenance_out.parent.mkdir(parents=True, exist_ok=True)
+        provenance_out.write_text(
+            json.dumps(spec_meta, indent=2, sort_keys=True) + "\n",
+            encoding="ascii",
+            newline="\n",
+        )
     print(
         "C48 SPEC PACKAGE: "
         f"{spec_meta['source_path']} @ {spec_meta['source_commit']} "
