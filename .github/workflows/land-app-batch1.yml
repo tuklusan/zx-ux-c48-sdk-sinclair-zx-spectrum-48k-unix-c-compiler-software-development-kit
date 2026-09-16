@@ -27,7 +27,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          parent=cf9e140609cccbd87adc27f03b16db1c9538445b
+          parent=4a87f33c05ba7854707fb9b36db74ed52f22f56b
           test "$(git rev-parse HEAD^)" = "$parent"
           test "$(git diff --name-only "$parent" HEAD)" = ".github/workflows/land-app-batch1.yml"
           python -B - <<'PY'
@@ -39,9 +39,27 @@ jobs:
           text = subprocess.check_output(
               ["git", "show", f"{stage}:{path}"], text=True
           )
+          text = text.replace(
+              "          verifier_insert = r'''def run_probe",
+              '          verifier_insert = r"""def run_probe',
+              1,
+          )
+          outer_end = (
+              "\n'''\n          rep(\n"
+              "              \"compiler/verify_apps.py\",\n"
+              "              verifier_anchor,"
+          )
+          fixed_end = (
+              '\n"""\n          rep(\n'
+              "              \"compiler/verify_apps.py\",\n"
+              "              verifier_anchor,"
+          )
+          if text.count(outer_end) != 1:
+              raise SystemExit("verifier outer-string terminator anchor mismatch")
+          text = text.replace(outer_end, fixed_end, 1)
           lines = text.splitlines()
 
-          def script_for(name):
+          def bounds_for(name):
               marker = "      - name: " + name
               try:
                   i = lines.index(marker)
@@ -54,15 +72,41 @@ jobs:
                   i += 1
               if i >= len(lines):
                   raise SystemExit(f"run block missing for: {name}")
-              i += 1
+              start = i + 1
+              end = start
+              while end < len(lines) and not lines[end].startswith("      - name: "):
+                  end += 1
+              return start, end
+
+          def script_for(name):
+              start, end = bounds_for(name)
+              raw = lines[start:end]
+              if name != "Apply guarded source and verifier fixes":
+                  return "\n".join(
+                      line[10:] if line.startswith("          ") else line
+                      for line in raw
+                  ) + "\n"
+
               out = []
-              while i < len(lines) and not lines[i].startswith("      - name: "):
-                  line = lines[i]
-                  if line.startswith("          "):
-                      out.append(line[10:])
-                  else:
+              quote = None
+              for raw_line in raw:
+                  if quote is None:
+                      line = (
+                          raw_line[10:]
+                          if raw_line.startswith("          ")
+                          else raw_line
+                      )
                       out.append(line)
-                  i += 1
+                      for delim in ('"""', "'''"):
+                          if line.count(delim) % 2:
+                              quote = delim
+                              break
+                  else:
+                      out.append(raw_line)
+                      if raw_line.count(quote) % 2:
+                          quote = None
+              if quote is not None:
+                  raise SystemExit(f"unterminated reconstructed literal: {quote}")
               return "\n".join(out) + "\n"
 
           steps = [
