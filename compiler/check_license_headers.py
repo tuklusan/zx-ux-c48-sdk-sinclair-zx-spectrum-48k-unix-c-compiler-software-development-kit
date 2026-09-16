@@ -18,6 +18,8 @@ import argparse
 from pathlib import Path
 import sys
 
+from check_project_banned_words import check_tree as check_banned_words
+
 COPYRIGHT = "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs."
 ATTRIBUTION_PREFIX = 'Attribution is required: \"Based on original work by Supratim Sanyal of'
 ATTRIBUTION_SUFFIX = 'SANYALnet Labs.\" See LICENSE for full terms'
@@ -95,6 +97,7 @@ def check_tree(root: Path) -> list[str]:
             errors.append(f"copyright marker is not in the header block: {rel}")
     # Attribution is a source/document requirement. User-facing CLI text
     # is intentionally outside this source-header gate.
+    errors.extend(f"project policy: {error}" for error in check_banned_words(root))
     return errors
 
 
