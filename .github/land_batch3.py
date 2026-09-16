@@ -45,30 +45,18 @@ def patch():
         '    unsigned int logical;\n','remove actual declaration')
     rep(SRC,'    ai_mtopic = ai_t_id;\n    if (ai_mfd < 3) return -1;\n    actual = 8566;\n    if (actual < 40) return -1;\n',
 '''    ai_mtopic = ai_t_id;
-    ai_scanwhy = 1;
     if (ai_mfd < 3) return -1;
 ''','remove hard length')
     rep(SRC,'    if (ai_readfull(ai_mhead, 40) != 0) return -1;\n',
 '''    if (ai_readfull(ai_mhead, 40) != 0) return -1;
     ai_scanwhy = 3;
-''','header reason')
+''','format reason')
     rep(SRC,'    logical = ai_getu16(ai_mhead, 30);\n    if (logical != actual) return -1;\n    if (logical < 40) return -1;\n',
 '''    logical = ai_getu16(ai_mhead, 30);
     if (logical < 40) return -1;
 ''','logical length')
-    rep(SRC,'    while (rn < rcount) {\n        if (used > rbytes) return -1;\n',
-'''    ai_scanwhy = 4;
-    while (rn < rcount) {
-        if (used > rbytes) return -1;
-''','record reason')
-    rep(SRC,'        while (pos < plen) {\n            take = plen - pos;\n',
-'''        ai_scanwhy = 5;
-        while (pos < plen) {
-            take = plen - pos;
-''','payload reason')
     rep(SRC,'    if (used != rbytes) return -1;\n    calc = ai_fs1 + (ai_fs2 * 256);\n    if (calc != ai_getu16(ai_mhead, 32)) return -1;\n    if (ai_mbytes != logical) return -1;\n',
-'''    ai_scanwhy = 6;
-    if (used != rbytes) return -1;
+'''    if (used != rbytes) return -1;
     if (ai_mbytes != logical) return -1;
     slot = read(ai_mfd, ai_mstage, 1);
     ai_mreads = ai_mreads + 1;
@@ -130,9 +118,13 @@ def probe(kind):
         if kind=='tail': data+=b'X'
         if kind=='trunc': data=data[:-1]
         (td/'ailm.dat').write_bytes(data)
-        r=run([sys.executable,str(ROOT/'compiler/c48run.py'),'ailmzx48.c48b'],
-              cwd=td,input='spectrum\nq\n',capture=True,timeout=120)
+        r=subprocess.run(
+            [sys.executable,str(ROOT/'compiler/c48run.py'),'ailmzx48.c48b'],
+            cwd=td,input='spectrum\nq\n',text=True,capture_output=True,
+            timeout=120)
         out=r.stdout+r.stderr
+        if r.returncode!=0:
+            raise SystemExit(f'{kind or "valid"}: runner failed: {out[-500:]}')
         if kind is None:
             if 'Model scan error code:' in out:
                 raise SystemExit('valid model scan failed')
@@ -208,6 +200,7 @@ def main():
     base=ast_count('BASELINE')
     patch(); c48_scan(); patched=ast_count('PATCHED')
     print(f'AST delta={patched-base} headroom={32768-patched}',flush=True)
+    if patched>32768: raise SystemExit('patched AST exceeds ceiling')
     rebuild(); target_tests(); remove_harness(); delta_guard()
     run([sys.executable,'-B','compiler/verify_release.py'],timeout=1800)
     sop()
