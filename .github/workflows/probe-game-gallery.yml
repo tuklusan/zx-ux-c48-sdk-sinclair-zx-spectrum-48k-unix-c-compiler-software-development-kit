@@ -1,0 +1,113 @@
+# Temporary game-gallery capture probe. Delete after gallery is finalized.
+name: Probe game gallery captures
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/probe-game-gallery.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  capture:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository with LFS objects
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install contact-sheet tool
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends imagemagick
+
+      - name: Capture first interactive state of all games
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import sys
+
+          root = Path.cwd()
+          sys.path.insert(0, str(root / "compiler"))
+          from c48.format import read
+          from c48.screen import Font4x8, ZXScreen
+          from c48.romvm import RomMathVM
+          from verify_graphics_demos import png_bytes
+
+          games = [
+              "advent", "arith", "bgammon", "chess", "cribbage", "fish",
+              "fortune", "hangman", "maze", "quiz", "rogue", "snake",
+              "trek", "wump",
+          ]
+          out = root / "game-probe"
+          out.mkdir(exist_ok=True)
+          font = Font4x8.load(root / "compiler" / "assets" / "SANYALnet-Labs-4x8-font-FINAL.bin")
+
+          class CaptureStop(Exception):
+              pass
+
+          for name in games:
+              program_path = root / "usr" / "bin" / "games" / f"{name}.c48b"
+              program = read(program_path)
+              screen = ZXScreen(font)
+              calls = 0
+              def stop_input():
+                  nonlocal_calls[0] += 1
+                  raise CaptureStop()
+              nonlocal_calls = [0]
+              vm = RomMathVM(
+                  program,
+                  screen,
+                  argv=[str(program_path)],
+                  input_provider=stop_input,
+                  tick_provider=lambda: 0x1234,
+                  max_steps=2_000_000,
+              )
+              try:
+                  vm.run()
+              except CaptureStop:
+                  pass
+              png = png_bytes(screen.render_rgb())
+              path = out / f"{name}.png"
+              path.write_bytes(png)
+              lit = sum(v.bit_count() for v in screen.mem[:6144])
+              attrs = len(set(screen.mem[6144:]))
+              print(
+                  f"{name}: input_requests={nonlocal_calls[0]} lit={lit} attrs={attrs} "
+                  f"png_sha256={hashlib.sha256(png).hexdigest()}"
+              )
+              if nonlocal_calls[0] != 1 or lit < 20:
+                  raise SystemExit(f"{name}: first-interaction capture failed quality floor")
+          PY
+
+          montage game-probe/*.png \
+            -thumbnail 384x288 \
+            -tile 3x5 -geometry +8+24 \
+            -set label '%t' \
+            game-probe-contact-sheet.png
+          test -s game-probe-contact-sheet.png
+
+      - name: Upload probe
+        uses: actions/upload-artifact@v4
+        with:
+          name: game-gallery-probe-${{ github.sha }}
+          path: |
+            game-probe/*.png
+            game-probe-contact-sheet.png
+          if-no-files-found: error
+          retention-days: 7
+          compression-level: 9
