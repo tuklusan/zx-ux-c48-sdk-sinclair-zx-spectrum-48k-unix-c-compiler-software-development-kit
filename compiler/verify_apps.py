@@ -18,6 +18,7 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import re
 import sys
 
 sys.dont_write_bytecode = True
@@ -72,11 +73,71 @@ def run_startup(name: str) -> ZXScreen:
     return screen
 
 
+def _probe_main_cut(name: str, source: str) -> int:
+    """Locate the sole final main definition without matching comments/strings."""
+    matches = list(re.finditer(r"(?m)^int main\(", source))
+    if len(matches) != 1:
+        fail(f"{name}: probe expected exactly one main definition")
+    start = matches[0].start()
+    brace = source.find("{", matches[0].end())
+    if brace < 0:
+        fail(f"{name}: probe main definition has no body")
+
+    depth = 0
+    state = "code"
+    i = brace
+    end = -1
+    while i < len(source):
+        ch = source[i]
+        nxt = source[i + 1] if i + 1 < len(source) else ""
+        if state == "code":
+            if ch == "/" and nxt == "/":
+                state = "line-comment"
+                i += 2
+                continue
+            if ch == "/" and nxt == "*":
+                state = "block-comment"
+                i += 2
+                continue
+            if ch == '"':
+                state = "string"
+            elif ch == "'":
+                state = "char"
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    end = i + 1
+                    break
+        elif state == "line-comment":
+            if ch == "\n":
+                state = "code"
+        elif state == "block-comment":
+            if ch == "*" and nxt == "/":
+                state = "code"
+                i += 2
+                continue
+        elif state in {"string", "char"}:
+            if ch == "\\":
+                i += 2
+                continue
+            if state == "string" and ch == '"':
+                state = "code"
+            elif state == "char" and ch == "'":
+                state = "code"
+        i += 1
+
+    if end < 0:
+        fail(f"{name}: probe could not find the end of main")
+    if source[end:].strip():
+        fail(f"{name}: probe requires main to be the final source definition")
+    return start
+
+
 def run_probe(name: str, main_text: str) -> None:
     source = (SRC / f"{name}.c").read_text(encoding="ascii")
-    cut = source.rfind("int main(")
-    if cut < 0:
-        fail(f"{name}: probe could not find main")
+    cut = _probe_main_cut(name, source)
     probe = source[:cut] + main_text
     program = compile_source(
         probe.encode("ascii"),
