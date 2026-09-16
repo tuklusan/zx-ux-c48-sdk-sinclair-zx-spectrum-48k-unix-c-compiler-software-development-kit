@@ -109,12 +109,15 @@ jobs:
                           "could not remove faulty v2 test dedent exactly once"
                       )
               if index == 3:
-                  needle = '    "MANIFEST.sha256",\n'
-                  if script.count(needle) != 1:
-                      raise SystemExit(
-                          "could not remove source-tree manifest diff requirement"
-                      )
-                  script = script.replace(needle, "", 1)
+                  for needle in (
+                      '    "MANIFEST.sha256",\n',
+                      '    "docs/images/demos/warp.png",\n',
+                  ):
+                      if script.count(needle) != 1:
+                          raise SystemExit(
+                              f"could not remove stale scope requirement: {needle!r}"
+                          )
+                      script = script.replace(needle, "", 1)
               if index == 4:
                   start_marker = "    manifest_text = (\n"
                   end_marker = (
