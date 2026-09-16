@@ -114,7 +114,8 @@ jobs:
           archive="zx-ux-c48-sdk-${safe_version}-${GITHUB_SHA}.zip"
           prefix="zx-ux-c48-sdk-${safe_version}/"
           python -B compiler/build_release_candidate.py \
-            --archive "$archive" --prefix "$prefix"
+            --archive "$archive" --prefix "$prefix" \
+            --provenance-out C48-SPECIFICATION.json
           sha256sum "$archive" > SHA256SUMS.release
           VERSION_TEXT="$version" ARCHIVE_NAME="$archive" python - <<'PY'
           import hashlib
