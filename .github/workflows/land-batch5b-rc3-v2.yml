@@ -1,0 +1,619 @@
+# Temporary one-shot Batch-5B landing instrumentation, retry 2.
+name: Stage Batch-5B RC3 landing v2
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/land-batch5b-rc3-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Check out exact landing base with LFS objects
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Assert product base contains instrumentation only
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          import subprocess
+          base = "c3e3647b33eea0d978609938adfd49eeaff441c2"
+          got = set(subprocess.check_output(
+              ["git", "diff", "--name-only", base, "HEAD"], text=True
+          ).splitlines())
+          want = {
+              ".github/workflows/land-batch5b-rc3.yml",
+              ".github/workflows/land-batch5b-rc3-v2.yml",
+          }
+          if got != want:
+              raise SystemExit(
+                  f"landing base drift: expected instrumentation only; got={sorted(got)}"
+              )
+          print("BATCH-5B BASE GUARD PASS", flush=True)
+          PY
+          git lfs fsck
+          git checkout -B batch5b-rc3-stage
+
+      - name: Apply accepted Batch-5B fixes and refresh graphics corpus
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from __future__ import annotations
+          import json
+          from pathlib import Path
+          import struct
+          import sys
+          import zlib
+
+          ROOT = Path.cwd()
+          DEMO = ROOT / "usr/src/demos/demoapi.h"
+          SPRITES = ROOT / "usr/src/demos/sprites.c"
+          WARP = ROOT / "usr/src/demos/warp.c"
+          TEST = ROOT / "compiler/tests/test_graphics_review.py"
+          EXPECT = ROOT / "compiler/graphics_demo_expectations.json"
+          RELEASE = ROOT / "compiler/release_expectations.json"
+
+          def replace_once(path: Path, old: str, new: str, label: str) -> None:
+              value = path.read_text(encoding="ascii")
+              count = value.count(old)
+              if count != 1:
+                  raise SystemExit(f"{label}: anchor count {count}")
+              path.write_text(value.replace(old, new, 1), encoding="ascii", newline="\n")
+
+          old_helper = '''int d_muldiv(int value, int scale, int div)
+          {
+              int p;
+              int whole;
+              int rem;
+              int n;
+              int chunk;
+              int out;
+              int prod;
+              if (div <= 0 || scale != 220) return 0;
+              if (value >= -2978 && value <= 2978 &&
+                  div <= 1638) {
+                  p = value * 11;
+                  whole = p / div;
+                  rem = p % div;
+                  return whole * 20 + rem * 20 / div;
+              }
+              n = value;
+              rem = 0;
+              out = 0;
+              while (n != 0) {
+                  if (n > 16) chunk = 16;
+                  else if (n < -16) chunk = -16;
+                  else chunk = n;
+                  prod = chunk * scale + rem;
+                  out = out + prod / div;
+                  rem = prod % div;
+                  n = n - chunk;
+              }
+              return out;
+          }
+          '''
+          new_helper = '''int d_muldiv(int value, int scale, int div)
+          {
+              int p;
+              int whole;
+              int rem;
+              int n;
+              int q;
+              int acc;
+              int mask;
+              int out;
+              if (div <= 0 || scale != 220) return 0;
+              if (value >= -2978 && value <= 2978 &&
+                  div <= 1638) {
+                  p = value * 11;
+                  whole = p / div;
+                  rem = p % div;
+                  if (whole >= -1637 && whole <= 1637)
+                      return whole * 20 + rem * 20 / div;
+              }
+              whole = value / div;
+              rem = value % div;
+              if (whole > 148 || whole < -148) return 0;
+              if (rem < 0) n = -rem;
+              else n = rem;
+              q = 0;
+              acc = 0;
+              mask = 128;
+              while (mask != 0) {
+                  q = q * 2;
+                  if (acc >= div - acc) {
+                      acc = acc - (div - acc);
+                      q = q + 1;
+                  }
+                  else
+                      acc = acc + acc;
+                  if ((scale & mask) != 0) {
+                      if (acc >= div - n) {
+                          acc = acc - (div - n);
+                          q = q + 1;
+                      }
+                      else
+                          acc = acc + n;
+                  }
+                  mask = mask >> 1;
+              }
+              if (rem < 0) q = -q;
+              out = whole * scale;
+              if (out > 0 && q > 32767 - out) return 0;
+              if (out < 0 && q < -32767 - 1 - out) return 0;
+              return out + q;
+          }
+          '''
+          replace_once(DEMO, old_helper, new_helper, "d_muldiv redesign")
+          replace_once(
+              SPRITES,
+              "        y = (i * 29 + f * 2) % 176;\n",
+              "        y = 16 + (i * 29 + f * 2) % 160;\n",
+              "sprites label band",
+          )
+          replace_once(
+              WARP,
+              "        if (d_ok(x1, y1) && d_ok(x2, y2) &&\n"
+              "            y1 < 184 && y2 < 184) {\n",
+              "        if (d_ok(x1, y1) && d_ok(x2, y2) &&\n"
+              "            y1 >= 16 && y1 < 184 &&\n"
+              "            y2 >= 16 && y2 < 184) {\n",
+              "warp label band",
+          )
+
+          test_text = TEST.read_text(encoding="ascii")
+          marker = '\n\nif __name__ == "__main__":\n'
+          if marker not in test_text:
+              raise SystemExit("graphics review test insertion marker missing")
+          if "GraphicsReviewBatch5BTests" in test_text:
+              raise SystemExit("Batch-5B tests already present")
+          addition = r'''
+
+          class GraphicsReviewBatch5BTests(unittest.TestCase):
+              def test_sprites_preserves_top_label_band(self):
+                  src = (SRC / "sprites.c").read_text(encoding="ascii")
+                  self.assertIn("y = 16 + (i * 29 + f * 2) % 160;", src)
+                  self.assertNotIn("y = (i * 29 + f * 2) % 176;", src)
+
+              def test_warp_preserves_top_label_band(self):
+                  src = (SRC / "warp.c").read_text(encoding="ascii")
+                  self.assertIn("y1 >= 16 && y1 < 184", src)
+                  self.assertIn("y2 >= 16 && y2 < 184", src)
+
+              def test_muldiv_large_divisor_and_small_divisor(self):
+                  with tempfile.TemporaryDirectory() as td:
+                      root = Path(td)
+                      shutil.copy2(SRC / "demoapi.h", root / "demoapi.h")
+                      source = root / "probe.c"
+                      source.write_text(
+                          '#include "demoapi.h"\n'
+                          'int main(void)\n'
+                          '{\n'
+                          '    if (d_muldiv(160, 220, 32767) != 1) return 1;\n'
+                          '    if (d_muldiv(-160, 220, 32767) != -1) return 2;\n'
+                          '    if (d_muldiv(100, 220, 1) != 22000) return 3;\n'
+                          '    return 0;\n'
+                          '}\n',
+                          encoding="ascii",
+                          newline="\n",
+                      )
+                      program = compile_file(source)
+                      vm = C48VM(program, ZXScreen(FONT), argv=["probe"])
+                      self.assertEqual(vm.run(), 0)
+          '''
+          addition = "\n".join(
+              line[10:] if line.startswith("          ") else line
+              for line in addition.splitlines()
+          )
+          TEST.write_text(
+              test_text.replace(marker, addition + marker, 1),
+              encoding="ascii", newline="\n",
+          )
+
+          release = json.loads(RELEASE.read_text(encoding="ascii"))
+          if release.get("version") != "1.0.0" or release.get("test_count") != 345:
+              raise SystemExit(
+                  f"unexpected release expectations: "
+                  f"{release.get('version')} / {release.get('test_count')}"
+              )
+          release["test_count"] = 348
+          RELEASE.write_text(
+              json.dumps(release, indent=2) + "\n",
+              encoding="ascii", newline="\n",
+          )
+
+          sys.path.insert(0, str(ROOT / "compiler"))
+          import verify_graphics_demos as v
+
+          old_expect = json.loads(EXPECT.read_text(encoding="ascii"))
+          expect = json.loads(json.dumps(old_expect))
+          frames_rgb = []
+          changed_visuals = set()
+          changed_binaries = set()
+          for name, exp in expect["demos"].items():
+              old = old_expect["demos"][name]
+              data = v.compile_bytes(name)
+              (v.BIN / f"{name}.c48b").write_bytes(data)
+              first = v.run_demo(name, 1, 15.0)
+              screen = v.run_demo(name, int(exp["frames"]), 15.0)
+              rgb = screen.render_rgb()
+              png = v.png_bytes(rgb)
+              (v.IMG / f"{name}.png").write_bytes(png)
+              lit, attrs = v.screen_metrics(screen)
+              exp["source_sha256"] = v.sha(v.SRC / f"{name}.c")
+              exp["binary_sha256"] = v.sha_bytes(data)
+              exp["first_screen_sha256"] = v.sha_bytes(first.bytes())
+              exp["screen_sha256"] = v.sha_bytes(screen.bytes())
+              exp["png_sha256"] = v.sha_bytes(png)
+              exp["lit_pixels"] = lit
+              exp["attribute_values"] = attrs
+              frames_rgb.append(rgb)
+              if exp["binary_sha256"] != old["binary_sha256"]:
+                  changed_binaries.add(name)
+              for key in (
+                  "first_screen_sha256", "screen_sha256", "png_sha256",
+                  "lit_pixels", "attribute_values",
+              ):
+                  if exp[key] != old[key]:
+                      changed_visuals.add(name)
+          if changed_visuals != {"sprites", "warp"}:
+              raise SystemExit(
+                  f"unexpected Batch-5B visual changes: {sorted(changed_visuals)}"
+              )
+          if len(changed_binaries) != 21:
+              raise SystemExit(
+                  f"expected 21 rebuilt binary changes, got {len(changed_binaries)}"
+              )
+          expect["helper_sha256"] = v.sha(v.SRC / "demoapi.h")
+          EXPECT.write_text(
+              json.dumps(expect, indent=2) + "\n",
+              encoding="ascii", newline="\n",
+          )
+
+          def png_rgb(width: int, height: int, rgb: bytes) -> bytes:
+              raw = bytearray()
+              stride = width * 3
+              for y in range(height):
+                  raw.append(0)
+                  raw.extend(rgb[y * stride:(y + 1) * stride])
+              def chunk(kind: bytes, data: bytes) -> bytes:
+                  body = kind + data
+                  return (
+                      struct.pack(">I", len(data)) + body
+                      + struct.pack(">I", zlib.crc32(body) & 0xffffffff)
+                  )
+              head = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+              return (
+                  b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", head)
+                  + chunk(b"IDAT", zlib.compress(bytes(raw), 9))
+                  + chunk(b"IEND", b"")
+              )
+
+          cols, rows = 4, 6
+          width, height = cols * 256, rows * 192
+          sheet = bytearray(width * height * 3)
+          for index, rgb in enumerate(frames_rgb):
+              ox = (index % cols) * 256
+              oy = (index // cols) * 192
+              for y in range(192):
+                  src = y * 256 * 3
+                  dst = ((oy + y) * width + ox) * 3
+                  sheet[dst:dst + 256 * 3] = rgb[src:src + 256 * 3]
+          (v.IMG / "contact-sheet.png").write_bytes(
+              png_rgb(width, height, bytes(sheet))
+          )
+          print(
+              "BATCH-5B REGEN PASS: 21 binaries; visuals=sprites,warp",
+              flush=True,
+          )
+          PY
+
+      - name: Remove landing instrumentation and transient caches
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -f \
+            .github/workflows/land-batch5b-rc3.yml \
+            .github/workflows/land-batch5b-rc3-v2.yml
+          find . -type d -name '__pycache__' -prune -exec rm -rf {} +
+          find . -type d -name '.pytest_cache' -prune -exec rm -rf {} +
+          find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
+
+      - name: Rebuild manifest
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import subprocess
+
+          root = Path.cwd()
+          manifest = root / "MANIFEST.sha256"
+          names = subprocess.check_output(
+              ["git", "ls-files", "-z"]
+          ).split(b"\0")
+          lines = []
+          for raw in names:
+              if not raw:
+                  continue
+              rel = raw.decode("utf-8", "surrogateescape")
+              if rel == "MANIFEST.sha256":
+                  continue
+              path = root / rel
+              if not path.is_file():
+                  raise SystemExit(f"tracked file missing for manifest: {rel}")
+              data = path.read_bytes()
+              if path.suffix.lower() == ".bat":
+                  data = data.replace(b"\r\n", b"\n")
+              lines.append((rel, hashlib.sha256(data).hexdigest()))
+          manifest.write_text(
+              "".join(
+                  f"{digest}  {rel}\n"
+                  for rel, digest in sorted(lines)
+              ),
+              encoding="ascii", newline="\n",
+          )
+          PY
+          git add -A
+          git diff --cached --check
+
+      - name: Verify candidate before commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B compiler/verify_release.py
+          python -B compiler/verify_graphics_demos.py \
+            --release --time-quota 15
+          python -B - <<'PY'
+          from pathlib import Path
+          import json
+
+          root = Path.cwd()
+          demo = (root / "usr/src/demos/demoapi.h").read_text(
+              encoding="ascii"
+          )
+          sprites = (root / "usr/src/demos/sprites.c").read_text(
+              encoding="ascii"
+          )
+          warp = (root / "usr/src/demos/warp.c").read_text(
+              encoding="ascii"
+          )
+          if "int chunk;" in demo or "int prod;" in demo:
+              raise SystemExit("stale overflow-prone d_muldiv slow path remains")
+          if "whole > 148 || whole < -148" not in demo:
+              raise SystemExit("safe d_muldiv representability guard missing")
+          if "y = 16 + (i * 29 + f * 2) % 160;" not in sprites:
+              raise SystemExit("sprites top-band fix missing")
+          if (
+              "y1 >= 16 && y1 < 184" not in warp
+              or "y2 >= 16 && y2 < 184" not in warp
+          ):
+              raise SystemExit("warp top-band guards missing")
+          rel = json.loads(
+              (root / "compiler/release_expectations.json").read_text(
+                  encoding="ascii"
+              )
+          )
+          if rel.get("test_count") != 348 or rel.get("version") != "1.0.0":
+              raise SystemExit("release expectation mismatch")
+          count = 0
+          for path in sorted((root / "usr/src").rglob("*")):
+              if (
+                  not path.is_file()
+                  or path.suffix.lower() not in {".c", ".h"}
+              ):
+                  continue
+              data = path.read_bytes()
+              data.decode("ascii")
+              for line_no, line in enumerate(data.splitlines(), 1):
+                  count += 1
+                  if b"\r" in line:
+                      raise SystemExit(
+                          f"CR in C48 source {path}:{line_no}"
+                      )
+                  if len(line) > 64:
+                      raise SystemExit(
+                          f"C48 source over 64 columns "
+                          f"{path}:{line_no}={len(line)}"
+                      )
+          print(f"BATCH-5B TARGET CHECKS PASS source-lines={count}", flush=True)
+          PY
+
+      - name: Commit clean candidate and check diff scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "fix: harden Batch-5B graphics demos"
+          python -B - <<'PY'
+          from pathlib import Path
+          import subprocess
+
+          base = "c3e3647b33eea0d978609938adfd49eeaff441c2"
+          seen = set(subprocess.check_output(
+              ["git", "diff", "--name-only", base, "HEAD"], text=True
+          ).splitlines())
+          required = {
+              "MANIFEST.sha256",
+              "compiler/graphics_demo_expectations.json",
+              "compiler/release_expectations.json",
+              "compiler/tests/test_graphics_review.py",
+              "docs/images/demos/contact-sheet.png",
+              "docs/images/demos/sprites.png",
+              "docs/images/demos/warp.png",
+              "usr/src/demos/demoapi.h",
+              "usr/src/demos/sprites.c",
+              "usr/src/demos/warp.c",
+          }
+          required.update(
+              str(p.as_posix())
+              for p in Path("usr/bin/demos").glob("*.c48b")
+          )
+          missing = required - seen
+          unexpected = seen - required
+          if missing:
+              raise SystemExit(
+                  f"missing Batch-5B diff paths: {sorted(missing)}"
+              )
+          if unexpected:
+              raise SystemExit(
+                  f"unexpected Batch-5B diff paths: {sorted(unexpected)}"
+              )
+          for temp in (
+              ".github/workflows/land-batch5b-rc3.yml",
+              ".github/workflows/land-batch5b-rc3-v2.yml",
+          ):
+              if temp in seen:
+                  raise SystemExit(f"landing workflow leaked: {temp}")
+          print(
+              f"BATCH-5B DIFF SCOPE PASS paths={len(seen)}",
+              flush=True,
+          )
+          PY
+
+      - name: Mandatory three-pass fresh-copy SoP
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from pathlib import Path
+          import hashlib
+          import subprocess
+          import tempfile
+
+          def run(args, cwd=None):
+              subprocess.run(args, cwd=cwd, check=True)
+
+          def scan(root: Path, pass_no: int, baseline=None):
+              run(["git", "lfs", "pull"], cwd=root)
+              names = subprocess.check_output(
+                  ["git", "ls-files", "-z"], cwd=root
+              ).split(b"\0")
+              snap = {}
+              files = lines = total = 0
+              for raw in names:
+                  if not raw:
+                      continue
+                  rel = raw.decode("utf-8", "surrogateescape")
+                  path = root / rel
+                  if not path.is_file():
+                      raise SystemExit(
+                          f"SoP {pass_no}: missing tracked file {rel}"
+                      )
+                  data = path.read_bytes()
+                  digest = hashlib.sha256(data).hexdigest()
+                  line_count = len(data.splitlines())
+                  snap[rel] = (digest, line_count, len(data))
+                  files += 1
+                  lines += line_count
+                  total += len(data)
+              for temp in (
+                  ".github/workflows/land-batch5b-rc3.yml",
+                  ".github/workflows/land-batch5b-rc3-v2.yml",
+              ):
+                  if temp in snap:
+                      raise SystemExit(
+                          f"SoP {pass_no}: temporary workflow remains {temp}"
+                      )
+              manifest_text = (
+                  root / "MANIFEST.sha256"
+              ).read_text(encoding="ascii")
+              for rel in snap:
+                  if rel == "MANIFEST.sha256":
+                      continue
+                  path = root / rel
+                  data = path.read_bytes()
+                  if path.suffix.lower() == ".bat":
+                      data = data.replace(b"\r\n", b"\n")
+                  md = hashlib.sha256(data).hexdigest()
+                  if f"{md}  {rel}\n" not in manifest_text:
+                      raise SystemExit(
+                          f"SoP {pass_no}: manifest mismatch {rel}"
+                      )
+              demo = (root / "usr/src/demos/demoapi.h").read_text(
+                  encoding="ascii"
+              )
+              sprites = (root / "usr/src/demos/sprites.c").read_text(
+                  encoding="ascii"
+              )
+              warp = (root / "usr/src/demos/warp.c").read_text(
+                  encoding="ascii"
+              )
+              if "int chunk;" in demo or "int prod;" in demo:
+                  raise SystemExit(
+                      f"SoP {pass_no}: stale d_muldiv fallback"
+                  )
+              if "y = 16 + (i * 29 + f * 2) % 160;" not in sprites:
+                  raise SystemExit(
+                      f"SoP {pass_no}: sprites fix missing"
+                  )
+              if (
+                  "y1 >= 16 && y1 < 184" not in warp
+                  or "y2 >= 16 && y2 < 184" not in warp
+              ):
+                  raise SystemExit(
+                      f"SoP {pass_no}: warp fix missing"
+                  )
+              if baseline is not None and snap != baseline:
+                  raise SystemExit(
+                      f"SoP {pass_no}: fresh-copy bytes differ"
+                  )
+              print(
+                  f"SoP FRESH BYTE-LINE SCAN {pass_no} PASS "
+                  f"files={files} lines={lines} bytes={total}",
+                  flush=True,
+              )
+              return snap
+
+          baseline = None
+          with tempfile.TemporaryDirectory(prefix="batch5b-sop-") as td:
+              base = Path(td)
+              for pass_no in (1, 2, 3):
+                  work = base / f"pass-{pass_no}"
+                  run([
+                      "git", "worktree", "add", "--detach",
+                      str(work), "HEAD",
+                  ])
+                  try:
+                      snap = scan(work, pass_no, baseline)
+                      if baseline is None:
+                          baseline = snap
+                  finally:
+                      run([
+                          "git", "worktree", "remove", "--force",
+                          str(work),
+                      ])
+          print(
+              "BATCH-5B SoP CERTIFIED: 3 successive fresh copies",
+              flush=True,
+          )
+          PY
+
+      - name: Push certified staging commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git push --force origin HEAD:refs/heads/batch5b-rc3-stage
+          echo "STAGED_COMMIT=$(git rev-parse HEAD)"
+          echo "STAGED_TREE=$(git rev-parse HEAD^{tree})"
