@@ -46,6 +46,39 @@ int w_cos(int a)
     return w_sin(a + 64);
 }
 
+int w_muldiv(int value, int scale, int div)
+{
+    int neg;
+    int n;
+    int chunk;
+    int rem;
+    int out;
+    int prod;
+    if (div <= 0 || scale < 0)
+        return 0;
+    neg = 0;
+    if (value < 0) {
+        neg = 1;
+        n = -value;
+    } else {
+        n = value;
+    }
+    rem = 0;
+    out = 0;
+    while (n > 0) {
+        chunk = n;
+        if (chunk > 16)
+            chunk = 16;
+        prod = chunk * scale + rem;
+        out = out + prod / div;
+        rem = prod % div;
+        n = n - chunk;
+    }
+    if (neg)
+        return -out;
+    return out;
+}
+
 void w_reset(void)
 {
     w_z[0] = -88;
@@ -105,8 +138,8 @@ int w_project(int x, int y, int z, int *sx, int *sy)
     q = z + 190;
     if (q < 30)
         return 0;
-    *sx = 128 + x * w_zoom / q;
-    *sy = 100 + y * w_zoom / q;
+    *sx = 128 + w_muldiv(x, w_zoom, q);
+    *sy = 100 + w_muldiv(y, w_zoom, q);
     if (*sx < 0 || *sx > 255)
         return 0;
     if (*sy < 32 || *sy > 176)
@@ -295,18 +328,36 @@ void w_edit(int key)
         w_sel++;
     if (key == 'p' && w_sel > 0)
         w_sel--;
-    if (key == 'a' && w_w[w_sel] > 3)
+    if (key == 'a' && w_w[w_sel] > 2) {
         w_w[w_sel] = w_w[w_sel] - 2;
-    if (key == 'd' && w_w[w_sel] < 78)
+        if (w_w[w_sel] < 2)
+            w_w[w_sel] = 2;
+    }
+    if (key == 'd' && w_w[w_sel] < 78) {
         w_w[w_sel] = w_w[w_sel] + 2;
-    if (key == 's' && w_h[w_sel] > 3)
+        if (w_w[w_sel] > 78)
+            w_w[w_sel] = 78;
+    }
+    if (key == 's' && w_h[w_sel] > 2) {
         w_h[w_sel] = w_h[w_sel] - 2;
-    if (key == 'w' && w_h[w_sel] < 30)
+        if (w_h[w_sel] < 2)
+            w_h[w_sel] = 2;
+    }
+    if (key == 'w' && w_h[w_sel] < 30) {
         w_h[w_sel] = w_h[w_sel] + 2;
-    if (key == 'z' && w_z[w_sel] > -110)
+        if (w_h[w_sel] > 30)
+            w_h[w_sel] = 30;
+    }
+    if (key == 'z' && w_z[w_sel] > -110) {
         w_z[w_sel] = w_z[w_sel] - 3;
-    if (key == 'x' && w_z[w_sel] < 110)
+        if (w_z[w_sel] < -110)
+            w_z[w_sel] = -110;
+    }
+    if (key == 'x' && w_z[w_sel] < 110) {
         w_z[w_sel] = w_z[w_sel] + 3;
+        if (w_z[w_sel] > 110)
+            w_z[w_sel] = 110;
+    }
     if (key == '5')
         w_yaw = w_yaw - 6;
     if (key == '8')
@@ -315,10 +366,16 @@ void w_edit(int key)
         w_pitch = w_pitch - 5;
     if (key == '6')
         w_pitch = w_pitch + 5;
-    if (key == '+' && w_zoom < 360)
+    if (key == '+' && w_zoom < 360) {
         w_zoom = w_zoom + 12;
-    if (key == '-' && w_zoom > 150)
+        if (w_zoom > 360)
+            w_zoom = 360;
+    }
+    if (key == '-' && w_zoom > 150) {
         w_zoom = w_zoom - 12;
+        if (w_zoom < 150)
+            w_zoom = 150;
+    }
     if (key == 'r')
         w_reset();
 }

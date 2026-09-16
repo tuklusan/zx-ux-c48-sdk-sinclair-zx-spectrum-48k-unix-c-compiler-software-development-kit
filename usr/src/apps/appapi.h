@@ -102,6 +102,10 @@ static void app_field(int row, int col, char *text,
 {
     char buf[33];
     int i;
+    if (width < 0)
+        width = 0;
+    if (width > 32)
+        width = 32;
     i = 0;
     while (i < width && text[i] != 0) {
         buf[i] = text[i];

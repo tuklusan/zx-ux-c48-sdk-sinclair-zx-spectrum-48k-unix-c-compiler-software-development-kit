@@ -432,6 +432,27 @@ int wr_nextrow(int pos)
     return pos;
 }
 
+int wr_prevrow(int pos)
+{
+    int p;
+    int prev;
+    int next;
+    if (pos <= 0)
+        return 0;
+    p = 0;
+    prev = 0;
+    while (p < pos && p < wr_len) {
+        next = wr_nextrow(p);
+        if (next <= p)
+            break;
+        if (next >= pos)
+            return p;
+        prev = p;
+        p = next;
+    }
+    return prev;
+}
+
 void wr_page(int down)
 {
     int p;
@@ -718,7 +739,7 @@ int wr_fbs(void)
     return 1;
 }
 
-void wr_insert_key(void)
+int wr_insert_key(void)
 {
     int c;
     int row;
@@ -727,34 +748,38 @@ void wr_insert_key(void)
     c = getchar();
     if (c == 7) {
         wr_insert = 0;
-        return;
+        return 1;
     }
     row = 0;
     if (wr_pcursor >= 0)
         row = wr_pcursor / 60;
     if (c == 8) {
-        if (wr_cur > 0) {
-            if (wr_fbs()) {
+        if (wr_cur <= 0)
+            return 0;
+        if (wr_fbs()) {
+            wr_fast = 1;
+        } else {
+            first = row;
+            if (first > 0)
+                first--;
+            wr_cur--;
+            wr_delete_at(wr_cur);
+            if (wr_tail(first))
                 wr_fast = 1;
-            } else {
-                first = row;
-                if (first > 0)
-                    first--;
-                wr_cur--;
-                wr_delete_at(wr_cur);
-                if (wr_tail(first))
-                    wr_fast = 1;
-            }
         }
-        return;
+        return 1;
     }
     if (c == 10 || c == 13) {
+        if (wr_len >= 1899)
+            return 0;
         wr_insert_char('\n');
         if (wr_tail(row))
             wr_fast = 1;
-        return;
+        return 1;
     }
     if (c >= 32 && c <= 126) {
+        if (wr_len >= 1899)
+            return 0;
         if (wr_fins(c)) {
             wr_fast = 1;
         } else {
@@ -762,12 +787,66 @@ void wr_insert_key(void)
             if (wr_tail(row))
                 wr_fast = 1;
         }
+        return 1;
     }
+    return 0;
+}
+
+int wr_command(int key)
+{
+    int old_cur;
+    int old_view;
+    if (key == 'q')
+        return -1;
+    if ((key == '8' || key == 'l') && wr_cur < wr_len) {
+        if (wr_fmove(1))
+            wr_fast = 1;
+        else
+            wr_cur++;
+        return 1;
+    }
+    if ((key == '5' || key == 'h') && wr_cur > 0) {
+        if (wr_fmove(-1)) {
+            wr_fast = 1;
+        } else {
+            wr_cur--;
+            if (wr_cur < wr_view)
+                wr_view = wr_prevrow(wr_view);
+        }
+        return 1;
+    }
+    if (key == '6' || key == '7') {
+        old_cur = wr_cur;
+        old_view = wr_view;
+        wr_page(key == '6');
+        if (wr_cur != old_cur || wr_view != old_view)
+            return 1;
+        return 0;
+    }
+    if (key == 'i') {
+        wr_insert = 1;
+        return 1;
+    }
+    if (key == 'x' && wr_cur < wr_len) {
+        wr_delete_at(wr_cur);
+        return 1;
+    }
+    if (key == 'f') {
+        wr_find();
+        return 1;
+    }
+    if (key == 'g' && (wr_cur != 0 || wr_view != 0)) {
+        wr_cur = 0;
+        wr_view = 0;
+        return 1;
+    }
+    return 0;
 }
 
 int main(int argc, char **argv)
 {
     int key;
+    int changed;
     wr_seed();
     wr_cur = 0;
     wr_view = 0;
@@ -779,38 +858,15 @@ int main(int argc, char **argv)
     while (1) {
         wr_fast = 0;
         if (wr_insert) {
-            wr_insert_key();
+            changed = wr_insert_key();
         } else {
             key = app_key();
-            if (key == 'q')
+            changed = wr_command(key);
+            if (changed < 0)
                 return 0;
-            if ((key == '8' || key == 'l') && wr_cur < wr_len) {
-                if (wr_fmove(1))
-                    wr_fast = 1;
-                else
-                    wr_cur++;
-            }
-            if ((key == '5' || key == 'h') && wr_cur > 0) {
-                if (wr_fmove(-1))
-                    wr_fast = 1;
-                else
-                    wr_cur--;
-            }
-            if (key == '6')
-                wr_page(1);
-            if (key == '7')
-                wr_page(0);
-            if (key == 'i')
-                wr_insert = 1;
-            if (key == 'x')
-                wr_delete_at(wr_cur);
-            if (key == 'f')
-                wr_find();
-            if (key == 'g') {
-                wr_cur = 0;
-                wr_view = 0;
-            }
         }
+        if (!changed)
+            continue;
         {
             int old_view;
             old_view = wr_view;

@@ -61,22 +61,18 @@ unsigned int sh_ref(char *s, int *used, int depth)
 {
     int col;
     int row;
-    int i;
     col = sh_colno(s[0]);
-    if (col < 0) {
+    if (col < 0 || s[1] < '1' || s[1] > '8') {
         *used = 0;
         return 0u;
     }
-    i = 1;
-    row = 0;
-    while (s[i] >= '0' && s[i] <= '9') {
-        row = row * 10 + s[i] - '0';
-        i++;
-    }
-    *used = i;
-    if (row < 1 || row > 8)
+    if (s[2] >= '0' && s[2] <= '9') {
+        *used = 0;
         return 0u;
-    return sh_value(row - 1, col, depth + 1);
+    }
+    row = s[1] - '1';
+    *used = 2;
+    return sh_value(row, col, depth + 1);
 }
 
 unsigned int sh_formula(char *s, int depth)
@@ -89,15 +85,23 @@ unsigned int sh_formula(char *s, int depth)
     int r1;
     int r2;
     int c;
+    int c2;
     int i;
     if (depth > 6)
         return 0u;
     if (s[1] == 'S' && s[2] == 'U' && s[3] == 'M' &&
         s[4] == '(') {
         c = sh_colno(s[5]);
+        c2 = sh_colno(s[8]);
+        if (c < 0 || c2 != c || s[6] < '1' || s[6] > '8')
+            return 0u;
+        if (s[7] != ':' || s[9] < '1' || s[9] > '8')
+            return 0u;
+        if (s[10] != ')' || s[11] != 0)
+            return 0u;
         r1 = s[6] - '0';
         r2 = s[9] - '0';
-        if (c < 0 || s[7] != ':' || s[8] != s[5])
+        if (r1 > r2)
             return 0u;
         total = 0u;
         for (i = r1; i <= r2; i++)
@@ -108,8 +112,11 @@ unsigned int sh_formula(char *s, int depth)
     if (used == 0)
         return 0u;
     i = 1 + used;
+    if (s[i] != '+' && s[i] != '-' &&
+        s[i] != '*' && s[i] != '/')
+        return 0u;
     b = sh_ref(s + i + 1, &used2, depth);
-    if (used2 == 0)
+    if (used2 == 0 || s[i + 1 + used2] != 0)
         return 0u;
     if (s[i] == '+')
         return a + b;
@@ -117,7 +124,7 @@ unsigned int sh_formula(char *s, int depth)
         return a - b;
     if (s[i] == '*')
         return a * b;
-    if (s[i] == '/' && b != 0u)
+    if (b != 0u)
         return a / b;
     return 0u;
 }
@@ -125,6 +132,8 @@ unsigned int sh_formula(char *s, int depth)
 unsigned int sh_value(int row, int col, int depth)
 {
     char *p;
+    if (row < 0 || row > 7 || col < 0 || col > 3)
+        return 0u;
     p = sh_cell(row, col);
     if (p[0] == '=')
         return sh_formula(p, depth);
