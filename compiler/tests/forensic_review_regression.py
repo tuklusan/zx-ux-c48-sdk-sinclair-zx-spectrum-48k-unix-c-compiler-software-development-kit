@@ -55,7 +55,7 @@ class LoaderForensicReviewTests(unittest.TestCase):
         idecl = program["items"][0]["declarators"][0]
         idecl["ctype"] = {"kind": "void"}
         program["symbols"]["x"]["type"] = {"kind": "void"}
-        self.assert_rejected(program, "void object")
+        self.assert_rejected(program, r"void.*object")
 
     def test_illegal_array_element_types_are_rejected(self):
         bad_bases = (
