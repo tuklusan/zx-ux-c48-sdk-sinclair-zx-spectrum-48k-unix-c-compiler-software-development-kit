@@ -44,6 +44,7 @@ from c48.screen import Font4x8, SCREEN_SIZE, ZXScreen
 
 FONT = Font4x8.load(ROOT / "assets" / "font4x8-tasword.bin")
 
+
 def host_arch() -> str:
     machine = platform.machine().lower()
     if machine in {"x86_64", "amd64"}:
@@ -291,9 +292,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--time-quota",
         type=float,
-        default=15.0,
+        default=30.0,
         metavar="SECONDS",
-        help="per-C48B wall-clock runtime quota (default: 15)",
+        help=(
+            "per-C48B wall-clock runtime quota (default: 30; "
+            "the graphics CI matrix explicitly enforces 15)"
+        ),
     )
     ns = ap.parse_args(argv)
     if not math.isfinite(ns.time_quota) or ns.time_quota <= 0.0:
