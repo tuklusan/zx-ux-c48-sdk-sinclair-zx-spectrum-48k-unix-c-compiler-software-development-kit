@@ -1,0 +1,147 @@
+name: Reposition games and applications galleries
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/reposition-galleries.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  rewrite:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Reposition galleries and certify README
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object README.md)" = "456059ea59a58ac6a380ed2d11d3aeff5dc16ee1"
+          python -B - <<'PY'
+          from pathlib import Path
+          from collections import Counter
+          import hashlib
+          import shutil
+
+          path = Path("README.md")
+          original = path.read_bytes()
+          text = original.decode("utf-8", errors="strict")
+
+          games_h = "## Games gallery — 14 C48 games"
+          relation_h = "## Relationship to native ZX-UX"
+          apps_h = "## Applications gallery — 3 C48 applications"
+          runtime_h = "## Runtime notes"
+
+          gs = text.index(games_h)
+          ge = text.index(relation_h, gs)
+          aps = text.index(apps_h, ge)
+          ape = text.index(runtime_h, aps)
+
+          games = text[gs:ge]
+          apps = text[aps:ape]
+
+          game_gallery_start = games.index("| ![C48 Adventure]")
+          game_contact = "The combined [14-game contact sheet](docs/images/games/contact-sheet.png) is generated from the same certified captures."
+          game_gallery_end = games.index(game_contact, game_gallery_start) + len(game_contact)
+          game_gallery = games[game_gallery_start:game_gallery_end]
+          games_without = games[:game_gallery_start] + games[game_gallery_end:]
+
+          game_p2 = "By then **Adventure** had turned caves, maps and magic words into mainframe folklore; **Hunt the Wumpus** had made pits, superbats and a monster lurking in a graph of rooms a shared BASIC-era legend; **Star Trek** had travelled through time-sharing systems, schools, magazines and books in endlessly rewritten listings; **Rogue** was carrying that tradition into Unix terminals with a different dungeon every run; and **Chess** remained computing’s classic public test of whether a machine could appear to think."
+          marker = game_p2 + "\n\n"
+          if games_without.count(marker) != 1:
+              raise SystemExit("game paragraph-2 marker mismatch")
+          new_games = games_without.replace(marker, marker + game_gallery + "\n\n", 1)
+
+          app_gallery_start = apps.index("| ![WRITE48]")
+          app_contact = "The combined [3-application contact sheet](docs/images/apps/contact-sheet.png) is generated from the same certified captures."
+          app_gallery_end = apps.index(app_contact, app_gallery_start) + len(app_contact)
+          app_gallery = apps[app_gallery_start:app_gallery_end]
+          apps_without = apps[:app_gallery_start] + apps[app_gallery_end:]
+
+          app_p1 = "The games above remember the period when a computer was something to explore, program and play with; these applications remember the other half of the same story—the moment personal computers were expected to be useful. Word processing and spreadsheets became symbols of the shift from hobby machine to everyday work tool, while interactive graphics turned the screen into a place to design and manipulate things rather than merely print results. By the early 1990s, that mixture of writing, personal finance and visual experimentation had become part of the culture of serious home computing."
+          marker = app_p1 + "\n\n"
+          if apps_without.count(marker) != 1:
+              raise SystemExit("application paragraph-1 marker mismatch")
+          new_apps = apps_without.replace(marker, marker + app_gallery + "\n\n", 1)
+
+          candidate = text[:gs] + new_games + text[ge:aps] + new_apps + text[ape:]
+
+          # Movement-only guard: line contents and multiplicities must be identical.
+          if Counter(candidate.splitlines()) != Counter(text.splitlines()):
+              raise SystemExit("movement-only guard failed: line content changed")
+          if len(candidate.splitlines()) != len(text.splitlines()):
+              raise SystemExit("movement-only guard failed: line count changed")
+
+          path.write_text(candidate, encoding="utf-8", newline="\n")
+
+          def validate(data: bytes, pass_no: int) -> None:
+              walked = 0
+              for line_no, line in enumerate(data.splitlines(keepends=True), 1):
+                  if b"\x00" in line:
+                      raise SystemExit(f"pass {pass_no}: NUL at README line {line_no}")
+                  for _byte in line:
+                      walked += 1
+              if walked != len(data):
+                  raise SystemExit(f"pass {pass_no}: byte walk mismatch {walked} != {len(data)}")
+
+              decoded = data.decode("utf-8", errors="strict")
+              g0 = decoded.index(games_h)
+              g1 = decoded.index(relation_h, g0)
+              a0 = decoded.index(apps_h, g1)
+              a1 = decoded.index(runtime_h, a0)
+              gsec = decoded[g0:g1]
+              asec = decoded[a0:a1]
+
+              # Games: p1, p2, gallery, p3, p4.
+              gp1 = gsec.index("These games are included as a small cultural time capsule")
+              gp2 = gsec.index("By then **Adventure**", gp1)
+              gg = gsec.index("| ![C48 Adventure]", gp2)
+              gp3 = gsec.index("The quieter side of that culture mattered just as much.", gg)
+              gp4 = gsec.index("Together, they give the SDK a playable connection", gp3)
+              if not (gp1 < gp2 < gg < gp3 < gp4):
+                  raise SystemExit(f"pass {pass_no}: games section order incorrect")
+
+              # Apps: p1, gallery, p2.
+              ap1 = asec.index("The games above remember the period")
+              ag = asec.index("| ![WRITE48]", ap1)
+              ap2 = asec.index("**WRITE48** evokes the word processors", ag)
+              if not (ap1 < ag < ap2):
+                  raise SystemExit(f"pass {pass_no}: applications section order incorrect")
+
+              if gsec.count(game_contact) != 1 or asec.count(app_contact) != 1:
+                  raise SystemExit(f"pass {pass_no}: contact sheet sentence mismatch")
+              for source in ("advent", "arith", "bgammon", "chess", "cribbage", "fish", "fortune", "hangman", "maze", "quiz", "rogue", "snake", "trek", "wump"):
+                  if gsec.count(f'usr/src/games/{source}.c') != 1:
+                      raise SystemExit(f"pass {pass_no}: game source mismatch for {source}")
+              for source in ("write48", "sheet48", "wire3d"):
+                  if asec.count(f'usr/src/apps/{source}.c') != 1:
+                      raise SystemExit(f"pass {pass_no}: app source mismatch for {source}")
+
+              print(f"README SOP PASS {pass_no}: {len(data)} bytes sha256={hashlib.sha256(data).hexdigest()}")
+
+          for pass_no in (1, 2, 3):
+              root = Path(f"/tmp/readme-reposition-sop-{pass_no}")
+              shutil.rmtree(root, ignore_errors=True)
+              root.mkdir(parents=True)
+              fresh = root / "README.md"
+              fresh.write_bytes(path.read_bytes())
+              validate(fresh.read_bytes(), pass_no)
+          PY
+          git diff --check -- README.md
+
+      - name: Commit README and remove temporary workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/reposition-galleries.yml
+          git add README.md
+          git diff --cached --check
+          git commit -m "README: interleave gallery prose and images"
+          git push origin HEAD:main
