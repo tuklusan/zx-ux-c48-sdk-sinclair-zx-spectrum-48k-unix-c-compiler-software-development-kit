@@ -12,7 +12,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-"""Numerical and wall-clock proof for C48's synchronous ROM-derived beep()."""
+"""Numerical and synchronization proof for C48's ROM-derived beep()."""
 from __future__ import annotations
 
 import argparse
@@ -20,7 +20,7 @@ import hashlib
 from pathlib import Path
 import sys
 import tempfile
-import time
+import threading
 import wave
 
 sys.dont_write_bytecode = True
@@ -92,6 +92,9 @@ def verify_case(duration: str, pitch: str) -> None:
     requested_pitch = Float5.from_decimal(pitch)
     expected = plan_beep(requested_duration, requested_pitch)
     observed: dict[str, float | int] = {}
+    entered = threading.Event()
+    release = threading.Event()
+    result: dict[str, object] = {}
 
     def blocking_probe(path: Path) -> None:
         _rate, frames, runs, seconds, measured = wav_measure(path)
@@ -99,7 +102,9 @@ def verify_case(duration: str, pitch: str) -> None:
         observed["runs"] = runs
         observed["seconds"] = seconds
         observed["hz"] = measured
-        time.sleep(seconds)
+        entered.set()
+        if not release.wait(timeout=30.0):
+            raise RuntimeError("blocking sound probe release timeout")
 
     program = compile_probe(duration, pitch)
     vm = RomMathVM(
@@ -113,15 +118,37 @@ def verify_case(duration: str, pitch: str) -> None:
             f"literal preload mismatch for pitch={pitch}: "
             f"prepared={vm.sound.prepared_count} generated={vm.sound.generated_count}"
         )
-    started = time.monotonic()
-    status = vm.run()
-    wall = time.monotonic() - started
+
+    if expected.cycles == 0:
+        if vm.run() != 0:
+            fail(f"VM returned nonzero for duration={duration} pitch={pitch}")
+        if entered.is_set():
+            fail(f"zero-cycle beep unexpectedly invoked sound player for pitch={pitch}")
+        return
+
+    def run_vm() -> None:
+        try:
+            result["status"] = vm.run()
+        except BaseException as exc:
+            result["error"] = exc
+
+    worker = threading.Thread(target=run_vm, daemon=True)
+    worker.start()
+    try:
+        if not entered.wait(timeout=10.0):
+            fail(f"sound callback was not entered for pitch={pitch}")
+        if not worker.is_alive():
+            fail(f"beep returned before blocking sound callback for pitch={pitch}")
+    finally:
+        release.set()
+    worker.join(timeout=10.0)
+    if worker.is_alive():
+        fail(f"VM did not resume after sound callback release for pitch={pitch}")
+    if "error" in result:
+        fail(f"VM raised {result['error']!r} for duration={duration} pitch={pitch}")
+    status = result.get("status")
     if status != 0:
         fail(f"VM returned {status} for duration={duration} pitch={pitch}")
-    if expected.cycles == 0:
-        if wall > 0.25:
-            fail(f"zero-cycle beep blocked unexpectedly: wall={wall:.6f}")
-        return
 
     runs = int(observed.get("runs", -1))
     wav_seconds = float(observed.get("seconds", -1.0))
@@ -141,11 +168,6 @@ def verify_case(duration: str, pitch: str) -> None:
             f"WAV frequency mismatch for pitch={pitch}: "
             f"wav={wav_hz:.9f} model={expected.frequency_hz:.9f}"
         )
-    if wall < wav_seconds * 0.90 or wall > wav_seconds + 0.75:
-        fail(
-            f"blocking wall time mismatch for pitch={pitch}: "
-            f"wall={wall:.6f} wav={wav_seconds:.6f}"
-        )
 
     print(
         "BEEP PROOF PASS: "
@@ -155,7 +177,7 @@ def verify_case(duration: str, pitch: str) -> None:
         f"physical_hz={expected.frequency_hz:.9f} "
         f"wav_hz={wav_hz:.9f} "
         f"model_s={expected.duration_seconds:.9f} "
-        f"wav_s={wav_seconds:.9f} wall_s={wall:.9f} "
+        f"wav_s={wav_seconds:.9f} blocking=confirmed "
         "speaker_output=not_asserted",
         flush=True,
     )
@@ -231,7 +253,7 @@ def main(argv: list[str] | None = None) -> int:
     ):
         verify_case(duration, pitch)
     print(
-        "BEEP VERIFY PASS: 4 ROM/WAV/wall-clock probes; "
+        "BEEP VERIFY PASS: 4 ROM/WAV/synchronization probes; "
         "audible speaker emission intentionally not asserted in CI",
         flush=True,
     )
