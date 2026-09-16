@@ -78,7 +78,7 @@ int main(void)
                 answer = answer / 10;
                 game_putc(7, 22 + digits, ' ');
             }
-            if (key >= '0' && key <= '9' && digits < 5) {
+            if (key >= '0' && key <= '9' && digits < 3) {
                 game_putc(7, 22 + digits, key);
                 answer = answer * 10 + key - '0';
                 digits++;

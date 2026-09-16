@@ -257,6 +257,7 @@ def run_script(
     keys: str,
     *,
     max_steps: int,
+    tick_value: int = 44257,
 ) -> tuple[C48VM, str, int]:
     program = read(BIN / f"{name}.c48b")
     screen = ZXScreen(FONT)
@@ -267,6 +268,7 @@ def run_script(
         argv=[name],
         input_provider=provider,
         max_steps=max_steps,
+        tick_provider=lambda: tick_value,
     )
     status = vm.run()
     if status != 0:
@@ -284,6 +286,7 @@ def run_human(
     steps,
     *,
     max_steps: int,
+    tick_value: int = 44257,
 ) -> tuple[C48VM, str, int]:
     program = read(BIN / f"{name}.c48b")
     screen = ZXScreen(FONT)
@@ -294,6 +297,7 @@ def run_human(
         argv=[name],
         input_provider=provider,
         max_steps=max_steps,
+        tick_provider=lambda: tick_value,
     )
     status = vm.run()
     if status != 0:
@@ -312,6 +316,7 @@ def run_player(
     *,
     max_steps: int,
     args: tuple = (),
+    tick_value: int = 44257,
 ) -> tuple[C48VM, str, Player]:
     program = read(BIN / f"{name}.c48b")
     screen = ZXScreen(FONT)
@@ -322,6 +327,7 @@ def run_player(
         argv=[name],
         input_provider=player,
         max_steps=max_steps,
+        tick_provider=lambda: tick_value,
     )
     player.bind(vm)
     status = vm.run()
@@ -333,6 +339,63 @@ def run_player(
 def require(text: str, marker: str, name: str) -> None:
     if marker not in text:
         fail(f"{name}: expected screen marker {marker!r}")
+
+
+def check_batch2_regressions() -> None:
+    vm1, _text, _count = run_script(
+        "fortune", "q", max_steps=500000, tick_value=1000
+    )
+    vm2, _text, _count = run_script(
+        "fortune", "q", max_steps=500000, tick_value=1000
+    )
+    vm3, _text, _count = run_script(
+        "fortune", "q", max_steps=500000, tick_value=1001
+    )
+    seed1 = global_int(vm1, "game_seed")
+    seed2 = global_int(vm2, "game_seed")
+    seed3 = global_int(vm3, "game_seed")
+    if seed1 != seed2 or seed1 == seed3:
+        fail("game PRNG seed injection/decorrelation mismatch")
+    if global_int(vm1, "game_seeded") != 1:
+        fail("game PRNG lazy seed flag was not set")
+
+    vmw, _text, _count = run_script(
+        "wump", "q", max_steps=500000
+    )
+    for room in range(12):
+        for slot in range(3):
+            neighbor = global_int(vmw, "cave", room * 3 + slot)
+            if neighbor < 0 or neighbor >= 12:
+                fail("wump: cave neighbor out of range")
+            back = False
+            for back_slot in range(3):
+                if global_int(
+                    vmw, "cave", neighbor * 3 + back_slot
+                ) == room:
+                    back = True
+            if not back:
+                fail(f"wump: one-way tunnel {room}->{neighbor}")
+
+    arith_source = (SRC / "arith.c").read_text(encoding="ascii")
+    if "key <= '9' && digits < 3)" not in arith_source:
+        fail("arith: three-digit input guard missing")
+    vma, _text, _count = run_script(
+        "arith", "99999\nq", max_steps=500000
+    )
+    if global_int(vma, "ar_turns") != 1:
+        fail("arith: five-key input regression did not complete")
+
+    vmb, _text, _count = run_script(
+        "bgammon", "2f0", max_steps=1000000
+    )
+    if (
+        global_int(vmb, "bg_pt", 5) != 4
+        or global_int(vmb, "bg_pt", 3) != 1
+        or global_int(vmb, "bg_pt", 4) != 0
+    ):
+        fail("bgammon: die-two-first choice was not honored")
+
+    print("GAME BATCH-2 REGRESSION PROBES PASS", flush=True)
 
 
 def check_quick_play() -> None:
@@ -390,7 +453,7 @@ def check_quick_play() -> None:
         flush=True,
     )
 
-    vm, _text, count = run_script("bgammon", "ff0", max_steps=1000000)
+    vm, _text, count = run_script("bgammon", "1ff0", max_steps=1000000)
     if (
         global_int(vm, "bg_pt", 5) != 3
         or global_int(vm, "bg_pt", 4) != 1
@@ -507,6 +570,7 @@ def check_human_io() -> None:
         (
             "bgammon",
             (
+                (("First die:",), "1"),
                 (("Source:",), "?"),
                 (("Last: ?", "ignored"), "f"),
                 (("Last: f", "accepted"), "0"),
@@ -659,6 +723,7 @@ def main(argv: list[str] | None = None) -> int:
     ns = parser.parse_args(argv)
     try:
         check_corpus()
+        check_batch2_regressions()
         check_quick_play()
         check_human_io()
         if ns.extended:

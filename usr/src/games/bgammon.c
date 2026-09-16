@@ -286,26 +286,72 @@ int bg_play(int die)
     }
 }
 
+int bg_order(void)
+{
+    int key;
+    int can1;
+    int can2;
+    can1 = bg_any(bg_d1, bg_side);
+    can2 = bg_any(bg_d2, bg_side);
+    if (!can1 && !can2)
+        return 1;
+    if (!can1)
+        return 2;
+    if (!can2)
+        return 1;
+    bg_show();
+    print_at(20, 0, "First die: 1 or 2");
+    print_at(21, 0, "Order:");
+    while (1) {
+        key = game_key_echo(21, 7);
+        bg_turns++;
+        if (key == '0')
+            return 0;
+        if (key == '1' || key == '2') {
+            game_record(key, 1);
+            return key - '0';
+        }
+        game_record(key, 3);
+        game_show_last(19);
+        game_putc(21, 7, ' ');
+    }
+}
+
 int main(void)
 {
     int count;
     int i;
     int die;
     int rc;
+    int order;
     bg_init();
     while (bg_off_w < 15 && bg_off_b < 15) {
         bg_d1 = game_rand(6) + 1;
         bg_d2 = game_rand(6) + 1;
         count = 2;
+        order = 1;
         if (bg_d1 == bg_d2)
             count = 4;
+        else {
+            order = bg_order();
+            if (order == 0)
+                return 0;
+        }
         for (i = 0; i < count; i++) {
-            if (i == 0)
-                die = bg_d1;
-            else
-                die = bg_d2;
             if (count == 4)
                 die = bg_d1;
+            else if (order == 1) {
+                if (i == 0)
+                    die = bg_d1;
+                else
+                    die = bg_d2;
+            }
+            else {
+                if (i == 0)
+                    die = bg_d2;
+                else
+                    die = bg_d1;
+            }
             rc = bg_play(die);
             if (rc < 0)
                 return 0;

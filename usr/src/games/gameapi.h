@@ -25,6 +25,7 @@ int yield(void);
 int sleep(unsigned int ticks);
 
 static unsigned int game_seed = 44257u;
+static int game_seeded = 0;
 
 static int game_key(void)
 {
@@ -115,11 +116,24 @@ static void game_num(int row, int col, unsigned int value)
     print_at(row, col, text + pos);
 }
 
+static void game_seed_set(unsigned int seed)
+{
+    game_seed = seed;
+    game_seeded = 1;
+}
+
+static void game_seed_init(void)
+{
+    game_seed_set(ticks());
+}
+
 static int game_rand(int limit)
 {
     unsigned int value;
     if (limit <= 1)
         return 0;
+    if (!game_seeded)
+        game_seed_init();
     game_seed = game_seed * 25173u + 13849u;
     game_seed = game_seed & 65535u;
     value = game_seed % (unsigned int)limit;

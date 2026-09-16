@@ -51,7 +51,8 @@ class C48VM:
                  display_update:Callable[[],None]|None=None,
                  display_present:Callable[[str],None]|None=None,
                  heap_size:int=1024, max_steps:int|None=None,
-                 sound_player:Callable[[Path],None]|None=None):
+                 sound_player:Callable[[Path],None]|None=None,
+                 tick_provider:Callable[[],int]|None=None):
         if not isinstance(heap_size,int) or isinstance(heap_size,bool) or heap_size < 0 or heap_size > 8192 or (heap_size & 1):
             raise RuntimeC48Error("host heap size must be an even value from 0..8192")
         if max_steps is not None and (
@@ -72,7 +73,7 @@ class C48VM:
         self.scope_allocs:list[list[int]]=[]
         self.string_allocs:dict[int,Allocation]={}
         self.heap_allocs:set[int]=set()
-        self.start_time=time.monotonic()
+        self.tick_provider=tick_provider or self._system_ticks
         self.max_steps=max_steps
         self.steps=0
         self.call_depth=0
@@ -99,6 +100,10 @@ class C48VM:
                 name=idecl["declarator"]["name"]
                 if name in self.global_lvalues and idecl.get("definition") and idecl.get("initializer") is not None:
                     self._initialize(self.global_lvalues[name],idecl["initializer"],zero_remainder=True)
+
+    @staticmethod
+    def _system_ticks()->int:
+        return int(time.monotonic_ns() // 20000000) & 0xFFFF
 
     @staticmethod
     def _stdin_char()->int:
@@ -530,7 +535,7 @@ class C48VM:
             "asin":lambda a:self._math1("asin",a),"acos":lambda a:self._math1("acos",a),"atan":lambda a:self._math1("atan",a),
             "sqrt":lambda a:self._math1("sqrt",a),"exp":lambda a:self._math1("exp",a),"log":lambda a:self._math1("log",a),
             "fabs":lambda a:Value(FLOAT,self._farg(a,0).abs()),"pow":self._b_pow,
-            "ticks":lambda a:Value(UINT,int((time.monotonic()-self.start_time)*50)&0xFFFF),
+            "ticks":lambda a:Value(UINT,int(self.tick_provider())&0xFFFF),
         }
     def _call_builtin(self,name,args):
         fn=self.builtins.get(name)

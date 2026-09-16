@@ -146,6 +146,7 @@ class GameReleaseRegressions(unittest.TestCase):
             argv=["arith"],
             input_provider=provider,
             max_steps=500000,
+            tick_provider=lambda: 44257,
         )
         self.assertEqual(vm.run(), 0)
         self.assertEqual(provider.calls, 6)
