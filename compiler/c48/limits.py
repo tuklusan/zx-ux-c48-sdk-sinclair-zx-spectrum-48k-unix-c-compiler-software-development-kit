@@ -56,6 +56,17 @@ C48B1_TYPE_DEPTH = 32
 C48B1_SEQUENCE_ITEMS = 4096
 C48B1_SYMBOLS = 4096
 
+# Exact syntax-tree node kinds.  CType dictionaries and declarator suffix
+# records also carry a string ``kind`` field, but they are not AST nodes and
+# must not consume the AST-node budget.
+AST_NODE_KINDS = frozenset({
+    "translation_unit", "declaration", "init_declarator", "declarator", "type_name", "parameter",
+    "function_definition", "compound", "if", "while", "do_while", "for", "break", "continue",
+    "return", "expr_stmt", "identifier", "integer_literal", "character_literal", "floating_literal",
+    "string_literal", "sizeof_type", "sizeof_expr", "cast", "assign", "unary", "postfix", "index",
+    "call", "binary", "init_list", "string_initializer", "scalar_initializer",
+})
+
 # VM recursion is bounded independently of the host Python recursion limit.
 VM_CALL_DEPTH = 64
 
@@ -191,7 +202,7 @@ class ResourceBudget:
             current, depth = stack.pop()
             if isinstance(current, dict):
                 max_depth = max(max_depth, depth)
-                if isinstance(current.get("kind"), str):
+                if current.get("kind") in AST_NODE_KINDS:
                     nodes += 1
                     if self.ast_nodes + nodes > AST_NODES:
                         self._raise("AST nodes", AST_NODES, pos)
