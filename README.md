@@ -257,6 +257,8 @@ For Spectrum-style interactive control, **Shift+Space acts as BREAK**. While the
 
 It exposes useful host-side calls for text, graphics, UDGs, memory/string operations, and related experiments. The file is intentionally labeled as a host profile and must not be mistaken for the final native ZX-UX ABI.
 
+For this development-only host profile, integer-returning service calls use `0` for success and a nonzero status for failure. Screen, graphics, and UDG argument validation commonly returns `1`; `beep()` additionally uses host-side values `1` for invalid arguments, `5` for playback or I/O failure, and `14` when no audible host backend is available. These values describe the SDK host runtime only. They do not freeze or claim the final native ZX-UX P11.41 `<c48.h>` ABI or its error convention.
+
 See `docs/ZX-UX C48 SDK Technical Reference.docx` for the host/native divergence and conformance boundaries.
 
 ### Sinclair-compatible BEEP

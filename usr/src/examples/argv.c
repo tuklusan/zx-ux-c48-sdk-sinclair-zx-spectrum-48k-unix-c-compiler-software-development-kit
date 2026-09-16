@@ -11,7 +11,7 @@
 // ============================================================
 #include "exapi.h"
 
-char *a_sample[17] = {
+char *a_sample[15] = {
     "SANYALnet Labs ZX-UX: It is 1982 again but you are ",
     "running Unix on a ZX Spectrum! ",
     "https://supratim-sanyal.blogspot.com/ ",
@@ -26,9 +26,7 @@ char *a_sample[17] = {
     "My girl wove six dozen plaid jackets before she quit. ",
     "Sixty zippers were quickly picked from the woven ",
     "jute bag. A wizard's job is to vex chumps quickly ",
-    "in fog. ",
-    "",
-    ""
+    "in fog. "
 };
 
 void a_style(int side)

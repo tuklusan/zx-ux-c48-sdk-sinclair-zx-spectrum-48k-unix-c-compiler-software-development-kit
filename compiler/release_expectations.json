@@ -48,8 +48,8 @@
         "beta",
         "gamma"
       ],
-      "source_sha256": "36060049da34bb1fdf91dcee325091ee9a54b6eddde3d1cf8ae4260a56af9ffb",
-      "binary_sha256": "12323dbcd9f664dfacc1597517ba295d34e61c4d5a1a22d49a64f631e5177cef",
+      "source_sha256": "10305f99c564a866b5e752b8c7c883bfd48a2abf795c8977ddbcc9e95b0e105e",
+      "binary_sha256": "db72ca813b90bde0f4446169c5be34ef5402d0094c5eb5c20708151e325fc004",
       "screen_sha256": "481b163722b49aeeb9992386f12cc41f147f906d144f33c45ed08234add02ade"
     }
   },
