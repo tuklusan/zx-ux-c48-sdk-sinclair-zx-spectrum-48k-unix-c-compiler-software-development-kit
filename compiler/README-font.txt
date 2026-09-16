@@ -36,12 +36,12 @@ Character generator:
   layout       : 8 bytes/glyph, one 4-bit scan row per byte in low nibble
 
 Extracted raw font:
-  file         : tasword2-font4x8-raw-768.bin
+  file         : compiler/tasword2-font4x8-raw-768.bin
   size         : 768
   SHA-256      : 0ccd55f30450231b4219f15c945af53a3eb418082a28b5062589723d8fa1834d
 
-Canonical packed F4X8 runtime resource:
-  file         : assets/font4x8-tasword.bin
+Canonical packed F4X8 Tasword resource:
+  file         : compiler/assets/font4x8-tasword.bin
   size         : 392
   SHA-256      : 90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339
   header       : "F4X8", version 1, first code 0x20, 96 glyphs, flags 0
@@ -60,15 +60,17 @@ Glyph 0x7F preview:
 
 Runtime-selectable F4X8 assets:
   compiler/assets/SANYALnet-Labs-4x8-font-FINAL.bin  default runtime font
+    SHA-256: dceb0a9c2cac3fa15e66759f55b12633d9338df0a7961e4372406e21da9c7942
   compiler/assets/font4x8-tasword.bin                 selectable Tasword font
+    SHA-256: 90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339
   compiler/assets/font4x8-zxux.bin                    alternate selectable font slot
+    SHA-256: 90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339
 
 Select a font explicitly with:
   c48run --font PATH program.c48b
 
-Both supplied runtime assets are valid 392-byte F4X8 resources. In this repository
-revision they are byte-identical and share SHA-256:
-  90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339
-
-The two names are intentionally retained independently so either font can change later
-without changing the c48run command-line contract.
+All three supplied runtime assets are valid 392-byte F4X8 resources.  The Tasword and
+ZX-UX selectable slots are byte-identical in this repository revision.  The default
+FINAL font is a distinct resource and is frozen independently by the release gate.
+The three names are retained independently so any slot can change later without
+changing the c48run command-line contract.
