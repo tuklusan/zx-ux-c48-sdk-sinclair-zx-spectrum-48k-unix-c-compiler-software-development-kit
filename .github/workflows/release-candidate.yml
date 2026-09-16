@@ -17,9 +17,22 @@ name: C48 release candidate packaging gate
   push:
     branches: [main]
     paths:
+      # Keep this set aligned with gui-desktop.yml: this workflow requires a
+      # successful host-native GUI run for the exact same commit before it can
+      # preserve candidate bytes.
       - "VERSION"
-      - ".gitattributes"
+      - "compiler/**/*.py"
+      - "compiler/**/*.json"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
+      - "usr/bin/demos/forest.c48b"
+      - "usr/bin/games/fortune.c48b"
+      - "usr/bin/games/snake.c48b"
+      - "c48run"
+      - "c48run.bat"
+      - ".github/workflows/gui-desktop.yml"
       - ".github/workflows/release-candidate.yml"
+      - ".gitattributes"
   workflow_dispatch:
 
 concurrency:
