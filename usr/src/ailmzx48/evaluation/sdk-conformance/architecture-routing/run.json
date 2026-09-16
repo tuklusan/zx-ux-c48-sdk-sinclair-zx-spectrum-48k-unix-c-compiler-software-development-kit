@@ -1,11 +1,11 @@
 {
   "bridge_uses": 1,
-  "c48b_sha256": "2db3ac84bfe057a939755f31c3064559e05b819f68c39a8799a86dc288856e56",
+  "c48b_sha256": "73e07177c16a07fee979a0ba37d174c5d95a13559aebacfdc8060de10649f209",
   "cold_model_budget_bytes": 8566,
   "cold_model_bytes_read": 17132,
   "cold_model_logical_length": 8566,
   "cold_model_max_request": 64,
-  "cold_model_read_calls": 2170,
+  "cold_model_read_calls": 706,
   "cold_model_seek_calls": 2,
   "cold_model_sha256": "a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096",
   "cold_record_count": 69,
@@ -14,7 +14,7 @@
   "cooperative_yields": 18,
   "corpus_sha256": "bfec469ecc696c7d0b1b745fbc16cc5a46d31466a8219f2038430afda59470b5",
   "dialogue_source_bytes": 198,
-  "elapsed_seconds": 7.835,
+  "elapsed_seconds": 7.659,
   "final_keyword_hit": true,
   "heap_size": 0,
   "iteration": 9132,
@@ -30,14 +30,14 @@
   "runner_max_seconds": 1200,
   "schema": 1,
   "semantic_retrieval_uses": 1,
-  "source_sha256": "eebebeb4adf28bbc0b4efc3dc4d6e300353d286570882c4d0d404b9c05da981c",
+  "source_sha256": "b660cf6c9122b900e07ebe37a08534b37ddd92af89e4db4888e2beb640fa06d3",
   "trigram_uses": 4,
-  "vm_steps": 1768154,
+  "vm_steps": 1698576,
   "vm_turn_steps": [
-    963010,
-    800807
+    932492,
+    765971
   ],
-  "vm_turn_steps_avg": 881908.5,
-  "vm_turn_steps_max": 963010,
-  "vm_turn_steps_min": 800807
+  "vm_turn_steps_avg": 849231.5,
+  "vm_turn_steps_max": 932492,
+  "vm_turn_steps_min": 765971
 }

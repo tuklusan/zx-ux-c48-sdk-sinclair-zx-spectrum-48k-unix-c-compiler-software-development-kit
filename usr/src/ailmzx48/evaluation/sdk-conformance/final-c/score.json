@@ -34,8 +34,8 @@
   "trigram_uses": 14,
   "turns": 12,
   "vm_step_limit": 16735040,
-  "vm_steps": 12591351,
-  "vm_turn_steps_avg": 1048917.8333333333,
-  "vm_turn_steps_max": 1147803,
-  "vm_turn_steps_min": 959472
+  "vm_steps": 12173413,
+  "vm_turn_steps_avg": 1014441.6666666666,
+  "vm_turn_steps_max": 1112967,
+  "vm_turn_steps_min": 928954
 }

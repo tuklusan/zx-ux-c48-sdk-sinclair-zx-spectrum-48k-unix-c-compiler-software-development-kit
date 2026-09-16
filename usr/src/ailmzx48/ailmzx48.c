@@ -52,6 +52,7 @@ unsigned int ai_mrecords;
 unsigned int ai_mhits;
 unsigned int ai_mbytes;
 unsigned int ai_mreads;
+unsigned int ai_scanwhy;
 unsigned int ai_mtopic;
 unsigned int ai_fs1;
 unsigned int ai_fs2;
@@ -322,7 +323,6 @@ void ai_fhead(void)
 
 int ai_modelscan(unsigned int topic)
 {
-    unsigned int actual;
     unsigned int logical;
     unsigned int rbytes;
     unsigned int rcount;
@@ -364,10 +364,9 @@ int ai_modelscan(unsigned int topic)
     ai_w2score = -1;
     ai_mtopic = ai_t_id;
     if (ai_mfd < 3) return -1;
-    actual = 8566;
-    if (actual < 40) return -1;
     if (seek(ai_mfd, 0) != 0) return -1;
     if (ai_readfull(ai_mhead, 40) != 0) return -1;
+    ai_scanwhy = 3;
     if(ai_mhead[0]!='A'||ai_mhead[1]!='4'||
        ai_mhead[2]!='8'||ai_mhead[3]!='M')return -1;
     if(ai_mhead[4]!=2||ai_mhead[5]!=0||
@@ -386,7 +385,6 @@ int ai_modelscan(unsigned int topic)
     if (ai_getu16(ai_mhead, 26) != 40) return -1;
     rbytes = ai_getu16(ai_mhead, 28);
     logical = ai_getu16(ai_mhead, 30);
-    if (logical != actual) return -1;
     if (logical < 40) return -1;
     if (rbytes != logical - 40) return -1;
     ai_fhead();
@@ -571,9 +569,20 @@ if (topic == ai_tcnt) {
         }
     }
     if (used != rbytes) return -1;
+    if (ai_mbytes != logical) return -1;
+    slot = read(ai_mfd, ai_mstage, 1);
+    ai_mreads = ai_mreads + 1;
+    if (slot < 0) {
+        ai_scanwhy = 1;
+        return -1;
+    }
+    if (slot != 0) {
+        ai_scanwhy = 7;
+        return -1;
+    }
     calc = ai_fs1 + (ai_fs2 * 256);
     if (calc != ai_getu16(ai_mhead, 32)) return -1;
-    if (ai_mbytes != logical) return -1;
+    ai_scanwhy = 0;
     if (ai_w1score >= 0) {
         ai_mhits = 1;
         if (ai_w2score >= 0) ai_mhits = 2;
@@ -1104,6 +1113,9 @@ int main(void)
             ai_altstate = 0;
         }
         if (rc < 0) {
+            puts("Model scan error code:");
+            putchar('0' + ai_scanwhy);
+            putchar(10);
             ai_error = 4;
             ai_settext("Model data unavailable.");
         } else if (rc > 0 && ai_coldans()) {

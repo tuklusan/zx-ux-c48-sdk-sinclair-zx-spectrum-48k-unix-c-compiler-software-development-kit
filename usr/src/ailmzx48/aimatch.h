@@ -20,8 +20,15 @@ int ai_readfull(unsigned char *p, unsigned int n)
         if (ask > 64) ask = 64;
         got = read(ai_mfd, &p[done], ask);
         ai_mreads = ai_mreads + 1;
-        if (got <= 0) return -1;
-        if ((unsigned int)got > ask) return -1;
+        if (got < 0) {
+            ai_scanwhy = 1;
+            return -1;
+        }
+        if (got == 0) {
+            ai_scanwhy = 2;
+            return -1;
+        }
+        /* read() <= requested count. */
         done = done + (unsigned int)got;
         ai_mbytes = ai_mbytes + (unsigned int)got;
     }
