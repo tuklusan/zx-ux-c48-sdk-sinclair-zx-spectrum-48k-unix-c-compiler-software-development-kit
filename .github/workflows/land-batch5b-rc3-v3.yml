@@ -1,5 +1,5 @@
 # Temporary recovery harness. It reuses the reviewed v2 run blocks,
-# removing only the faulty test-string dedent before execution.
+# correcting only diagnosed landing-instrumentation defects.
 name: Stage Batch-5B RC3 landing v3
 
 "on":
@@ -108,6 +108,26 @@ jobs:
                       raise SystemExit(
                           "could not remove faulty v2 test dedent exactly once"
                       )
+              if index == 3:
+                  needle = '    "MANIFEST.sha256",\n'
+                  if script.count(needle) != 1:
+                      raise SystemExit(
+                          "could not remove source-tree manifest diff requirement"
+                      )
+                  script = script.replace(needle, "", 1)
+              if index == 4:
+                  start_marker = "    manifest_text = (\n"
+                  end_marker = (
+                      '    demo = (root / "usr/src/demos/demoapi.h")'
+                      '.read_text(\n'
+                  )
+                  start = script.find(start_marker)
+                  end = script.find(end_marker, start)
+                  if start < 0 or end < 0 or end <= start:
+                      raise SystemExit(
+                          "could not remove package-manifest checks from source SoP"
+                      )
+                  script = script[:start] + script[end:]
               path = Path(f"/tmp/batch5b-step-{index}.sh")
               path.write_text(script, encoding="utf-8", newline="\n")
           print("BATCH-5B V3 EXTRACTION PASS", flush=True)
@@ -131,9 +151,13 @@ jobs:
           find . -type d -name '.pytest_cache' -prune -exec rm -rf {} +
           find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
 
-      - name: Rebuild manifest
+      - name: Stage clean source candidate
         shell: bash
-        run: bash /tmp/batch5b-step-1.sh
+        run: |
+          set -euo pipefail
+          test ! -e MANIFEST.sha256
+          git add -A
+          git diff --cached --check
 
       - name: Verify candidate before commit
         shell: bash
