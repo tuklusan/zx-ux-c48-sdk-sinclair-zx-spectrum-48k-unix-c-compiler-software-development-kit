@@ -19,22 +19,27 @@ patent, trademark, and governing-law provisions.
 
 **ZX-UX C48 SDK** is not the full [**ZX-UX Unix for the Sinclair ZX Spectrum 48K**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project). It is a portable C compiler and just enough ZX-UX runtime to let you write and test C48 programs away from the actual ZX-UX environment on a real 48K Spectrum. The SDK runs on Windows, Linux and macOS, on Intel and Arm hosts.
 
-| | | |
-|---|---|---|
 | ![Torus Reactor](docs/images/demos/torus.png)<br>**Torus Reactor** | ![Sprite Storm](docs/images/demos/sprites.png)<br>**Sprite Storm** | ![Spectrum Plasma](docs/images/demos/plasma.png)<br>**Spectrum Plasma** |
+|---|---|---|
+| <sub>Ubuntu 24.04 · x64</sub> | <sub>Windows Server 2025 · x64</sub> | <sub>macOS 26 · Arm64</sub> |
 
 ## Graphics showcase — 18 more C48 demos
 
 These and the three hero images above are rendered from the exact 6912-byte ZX Spectrum screen state produced by the C48 VM. The automated graphics gate runs all 21 demos independently across GitHub-hosted Windows, Linux and macOS runners.
 
-| Demo | Demo | Demo |
-|---|---|---|
 | ![UDG Walker](docs/images/demos/spriteanim.png)<br>**UDG Walker** | ![Raycast Labyrinth](docs/images/demos/raymaze.png)<br>**Raycast Labyrinth** | ![Crystal Goblet](docs/images/demos/goblet.png)<br>**Crystal Goblet** |
+|---|---|---|
+| <sub>Ubuntu 24.04 · x64</sub> | <sub>macOS 26 · Arm64</sub> | <sub>Ubuntu 24.04 · x64</sub> |
 | ![Infinity Tunnel](docs/images/demos/tunnel.png)<br>**Infinity Tunnel** | ![Vector Metropolis](docs/images/demos/city.png)<br>**Vector Metropolis** | ![Mountain Flight](docs/images/demos/terrain.png)<br>**Mountain Flight** |
+| <sub>Windows Server 2025 · x64</sub> | <sub>Ubuntu 24.04 · x64</sub> | <sub>Windows Server 2025 · x64</sub> |
 | ![Ocean Grid](docs/images/demos/ocean.png)<br>**Ocean Grid** | ![Mobius Flight](docs/images/demos/mobius.png)<br>**Mobius Flight** | ![Polyhedron Morph](docs/images/demos/morph3d.png)<br>**Polyhedron Morph** |
+| <sub>macOS 26 · Arm64</sub> | <sub>Windows Server 2025 · x64</sub> | <sub>macOS 26 · Arm64</sub> |
 | ![Warp Drive](docs/images/demos/warp.png)<br>**Warp Drive** | ![Spiral Galaxy](docs/images/demos/galaxy.png)<br>**Spiral Galaxy** | ![Clockwork Orrery](docs/images/demos/orrery.png)<br>**Clockwork Orrery** |
+| <sub>Ubuntu 24.04 · x64</sub> | <sub>Windows Server 2025 · x64</sub> | <sub>macOS 26 · Arm64</sub> |
 | ![Firework Night](docs/images/demos/firework.png)<br>**Firework Night** | ![Kaleidoscope](docs/images/demos/kaleido.png)<br>**Kaleidoscope** | ![Moire Engine](docs/images/demos/moire.png)<br>**Moire Engine** |
+| <sub>Ubuntu 24.04 · x64</sub> | <sub>Ubuntu 24.04 · x64</sub> | <sub>Windows Server 2025 · x64</sub> |
 | ![Mandelbrot Dive](docs/images/demos/mandel.png)<br>**Mandelbrot Dive** | ![Julia Ballet](docs/images/demos/julia.png)<br>**Julia Ballet** | ![Fractal Forest](docs/images/demos/forest.png)<br>**Fractal Forest** |
+| <sub>Ubuntu 24.04 · x64</sub> | <sub>Windows Server 2025 · x64</sub> | <sub>macOS 26 · Arm64</sub> |
 
 The combined [21-demo contact sheet](docs/images/demos/contact-sheet.png) and the individual demo outputs are covered by automated verification.
 
