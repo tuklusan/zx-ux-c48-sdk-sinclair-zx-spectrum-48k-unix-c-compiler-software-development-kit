@@ -22,6 +22,7 @@ from typing import Any
 
 from .errors import RuntimeC48Error
 from .limits import (
+    AST_NODE_KINDS,
     C48B1_AST_NODES,
     C48B1_BYTES,
     C48B1_CONTAINERS,
@@ -37,13 +38,7 @@ from .typesys import CHAR, FLOAT, INT, UINT, CType, ptr
 MAGIC = b"C48B1\n"
 
 _TYPE_SCALARS = {"void", "char", "uchar", "short", "ushort", "int", "uint", "float"}
-_AST_KINDS = {
-    "translation_unit", "declaration", "init_declarator", "declarator", "type_name", "parameter",
-    "function_definition", "compound", "if", "while", "do_while", "for", "break", "continue",
-    "return", "expr_stmt", "identifier", "integer_literal", "character_literal", "floating_literal",
-    "string_literal", "sizeof_type", "sizeof_expr", "cast", "assign", "unary", "postfix", "index",
-    "call", "binary", "init_list", "string_initializer", "scalar_initializer",
-}
+_AST_KINDS = AST_NODE_KINDS
 
 
 def _invalid(detail: str) -> None:
@@ -90,7 +85,7 @@ def _check_loaded_structure(value: Any) -> None:
         current, depth = stack.pop()
         if isinstance(current, dict):
             containers += 1
-            if isinstance(current.get("kind"), str):
+            if current.get("kind") in _AST_KINDS:
                 ast_nodes += 1
             if depth > C48B1_JSON_DEPTH:
                 _resource(f"decoded nesting exceeds {C48B1_JSON_DEPTH}")
@@ -148,6 +143,8 @@ def _validate_ctype(d: Any, where: str = "type", depth: int = 0) -> None:
         if set(d) != {"kind", "base"}:
             _invalid(f"{where} pointer type has invalid fields")
         _validate_ctype(d["base"], f"{where}.base", depth + 1)
+        if d["base"]["kind"] in {"array", "function"}:
+            _invalid(f"{where} pointer base type is not representable in C48 Version 1")
         return
     if k == "array":
         if set(d) != {"kind", "base", "length"} or not _is_int(d["length"]) or d["length"] <= 0:
@@ -155,6 +152,14 @@ def _validate_ctype(d: Any, where: str = "type", depth: int = 0) -> None:
         if d["length"] > 65535:
             _resource("array length exceeds 65535")
         _validate_ctype(d["base"], f"{where}.base", depth + 1)
+        if d["base"]["kind"] in {"void", "array", "function"}:
+            _invalid(f"{where} array element type must be a complete non-array object type")
+        try:
+            size = CType.from_dict(d["base"]).size * d["length"]
+        except (AssertionError, ValueError):
+            _invalid(f"{where} array element type is not a complete object type")
+        if size > 65535:
+            _resource("array object size exceeds 65535")
         return
     if k == "function":
         if set(d) != {"kind", "params", "ret"}:
@@ -162,7 +167,11 @@ def _validate_ctype(d: Any, where: str = "type", depth: int = 0) -> None:
         params = _check_sequence(d.get("params"), f"{where}.params")
         for i, p in enumerate(params):
             _validate_ctype(p, f"{where}.params[{i}]", depth + 1)
+            if p["kind"] in {"void", "array", "function"}:
+                _invalid(f"{where}.params[{i}] must be a scalar or pointer type")
         _validate_ctype(d["ret"], f"{where}.ret", depth + 1)
+        if d["ret"]["kind"] in {"array", "function"}:
+            _invalid(f"{where}.ret cannot be an array or function type")
         return
     _invalid(f"{where} has unknown type kind {k!r}")
 
@@ -199,6 +208,8 @@ def _validate_type_name(n: Any, where: str) -> None:
     if not isinstance(n, dict) or n.get("kind") != "type_name":
         _invalid(f"{where} is not a type_name")
     if not isinstance(n.get("spelling"), list) or any(not isinstance(x, str) for x in n["spelling"]):
+        _invalid(f"{where}.spelling is invalid")
+    if tuple(n["spelling"]) not in _TYPE_NAME_MAP:
         _invalid(f"{where}.spelling is invalid")
     if not _is_int(n.get("pointers")) or n["pointers"] < 0:
         _invalid(f"{where}.pointers is invalid")
@@ -258,6 +269,8 @@ def _validate_node(n: Any, where: str = "program") -> None:
                 or not isinstance(s["defined"], bool)
             ):
                 _invalid(f"symbol {name!r} metadata invalid")
+            if s["entity"] == "object" and s["type"]["kind"] == "void":
+                _invalid(f"symbol {name!r} has invalid void object type")
             if not _optional_str_choice(s["storage"], {"static", "extern"}):
                 _invalid(f"symbol {name!r} storage invalid")
         return
@@ -266,6 +279,8 @@ def _validate_node(n: Any, where: str = "program") -> None:
     if k == "declarator": _validate_declarator(n, where); return
     if k == "parameter":
         _validate_type_name(n.get("type"), f"{where}.type"); _validate_ctype(n.get("ctype"), f"{where}.ctype")
+        if n["ctype"]["kind"] in {"void", "array", "function"}:
+            _invalid(f"{where}.ctype must be a scalar or pointer type")
         if n.get("name") is not None and not isinstance(n["name"], str): _invalid(f"{where}.name invalid")
         if not _is_int(n.get("pointers")) or n["pointers"] < 0:
             _invalid(f"{where}.pointers invalid")
@@ -303,6 +318,8 @@ def _validate_node(n: Any, where: str = "program") -> None:
         return
     if k == "init_declarator":
         _validate_declarator(n.get("declarator"), f"{where}.declarator"); _validate_ctype(n.get("ctype"), f"{where}.ctype")
+        if n["ctype"]["kind"] == "void":
+            _invalid(f"{where}.ctype cannot be void for an object declaration")
         if "definition" in n and not isinstance(n["definition"], bool): _invalid(f"{where}.definition invalid")
         if "linkage" in n and not _str_choice(
             n["linkage"], {"internal", "external"}
@@ -336,7 +353,8 @@ def _validate_node(n: Any, where: str = "program") -> None:
         return
     if k in {"break", "continue"}: return
     if k == "expr_stmt":
-        if n.get("value") is not None: _validate_node(n["value"], f"{where}.value")
+        if "value" not in n: _invalid(f"{where}.value is missing")
+        if n["value"] is not None: _validate_node(n["value"], f"{where}.value")
         return
     if k == "return":
         _validate_ctype(n.get("return_type"), f"{where}.return_type")
@@ -344,13 +362,15 @@ def _validate_node(n: Any, where: str = "program") -> None:
         return
     if k == "if":
         _validate_node(n.get("condition"), f"{where}.condition"); _validate_node(n.get("then"), f"{where}.then")
-        if n.get("otherwise") is not None: _validate_node(n["otherwise"], f"{where}.otherwise")
+        if "otherwise" not in n: _invalid(f"{where}.otherwise is missing")
+        if n["otherwise"] is not None: _validate_node(n["otherwise"], f"{where}.otherwise")
         return
     if k in {"while", "do_while"}:
         _validate_node(n.get("condition"), f"{where}.condition"); _validate_node(n.get("body"), f"{where}.body"); return
     if k == "for":
         for fld in ("init", "condition", "step"):
-            if n.get(fld) is not None: _validate_node(n[fld], f"{where}.{fld}")
+            if fld not in n: _invalid(f"{where}.{fld} is missing")
+            if n[fld] is not None: _validate_node(n[fld], f"{where}.{fld}")
         _validate_node(n.get("body"), f"{where}.body"); return
 
     if k in {"scalar_initializer", "string_initializer"}:
@@ -576,7 +596,10 @@ def _validate_semantic_consistency(program: dict[str, Any]) -> None:
 
     This deliberately checks invariants that are already frozen by the compiler
     and consumed as trusted metadata by the VM.  It is not a second compiler;
-    it cross-checks redundant executable annotations against each other.
+    it cross-checks redundant executable annotations against each other.  Array
+    bound syntax is deliberately removed by _runtime_tree(), so the loader
+    validates the frozen resolved CType rather than trying to re-run semantic
+    constant evaluation from syntax that is no longer present.
     """
     symbols = program["symbols"]
     declarations: dict[str, tuple[dict[str, Any], str]] = {}
