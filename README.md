@@ -142,7 +142,22 @@ pre-release evidence artifact for 90 days.
 
 Human-facing graphics, conformance, host-divergence, application, game, Float5, and release material is consolidated in `docs/ZX-UX C48 SDK Technical Reference.docx`. The detailed host-native Tk release gate and its bounded screenshot/probe evidence contract live with the verification tooling in `compiler/GUI-SMOKE-TESTS.md`.
 
-## Clone and quick start
+## Download, clone, and quick start
+
+### Download the packaged SDK ZIP
+
+If you want to use the SDK without Git, the packaged release ZIP is the simplest route. It is one platform-neutral archive containing both the Windows batch launchers and the POSIX shell launchers.
+
+- **[Latest published release or release candidate](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases)** - this page is always current, with the newest published release at the top. Download the asset whose name starts with `zx-ux-c48-sdk-` and ends in `.zip`.
+- **[Direct download: current certified 1.0.0-RC5 ZIP](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/download/1.0.0-RC5/zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip)** - one-click download of the current certified package.
+
+GitHub's `/releases/latest` shortcut deliberately excludes prereleases, so the Releases page above is the durable link to the newest available package while release candidates are active.
+
+After downloading, extract the ZIP to a directory of your choice and run the commands below from the extracted SDK directory.
+
+### Clone with Git
+
+If you prefer to track the repository directly:
 
 ```text
 git clone https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit.git
