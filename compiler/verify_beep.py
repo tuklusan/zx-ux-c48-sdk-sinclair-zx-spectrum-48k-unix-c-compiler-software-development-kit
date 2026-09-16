@@ -127,10 +127,7 @@ def verify_case(duration: str, pitch: str) -> None:
         return
 
     def run_vm() -> None:
-        try:
-            result["status"] = vm.run()
-        except BaseException as exc:
-            result["error"] = exc
+        result["status"] = vm.run()
 
     worker = threading.Thread(target=run_vm, daemon=True)
     worker.start()
@@ -144,8 +141,6 @@ def verify_case(duration: str, pitch: str) -> None:
     worker.join(timeout=10.0)
     if worker.is_alive():
         fail(f"VM did not resume after sound callback release for pitch={pitch}")
-    if "error" in result:
-        fail(f"VM raised {result['error']!r} for duration={duration} pitch={pitch}")
     status = result.get("status")
     if status != 0:
         fail(f"VM returned {status} for duration={duration} pitch={pitch}")
