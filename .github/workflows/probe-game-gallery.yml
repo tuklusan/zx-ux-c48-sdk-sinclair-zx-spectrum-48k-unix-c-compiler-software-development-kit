@@ -25,13 +25,6 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install contact-sheet tool
-        shell: bash
-        run: |
-          set -euo pipefail
-          sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends imagemagick
-
       - name: Capture first interactive state of all games
         shell: bash
         run: |
@@ -39,7 +32,9 @@ jobs:
           python -B - <<'PY'
           from pathlib import Path
           import hashlib
+          import struct
           import sys
+          import zlib
 
           root = Path.cwd()
           sys.path.insert(0, str(root / "compiler"))
@@ -67,6 +62,7 @@ jobs:
           class CaptureStop(Exception):
               pass
 
+          frames = []
           for name in games:
               program_path = root / "usr" / "bin" / "games" / f"{name}.c48b"
               program = read(program_path)
@@ -87,7 +83,9 @@ jobs:
                   vm.run()
               except CaptureStop:
                   pass
-              png = png_bytes(screen.render_rgb())
+              rgb = screen.render_rgb()
+              frames.append(rgb)
+              png = png_bytes(rgb)
               path = out / f"{name}.png"
               path.write_bytes(png)
               lit = sum(v.bit_count() for v in screen.mem[:6144])
@@ -98,17 +96,34 @@ jobs:
               )
               if input_requests[0] != 1 or lit < 20:
                   raise SystemExit(f"{name}: first-interaction capture failed quality floor")
-          PY
 
-          montage \
-            game-probe/advent.png game-probe/arith.png game-probe/bgammon.png \
-            game-probe/chess.png game-probe/cribbage.png game-probe/fish.png \
-            game-probe/fortune.png game-probe/hangman.png game-probe/maze.png \
-            game-probe/quiz.png game-probe/rogue.png game-probe/snake.png \
-            game-probe/trek.png game-probe/wump.png \
-            -thumbnail 384x288 -tile 3x5 -geometry +8+8 \
-            game-probe-contact-sheet.png
-          test -s game-probe-contact-sheet.png
+          # Build a dependency-free 3x5 contact sheet at native 256x192 per cell.
+          cols, rows, gap = 3, 5, 8
+          cell_w, cell_h = 256, 192
+          width = cols * cell_w + (cols - 1) * gap
+          height = rows * cell_h + (rows - 1) * gap
+          canvas = bytearray([32] * (width * height * 3))
+          for idx, rgb in enumerate(frames):
+              row, col = divmod(idx, cols)
+              ox = col * (cell_w + gap)
+              oy = row * (cell_h + gap)
+              for y in range(cell_h):
+                  src = y * cell_w * 3
+                  dst = ((oy + y) * width + ox) * 3
+                  canvas[dst:dst + cell_w * 3] = rgb[src:src + cell_w * 3]
+
+          def chunk(kind, data):
+              body = kind + data
+              return struct.pack(">I", len(data)) + body + struct.pack(">I", zlib.crc32(body) & 0xffffffff)
+          raw = bytearray()
+          for y in range(height):
+              off = y * width * 3
+              raw.extend(b"\0" + canvas[off:off + width * 3])
+          head = struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0)
+          contact = b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", head) + chunk(b"IDAT", zlib.compress(bytes(raw), 9)) + chunk(b"IEND", b"")
+          (root / "game-probe-contact-sheet.png").write_bytes(contact)
+          print(f"contact-sheet: {width}x{height} sha256={hashlib.sha256(contact).hexdigest()}")
+          PY
 
       - name: Upload probe
         uses: actions/upload-artifact@v4
