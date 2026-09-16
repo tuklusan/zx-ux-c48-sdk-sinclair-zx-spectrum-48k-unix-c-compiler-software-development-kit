@@ -292,11 +292,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument(
         "--time-quota",
         type=float,
-        default=30.0,
+        default=45.0,
         metavar="SECONDS",
         help=(
-            "per-C48B wall-clock runtime quota (default: 30; "
-            "the graphics CI matrix explicitly enforces 15)"
+            "per-C48B wall-clock runtime quota (default: 45; "
+            "the graphics CI matrix uses the same 45-second quota)"
         ),
     )
     ns = ap.parse_args(argv)

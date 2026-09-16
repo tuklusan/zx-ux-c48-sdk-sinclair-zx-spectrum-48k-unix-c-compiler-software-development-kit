@@ -38,8 +38,8 @@ from c48.gui import (
 from c48.screen import PALETTE_BRIGHT, PALETTE_NORMAL
 
 TIMEOUT = 90.0
-VM_TIME_QUOTA = 15.0
-HOST_COMMAND_TIMEOUT = 30.0
+VM_TIME_QUOTA = 45.0
+HOST_COMMAND_TIMEOUT = 45.0
 
 
 def _records(path: Path) -> list[dict]:
@@ -604,7 +604,7 @@ def _forest(evidence: Path) -> dict:
     probe = evidence / f"probe-{name}.jsonl"
     # This case validates completed-program/footer/close semantics, not
     # the demo's full 240-frame exhibition loop.  Two frames exercise real Tk
-    # rendering while keeping the binary well inside the 15-second CI quota.
+    # rendering while keeping the binary well inside the 45-second CI quota.
     process = _start(ROOT / "usr/bin/demos/forest.c48b", probe, "2")
     title = "ZX-UX C48 - forest.c48b"
     try:

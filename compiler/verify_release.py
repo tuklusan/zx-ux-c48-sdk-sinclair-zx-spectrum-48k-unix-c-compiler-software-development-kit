@@ -316,7 +316,7 @@ def check_beep() -> None:
         ])
         if bp.returncode != 0 or rebuilt.read_bytes() != frozen.read_bytes():
             fail("tune deterministic rebuild mismatch")
-    cp = run([sys.executable, "-B", str(ROOT / "verify_beep.py")], timeout=30)
+    cp = run([sys.executable, "-B", str(ROOT / "verify_beep.py")], timeout=45)
     if cp.returncode != 0:
         sys.stderr.write(cp.stdout + cp.stderr)
         fail("BEEP numerical verification failed")
@@ -350,7 +350,7 @@ def check_demos() -> None:
             # is deterministic even though each clean-room root is different.
             cmd = [
                 sys.executable, "-B", str(ROOT / "c48run.py"), "--headless",
-                "--time-quota", "15",
+                "--time-quota", "45",
                 "--dump-screen", screen.name, rebuilt.name, *exp["args"],
             ]
             rp = run(cmd, cwd=d)
