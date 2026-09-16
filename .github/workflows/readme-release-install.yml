@@ -1,0 +1,140 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: One-shot README release install update
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/readme-release-install.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: readme-release-install-main
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Check out current main with LFS objects
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Update README installation instructions
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("README.md")
+          text = path.read_text(encoding="utf-8")
+          old = """## Clone and quick start
+
+```text
+git clone https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit.git
+cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit
+```
+"""
+          new = """## Download, clone, and quick start
+
+### Download the packaged SDK ZIP
+
+If you want to use the SDK without Git, the packaged release ZIP is the simplest route. It is one platform-neutral archive containing both the Windows batch launchers and the POSIX shell launchers.
+
+- **[Latest published release or release candidate](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases)** - this page is always current, with the newest published release at the top. Download the asset whose name starts with `zx-ux-c48-sdk-` and ends in `.zip`.
+- **[Direct download: current certified 1.0.0-RC5 ZIP](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/download/1.0.0-RC5/zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip)** - one-click download of the current certified package.
+
+GitHub's `/releases/latest` shortcut deliberately excludes prereleases, so the Releases page above is the durable link to the newest available package while release candidates are active.
+
+After downloading, extract the ZIP to a directory of your choice and run the commands below from the extracted SDK directory.
+
+### Clone with Git
+
+If you prefer to track the repository directly:
+
+```text
+git clone https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit.git
+cd zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit
+```
+"""
+          if text.count(old) != 1:
+              raise SystemExit(
+                  f"README update: expected exactly one clone/quick-start block, found {text.count(old)}"
+              )
+          if "Direct download: current certified 1.0.0-RC5 ZIP" in text:
+              raise SystemExit("README update: release-install text is already present")
+          text = text.replace(old, new)
+          path.write_text(text, encoding="utf-8", newline="\n")
+          PY
+
+      - name: Verify, commit, and push README update
+        id: commit
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/readme-release-install.yml
+          git add README.md
+          git diff --cached --check
+          python -B compiler/verify_release.py
+          git commit -m "Document release ZIP installation path"
+          git push origin HEAD:main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Three successive SoP scans from final remote head
+        shell: bash
+        env:
+          TARGET_SHA: ${{ steps.commit.outputs.sha }}
+        run: |
+          set -euo pipefail
+          for pass in 1 2 3; do
+            scan="/tmp/readme-sop-${pass}"
+            rm -rf "$scan"
+            GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 \
+              "https://github.com/${GITHUB_REPOSITORY}.git" "$scan"
+            git -C "$scan" lfs pull
+            test "$(git -C "$scan" rev-parse HEAD)" = "$TARGET_SHA"
+            SCAN_DIR="$scan" PASS="$pass" python - <<'PY'
+          from pathlib import Path
+          import os
+
+          root = Path(os.environ["SCAN_DIR"])
+          text = (root / "README.md").read_text(encoding="utf-8")
+          required = (
+              "## Download, clone, and quick start",
+              "Latest published release or release candidate",
+              "Direct download: current certified 1.0.0-RC5 ZIP",
+              "releases/download/1.0.0-RC5/zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip",
+              "### Clone with Git",
+          )
+          for item in required:
+              if text.count(item) != 1:
+                  raise SystemExit(
+                      f"SoP pass {os.environ['PASS']}: README marker count for {item!r} is {text.count(item)}"
+                  )
+          if (root / ".github/workflows/readme-release-install.yml").exists():
+              raise SystemExit(f"SoP pass {os.environ['PASS']}: temporary workflow still present")
+          print(f"SoP pass {os.environ['PASS']}: README release-install section is exact")
+          PY
+            (cd "$scan" && python -B compiler/verify_release.py)
+            test -z "$(git -C "$scan" status --porcelain)"
+          done
