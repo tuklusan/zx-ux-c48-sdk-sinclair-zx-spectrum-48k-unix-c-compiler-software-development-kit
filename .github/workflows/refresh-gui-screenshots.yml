@@ -14,23 +14,10 @@
 name: Refresh checked-in GUI screenshots
 
 "on":
-  # Bootstrap this maintenance workflow when it is first added.  The push
-  # trigger is removed after the RC5 refresh; workflow_dispatch remains for
-  # future deliberate refreshes.
   push:
     branches: [main]
     paths:
       - ".github/workflows/refresh-gui-screenshots.yml"
-  workflow_dispatch:
-    inputs:
-      source_run_id:
-        description: "Successful host-native GUI workflow run ID"
-        required: true
-        default: "35112503533"
-      source_sha:
-        description: "Exact commit certified by that GUI workflow"
-        required: true
-        default: "41d130e489638dd07ba3305eea41517e0ec3b32f"
 
 permissions:
   contents: write
@@ -45,10 +32,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      SOURCE_RUN_ID: ${{ inputs.source_run_id || '35112503533' }}
-      SOURCE_SHA: ${{ inputs.source_sha || '41d130e489638dd07ba3305eea41517e0ec3b32f' }}
-      SOURCE_DIR: ${{ runner.temp }}/gui-source
-      EXPECTED_JSON: ${{ runner.temp }}/gui-expected.json
+      SOURCE_RUN_ID: "35112503533"
+      SOURCE_SHA: "41d130e489638dd07ba3305eea41517e0ec3b32f"
+      SOURCE_DIR: "/tmp/gui-source"
+      EXPECTED_JSON: "/tmp/gui-expected.json"
 
     steps:
       - name: Check out current main with LFS objects
@@ -66,7 +53,7 @@ jobs:
           run-id: ${{ env.SOURCE_RUN_ID }}
           github-token: ${{ github.token }}
 
-      - name: Verify evidence bytes and refresh retained PNGs
+      - name: Verify evidence and materialize retained PNGs
         shell: bash
         run: |
           set -euo pipefail
@@ -79,15 +66,14 @@ jobs:
           import struct
 
           root = Path(os.environ["SOURCE_DIR"])
-          expected_json = Path(os.environ["EXPECTED_JSON"])
           source_sha = os.environ["SOURCE_SHA"]
+          expected_json = Path(os.environ["EXPECTED_JSON"])
 
           sums = root / "SHA256SUMS"
           manifest = root / "RELEASE-GUI-EVIDENCE.json"
           if not sums.is_file() or not manifest.is_file():
-              raise SystemExit("GUI refresh: aggregate evidence metadata is missing")
+              raise SystemExit("GUI refresh: aggregate evidence metadata missing")
 
-          # Verify every byte named by the aggregate evidence checksum file.
           for line in sums.read_text(encoding="ascii").splitlines():
               digest, rel = line.split("  ", 1)
               path = root / rel
@@ -95,17 +81,11 @@ jobs:
                   raise SystemExit(f"GUI refresh: missing evidence member: {rel}")
               actual = hashlib.sha256(path.read_bytes()).hexdigest()
               if actual != digest:
-                  raise SystemExit(
-                      f"GUI refresh: evidence checksum mismatch: {rel}: "
-                      f"{actual} != {digest}"
-                  )
+                  raise SystemExit(f"GUI refresh: evidence checksum mismatch: {rel}")
 
           metadata = json.loads(manifest.read_text(encoding="ascii"))
           if metadata.get("commit") != source_sha:
-              raise SystemExit(
-                  f"GUI refresh: source commit mismatch: {metadata.get('commit')} "
-                  f"!= {source_sha}"
-              )
+              raise SystemExit("GUI refresh: aggregate evidence commit mismatch")
 
           runners = (
               "ubuntu-latest",
@@ -120,11 +100,7 @@ jobs:
               for row in metadata.get("rows", [])
           }
           if rows != expected_rows:
-              raise SystemExit(
-                  f"GUI refresh: evidence matrix mismatch: "
-                  f"missing={sorted(expected_rows - rows)} "
-                  f"extra={sorted(rows - expected_rows)}"
-              )
+              raise SystemExit("GUI refresh: eight-row GUI evidence matrix mismatch")
 
           names = (
               "forest-canvas.png",
@@ -138,69 +114,55 @@ jobs:
           )
           expected = {}
 
-          def png_size(path: Path) -> tuple[int, int]:
+          def validate_png(path: Path) -> None:
               data = path.read_bytes()
               if len(data) < 24 or data[:8] != b"\x89PNG\r\n\x1a\n":
-                  raise SystemExit(f"GUI refresh: invalid PNG signature: {path}")
+                  raise SystemExit(f"GUI refresh: bad PNG signature: {path}")
               if data[12:16] != b"IHDR":
-                  raise SystemExit(f"GUI refresh: missing PNG IHDR: {path}")
+                  raise SystemExit(f"GUI refresh: bad PNG header: {path}")
               width, height = struct.unpack(">II", data[16:24])
               if width < 1 or height < 1:
-                  raise SystemExit(f"GUI refresh: invalid PNG geometry: {path}")
-              return width, height
+                  raise SystemExit(f"GUI refresh: bad PNG geometry: {path}")
 
           for runner, py in sorted(expected_rows):
               source = root / f"gui-desktop-{runner}-py{py}-{source_sha}"
-              if not source.is_dir():
-                  raise SystemExit(f"GUI refresh: missing row directory: {source.name}")
-              actual_pngs = sorted(p.name for p in source.glob("*.png"))
-              if actual_pngs != sorted(names):
-                  raise SystemExit(
-                      f"GUI refresh: unexpected PNG set in {source.name}: {actual_pngs}"
-                  )
-
               target = Path("screenshots/gui-desktop") / runner / f"python-{py}"
-              if not target.is_dir():
-                  raise SystemExit(f"GUI refresh: missing target directory: {target}")
-              target_pngs = sorted(p.name for p in target.glob("*.png"))
-              if target_pngs != sorted(names):
-                  raise SystemExit(
-                      f"GUI refresh: target PNG set drift in {target}: {target_pngs}"
-                  )
-
+              if not source.is_dir() or not target.is_dir():
+                  raise SystemExit(f"GUI refresh: missing source/target row: {runner} {py}")
+              if sorted(p.name for p in source.glob("*.png")) != sorted(names):
+                  raise SystemExit(f"GUI refresh: source PNG set drift: {source}")
+              if sorted(p.name for p in target.glob("*.png")) != sorted(names):
+                  raise SystemExit(f"GUI refresh: target PNG set drift: {target}")
               for name in names:
                   src = source / name
                   dst = target / name
-                  png_size(src)
+                  validate_png(src)
                   digest = hashlib.sha256(src.read_bytes()).hexdigest()
                   shutil.copyfile(src, dst)
-                  copied = hashlib.sha256(dst.read_bytes()).hexdigest()
-                  if copied != digest:
-                      raise SystemExit(
-                          f"GUI refresh: copy checksum mismatch: {dst}: "
-                          f"{copied} != {digest}"
-                      )
+                  if hashlib.sha256(dst.read_bytes()).hexdigest() != digest:
+                      raise SystemExit(f"GUI refresh: copy mismatch: {dst}")
                   expected[dst.as_posix()] = digest
 
           if len(expected) != 64:
-              raise SystemExit(f"GUI refresh: expected 64 retained PNGs, got {len(expected)}")
+              raise SystemExit(f"GUI refresh: expected 64 PNGs, got {len(expected)}")
           expected_json.write_text(
               json.dumps(expected, indent=2, sort_keys=True) + "\n",
               encoding="ascii",
               newline="\n",
           )
-          print(f"GUI refresh: verified and materialized {len(expected)} PNGs")
+          print("GUI refresh: certified RC5 evidence copied into all eight rows")
           PY
 
-      - name: Verify candidate tree before commit
+      - name: Verify, commit, and push refreshed screenshots
+        id: commit
         shell: bash
         run: |
           set -euo pipefail
+          git lfs install --local
           git check-attr filter -- screenshots/gui-desktop/*/python-*/*.png | \
             awk -F': ' '$3 != "lfs" {bad=1; print} END {exit bad}'
           git add -- screenshots/gui-desktop
           git diff --cached --check
-          git lfs install --local
           python -B compiler/verify_release.py
           python - <<'PY'
           from pathlib import Path
@@ -210,41 +172,34 @@ jobs:
 
           expected = json.loads(Path(os.environ["EXPECTED_JSON"]).read_text(encoding="ascii"))
           for rel, digest in expected.items():
-              actual = hashlib.sha256(Path(rel).read_bytes()).hexdigest()
-              if actual != digest:
+              if hashlib.sha256(Path(rel).read_bytes()).hexdigest() != digest:
                   raise SystemExit(f"GUI refresh: candidate byte mismatch: {rel}")
-          print("GUI refresh: candidate bytes match certified GUI evidence")
           PY
-
-      - name: Commit and push refreshed screenshots
-        id: commit
-        shell: bash
-        run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email \
             "41898282+github-actions[bot]@users.noreply.github.com"
           if git diff --cached --quiet; then
-            echo "No checked-in GUI PNG bytes changed."
+            echo "GUI refresh: checked-in PNGs already match RC5 evidence"
           else
             git commit -m "Refresh GUI desktop screenshots from RC5 evidence"
             git push origin HEAD:main
           fi
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: SoP fresh-copy scan 1
+      - name: Three successive SoP scans from fresh remote copies
         shell: bash
         env:
           TARGET_SHA: ${{ steps.commit.outputs.sha }}
-          SCAN_DIR: ${{ runner.temp }}/sop-scan-1
         run: |
           set -euo pipefail
-          rm -rf "$SCAN_DIR"
-          GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 \
-            "https://github.com/${GITHUB_REPOSITORY}.git" "$SCAN_DIR"
-          git -C "$SCAN_DIR" lfs pull
-          test "$(git -C "$SCAN_DIR" rev-parse HEAD)" = "$TARGET_SHA"
-          EXPECTED_JSON="$EXPECTED_JSON" SCAN_DIR="$SCAN_DIR" python - <<'PY'
+          for pass in 1 2 3; do
+            scan="/tmp/sop-scan-${pass}"
+            rm -rf "$scan"
+            GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 \
+              "https://github.com/${GITHUB_REPOSITORY}.git" "$scan"
+            git -C "$scan" lfs pull
+            test "$(git -C "$scan" rev-parse HEAD)" = "$TARGET_SHA"
+            EXPECTED_JSON="$EXPECTED_JSON" SCAN_DIR="$scan" PASS="$pass" python - <<'PY'
           from pathlib import Path
           import hashlib
           import json
@@ -252,84 +207,17 @@ jobs:
 
           root = Path(os.environ["SCAN_DIR"])
           expected = json.loads(Path(os.environ["EXPECTED_JSON"]).read_text(encoding="ascii"))
-          actual_pngs = sorted(
+          actual = sorted(
               p.relative_to(root).as_posix()
               for p in (root / "screenshots/gui-desktop").glob("*/python-*/*.png")
           )
-          if actual_pngs != sorted(expected):
-              raise SystemExit("SoP scan 1: retained PNG file set mismatch")
+          if actual != sorted(expected):
+              raise SystemExit(f"SoP pass {os.environ['PASS']}: PNG file set mismatch")
           for rel, digest in expected.items():
-              data = (root / rel).read_bytes()
-              if hashlib.sha256(data).hexdigest() != digest:
-                  raise SystemExit(f"SoP scan 1: byte mismatch: {rel}")
-          print(f"SoP scan 1: {len(expected)} PNG files byte-exact")
+              if hashlib.sha256((root / rel).read_bytes()).hexdigest() != digest:
+                  raise SystemExit(f"SoP pass {os.environ['PASS']}: byte mismatch: {rel}")
+          print(f"SoP pass {os.environ['PASS']}: 64 PNGs byte-exact")
           PY
-          (cd "$SCAN_DIR" && python -B compiler/verify_release.py)
-
-      - name: SoP fresh-copy scan 2
-        shell: bash
-        env:
-          TARGET_SHA: ${{ steps.commit.outputs.sha }}
-          SCAN_DIR: ${{ runner.temp }}/sop-scan-2
-        run: |
-          set -euo pipefail
-          rm -rf "$SCAN_DIR"
-          GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 \
-            "https://github.com/${GITHUB_REPOSITORY}.git" "$SCAN_DIR"
-          git -C "$SCAN_DIR" lfs pull
-          test "$(git -C "$SCAN_DIR" rev-parse HEAD)" = "$TARGET_SHA"
-          EXPECTED_JSON="$EXPECTED_JSON" SCAN_DIR="$SCAN_DIR" python - <<'PY'
-          from pathlib import Path
-          import hashlib
-          import json
-          import os
-
-          root = Path(os.environ["SCAN_DIR"])
-          expected = json.loads(Path(os.environ["EXPECTED_JSON"]).read_text(encoding="ascii"))
-          actual_pngs = sorted(
-              p.relative_to(root).as_posix()
-              for p in (root / "screenshots/gui-desktop").glob("*/python-*/*.png")
-          )
-          if actual_pngs != sorted(expected):
-              raise SystemExit("SoP scan 2: retained PNG file set mismatch")
-          for rel, digest in expected.items():
-              data = (root / rel).read_bytes()
-              if hashlib.sha256(data).hexdigest() != digest:
-                  raise SystemExit(f"SoP scan 2: byte mismatch: {rel}")
-          print(f"SoP scan 2: {len(expected)} PNG files byte-exact")
-          PY
-          (cd "$SCAN_DIR" && python -B compiler/verify_release.py)
-
-      - name: SoP fresh-copy scan 3
-        shell: bash
-        env:
-          TARGET_SHA: ${{ steps.commit.outputs.sha }}
-          SCAN_DIR: ${{ runner.temp }}/sop-scan-3
-        run: |
-          set -euo pipefail
-          rm -rf "$SCAN_DIR"
-          GIT_LFS_SKIP_SMUDGE=1 git clone --depth 1 \
-            "https://github.com/${GITHUB_REPOSITORY}.git" "$SCAN_DIR"
-          git -C "$SCAN_DIR" lfs pull
-          test "$(git -C "$SCAN_DIR" rev-parse HEAD)" = "$TARGET_SHA"
-          EXPECTED_JSON="$EXPECTED_JSON" SCAN_DIR="$SCAN_DIR" python - <<'PY'
-          from pathlib import Path
-          import hashlib
-          import json
-          import os
-
-          root = Path(os.environ["SCAN_DIR"])
-          expected = json.loads(Path(os.environ["EXPECTED_JSON"]).read_text(encoding="ascii"))
-          actual_pngs = sorted(
-              p.relative_to(root).as_posix()
-              for p in (root / "screenshots/gui-desktop").glob("*/python-*/*.png")
-          )
-          if actual_pngs != sorted(expected):
-              raise SystemExit("SoP scan 3: retained PNG file set mismatch")
-          for rel, digest in expected.items():
-              data = (root / rel).read_bytes()
-              if hashlib.sha256(data).hexdigest() != digest:
-                  raise SystemExit(f"SoP scan 3: byte mismatch: {rel}")
-          print(f"SoP scan 3: {len(expected)} PNG files byte-exact")
-          PY
-          (cd "$SCAN_DIR" && python -B compiler/verify_release.py)
+            (cd "$scan" && python -B compiler/verify_release.py)
+            test -z "$(git -C "$scan" status --porcelain)"
+          done
