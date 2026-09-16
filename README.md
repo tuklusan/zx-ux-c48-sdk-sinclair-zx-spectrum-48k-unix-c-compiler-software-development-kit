@@ -23,6 +23,10 @@ patent, trademark, and governing-law provisions.
 
 **ZX-UX C48 SDK** is not the full [**ZX-UX Unix for the Sinclair ZX Spectrum 48K**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project). It is a portable C compiler and just enough ZX-UX runtime to let you write and test C48 programs away from the actual ZX-UX environment on a real 48K Spectrum. The SDK runs on Windows, Linux and macOS, on Intel and Arm hosts.
 
+## Download and install
+
+Download the SDK and see installation instructions on the [Latest release](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/latest).
+
 ## Graphics showcase — 18 more C48 demos
 
 These and the three hero images above are rendered from the exact 6912-byte ZX Spectrum screen state produced by the C48 VM. The automated graphics gate runs all 21 demos independently across GitHub-hosted Windows, Linux and macOS runners.
