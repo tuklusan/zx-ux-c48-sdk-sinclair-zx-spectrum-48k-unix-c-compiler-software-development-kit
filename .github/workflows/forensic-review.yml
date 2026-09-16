@@ -1,0 +1,68 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
+name: Temporary forensic review gate
+
+"on":
+  push:
+    branches: [review/forensic-core-hardening-20260916]
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    name: Fresh checkout pass ${{ matrix.pass }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        pass: [1, 2, 3]
+    steps:
+      - name: Check out fresh repository bytes
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Byte-scan changed source files line by line
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          files = [
+              Path('compiler/c48/compiler.py'),
+              Path('compiler/c48/format.py'),
+              Path('compiler/c48/limits.py'),
+              Path('compiler/c48/preprocessor.py'),
+              Path('compiler/c48/sound.py'),
+              Path('compiler/tests/forensic_review_regression.py'),
+          ]
+          for path in files:
+              with path.open('rb') as stream:
+                  for lineno, raw in enumerate(stream, 1):
+                      if b'\x00' in raw:
+                          raise SystemExit(f'NUL byte: {path}:{lineno}')
+                      raw.decode('utf-8')
+              print(f'BYTE SCAN PASS: {path}')
+          PY
+
+      - name: Run forensic review regressions
+        run: python -B compiler/tests/forensic_review_regression.py
+
+      - name: Run complete unit suite
+        run: python -B compiler/run_tests.py
