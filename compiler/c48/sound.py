@@ -308,7 +308,10 @@ def _static_float_arg(node: dict[str, Any]) -> Float5 | None:
     if kind in {"integer_literal", "character_literal"}:
         return Float5.from_int(int(node["value"]))
     if kind == "cast":
-        return _static_float_arg(node["operand"])
+        # The cast can change the value before the call (notably float->int).
+        # Rather than pre-synthesizing under a false cache key, leave casted
+        # arguments to the normal runtime path.
+        return None
     if kind == "unary" and node.get("op") in {"+", "-"}:
         value = _static_float_arg(node["operand"])
         if value is None:
