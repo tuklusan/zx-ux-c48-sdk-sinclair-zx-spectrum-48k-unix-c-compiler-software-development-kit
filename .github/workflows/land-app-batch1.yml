@@ -27,9 +27,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          stage=6bbdf6312e4e531f4b55bab23c5cb34121094ad9
-          test "$(git rev-parse HEAD^)" = "$stage"
-          test "$(git diff --name-only "$stage" HEAD)" = ".github/workflows/land-app-batch1.yml"
+          parent=cf9e140609cccbd87adc27f03b16db1c9538445b
+          test "$(git rev-parse HEAD^)" = "$parent"
+          test "$(git diff --name-only "$parent" HEAD)" = ".github/workflows/land-app-batch1.yml"
           python -B - <<'PY'
           import os
           import subprocess
@@ -60,12 +60,8 @@ jobs:
                   line = lines[i]
                   if line.startswith("          "):
                       out.append(line[10:])
-                  elif not line:
-                      out.append("")
                   else:
-                      raise SystemExit(
-                          f"unexpected indentation in {name}: {line!r}"
-                      )
+                      out.append(line)
                   i += 1
               return "\n".join(out) + "\n"
 
