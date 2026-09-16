@@ -2,6 +2,7 @@
   "version": "1.0.0",
   "test_count": 348,
   "font": {
+    "final_sha256": "dceb0a9c2cac3fa15e66759f55b12633d9338df0a7961e4372406e21da9c7942",
     "tasword_sha256": "90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339",
     "zxux_sha256": "90f6818cf81cf3f13509cff32c091075691195d9638dbe801d12daceec1c9339",
     "raw_sha256": "0ccd55f30450231b4219f15c945af53a3eb418082a28b5062589723d8fa1834d"
