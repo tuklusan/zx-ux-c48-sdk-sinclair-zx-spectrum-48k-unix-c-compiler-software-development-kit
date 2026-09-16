@@ -19,6 +19,10 @@ patent, trademark, and governing-law provisions.
 
 **ZX-UX C48 SDK** is not the full [**ZX-UX Unix for the Sinclair ZX Spectrum 48K**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project). It is a portable C compiler and just enough ZX-UX runtime to let you write and test C48 programs away from the actual ZX-UX environment on a real 48K Spectrum. The SDK runs on Windows, Linux and macOS, on Intel and Arm hosts.
 
+| | | |
+|---|---|---|
+| ![Torus Reactor](docs/images/demos/torus.png)<br>**Torus Reactor** | ![Sprite Storm](docs/images/demos/sprites.png)<br>**Sprite Storm** | ![Spectrum Plasma](docs/images/demos/plasma.png)<br>**Spectrum Plasma** |
+
 ## Install and quick start
 
 **Current stable release: 1.0.0.** Requires **Python 3.10 or newer**.
@@ -51,21 +55,30 @@ Linux / macOS:
 
 Tkinter is needed only for the graphical display window. The compiler and non-audio headless runtime need no third-party Python packages. Audible `beep()` uses standard-library `winsound` on Windows; Linux/macOS can use the optional `playsound3==3.3.2` adapter.
 
-## Graphics showcase — 21 C48 demos
+## Graphics showcase — 18 more C48 demos
 
-These images are rendered from the exact 6912-byte ZX Spectrum screen state produced by the C48 VM. The release gate runs the 21 demos independently across GitHub-hosted Windows, Linux and macOS runners.
+These and the three hero images above are rendered from the exact 6912-byte ZX Spectrum screen state produced by the C48 VM. The release gate runs all 21 demos independently across GitHub-hosted Windows, Linux and macOS runners.
 
 | Demo | Demo | Demo |
 |---|---|---|
-| ![UDG Walker](docs/images/demos/spriteanim.png)<br>**UDG Walker** | ![Torus Reactor](docs/images/demos/torus.png)<br>**Torus Reactor** | ![Raycast Labyrinth](docs/images/demos/raymaze.png)<br>**Raycast Labyrinth** |
-| ![Crystal Goblet](docs/images/demos/goblet.png)<br>**Crystal Goblet** | ![Infinity Tunnel](docs/images/demos/tunnel.png)<br>**Infinity Tunnel** | ![Vector Metropolis](docs/images/demos/city.png)<br>**Vector Metropolis** |
-| ![Mountain Flight](docs/images/demos/terrain.png)<br>**Mountain Flight** | ![Ocean Grid](docs/images/demos/ocean.png)<br>**Ocean Grid** | ![Mobius Flight](docs/images/demos/mobius.png)<br>**Mobius Flight** |
-| ![Polyhedron Morph](docs/images/demos/morph3d.png)<br>**Polyhedron Morph** | ![Warp Drive](docs/images/demos/warp.png)<br>**Warp Drive** | ![Spiral Galaxy](docs/images/demos/galaxy.png)<br>**Spiral Galaxy** |
-| ![Clockwork Orrery](docs/images/demos/orrery.png)<br>**Clockwork Orrery** | ![Firework Night](docs/images/demos/firework.png)<br>**Firework Night** | ![Sprite Storm](docs/images/demos/sprites.png)<br>**Sprite Storm** |
-| ![Spectrum Plasma](docs/images/demos/plasma.png)<br>**Spectrum Plasma** | ![Kaleidoscope](docs/images/demos/kaleido.png)<br>**Kaleidoscope** | ![Moire Engine](docs/images/demos/moire.png)<br>**Moire Engine** |
+| ![UDG Walker](docs/images/demos/spriteanim.png)<br>**UDG Walker** | ![Raycast Labyrinth](docs/images/demos/raymaze.png)<br>**Raycast Labyrinth** | ![Crystal Goblet](docs/images/demos/goblet.png)<br>**Crystal Goblet** |
+| ![Infinity Tunnel](docs/images/demos/tunnel.png)<br>**Infinity Tunnel** | ![Vector Metropolis](docs/images/demos/city.png)<br>**Vector Metropolis** | ![Mountain Flight](docs/images/demos/terrain.png)<br>**Mountain Flight** |
+| ![Ocean Grid](docs/images/demos/ocean.png)<br>**Ocean Grid** | ![Mobius Flight](docs/images/demos/mobius.png)<br>**Mobius Flight** | ![Polyhedron Morph](docs/images/demos/morph3d.png)<br>**Polyhedron Morph** |
+| ![Warp Drive](docs/images/demos/warp.png)<br>**Warp Drive** | ![Spiral Galaxy](docs/images/demos/galaxy.png)<br>**Spiral Galaxy** | ![Clockwork Orrery](docs/images/demos/orrery.png)<br>**Clockwork Orrery** |
+| ![Firework Night](docs/images/demos/firework.png)<br>**Firework Night** | ![Kaleidoscope](docs/images/demos/kaleido.png)<br>**Kaleidoscope** | ![Moire Engine](docs/images/demos/moire.png)<br>**Moire Engine** |
 | ![Mandelbrot Dive](docs/images/demos/mandel.png)<br>**Mandelbrot Dive** | ![Julia Ballet](docs/images/demos/julia.png)<br>**Julia Ballet** | ![Fractal Forest](docs/images/demos/forest.png)<br>**Fractal Forest** |
 
 The combined [21-demo contact sheet](docs/images/demos/contact-sheet.png) and the individual demo outputs are part of the release verification envelope.
+
+## Documentation
+
+The language authority is upstream: the [**C48 Language Specification for native ZX-UX**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) defines the C language implemented by this portable SDK. The SDK documentation describes the host compiler/runtime implementation and its deliberate boundaries from native ZX-UX.
+
+- [`ZX-UX C48 SDK User Manual`](docs/ZX-UX%20C48%20SDK%20User%20Manual.docx) — install, compile and run C48 programs on Windows, Linux and macOS.
+- [`ZX-UX C48 SDK Technical Reference`](docs/ZX-UX%20C48%20SDK%20Technical%20Reference.docx) — implementation architecture, runtime behavior, graphics, Float5, verification and host/native boundaries.
+- [`ZX-UX C48 SDK Adversarial Security Review`](docs/ZX-UX%20C48%20SDK%20Adversarial%20Security%20Review.docx) — hostile-input and memory-boundary assessment.
+
+The repository also keeps a stable [`C48 specification pointer`](docs/ZX-UX%20C48%20Language%20Specification.md) to the authoritative upstream document.
 
 ## What the SDK provides
 
@@ -92,7 +105,7 @@ C48 source -> portable C48 compiler -> C48B1 -> c48run -> C48 VM
 
 [ZX-UX](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project) is the actual Unix-like operating and development environment for the original unexpanded 48K Sinclair ZX Spectrum. This SDK exists so C48 software can be developed and tested on modern computers while native ZX-UX compiler, linker, ABI, ROM-bridge, persistence, and process facilities remain separately implemented and verified.
 
-The authoritative C48 language specification lives upstream. This repository carries a stable pointer at [`docs/ZX-UX C48 Language Specification.md`](docs/ZX-UX%20C48%20Language%20Specification.md). `usr/src/c48host.h` is explicitly a **development-only Host Game API profile** and is not the final native ZX-UX `<c48.h>` ABI.
+The authoritative C48 language specification lives upstream and is the language baseline implemented by the SDK. `usr/src/c48host.h` is explicitly a **development-only Host Game API profile** and is not the final native ZX-UX `<c48.h>` ABI.
 
 ## 1.0.0 runtime notes
 
@@ -160,15 +173,6 @@ python3 -B compiler/verify_release.py
 ```
 
 The repository also carries targeted test and maintenance gates under `.github/workflows/` and `compiler/`.
-
-## Documentation
-
-- [`docs/ZX-UX C48 Language Specification.md`](docs/ZX-UX%20C48%20Language%20Specification.md) — pointer to the authoritative upstream C48 language specification.
-- [`docs/ZX-UX C48 SDK User Manual.docx`](docs/ZX-UX%20C48%20SDK%20User%20Manual.docx) — installation, command-line workflow and SDK usage.
-- [`docs/ZX-UX C48 SDK Technical Reference.docx`](docs/ZX-UX%20C48%20SDK%20Technical%20Reference.docx) — implementation architecture, runtime details, host/native boundaries, graphics, Float5 and verification.
-- [`docs/ZX-UX C48 SDK Adversarial Security Review.docx`](docs/ZX-UX%20C48%20SDK%20Adversarial%20Security%20Review.docx) — hostile-input and memory-boundary assessment.
-- [`compiler/GUI-SMOKE-TESTS.md`](compiler/GUI-SMOKE-TESTS.md) — host-native Tk acceptance gate.
-- [`compiler/README-font.txt`](compiler/README-font.txt) — F4X8 font provenance and current runtime font slots.
 
 ## License and author
 
