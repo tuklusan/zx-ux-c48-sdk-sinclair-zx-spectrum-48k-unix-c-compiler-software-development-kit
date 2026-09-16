@@ -1,0 +1,149 @@
+# Temporary recovery harness. It reuses the reviewed v2 run blocks,
+# removing only the faulty test-string dedent before execution.
+name: Stage Batch-5B RC3 landing v3
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/land-batch5b-rc3-v3.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  stage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Check out exact product base
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Validate base and extract corrected harness blocks
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          base = "c3e3647b33eea0d978609938adfd49eeaff441c2"
+          got = set(subprocess.check_output(
+              ["git", "diff", "--name-only", base, "HEAD"], text=True
+          ).splitlines())
+          temps = {
+              ".github/workflows/land-batch5b-rc3.yml",
+              ".github/workflows/land-batch5b-rc3-v2.yml",
+              ".github/workflows/land-batch5b-rc3-v3.yml",
+          }
+          if got != temps:
+              raise SystemExit(
+                  f"product base drift before v3: got={sorted(got)}"
+              )
+
+          source = Path(
+              ".github/workflows/land-batch5b-rc3-v2.yml"
+          ).read_text(encoding="utf-8").splitlines()
+
+          names = [
+              "Apply accepted Batch-5B fixes and refresh graphics corpus",
+              "Rebuild manifest",
+              "Verify candidate before commit",
+              "Commit clean candidate and check diff scope",
+              "Mandatory three-pass fresh-copy SoP",
+              "Push certified staging commit",
+          ]
+
+          def extract(name):
+              marker = "      - name: " + name
+              try:
+                  start = source.index(marker)
+              except ValueError:
+                  raise SystemExit(f"missing v2 step: {name}")
+              run = None
+              for i in range(start + 1, len(source)):
+                  if source[i] == "        run: |":
+                      run = i + 1
+                      break
+                  if source[i].startswith("      - name: "):
+                      break
+              if run is None:
+                  raise SystemExit(f"missing run block: {name}")
+              out = []
+              for line in source[run:]:
+                  if line.startswith("      - name: "):
+                      break
+                  if not line.startswith("          "):
+                      raise SystemExit(
+                          f"unexpected v2 run indentation in {name}: {line!r}"
+                      )
+                  out.append(line[10:])
+              return "\n".join(out) + "\n"
+
+          for index, name in enumerate(names):
+              script = extract(name)
+              if index == 0:
+                  pattern = re.compile(
+                      r'addition = "\\n"\.join\(\n'
+                      r'    line\[10:\] if line\.startswith\("          "\) else line\n'
+                      r'    for line in addition\.splitlines\(\)\n'
+                      r'\)\n'
+                  )
+                  script, count = pattern.subn("", script, count=1)
+                  if count != 1:
+                      raise SystemExit(
+                          "could not remove faulty v2 test dedent exactly once"
+                      )
+              path = Path(f"/tmp/batch5b-step-{index}.sh")
+              path.write_text(script, encoding="utf-8", newline="\n")
+          print("BATCH-5B V3 EXTRACTION PASS", flush=True)
+          PY
+          git lfs fsck
+          git checkout -B batch5b-rc3-stage
+
+      - name: Apply corrected accepted changes
+        shell: bash
+        run: bash /tmp/batch5b-step-0.sh
+
+      - name: Remove all temporary landing instrumentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -f \
+            .github/workflows/land-batch5b-rc3.yml \
+            .github/workflows/land-batch5b-rc3-v2.yml \
+            .github/workflows/land-batch5b-rc3-v3.yml
+          find . -type d -name '__pycache__' -prune -exec rm -rf {} +
+          find . -type d -name '.pytest_cache' -prune -exec rm -rf {} +
+          find . -type f \( -name '*.pyc' -o -name '*.pyo' \) -delete
+
+      - name: Rebuild manifest
+        shell: bash
+        run: bash /tmp/batch5b-step-1.sh
+
+      - name: Verify candidate before commit
+        shell: bash
+        run: bash /tmp/batch5b-step-2.sh
+
+      - name: Commit and scope-check candidate
+        shell: bash
+        run: bash /tmp/batch5b-step-3.sh
+
+      - name: Mandatory three-pass fresh-copy SoP
+        shell: bash
+        run: bash /tmp/batch5b-step-4.sh
+
+      - name: Push certified staging commit
+        shell: bash
+        run: bash /tmp/batch5b-step-5.sh
