@@ -24,4 +24,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          # Retry uses the compact target-side diagnostic profile.
           python -B .github/land_batch3.py
