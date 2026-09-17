@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 from pathlib import Path
 import sys
 
@@ -43,11 +44,19 @@ def classify(path: Path) -> str:
     return "unknown"
 
 
+def _iter_project_files(root: Path):
+    for dirpath, dirnames, filenames in os.walk(root, topdown=True):
+        dirnames[:] = sorted(
+            name for name in dirnames if name not in {".git", "__pycache__"}
+        )
+        base = Path(dirpath)
+        for name in sorted(filenames):
+            yield base / name
+
+
 def check_tree(root: Path) -> list[str]:
     errors: list[str] = []
-    for path in sorted(root.rglob("*")):
-        if not path.is_file() or ".git" in path.relative_to(root).parts:
-            continue
+    for path in _iter_project_files(root):
         rel = path.relative_to(root).as_posix()
         # Imported third-party reference material is preserved byte-for-byte
         # and is governed by its own provenance/licensing, not the SDK header.
