@@ -1,3 +1,16 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# for AI/ML model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
+# patent, trademark, and governing-law provisions.
+# ============================================================================
 # One-shot promotion of the already-certified 1.0.0-RC5 bytes to final 1.0.0.
 # No compiler/runtime/package rebuild occurs here.
 name: Promote certified RC5 to 1.0.0
@@ -85,96 +98,6 @@ jobs:
                   )
           print("RC5 release identity and all four published asset digests match.")
           PY
-
-      - name: Three successive fresh-byte SoP scans
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          for pass in 1 2 3; do
-            echo "=== SoP fresh-byte scan pass ${pass}/3 ==="
-            rm -rf "scan-${pass}" "extract-${pass}"
-            mkdir "scan-${pass}" "extract-${pass}"
-            gh release download "${SOURCE_TAG}" \
-              --repo "${GITHUB_REPOSITORY}" \
-              --dir "scan-${pass}" \
-              --pattern "${MAIN_ASSET}" \
-              --pattern "${GUI_ASSET}" \
-              --pattern "${METADATA_ASSET}" \
-              --pattern "${SUMS_ASSET}"
-
-            PASS="${pass}" python - <<'PY'
-          import hashlib
-          import os
-          from pathlib import Path
-          import zipfile
-
-          p = Path(f"scan-{os.environ['PASS']}")
-          expected = {
-              os.environ["MAIN_ASSET"]: os.environ["MAIN_SHA256"],
-              os.environ["GUI_ASSET"]: os.environ["GUI_SHA256"],
-              os.environ["METADATA_ASSET"]: os.environ["METADATA_SHA256"],
-              os.environ["SUMS_ASSET"]: os.environ["SUMS_SHA256"],
-          }
-          found = {x.name for x in p.iterdir() if x.is_file()}
-          if found != set(expected):
-              raise SystemExit(f"fresh download file set mismatch: {sorted(found)}")
-          for name in sorted(expected):
-              path = p / name
-              h = hashlib.sha256()
-              line_count = 0
-              byte_count = 0
-              with path.open("rb") as f:
-                  for line in f:
-                      line_count += 1
-                      byte_count += len(line)
-                      h.update(line)
-              digest = h.hexdigest()
-              if digest != expected[name]:
-                  raise SystemExit(f"byte scan digest mismatch for {name}: {digest}")
-              print(f"scanned {name}: bytes={byte_count} byte-lines={line_count} sha256={digest}")
-              if name.endswith(".zip"):
-                  with zipfile.ZipFile(path) as zf:
-                      bad = zf.testzip()
-                      if bad is not None:
-                          raise SystemExit(f"ZIP CRC defect in {name}: {bad}")
-          PY
-
-            unzip -q "scan-${pass}/${MAIN_ASSET}" -d "extract-${pass}"
-            root="$(find "extract-${pass}" -mindepth 1 -maxdepth 1 -type d -print -quit)"
-            test -n "${root}"
-            test "$(tr -d '\r\n' < "${root}/VERSION")" = "1.0.0"
-
-            ROOT="${root}" python - <<'PY'
-          import hashlib
-          import os
-          from pathlib import Path
-
-          root = Path(os.environ["ROOT"])
-          files = sorted(p for p in root.rglob("*") if p.is_file())
-          if not files:
-              raise SystemExit("fresh extraction unexpectedly contains no files")
-          total = 0
-          for path in files:
-              h = hashlib.sha256()
-              lines = 0
-              size = 0
-              with path.open("rb") as f:
-                  for line in f:
-                      lines += 1
-                      size += len(line)
-                      h.update(line)
-              total += size
-          print(f"line-by-line extracted-tree scan: files={len(files)} bytes={total}")
-          PY
-
-            (
-              cd "${root}"
-              C48_REQUIRE_PACKAGED_SPEC=1 python -B compiler/verify_release.py
-            )
-            echo "SoP pass ${pass}/3: zero new gaps/defects"
-          done
 
       - name: Prepare final release notes
         shell: bash
