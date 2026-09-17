@@ -10,10 +10,8 @@
 // Sanyal of SANYALnet Labs. See root LICENSE for full terms.
 // ============================================================
 #include "gameapi.h"
-
 int udg_define(int slot, unsigned char *data);
 int udg_draw(int slot, int row, int col);
-
 #define CH_EMPTY 0
 #define CH_PAWN 1
 #define CH_KNIGHT 2
@@ -27,7 +25,6 @@ int udg_draw(int slot, int row, int col);
 #define CH_MAXMOVES 256
 #define CH_INF 30000
 #define CH_MATE 29000
-
 unsigned char ch_board[120];
 int ch_side;
 int ch_ep;
@@ -43,13 +40,11 @@ int ch_computer;
 int ch_pending;
 char ch_last[5];
 int ch_last_state;
-
 unsigned char ch_mfrom[768];
 unsigned char ch_mto[768];
 unsigned char ch_mpromo[768];
 unsigned char ch_mscore[768];
 int ch_mcount[4];
-
 int ch_ufrom[5];
 int ch_uto[5];
 int ch_uepcap[5];
@@ -67,28 +62,40 @@ unsigned char ch_utarget[5];
 unsigned char ch_uepold[5];
 unsigned char ch_urook[5];
 unsigned char ch_urookold[5];
-
 int ch_best_from;
 int ch_best_to;
 int ch_best_promo;
 int ch_best_score;
 int ch_nodes;
-
+unsigned char ch_kfrom[4];
+unsigned char ch_kto[4];
 int ch_value[7] = {
     0, 100, 320, 330, 500, 900, 20000
 };
-
+unsigned char ch_pst[192] = {
+50,50,50,50,55,60,60,30,55,45,40,50,50,50,
+50,70,55,55,60,75,60,60,70,80,100,100,100,
+100,50,50,50,50,0,10,20,20,10,30,50,55,20,
+55,60,65,20,50,65,70,20,55,65,70,20,50,60,
+65,10,30,50,50,0,10,20,20,30,40,40,40,40,
+55,50,50,40,60,60,60,40,50,60,60,40,55,55,
+60,40,50,55,60,40,50,50,50,30,40,40,40,50,
+50,50,55,45,50,50,50,45,50,50,50,45,50,50,
+50,45,50,50,50,45,50,50,50,55,60,60,60,50,
+50,50,50,30,40,40,45,40,50,55,50,40,55,55,
+55,50,50,55,55,45,50,55,55,40,50,55,55,40,
+50,50,50,30,40,40,45,70,80,60,50,70,70,50,
+50,40,30,30,30,30,20,20,10,20,10,10,0,20,
+10,10,0,20,10,10,0,20,10,10,0
+};
 int ch_knight_step[8] = {
     -21, -19, -12, -8, 8, 12, 19, 21
 };
-
 int ch_king_step[8] = {
     -11, -10, -9, -1, 1, 9, 10, 11
 };
-
 int ch_bishop_step[4] = {-11, -9, 9, 11};
 int ch_rook_step[4] = {-10, -1, 1, 10};
-
 unsigned char ch_udg[160] = {
     0,0,0,25,25,31,15,7,
     0,0,0,152,152,248,240,224,
@@ -111,9 +118,7 @@ unsigned char ch_udg[160] = {
     0,0,0,1,3,1,0,1,
     0,0,128,192,224,192,128,192
 };
-
 unsigned char ch_blank[8] = {0,0,0,0,0,0,0,0};
-
 unsigned char ch_piece_tab[28] = {
     128,128,128,128,
     162,163,147,146,
@@ -123,43 +128,36 @@ unsigned char ch_piece_tab[28] = {
     158,159,161,160,
     150,151,161,160
 };
-
 int ch_abs(int value)
 {
     if (value < 0)
         return -value;
     return value;
 }
-
 int ch_type(int p)
 {
     return p & 7;
 }
-
 int ch_color(int p)
 {
     return p & CH_BLACK;
 }
-
 int ch_piece(int p)
 {
     return p != CH_EMPTY && p != CH_OFF;
 }
-
 int ch_own(int p, int side)
 {
     if (!ch_piece(p))
         return 0;
     return ch_color(p) == side;
 }
-
 int ch_enemy(int p, int side)
 {
     if (!ch_piece(p))
         return 0;
     return ch_color(p) != side;
 }
-
 int ch_coord(int file, int rank)
 {
     int row;
@@ -172,7 +170,6 @@ int ch_coord(int file, int rank)
     col = file - 'a' + 1;
     return row * 10 + col;
 }
-
 void ch_square_text(int sq, char *text)
 {
     int row;
@@ -183,7 +180,6 @@ void ch_square_text(int sq, char *text)
     text[1] = (char)('0' + row - 1);
     text[2] = 0;
 }
-
 int ch_promo_code(int key)
 {
     if (key == 'q')
@@ -196,7 +192,6 @@ int ch_promo_code(int key)
         return CH_KNIGHT;
     return 0;
 }
-
 void ch_init_board(void)
 {
     int i;
@@ -244,7 +239,6 @@ void ch_init_board(void)
     ch_best_promo = CH_QUEEN;
     ch_best_score = 0;
 }
-
 int ch_ray_attack(int from, int to, int step)
 {
     int sq;
@@ -258,7 +252,6 @@ int ch_ray_attack(int from, int to, int step)
     }
     return 0;
 }
-
 int ch_attack_piece(int from, int to, int side)
 {
     int p;
@@ -304,7 +297,6 @@ int ch_attack_piece(int from, int to, int side)
     }
     return 0;
 }
-
 int ch_attacked(int square, int side)
 {
     int r;
@@ -319,7 +311,6 @@ int ch_attacked(int square, int side)
     }
     return 0;
 }
-
 int ch_king_square(int side)
 {
     int r;
@@ -337,7 +328,6 @@ int ch_king_square(int side)
     }
     return CH_NOMOVE;
 }
-
 int ch_check(int side)
 {
     int king;
@@ -346,7 +336,6 @@ int ch_check(int side)
         return 1;
     return ch_attacked(king, side ^ CH_BLACK);
 }
-
 int ch_path_clear(int from, int to, int step)
 {
     int sq;
@@ -358,7 +347,6 @@ int ch_path_clear(int from, int to, int step)
     }
     return 1;
 }
-
 int ch_castle(int from, int to, int side)
 {
     if (side == 0 && from == 25 && to == 27 && ch_wk) {
@@ -409,7 +397,6 @@ int ch_castle(int from, int to, int side)
     }
     return 0;
 }
-
 int ch_pseudo(int from, int to, int side)
 {
     int p;
@@ -441,7 +428,9 @@ int ch_pseudo(int from, int to, int side)
                 ch_board[from + 10] == CH_EMPTY)
                 return 1;
             if ((d == 9 || d == 11) &&
-                (ch_enemy(t, side) || to == ch_ep))
+                (ch_enemy(t, side) ||
+                (to == ch_ep && ch_board[to - 10] ==
+                 (CH_PAWN | CH_BLACK))))
                 return 1;
         }
         else {
@@ -452,7 +441,9 @@ int ch_pseudo(int from, int to, int side)
                 ch_board[from - 10] == CH_EMPTY)
                 return 1;
             if ((d == -11 || d == -9) &&
-                (ch_enemy(t, side) || to == ch_ep))
+                (ch_enemy(t, side) ||
+                (to == ch_ep && ch_board[to + 10] ==
+                 CH_PAWN)))
                 return 1;
         }
         return 0;
@@ -489,13 +480,11 @@ int ch_pseudo(int from, int to, int side)
     }
     return 0;
 }
-
 int ch_valid_promo(int promo)
 {
     return promo == CH_QUEEN || promo == CH_ROOK ||
         promo == CH_BISHOP || promo == CH_KNIGHT;
 }
-
 void ch_save_undo(int ply, int from, int to)
 {
     ch_ufrom[ply] = from;
@@ -516,7 +505,6 @@ void ch_save_undo(int ply, int from, int to)
     ch_uohalf[ply] = ch_halfmove;
     ch_uofull[ply] = ch_fullmove;
 }
-
 void ch_make(int from, int to, int promo,
              int side, int ply)
 {
@@ -604,7 +592,6 @@ void ch_make(int from, int to, int promo,
     if (side == CH_BLACK)
         ch_fullmove++;
 }
-
 void ch_unmake(int ply)
 {
     int from;
@@ -627,7 +614,6 @@ void ch_unmake(int ply)
     ch_halfmove = ch_uohalf[ply];
     ch_fullmove = ch_uofull[ply];
 }
-
 int ch_legal_prom(int from, int to, int promo,
                   int side, int apply)
 {
@@ -642,31 +628,30 @@ int ch_legal_prom(int from, int to, int promo,
         return 0;
     return 1;
 }
-
 int ch_legal(int from, int to, int side, int apply)
 {
     return ch_legal_prom(from, to, CH_QUEEN, side, apply);
 }
-
-int ch_cap_score(int from, int to, int promo,
-                     int side)
+int ch_cap_score(int from, int to, int promo, int ply)
 {
     int target;
     int score;
+    int attacker;
     target = ch_board[to];
+    attacker = ch_type(ch_board[from]);
     score = 0;
     if (ch_piece(target))
-        score = ch_type(target) * 16;
-    if (ch_type(ch_board[from]) == CH_PAWN &&
-        target == CH_EMPTY && to == ch_ep)
-        score = CH_PAWN * 16;
+        score = ch_type(target) * 16 + 7 - attacker;
+    if (attacker == CH_PAWN && target == CH_EMPTY &&
+        to == ch_ep)
+        score = CH_PAWN * 16 + 6;
     if (ch_valid_promo(promo))
         score = score + promo;
-    if (side == CH_BLACK)
-        score = score + 0;
+    if (score == 0 && promo == 0 &&
+        from == ch_kfrom[ply] && to == ch_kto[ply])
+        score = 12;
     return score;
 }
-
 void ch_store_move(int from, int to, int promo,
                    int side, int ply)
 {
@@ -688,10 +673,9 @@ void ch_store_move(int from, int to, int promo,
     ch_mto[base] = (unsigned char)to;
     ch_mpromo[base] = (unsigned char)promo;
     ch_mscore[base] =
-        (unsigned char)ch_cap_score(from, to, promo, side);
+        (unsigned char)ch_cap_score(from, to, promo, ply);
     ch_mcount[ply] = count + 1;
 }
-
 void ch_store_pawn(int from, int to, int side, int ply)
 {
     int row;
@@ -706,7 +690,6 @@ void ch_store_pawn(int from, int to, int side, int ply)
     else
         ch_store_move(from, to, 0, side, ply);
 }
-
 void ch_gen_slider(int from, int side, int ply,
                    int *steps, int nsteps)
 {
@@ -724,7 +707,6 @@ void ch_gen_slider(int from, int side, int ply,
         }
     }
 }
-
 void ch_swap_move(int a, int b)
 {
     unsigned char v;
@@ -741,7 +723,6 @@ void ch_swap_move(int a, int b)
     ch_mscore[a] = ch_mscore[b];
     ch_mscore[b] = v;
 }
-
 void ch_sort_moves(int ply)
 {
     int base;
@@ -758,7 +739,6 @@ void ch_sort_moves(int ply)
         }
     }
 }
-
 int ch_gen(int side, int ply)
 {
     int r;
@@ -823,7 +803,18 @@ int ch_gen(int side, int ply)
     ch_sort_moves(ply);
     return ch_mcount[ply];
 }
-
+int ch_pst_value(int type, int r, int c, int side)
+{
+    int rr;
+    int cc;
+    rr = r - 2;
+    if (side == CH_BLACK)
+        rr = 7 - rr;
+    cc = c - 1;
+    if (cc > 3)
+        cc = 7 - cc;
+    return (int)ch_pst[(type - 1) * 32 + rr * 4 + cc] - 50;
+}
 int ch_eval(int side)
 {
     int r;
@@ -842,9 +833,8 @@ int ch_eval(int side)
                 continue;
             type = ch_type(p);
             value = ch_value[type];
-            if (c >= 4 && c <= 5 &&
-                r >= 5 && r <= 6)
-                value = value + 10;
+            value = value +
+                ch_pst_value(type, r, c, ch_color(p));
             if (ch_color(p) == side)
                 score = score + value;
             else
@@ -853,7 +843,6 @@ int ch_eval(int side)
     }
     return score;
 }
-
 int ch_search(int side, int depth,
               int alpha, int beta, int ply)
 {
@@ -865,6 +854,8 @@ int ch_search(int side, int depth,
     int promo;
     int score;
     ch_nodes++;
+    if (ch_halfmove >= 100)
+        return 0;
     if (depth <= 0)
         return ch_eval(side);
     count = ch_gen(side, ply);
@@ -885,12 +876,17 @@ int ch_search(int side, int depth,
         ch_unmake(ply);
         if (score > alpha)
             alpha = score;
-        if (alpha >= beta)
+        if (alpha >= beta) {
+            if (ch_board[to] == CH_EMPTY && promo == 0 &&
+                to != ch_ep) {
+                ch_kfrom[ply] = (unsigned char)from;
+                ch_kto[ply] = (unsigned char)to;
+            }
             return alpha;
+        }
     }
     return alpha;
 }
-
 void ch_prioritize(int ply, int from, int to, int promo)
 {
     int base;
@@ -906,7 +902,6 @@ void ch_prioritize(int ply, int from, int to, int promo)
         }
     }
 }
-
 int ch_find_best(int side)
 {
     int depth;
@@ -965,7 +960,6 @@ int ch_find_best(int side)
     }
     return ch_best_from >= 0;
 }
-
 void ch_define_udg(void)
 {
     int i;
@@ -973,7 +967,6 @@ void ch_define_udg(void)
         udg_define(i, ch_udg + i * 8);
     udg_define(20, ch_blank);
 }
-
 void ch_draw_piece(int br, int bc, int p)
 {
     int type;
@@ -1010,14 +1003,12 @@ void ch_draw_piece(int br, int bc, int p)
     code = ch_piece_tab[pos + 2];
     udg_draw(code - 144, br + 1, bc + 1);
 }
-
 void ch_clear_text(void)
 {
     paper(0);
     ink(7);
     bright(0);
 }
-
 void ch_num(int row, int col, unsigned int value)
 {
     char text[6];
@@ -1031,7 +1022,6 @@ void ch_num(int row, int col, unsigned int value)
     } while (value != 0u);
     print_at(row, col, text + pos);
 }
-
 void ch_score_text(int row, int col, int value)
 {
     if (value < 0) {
@@ -1045,7 +1035,6 @@ void ch_score_text(int row, int col, int value)
                (unsigned int)value);
     }
 }
-
 void ch_draw(void)
 {
     int r;
@@ -1066,7 +1055,7 @@ void ch_draw(void)
     print_at(16, 0, " a   b   c   d   e   f   g   h");
     for (r = 0; r < 8; r++)
         game_putc(r * 2, 32, '8' - r);
-    print_at(0, 34, "ZX-UX 16K CHESS");
+    print_at(0, 34, "ZX-UX Chess");
     if (ch_computer == CH_NOMOVE)
         print_at(2, 34, "Mode: select side");
     else {
@@ -1103,7 +1092,6 @@ void ch_draw(void)
             print_at(20, 17, "illegal ");
     }
 }
-
 int ch_readmove(char *move)
 {
     int key;
@@ -1143,7 +1131,6 @@ int ch_readmove(char *move)
         print_at(22, 0, "Use e2e4; DELETE edits.");
     }
 }
-
 void ch_save_last(char *move, int state)
 {
     int i;
@@ -1152,7 +1139,6 @@ void ch_save_last(char *move, int state)
     ch_last[4] = 0;
     ch_last_state = state;
 }
-
 void ch_save_squares(int from, int to, int state)
 {
     char a[3];
@@ -1166,7 +1152,6 @@ void ch_save_squares(int from, int to, int state)
     ch_last[4] = 0;
     ch_last_state = state;
 }
-
 int ch_select_game(void)
 {
     int key;
@@ -1200,7 +1185,6 @@ int ch_select_game(void)
         }
     }
 }
-
 int ch_game_over(void)
 {
     if (ch_halfmove >= 100) {
@@ -1221,7 +1205,6 @@ int ch_game_over(void)
         ch_turns++;
     return 1;
 }
-
 void ch_cpu_move(void)
 {
     ch_clear_text();
@@ -1234,7 +1217,6 @@ void ch_cpu_move(void)
     ch_side = ch_side ^ CH_BLACK;
     ch_turns++;
 }
-
 int main(void)
 {
     int rc;
