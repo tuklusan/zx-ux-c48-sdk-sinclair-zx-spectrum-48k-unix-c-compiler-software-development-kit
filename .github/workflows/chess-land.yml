@@ -24,25 +24,39 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Restore certified chess delta and screenshot
+      - name: Restore and verify certified chess payload
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git hash-object usr/src/games/chess.c)" =             "fb8e934768fe7d452fda009cf00cce0e3a813667"
-          printf '%s' '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' | base64 -d > /tmp/chess-delta.tar.xz
-          printf '%s  %s\n'             59207eec2e1d0a4787bee3b957a1b775f4fd91c66ad21a41837e2fe557a8842b             /tmp/chess-delta.tar.xz | sha256sum -c -
-          tar -xJf /tmp/chess-delta.tar.xz -C /tmp
-          git apply --check /tmp/chess.patch
-          git apply /tmp/chess.patch
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+          test "$(git hash-object usr/src/games/chess.c)" = "fb8e934768fe7d452fda009cf00cce0e3a813667"
+          test "$(git hash-object .github/chess-payload.b64)" = "cd96fa764cd25a3934576985368dc16722a348a1"
+          rm -rf /tmp/chess-delta
+          mkdir -p /tmp/chess-delta
+          base64 -d .github/chess-payload.b64 > /tmp/chess-delta/payload.tar.xz
+          printf '%s  %s\n' \
+            59207eec2e1d0a4787bee3b957a1b775f4fd91c66ad21a41837e2fe557a8842b \
+            /tmp/chess-delta/payload.tar.xz | sha256sum -c -
+          tar -tJf /tmp/chess-delta/payload.tar.xz | sort > /tmp/chess-members
+          printf '%s\n' chess.patch chess.png > /tmp/chess-expected-members
+          diff -u /tmp/chess-expected-members /tmp/chess-members
+          tar -xJf /tmp/chess-delta/payload.tar.xz -C /tmp/chess-delta
+          printf '%s  %s\n' \
+            090772271d567c3a0e891d22fe924b151e60858f24c53875508c9e5465dff637 \
+            /tmp/chess-delta/chess.patch | sha256sum -c -
+          printf '%s  %s\n' \
+            edd55c6372e3f3437588ddeb075a7788a8f8622ad62c2c30247bbb9e4b6ae8c8 \
+            /tmp/chess-delta/chess.png | sha256sum -c -
+          git apply --check /tmp/chess-delta/chess.patch
+          git apply /tmp/chess-delta/chess.patch
           mkdir -p docs/images/games
-          cp /tmp/chess.png docs/images/games/chess.png
-          printf '%s  %s\n'             dbbb87a39a9c68427e40ffc64c3e24e7148fe19e4f72c7a337382a78f3d505d6             usr/src/games/chess.c | sha256sum -c -
-          printf '%s  %s\n'             edd55c6372e3f3437588ddeb075a7788a8f8622ad62c2c30247bbb9e4b6ae8c8             docs/images/games/chess.png | sha256sum -c -
+          cp /tmp/chess-delta/chess.png docs/images/games/chess.png
+          printf '%s  %s\n' \
+            dbbb87a39a9c68427e40ffc64c3e24e7148fe19e4f72c7a337382a78f3d505d6 \
+            usr/src/games/chess.c | sha256sum -c -
+          printf '%s  %s\n' \
+            edd55c6372e3f3437588ddeb075a7788a8f8622ad62c2c30247bbb9e4b6ae8c8 \
+            docs/images/games/chess.png | sha256sum -c -
           test "$(wc -c < usr/src/games/chess.c)" -eq 32766
           test "$(wc -c < docs/images/games/chess.png)" -eq 2160
 
@@ -51,22 +65,34 @@ jobs:
         run: |
           set -euo pipefail
           ./c48 usr/src/games/chess.c -o usr/bin/games/chess.c48b
-          printf '%s  %s\n'             8f5545b93bc4ad5499117bcd6a558484e8fc1ec9ba391e706000505f860d12af             usr/bin/games/chess.c48b | sha256sum -c -
+          printf '%s  %s\n' \
+            8f5545b93bc4ad5499117bcd6a558484e8fc1ec9ba391e706000505f860d12af \
+            usr/bin/games/chess.c48b | sha256sum -c -
           test "$(wc -c < usr/bin/games/chess.c48b)" -eq 683249
 
-      - name: Commit exactly the chess artifacts and self-remove
+      - name: Commit exactly the chess artifacts
         shell: bash
         run: |
           set -euo pipefail
           git lfs install --local --force
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          rm .github/workflows/chess-land.yml
-          git add usr/src/games/chess.c             usr/bin/games/chess.c48b             docs/images/games/chess.png             .github/workflows/chess-land.yml
-          printf '%s\n'             '.github/workflows/chess-land.yml'             'docs/images/games/chess.png'             'usr/bin/games/chess.c48b'             'usr/src/games/chess.c' > /tmp/expected-paths
+          rm .github/chess-payload.b64
+          git add \
+            .github/chess-payload.b64 \
+            docs/images/games/chess.png \
+            usr/bin/games/chess.c48b \
+            usr/src/games/chess.c
+          printf '%s\n' \
+            '.github/chess-payload.b64' \
+            'docs/images/games/chess.png' \
+            'usr/bin/games/chess.c48b' \
+            'usr/src/games/chess.c' > /tmp/expected-paths
           git diff --cached --name-only | sort > /tmp/staged-paths
           diff -u /tmp/expected-paths /tmp/staged-paths
           git diff --cached --check
+          test -z "$(git diff --name-only)"
+          test -z "$(git ls-files --others --exclude-standard)"
           git show :docs/images/games/chess.png > /tmp/chess-pointer
           grep -Fx 'version https://git-lfs.github.com/spec/v1' /tmp/chess-pointer
           grep -Fx 'oid sha256:edd55c6372e3f3437588ddeb075a7788a8f8622ad62c2c30247bbb9e4b6ae8c8' /tmp/chess-pointer
