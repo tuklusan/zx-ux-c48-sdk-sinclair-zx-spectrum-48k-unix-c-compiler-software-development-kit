@@ -1,0 +1,56 @@
+name: Chess payload repair
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/chess-fix-payload.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: chess-one-off-landing-main
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out exact repair staging commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Repair exactly one payload byte and self-remove
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object .github/workflows/chess-land.yml)" = "109b952641986027d6ff8d1c75a156922d31772c"
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('.github/workflows/chess-land.yml')
+          s = p.read_text()
+          old = 'yoiresyx'
+          new = 'yiresyx'
+          if s.count(old) != 1:
+              raise SystemExit('expected exactly one bad payload sequence')
+          s = s.replace(old, new)
+          if old in s or s.count(new) != 1:
+              raise SystemExit('payload repair postcondition failed')
+          p.write_text(s)
+          PY
+          test "$(git hash-object .github/workflows/chess-land.yml)" = "7170b46cb670d694ae3b51b5e11643df4d0f8e11"
+          rm .github/workflows/chess-fix-payload.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/workflows/chess-land.yml .github/workflows/chess-fix-payload.yml
+          printf '%s\n' '.github/workflows/chess-fix-payload.yml' '.github/workflows/chess-land.yml' > /tmp/expected
+          git diff --cached --name-only | sort > /tmp/staged
+          diff -u /tmp/expected /tmp/staged
+          git diff --cached --check
+          git commit -m "Repair chess landing payload"
+          git fetch origin main
+          test "$(git rev-parse HEAD^)" = "$(git rev-parse origin/main)"
+          git push origin HEAD:main
