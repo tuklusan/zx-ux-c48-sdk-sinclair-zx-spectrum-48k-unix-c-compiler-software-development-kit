@@ -648,7 +648,7 @@ int ch_legal(int from, int to, int side, int apply)
     return ch_legal_prom(from, to, CH_QUEEN, side, apply);
 }
 
-int ch_capture_score(int from, int to, int promo,
+int ch_cap_score(int from, int to, int promo,
                      int side)
 {
     int target;
@@ -688,7 +688,7 @@ void ch_store_move(int from, int to, int promo,
     ch_mto[base] = (unsigned char)to;
     ch_mpromo[base] = (unsigned char)promo;
     ch_mscore[base] =
-        (unsigned char)ch_capture_score(from, to, promo, side);
+        (unsigned char)ch_cap_score(from, to, promo, side);
     ch_mcount[ply] = count + 1;
 }
 
@@ -1071,7 +1071,10 @@ void ch_draw(void)
         print_at(2, 34, "Mode: select side");
     else {
         print_at(2, 34, "Computer:");
-        side_text[0] = ch_computer ? 'B' : 'W';
+        if (ch_computer == CH_BLACK)
+            side_text[0] = 'B';
+        else
+            side_text[0] = 'W';
         side_text[1] = 0;
         print_at(2, 44, side_text);
         print_at(3, 34, "Look ahead:");
@@ -1219,7 +1222,7 @@ int ch_game_over(void)
     return 1;
 }
 
-void ch_computer_move(void)
+void ch_cpu_move(void)
 {
     ch_clear_text();
     print_at(22, 0, "Thinking...");
@@ -1250,7 +1253,7 @@ int main(void)
         if (ch_game_over())
             return 0;
         if (ch_computer == ch_side) {
-            ch_computer_move();
+            ch_cpu_move();
             continue;
         }
         rc = ch_readmove(move);
