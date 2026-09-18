@@ -78,8 +78,8 @@
       "binary_sha256": "18ca859d729aa7d5a8508f523031f30eaec3ff165a32f78804790d11a3a57944"
     },
     "chess": {
-      "source_sha256": "5c25889b2150d0b2373d88b59acb26c48edf24bf1797da9c0c23fe78920665cc",
-      "binary_sha256": "d9a070e46e0c51c8a4f24552fa27d5b8fef787e347ddced16515b7f07769220f"
+      "source_sha256": "dbbb87a39a9c68427e40ffc64c3e24e7148fe19e4f72c7a337382a78f3d505d6",
+      "binary_sha256": "8f5545b93bc4ad5499117bcd6a558484e8fc1ec9ba391e706000505f860d12af"
     },
     "cribbage": {
       "source_sha256": "0422ec93afb652636845129a507dd83d29f2458961ac5f41abda814905be3a8c",
