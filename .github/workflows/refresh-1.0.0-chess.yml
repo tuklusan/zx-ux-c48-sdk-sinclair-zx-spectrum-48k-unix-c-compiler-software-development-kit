@@ -28,22 +28,20 @@ permissions:
 
 env:
   BASE_COMMIT: 41d130e489638dd07ba3305eea41517e0ec3b32f
-  TARGET_COMMIT: 8283e5ae4dcf2833257884658ff8de6af238fdd2
-  CHESS_SOURCE_COMMIT: 53ccbf76e891ed411193aa05ada12c35e3a04b75
+  TARGET_COMMIT: 76cd18d0db82f987a675bd1ccf78ff25103a3612
+  TARGET_TREE: 5720940a39e82d1cb8297070eec4c8049e99ae8f
   FINAL_TAG: 1.0.0
   TEMP_TAG: _release-refresh-1.0.0-chess
   OLD_MAIN_ASSET: zx-ux-c48-sdk-1.0.0-RC5-41d130e489638dd07ba3305eea41517e0ec3b32f.zip
-  OLD_GUI_ASSET: c48-1.0.0-RC5-gui-evidence-41d130e489638dd07ba3305eea41517e0ec3b32f.zip
-  OLD_METADATA_ASSET: RC5-RELEASE-METADATA.json
-  OLD_SUMS_ASSET: SHA256SUMS-1.0.0-RC5.txt
-  MAIN_ASSET: zx-ux-c48-sdk-1.0.0-8283e5ae4dcf2833257884658ff8de6af238fdd2.zip
+  GUI_ASSET: c48-1.0.0-RC5-gui-evidence-41d130e489638dd07ba3305eea41517e0ec3b32f.zip
+  MAIN_ASSET: zx-ux-c48-sdk-1.0.0-76cd18d0db82f987a675bd1ccf78ff25103a3612.zip
   METADATA_ASSET: RELEASE-METADATA-1.0.0.json
   SUMS_ASSET: SHA256SUMS-1.0.0.txt
 
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - name: Check out main tooling
         uses: actions/checkout@v4
@@ -58,45 +56,128 @@ jobs:
         run: |
           set -euo pipefail
           current="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${FINAL_TAG}" --jq .object.sha)"
-          test "${current}" = "${BASE_COMMIT}"
+          case "${current}" in
+            "${BASE_COMMIT}"|"${TARGET_COMMIT}") ;;
+            *) echo "unexpected 1.0.0 tag target: ${current}" >&2; exit 1 ;;
+          esac
           gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/${TEMP_TAG}" >/dev/null 2>&1 || true
           gh api --method POST "repos/${GITHUB_REPOSITORY}/git/refs"             -f ref="refs/tags/${TEMP_TAG}" -f sha="${TARGET_COMMIT}" >/dev/null
           git fetch --force origin "refs/tags/${TEMP_TAG}:refs/tags/${TEMP_TAG}"
           git checkout --detach "${TEMP_TAG}"
           git lfs pull
           test "$(git rev-parse HEAD)" = "${TARGET_COMMIT}"
+          test "$(git rev-parse HEAD^{tree})" = "${TARGET_TREE}"
 
-      - name: Prove release-tree scope and chess reproducibility
+      - name: Prove exact release-tree scope and chess reproducibility
         shell: bash
         run: |
           set -euo pipefail
-          printf '%s\n'             usr/bin/games/chess.c48b             usr/src/games/chess.c > expected-files.txt
+          printf '%s\n'             compiler/release_expectations.json             usr/bin/games/chess.c48b             usr/src/games/chess.c > expected-files.txt
           git diff --name-only "${BASE_COMMIT}" "${TARGET_COMMIT}" | sort > actual-files.txt
           diff -u expected-files.txt actual-files.txt
-          cmp usr/src/games/chess.c <(git show "${CHESS_SOURCE_COMMIT}:usr/src/games/chess.c")
-          cmp usr/bin/games/chess.c48b <(git show "${CHESS_SOURCE_COMMIT}:usr/bin/games/chess.c48b")
+
+          python3 - <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          src = sha("usr/src/games/chess.c")
+          binary = sha("usr/bin/games/chess.c48b")
+          expect = json.loads(Path("compiler/release_expectations.json").read_text())
+          chess = expect["games"]["chess"]
+          if chess["source_sha256"] != src:
+              raise SystemExit("chess source expectation mismatch")
+          if chess["binary_sha256"] != binary:
+              raise SystemExit("chess binary expectation mismatch")
+          print(f"chess source sha256={src}")
+          print(f"chess binary sha256={binary}")
+          PY
+
           python3 -B compiler/c48.py usr/src/games/chess.c -o rebuilt-chess.c48b
           cmp rebuilt-chess.c48b usr/bin/games/chess.c48b
+          rm rebuilt-chess.c48b
 
-      - name: Capture current published release assets
+      - name: Capture current published 1.0.0 bytes
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           mkdir -p prior
-          gh release download "${FINAL_TAG}" --repo "${GITHUB_REPOSITORY}"             --pattern "${OLD_MAIN_ASSET}" --pattern "${OLD_GUI_ASSET}" --dir prior
+          gh release download "${FINAL_TAG}" --repo "${GITHUB_REPOSITORY}"             --pattern "${OLD_MAIN_ASSET}"             --pattern "${GUI_ASSET}"             --dir prior
           test -s "prior/${OLD_MAIN_ASSET}"
-          test -s "prior/${OLD_GUI_ASSET}"
+          test -s "prior/${GUI_ASSET}"
 
-      - name: Build refreshed full release package
+      - name: Patch only chess payload and integrity metadata into full release
         shell: bash
         run: |
           set -euo pipefail
-          python3 -B compiler/build_release_candidate.py             --archive "${MAIN_ASSET}"             --prefix "zx-ux-c48-sdk-1.0.0/"             --provenance-out C48-SPECIFICATION.json
-          test -s "${MAIN_ASSET}"
+          python3 - <<'PY'
+          import hashlib
+          from pathlib import Path, PurePosixPath
+          import zipfile
 
-      - name: Three independent byte scans against previous release
+          old_path = Path("prior") / Path(__import__("os").environ["OLD_MAIN_ASSET"])
+          new_path = Path(__import__("os").environ["MAIN_ASSET"])
+          replacements = {
+              "compiler/release_expectations.json": Path("compiler/release_expectations.json").read_bytes(),
+              "usr/bin/games/chess.c48b": Path("usr/bin/games/chess.c48b").read_bytes(),
+              "usr/src/games/chess.c": Path("usr/src/games/chess.c").read_bytes(),
+          }
+
+          with zipfile.ZipFile(old_path, "r") as old:
+              infos = old.infolist()
+              files = [i for i in infos if not i.is_dir()]
+              roots = {PurePosixPath(i.filename).parts[0] for i in files}
+              if len(roots) != 1:
+                  raise SystemExit(f"old release ZIP root mismatch: {sorted(roots)}")
+              root = next(iter(roots)) + "/"
+              data = {i.filename: old.read(i.filename) for i in files}
+
+              for rel, payload in replacements.items():
+                  full = root + rel
+                  if full not in data:
+                      raise SystemExit(f"old release lacks {rel}")
+                  data[full] = payload
+
+              manifest_name = root + "MANIFEST.sha256"
+              if manifest_name not in data:
+                  raise SystemExit("old release lacks MANIFEST.sha256")
+
+              members = {}
+              for full, payload in data.items():
+                  if full == manifest_name:
+                      continue
+                  if not full.startswith(root):
+                      raise SystemExit(f"member outside release root: {full}")
+                  rel = full[len(root):]
+                  members[rel] = hashlib.sha256(payload).hexdigest()
+              data[manifest_name] = "".join(
+                  f"{digest}  {rel}\n"
+                  for rel, digest in sorted(members.items())
+              ).encode("ascii")
+
+              with zipfile.ZipFile(
+                  new_path,
+                  "w",
+                  compression=zipfile.ZIP_DEFLATED,
+                  compresslevel=9,
+              ) as new:
+                  for info in infos:
+                      if info.is_dir():
+                          new.writestr(info, b"")
+                      else:
+                          new.writestr(info, data[info.filename])
+
+          if not new_path.is_file() or new_path.stat().st_size == 0:
+              raise SystemExit("refreshed release ZIP was not created")
+          print(f"built {new_path}")
+          PY
+
+      - name: Three successive extracted-byte scans
         shell: bash
         run: |
           set -euo pipefail
@@ -115,24 +196,39 @@ jobs:
           if len(old_top) != 1 or len(new_top) != 1:
               raise SystemExit("archive root count mismatch")
 
-          def payload(root: Path):
-              out = {}
-              for path in sorted(x for x in root.rglob("*") if x.is_file()):
-                  out[path.relative_to(root).as_posix()] = path.read_bytes()
-              return out
+          def payload(root):
+              return {
+                  path.relative_to(root).as_posix(): path.read_bytes()
+                  for path in sorted(x for x in root.rglob("*") if x.is_file())
+              }
 
           old = payload(old_top[0])
           new = payload(new_top[0])
           if set(old) != set(new):
-              missing = sorted(set(old) - set(new))
-              added = sorted(set(new) - set(old))
-              raise SystemExit(f"file-set mismatch missing={missing} added={added}")
+              raise SystemExit(
+                  "file-set mismatch "
+                  f"missing={sorted(set(old)-set(new))} "
+                  f"added={sorted(set(new)-set(old))}"
+              )
 
           changed = sorted(k for k in old if old[k] != new[k])
-          expected = ["usr/bin/games/chess.c48b", "usr/src/games/chess.c"]
+          expected = sorted([
+              "MANIFEST.sha256",
+              "compiler/release_expectations.json",
+              "usr/bin/games/chess.c48b",
+              "usr/src/games/chess.c",
+          ])
           if changed != expected:
               raise SystemExit(f"unexpected payload changes: {changed}")
-          print(f"byte scan {p}: exactly the two chess payload files differ")
+
+          for rel in (
+              "C48-SPECIFICATION.json",
+              "docs/04-C48 Language Specification Rev 0.11.docx",
+          ):
+              if rel not in old or old[rel] != new[rel]:
+                  raise SystemExit(f"canonical specification drifted: {rel}")
+
+          print(f"byte scan {p}: zero unexpected changes")
           PY
           done
 
@@ -150,86 +246,127 @@ jobs:
           python3 -B compiler/c48.py usr/src/games/chess.c -o /tmp/chess-release-check.c48b
           cmp /tmp/chess-release-check.c48b usr/bin/games/chess.c48b
 
-      - name: Prepare final metadata and checksums
+      - name: Prepare release metadata and checksums
         shell: bash
         env:
           RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
           MAIN_SHA="$(sha256sum "${MAIN_ASSET}" | awk '{print $1}')"
-          GUI_SHA="$(sha256sum "prior/${OLD_GUI_ASSET}" | awk '{print $1}')"
+          GUI_SHA="$(sha256sum "prior/${GUI_ASSET}" | awk '{print $1}')"
           export MAIN_SHA GUI_SHA
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          metadata = {
+              "schema": 2,
+              "release": "1.0.0",
+              "release_commit": os.environ["TARGET_COMMIT"],
+              "release_tree": os.environ["TARGET_TREE"],
+              "previous_release_commit": os.environ["BASE_COMMIT"],
+              "functional_change": "finalized ZX-UX Chess game",
+              "tracked_release_delta": [
+                  "compiler/release_expectations.json",
+                  "usr/bin/games/chess.c48b",
+                  "usr/src/games/chess.c",
+              ],
+              "package_integrity_delta": ["MANIFEST.sha256"],
+              "verification": {
+                  "workflow_run": int(os.environ["RUN_ID"]),
+                  "successive_extracted_byte_scans": 3,
+                  "chess_recompiled_byte_identical": True,
+                  "virgin_package_verify_release": True,
+                  "canonical_c48_spec_preserved_byte_identical": True,
+              },
+              "assets": {
+                  os.environ["MAIN_ASSET"]: os.environ["MAIN_SHA"],
+                  os.environ["GUI_ASSET"]: os.environ["GUI_SHA"],
+              },
+          }
+          Path(os.environ["METADATA_ASSET"]).write_text(
+              json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+              encoding="ascii",
+              newline="\n",
+          )
+          PY
+          META_SHA="$(sha256sum "${METADATA_ASSET}" | awk '{print $1}')"
+          {
+            printf '%s  %s\n' "${MAIN_SHA}" "${MAIN_ASSET}"
+            printf '%s  %s\n' "${GUI_SHA}" "${GUI_ASSET}"
+            printf '%s  %s\n' "${META_SHA}" "${METADATA_ASSET}"
+          } > "${SUMS_ASSET}"
+
+      - name: Upload and verify refreshed release assets before retagging
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh release upload "${FINAL_TAG}"             "${MAIN_ASSET}" "${METADATA_ASSET}" "${SUMS_ASSET}"             --repo "${GITHUB_REPOSITORY}" --clobber
+
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}" > staged-release.json
           python3 - <<'PY'
           import hashlib
           import json
           import os
           from pathlib import Path
 
-          data = {
-              "schema": 2,
-              "release": "1.0.0",
-              "release_commit": os.environ["TARGET_COMMIT"],
-              "previous_release_commit": os.environ["BASE_COMMIT"],
-              "release_tree": "7629dc0da0e9f63e84d24e7025b803652384da73",
-              "change_scope": [
-                  "usr/src/games/chess.c",
-                  "usr/bin/games/chess.c48b",
-              ],
-              "chess_source_commit": os.environ["CHESS_SOURCE_COMMIT"],
-              "verification": {
-                  "workflow_run": int(os.environ["RUN_ID"]),
-                  "package_byte_scans": 3,
-                  "chess_recompiled_byte_identical": True,
-                  "virgin_package_verify_release": True,
-              },
-              "assets": {
-                  os.environ["MAIN_ASSET"]: os.environ["MAIN_SHA"],
-                  os.environ["OLD_GUI_ASSET"]: os.environ["GUI_SHA"],
-              },
-          }
-          raw = (json.dumps(data, indent=2, sort_keys=True) + "\n").encode("ascii")
-          Path(os.environ["METADATA_ASSET"]).write_bytes(raw)
+          release = json.loads(Path("staged-release.json").read_text())
+          assets = {x["name"]: x for x in release.get("assets", [])}
+          for name in (
+              os.environ["MAIN_ASSET"],
+              os.environ["METADATA_ASSET"],
+              os.environ["SUMS_ASSET"],
+              os.environ["GUI_ASSET"],
+          ):
+              if name not in assets:
+                  raise SystemExit(f"staged release lacks {name}")
+          for name in (
+              os.environ["MAIN_ASSET"],
+              os.environ["METADATA_ASSET"],
+              os.environ["SUMS_ASSET"],
+          ):
+              local = hashlib.sha256(Path(name).read_bytes()).hexdigest()
+              remote = str(assets[name].get("digest") or "")
+              if remote and remote != f"sha256:{local}":
+                  raise SystemExit(f"published digest mismatch for {name}")
           PY
-          META_SHA="$(sha256sum "${METADATA_ASSET}" | awk '{print $1}')"
-          {
-            printf '%s  %s\n' "${MAIN_SHA}" "${MAIN_ASSET}"
-            printf '%s  %s\n' "${GUI_SHA}" "${OLD_GUI_ASSET}"
-            printf '%s  %s\n' "${META_SHA}" "${METADATA_ASSET}"
-          } > "${SUMS_ASSET}"
 
-      - name: Publish refreshed 1.0.0 in place
+      - name: Move 1.0.0 tag and update published release
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          gh release upload "${FINAL_TAG}"             "${MAIN_ASSET}"             "${METADATA_ASSET}"             "${SUMS_ASSET}"             --repo "${GITHUB_REPOSITORY}"
-
           gh api --method PATCH             "repos/${GITHUB_REPOSITORY}/git/refs/tags/${FINAL_TAG}"             -f sha="${TARGET_COMMIT}" -F force=true >/dev/null
 
           cat > release-notes.md <<EOF
           # C48 SDK 1.0.0
 
-          This refreshed **1.0.0** release contains the finalized ZX-UX Chess game while keeping the rest of the previous 1.0.0 release tree unchanged.
+          This refreshed **1.0.0** publication contains the finalized **ZX-UX Chess** game. The compiler, runtime, documentation, canonical C48 language specification, and every other packaged program remain byte-identical to the previous 1.0.0 package.
 
-          Relative to the previous 1.0.0 release commit \`${BASE_COMMIT}\`, exactly two tracked payload files changed:
+          The functional release change is:
 
           - \`usr/src/games/chess.c\`
           - \`usr/bin/games/chess.c48b\`
 
-          The C48B1 chess executable was rebuilt from the updated source with the 1.0.0 compiler and compared byte-for-byte with the committed executable. Three independent extracted-package byte scans confirmed that no other packaged file changed.
+          \`compiler/release_expectations.json\` changes only the two SHA-256 values required to certify the refreshed chess source and executable. \`MANIFEST.sha256\` is regenerated package integrity metadata.
+
+          The chess executable was rebuilt from the released source with the 1.0.0 compiler and matched byte-for-byte. Three successive extracted-package scans found no unexpected changes, and the complete virgin release package passed \`compiler/verify_release.py\`.
 
           **Release commit:** \`${TARGET_COMMIT}\`
 
           **Main package:** \`${MAIN_ASSET}\`
 
-          The GUI evidence asset is retained byte-for-byte from the prior certified 1.0.0 publication because no GUI evidence payload changed. Updated release metadata and SHA-256 checksums are included.
+          The GUI evidence asset is retained byte-for-byte from the prior certified 1.0.0 publication because no GUI evidence changed.
 
           ## Install
 
           Requires Python 3.10 or newer. Extract the main package and use \`c48\` / \`c48run\` on Windows or \`./c48\` / \`./c48run\` on Linux/macOS.
 
-          To use the exact GitHub release tree:
+          To use the exact release tree:
 
           \`\`\`sh
           git clone https://github.com/${GITHUB_REPOSITORY}.git
@@ -242,10 +379,48 @@ jobs:
           body="$(cat release-notes.md)"
           gh api --method PATCH "repos/${GITHUB_REPOSITORY}/releases/${release_id}"             -f tag_name="${FINAL_TAG}"             -f target_commitish="${TARGET_COMMIT}"             -f name="C48 SDK 1.0.0"             -f body="${body}"             -F draft=false             -F prerelease=false             -f make_latest=true >/dev/null
 
+      - name: Verify new publication before removing superseded assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          resolved="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${FINAL_TAG}" --jq .object.sha)"
+          test "${resolved}" = "${TARGET_COMMIT}"
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}" > published-before-cleanup.json
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          r = json.loads(Path("published-before-cleanup.json").read_text())
+          if r.get("draft") or r.get("prerelease"):
+              raise SystemExit("1.0.0 is not a normal published release")
+          if r.get("target_commitish") != os.environ["TARGET_COMMIT"]:
+              raise SystemExit("release target mismatch")
+          names = {x["name"] for x in r.get("assets", [])}
+          required = {
+              os.environ["MAIN_ASSET"],
+              os.environ["GUI_ASSET"],
+              os.environ["METADATA_ASSET"],
+              os.environ["SUMS_ASSET"],
+          }
+          if not required.issubset(names):
+              raise SystemExit(f"release missing required assets: {sorted(required-names)}")
+          print("refreshed publication verified before cleanup")
+          PY
+
+      - name: Remove superseded release assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}" --jq .id)"
           gh api "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?per_page=100"             --paginate --jq '.[] | [.id,.name] | @tsv' > assets.tsv
           while IFS=$'\t' read -r id name; do
             case "${name}" in
-              "${MAIN_ASSET}"|"${OLD_GUI_ASSET}"|"${METADATA_ASSET}"|"${SUMS_ASSET}")
+              "${MAIN_ASSET}"|"${GUI_ASSET}"|"${METADATA_ASSET}"|"${SUMS_ASSET}")
                 ;;
               *)
                 gh api --method DELETE "repos/${GITHUB_REPOSITORY}/releases/assets/${id}"
@@ -253,7 +428,7 @@ jobs:
             esac
           done < assets.tsv
 
-      - name: Post-publish verification
+      - name: Final post-publish zero-defect verification
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -274,14 +449,14 @@ jobs:
               raise SystemExit("release target mismatch")
           expected = {
               os.environ["MAIN_ASSET"],
-              os.environ["OLD_GUI_ASSET"],
+              os.environ["GUI_ASSET"],
               os.environ["METADATA_ASSET"],
               os.environ["SUMS_ASSET"],
           }
           actual = {x["name"] for x in r.get("assets", [])}
           if actual != expected:
               raise SystemExit(f"release asset set mismatch: {sorted(actual)}")
-          print("published 1.0.0 is exact and complete")
+          print("FINAL VERIFY PASS: refreshed 1.0.0 is exact and complete")
           PY
 
       - name: Remove temporary tag
