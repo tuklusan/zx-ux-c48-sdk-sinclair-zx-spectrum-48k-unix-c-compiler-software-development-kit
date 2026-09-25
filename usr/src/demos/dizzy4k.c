@@ -2,7 +2,7 @@
  * Dizzy 4K Intro - C48 port/reconstruction.
  * Original ZX Spectrum 4K intro by SerzhSoft, Funtop 1998.
  * Public tape archive:
- * https://www.planetemu.net/rom/sinclair-zx-spectrum-demos-tap/dizzy-4k-intro-1998-04-serzhsoft-ru-en-funtop
+ * https://bbb.retroscene.org/prods.php?py=16&y=1998
  *
  * This source is a C48 port of the original Dizzy 4K demo.
  * The original demo remains the work of SerzhSoft.
@@ -150,8 +150,10 @@ void biozoid_scene(int n)
         cls();
         print_at(0, 10, "BIOZOIDS");
         for (i = 0; i < 9; i++) {
-            x = 128 + d_sin(f * 9 + i * 28) * (35 + (i & 3) * 9) / 128;
-            y = 96 + d_cos(f * 7 + i * 37) * (24 + (i & 1) * 18) / 128;
+            x = 128 + d_sin(f * 9 + i * 28) *
+                (35 + (i & 3) * 9) / 128;
+            y = 96 + d_cos(f * 7 + i * 37) *
+                (24 + (i & 1) * 18) / 128;
             r = 3 + ((i + f) & 7);
             biozoid(x, y, r, 1 + (i % 7));
         }
