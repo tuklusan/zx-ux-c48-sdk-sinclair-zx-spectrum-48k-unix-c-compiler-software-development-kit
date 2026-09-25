@@ -1,0 +1,289 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms.
+# ============================================================================
+name: Publish Dizzy 4K full release
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-dizzy4k-1.0.0.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+env:
+  TARGET_SHA: ee78ba626e3880bdca95d08278b3cd82245cc7a1
+  TEMP_TAG: _dizzy4k-release-target
+  RC_TAG: 1.0.0-RC5
+  FINAL_TAG: 1.0.0
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - name: Dispatch exact-target recertification
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method DELETE             "repos/${GITHUB_REPOSITORY}/git/refs/tags/${TEMP_TAG}"             >/dev/null 2>&1 || true
+          gh api --method POST             "repos/${GITHUB_REPOSITORY}/git/refs"             -f ref="refs/tags/${TEMP_TAG}"             -f sha="${TARGET_SHA}" >/dev/null
+          gh api --method POST             "repos/${GITHUB_REPOSITORY}/actions/workflows/release-recertify.yml/dispatches"             -f ref="${TEMP_TAG}" >/dev/null
+
+      - name: Wait for exact-target recertification
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import time
+          import urllib.request
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          target = os.environ["TARGET_SHA"]
+          token = os.environ["GH_TOKEN"]
+          url = (
+              f"https://api.github.com/repos/{repo}/actions/workflows/"
+              f"release-recertify.yml/runs?head_sha={target}"
+              "&event=workflow_dispatch&per_page=20"
+          )
+          headers = {
+              "Accept": "application/vnd.github+json",
+              "Authorization": f"Bearer {token}",
+              "User-Agent": "zx-ux-c48-release-finalizer",
+              "X-GitHub-Api-Version": "2022-11-28",
+          }
+          deadline = time.monotonic() + 5 * 60 * 60
+          while time.monotonic() < deadline:
+              request = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  data = json.load(response)
+              runs = [
+                  item for item in data.get("workflow_runs", [])
+                  if item.get("head_sha") == target
+                  and item.get("event") == "workflow_dispatch"
+              ]
+              runs.sort(
+                  key=lambda item: int(item.get("run_number", 0)),
+                  reverse=True,
+              )
+              if runs:
+                  run = runs[0]
+                  run_id = int(run["id"])
+                  status = str(run.get("status", ""))
+                  conclusion = run.get("conclusion")
+                  print(
+                      f"recertification run={run_id} "
+                      f"status={status} conclusion={conclusion}",
+                      flush=True,
+                  )
+                  if status == "completed":
+                      if conclusion != "success":
+                          raise SystemExit(
+                              f"recertification failed: {conclusion}"
+                          )
+                      Path("recertify-run.txt").write_text(
+                          f"{run_id}\n", encoding="ascii"
+                      )
+                      break
+              else:
+                  print("waiting for recertification run", flush=True)
+              time.sleep(20)
+          else:
+              raise SystemExit("timed out waiting for recertification")
+          PY
+
+      - name: Download certified prerelease bytes
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          resolved="$(gh api             "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RC_TAG}"             --jq .object.sha)"
+          test "${resolved}" = "${TARGET_SHA}"
+
+          MAIN_RC="zx-ux-c48-sdk-${RC_TAG}-${TARGET_SHA}.zip"
+          GUI_RC="c48-${RC_TAG}-gui-evidence-${TARGET_SHA}.zip"
+          mkdir -p rc
+          gh release download "${RC_TAG}"             --repo "${GITHUB_REPOSITORY}"             --pattern "${MAIN_RC}"             --pattern "${GUI_RC}"             --pattern "RC5-RELEASE-METADATA.json"             --pattern "SHA256SUMS-${RC_TAG}.txt"             --dir rc
+          test -s "rc/${MAIN_RC}"
+          test -s "rc/${GUI_RC}"
+          test -s "rc/RC5-RELEASE-METADATA.json"
+          test -s "rc/SHA256SUMS-${RC_TAG}.txt"
+
+      - name: Prepare final release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          MAIN_RC="zx-ux-c48-sdk-${RC_TAG}-${TARGET_SHA}.zip"
+          GUI_RC="c48-${RC_TAG}-gui-evidence-${TARGET_SHA}.zip"
+          MAIN_FINAL="zx-ux-c48-sdk-${FINAL_TAG}-${TARGET_SHA}.zip"
+          GUI_FINAL="c48-${FINAL_TAG}-gui-evidence-${TARGET_SHA}.zip"
+          cp "rc/${MAIN_RC}" "${MAIN_FINAL}"
+          cp "rc/${GUI_RC}" "${GUI_FINAL}"
+
+          MAIN_FINAL="${MAIN_FINAL}" GUI_FINAL="${GUI_FINAL}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          run_id = int(
+              Path("recertify-run.txt").read_text(encoding="ascii").strip()
+          )
+          metadata = {
+              "schema": 3,
+              "release": os.environ["FINAL_TAG"],
+              "release_commit": os.environ["TARGET_SHA"],
+              "source_prerelease": os.environ["RC_TAG"],
+              "recertification_run": run_id,
+              "graphics_demo_count": 22,
+              "feature": "Dizzy 4K C48 port and certified hero-phase capture",
+              "assets": {
+                  os.environ["MAIN_FINAL"]: sha(os.environ["MAIN_FINAL"]),
+                  os.environ["GUI_FINAL"]: sha(os.environ["GUI_FINAL"]),
+              },
+          }
+          Path("RELEASE-METADATA-1.0.0.json").write_text(
+              json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+              encoding="ascii",
+              newline="\n",
+          )
+          PY
+
+          META="RELEASE-METADATA-1.0.0.json"
+          SUMS="SHA256SUMS-1.0.0.txt"
+          {
+            sha256sum "${MAIN_FINAL}"
+            sha256sum "${GUI_FINAL}"
+            sha256sum "${META}"
+          } > "${SUMS}"
+
+          cat > release-notes.md <<EOF
+          # C48 SDK 1.0.0
+
+          This refreshed full **1.0.0** release adds the certified
+          **Dizzy 4K C48 port** of SerzhSoft's 1998 Funtop intro.
+
+          Included in this release:
+
+          - C48 source: `usr/src/demos/dizzy4k.c`
+          - C48B1 program: `usr/bin/demos/dizzy4k.c48b`
+          - Hero-phase screenshot: `docs/images/demos/dizzy4k.png`
+          - README graphics matrix expanded to 22 certified demos
+          - Refreshed 22-demo contact sheet
+
+          The target commit was recertified through the complete SDK,
+          sound, desktop, graphics, and release-package gates before
+          publication.
+
+          **Release commit:** `${TARGET_SHA}`
+
+          **Main package:** `${MAIN_FINAL}`
+
+          Requires Python 3.10 or newer. Extract the package and use
+          `c48` / `c48run` on Windows or
+          `./c48` / `./c48run` on Linux and macOS.
+          EOF
+
+      - name: Publish refreshed final release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MAIN_FINAL="zx-ux-c48-sdk-${FINAL_TAG}-${TARGET_SHA}.zip"
+          GUI_FINAL="c48-${FINAL_TAG}-gui-evidence-${TARGET_SHA}.zip"
+          META="RELEASE-METADATA-1.0.0.json"
+          SUMS="SHA256SUMS-1.0.0.txt"
+
+          gh release upload "${FINAL_TAG}"             "${MAIN_FINAL}" "${GUI_FINAL}" "${META}" "${SUMS}"             --repo "${GITHUB_REPOSITORY}" --clobber
+
+          gh api --method PATCH             "repos/${GITHUB_REPOSITORY}/git/refs/tags/${FINAL_TAG}"             -f sha="${TARGET_SHA}" -F force=true >/dev/null
+
+          release_id="$(gh api             "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}"             --jq .id)"
+          body="$(cat release-notes.md)"
+          gh api --method PATCH             "repos/${GITHUB_REPOSITORY}/releases/${release_id}"             -f tag_name="${FINAL_TAG}"             -f target_commitish="${TARGET_SHA}"             -f name="C48 SDK 1.0.0"             -f body="${body}"             -F draft=false             -F prerelease=false             -f make_latest=true >/dev/null
+
+          gh api             "repos/${GITHUB_REPOSITORY}/releases/${release_id}/assets?per_page=100"             --paginate --jq '.[] | [.id,.name] | @tsv' > assets.tsv
+          while IFS=$'\t' read -r id name; do
+            case "${name}" in
+              "${MAIN_FINAL}"|"${GUI_FINAL}"|"${META}"|"${SUMS}")
+                ;;
+              *)
+                gh api --method DELETE                   "repos/${GITHUB_REPOSITORY}/releases/assets/${id}"
+                ;;
+            esac
+          done < assets.tsv
+
+      - name: Verify final publication and remove prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MAIN_FINAL="zx-ux-c48-sdk-${FINAL_TAG}-${TARGET_SHA}.zip"
+          GUI_FINAL="c48-${FINAL_TAG}-gui-evidence-${TARGET_SHA}.zip"
+          META="RELEASE-METADATA-1.0.0.json"
+          SUMS="SHA256SUMS-1.0.0.txt"
+
+          resolved="$(gh api             "repos/${GITHUB_REPOSITORY}/git/ref/tags/${FINAL_TAG}"             --jq .object.sha)"
+          test "${resolved}" = "${TARGET_SHA}"
+          gh api             "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}"             > published.json
+
+          MAIN_FINAL="${MAIN_FINAL}" GUI_FINAL="${GUI_FINAL}"           META="${META}" SUMS="${SUMS}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          release = json.loads(Path("published.json").read_text())
+          if release.get("draft") or release.get("prerelease"):
+              raise SystemExit("final release is not normally published")
+          if release.get("target_commitish") != os.environ["TARGET_SHA"]:
+              raise SystemExit("final release target mismatch")
+
+          expected = {
+              os.environ["MAIN_FINAL"],
+              os.environ["GUI_FINAL"],
+              os.environ["META"],
+              os.environ["SUMS"],
+          }
+          assets = {
+              item["name"]: item
+              for item in release.get("assets", [])
+          }
+          if set(assets) != expected:
+              raise SystemExit(
+                  f"final asset set mismatch: {sorted(assets)}"
+              )
+
+          for name in expected:
+              local = hashlib.sha256(Path(name).read_bytes()).hexdigest()
+              remote = str(assets[name].get("digest") or "")
+              if remote and remote != f"sha256:{local}":
+                  raise SystemExit(f"digest mismatch for {name}")
+          print("FINAL RELEASE VERIFY PASS")
+          PY
+
+          gh release delete "${RC_TAG}"             --repo "${GITHUB_REPOSITORY}"             --cleanup-tag --yes
+          gh api --method DELETE             "repos/${GITHUB_REPOSITORY}/git/refs/tags/${TEMP_TAG}"             >/dev/null 2>&1 || true
