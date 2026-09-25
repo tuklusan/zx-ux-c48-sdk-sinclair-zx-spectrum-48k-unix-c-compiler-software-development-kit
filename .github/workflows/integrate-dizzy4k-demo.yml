@@ -83,8 +83,7 @@ jobs:
           screen = ZXScreen(font)
           screen.mem[:] = main_data
           png = png_bytes(screen.render_rgb())
-          image = Path("docs/images/demos/dizzy4k.png")
-          image.write_bytes(png)
+          Path("docs/images/demos/dizzy4k.png").write_bytes(png)
           lit, attrs = screen_metrics(screen)
 
           expect_path = Path("compiler/graphics_demo_expectations.json")
@@ -111,23 +110,19 @@ jobs:
           print(json.dumps(expect["demos"]["dizzy4k"], indent=2))
           PY
 
-      - name: Refresh graphics corpus and README
+      - name: Refresh verification and README
         shell: bash
         run: |
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
 
-          def replace_required(path, old, new, count=None):
+          def replace_required(path, old, new):
               p = Path(path)
               text = p.read_text(encoding="utf-8")
               if old not in text:
                   raise SystemExit(f"missing patch anchor in {path}: {old!r}")
-              if count is None:
-                  text = text.replace(old, new)
-              else:
-                  text = text.replace(old, new, count)
-              p.write_text(text, encoding="utf-8", newline="\n")
+              p.write_text(text.replace(old, new), encoding="utf-8", newline="\n")
 
           replace_required(
               "compiler/verify_graphics_demos.py",
@@ -148,35 +143,6 @@ jobs:
               "compiler/verify_release.py",
               'GRAPHICS DEMO VERIFY PASS: 21 demos',
               'GRAPHICS DEMO VERIFY PASS: 22 demos',
-          )
-
-          g = Path(".github/workflows/graphics-demos.yml")
-          text = g.read_text(encoding="utf-8")
-          pairs = [
-              ("fan out into 21 runners", "fan out into 22 runners"),
-              ("max-parallel: 21", "max-parallel: 22"),
-              ('          - {demo: raymaze, os: macos-latest}\n',
-               '          - {demo: raymaze, os: macos-latest}\n'
-               '          - {demo: dizzy4k, os: ubuntu-latest}\n'),
-              ('expected = {".c48b": 21, ".scr": 21, ".png": 21, ".json": 21}',
-               'expected = {".c48b": 22, ".scr": 22, ".png": 22, ".json": 22}'),
-              ('"demo_count": 21', '"demo_count": 22'),
-          ]
-          for old, new in pairs:
-              if old not in text:
-                  raise SystemExit(f"missing graphics workflow anchor: {old!r}")
-              text = text.replace(old, new, 1)
-          g.write_text(text, encoding="utf-8", newline="\n")
-
-          r = Path(".github/workflows/release-recertify.yml")
-          text = r.read_text(encoding="utf-8")
-          old = "21-demo graphics gate"
-          if old not in text:
-              raise SystemExit("release recertification count anchor missing")
-          r.write_text(
-              text.replace(old, "22-demo graphics gate", 1),
-              encoding="utf-8",
-              newline="\n",
           )
 
           readme = Path("README.md")
@@ -200,8 +166,11 @@ jobs:
           addition = anchor + '\n' +               '| ![Dizzy 4K C48 port hero phase](docs/images/demos/dizzy4k.png)<br>**Dizzy 4K (C48 Port)** |  |  |\n' +               '| <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/dizzy4k.c">dizzy4k.c</a></sub> |  |  |'
           if anchor not in text:
               raise SystemExit("README demo-table anchor missing")
-          text = text.replace(anchor, addition, 1)
-          readme.write_text(text, encoding="utf-8", newline="\n")
+          readme.write_text(
+              text.replace(anchor, addition, 1),
+              encoding="utf-8",
+              newline="\n",
+          )
           PY
 
       - name: Refresh demo contact sheet
@@ -245,14 +214,13 @@ jobs:
           sheet.save(root / "contact-sheet.png", optimize=True)
           PY
 
-      - name: Verify corpus and stage exact release delta
+      - name: Verify and stage
         shell: bash
         run: |
           set -euo pipefail
           python -B compiler/verify_graphics_demos.py --static
           python -B compiler/check_license_headers.py
-          rm .github/workflows/integrate-dizzy4k-demo.yml
-          git add             usr/src/demos/dizzy4k.c             usr/bin/demos/dizzy4k.c48b             docs/images/demos/dizzy4k.png             docs/images/demos/contact-sheet.png             compiler/graphics_demo_expectations.json             compiler/verify_graphics_demos.py             compiler/verify_release.py             .github/workflows/graphics-demos.yml             .github/workflows/release-recertify.yml             README.md             .github/workflows/integrate-dizzy4k-demo.yml
+          git add             usr/src/demos/dizzy4k.c             usr/bin/demos/dizzy4k.c48b             docs/images/demos/dizzy4k.png             docs/images/demos/contact-sheet.png             compiler/graphics_demo_expectations.json             compiler/verify_graphics_demos.py             compiler/verify_release.py             README.md
           python -B compiler/check_project_banned_words.py
           git diff --cached --check
           git diff --cached --name-only
