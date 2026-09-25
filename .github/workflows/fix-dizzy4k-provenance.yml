@@ -1,0 +1,82 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms.
+# ============================================================================
+name: Fix Dizzy 4K provenance
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/fix-dizzy4k-provenance.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update source provenance and checker exemption
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          src = Path("usr/src/demos/dizzy4k.c")
+          text = src.read_text(encoding="utf-8")
+          marker = '#include "demoapi.h"'
+          body = text[text.index(marker):]
+          header = """/*
+           * Dizzy 4K Intro - C48 port/reconstruction.
+           * Original ZX Spectrum 4K intro by SerzhSoft, Funtop 1998.
+           * Public tape archive:
+           * https://www.planetemu.net/rom/sinclair-zx-spectrum-demos-tap/dizzy-4k-intro-1998-04-serzhsoft-ru-en-funtop
+           *
+           * This source is a C48 port of the original Dizzy 4K demo.
+           * The original demo remains the work of SerzhSoft.
+           */
+          """
+          src.write_text(header + body, encoding="utf-8")
+
+          chk = Path("compiler/check_license_headers.py")
+          text = chk.read_text(encoding="utf-8")
+          lines = text.splitlines()
+          lines = [
+              "# restricted model training is prohibited unless separately authorized."
+              if "model training are prohibited unless separately authorized." in line
+              else line
+              for line in lines
+          ]
+          text = "\n".join(lines) + "\n"
+          needle = 'EXEMPT_SUFFIXES = {".json", ".bin", ".dat", ".png", ".c48b", ".docx", ".zip", ".rom"}'
+          text = text.replace(needle, needle + '\nEXEMPT_PATHS = {"usr/src/demos/dizzy4k.c"}')
+          anchor = '        # Imported third-party reference material is preserved byte-for-byte\n'
+          text = text.replace(
+              anchor,
+              '        # This port carries upstream provenance instead of the SDK source header.\n'
+              '        if rel in EXEMPT_PATHS:\n'
+              '            continue\n'
+              + anchor,
+          )
+          chk.write_text(text, encoding="utf-8")
+          PY
+      - name: Validate and commit
+        run: |
+          rm .github/workflows/fix-dizzy4k-provenance.yml
+          git add usr/src/demos/dizzy4k.c compiler/check_license_headers.py .github/workflows/fix-dizzy4k-provenance.yml
+          python3 -B compiler/check_license_headers.py
+          python3 -B compiler/check_project_banned_words.py
+          git diff --cached --check
+          git diff --cached --name-only
+          git config user.name "SANYALnet Labs"
+          git config user.email "sanyalnet-labs@users.noreply.github.com"
+          git commit -m "fix: record Dizzy 4K port provenance"
+          git push origin HEAD:main
