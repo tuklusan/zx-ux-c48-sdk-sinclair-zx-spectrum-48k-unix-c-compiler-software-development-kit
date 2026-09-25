@@ -1,6 +1,7 @@
 {
   "schema": 1,
   "demo_count": 22,
+  "source_contract_columns": 64,
   "helper_sha256": "67c35f0cc530da19816864bce07656730864e8c41f9e0601cfc44481e5133ef1",
   "demos": {
     "goblet": {
