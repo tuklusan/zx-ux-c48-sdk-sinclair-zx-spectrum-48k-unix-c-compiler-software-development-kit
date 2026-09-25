@@ -27,9 +27,9 @@ patent, trademark, and governing-law provisions.
 
 Get the [Latest ZX-UX C48 SDK release](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/releases/latest) for the certified download package and installation instructions.
 
-## ZX Spectrum 48K graphics showcase — 21 C48 demos
+## ZX Spectrum 48K graphics showcase — 22 C48 demos
 
-The three hero images above and 18 demos below are rendered from the C48 VM's exact ZX Spectrum 48K bitmap/attribute screen state—a remarkably small place in which to keep this much visual ambition. Automated graphics verification renders every demo independently on GitHub-hosted Windows, Linux and macOS runners.
+The three hero images above and 19 demos below are rendered from the C48 VM's exact ZX Spectrum 48K bitmap/attribute screen state—a remarkably small place in which to keep this much visual ambition. Automated graphics verification renders every demo independently on GitHub-hosted Windows, Linux and macOS runners.
 
 | ![UDG Walker](docs/images/demos/spriteanim.png)<br>**UDG Walker** | ![Raycast Labyrinth](docs/images/demos/raymaze.png)<br>**Raycast Labyrinth** | ![Crystal Goblet](docs/images/demos/goblet.png)<br>**Crystal Goblet** |
 |---|---|---|
@@ -44,8 +44,10 @@ The three hero images above and 18 demos below are rendered from the C48 VM's ex
 | <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/firework.c">firework.c</a></sub> | <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/kaleido.c">kaleido.c</a></sub> | <sub>Windows Server 2025/x64 · <a href="usr/src/demos/moire.c">moire.c</a></sub> |
 | ![Mandelbrot Dive](docs/images/demos/mandel.png)<br>**Mandelbrot Dive** | ![Julia Ballet](docs/images/demos/julia.png)<br>**Julia Ballet** | ![Fractal Forest](docs/images/demos/forest.png)<br>**Fractal Forest** |
 | <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/mandel.c">mandel.c</a></sub> | <sub>Windows Server 2025/x64 · <a href="usr/src/demos/julia.c">julia.c</a></sub> | <sub>macOS 26/Arm64 · <a href="usr/src/demos/forest.c">forest.c</a></sub> |
+| ![Dizzy 4K C48 port hero phase](docs/images/demos/dizzy4k.png)<br>**Dizzy 4K (C48 Port)** |  |  |
+| <sub>Ubuntu 24.04/x64 · <a href="usr/src/demos/dizzy4k.c">dizzy4k.c</a></sub> |  |  |
 
-A [combined contact sheet of all 21 ZX Spectrum graphics demos](docs/images/demos/contact-sheet.png) is covered by the same automated verification.
+A [combined contact sheet of all 22 ZX Spectrum graphics demos](docs/images/demos/contact-sheet.png) is covered by the same automated verification.
 
 ## Document Library
 
@@ -175,7 +177,7 @@ compiler/                     compiler, VM, assets and verification
 usr/src/ailmzx48/             agentic language-model source and design
 usr/src/examples/             basic examples
 usr/src/sound/                BEEP demonstration
-usr/src/demos/                21 graphics demos
+usr/src/demos/                22 graphics demos
 usr/src/games/                games
 usr/src/apps/                 larger applications
 usr/src/security/             adversarial fixtures

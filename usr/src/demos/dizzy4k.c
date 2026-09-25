@@ -230,6 +230,8 @@ void hero_scene(int n)
     for (f = 0; f < n; f++) yield();
     caption("FOR YOU", "DIZZY");
     for (f = 0; f < n; f++) yield();
+    hero_frame(n);
+    yield();
 }
 
 int main(int argc, char **argv)

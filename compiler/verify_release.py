@@ -387,7 +387,7 @@ def check_graphics_demos() -> None:
     if cp.returncode != 0:
         sys.stderr.write(cp.stdout + cp.stderr)
         fail("graphics demo verification failed")
-    if "GRAPHICS DEMO VERIFY PASS: 21 demos" not in cp.stdout:
+    if "GRAPHICS DEMO VERIFY PASS: 22 demos" not in cp.stdout:
         fail("graphics demo completion marker missing")
 
 

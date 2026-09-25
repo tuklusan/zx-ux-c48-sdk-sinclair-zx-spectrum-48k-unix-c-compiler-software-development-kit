@@ -306,14 +306,14 @@ def main(argv: list[str] | None = None) -> int:
     expect = load_expect()
     if expect.get("schema") != 1:
         fail("graphics demo expectation schema mismatch")
-    if len(expect.get("demos", {})) != 21:
-        fail("graphics demo count is not exactly 21")
+    if len(expect.get("demos", {})) != 22:
+        fail("graphics demo count is not exactly 22")
     check_members(expect)
 
     if ns.static:
         for name, exp in expect["demos"].items():
             check_static_one(name, exp)
-        print("GRAPHICS DEMO STATIC PASS: 21 demos", flush=True)
+        print("GRAPHICS DEMO STATIC PASS: 22 demos", flush=True)
         return 0
 
     if ns.demo:
@@ -352,7 +352,7 @@ def main(argv: list[str] | None = None) -> int:
             time_quota=ns.time_quota,
         )
         print(f"GRAPHICS DEMO: {name} PASS", flush=True)
-    print("GRAPHICS DEMO VERIFY PASS: 21 demos", flush=True)
+    print("GRAPHICS DEMO VERIFY PASS: 22 demos", flush=True)
     return 0
 
 
