@@ -1,14 +1,12 @@
-// ============================================================
-// Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-// Proprietary rights reserved except as licensed in LICENSE.
-//
-// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.
-// Non-commercial use permitted; see root LICENSE.
-//
-// Attribution required: Based on original work by Supratim
-// Sanyal of SANYALnet Labs. See root LICENSE for full terms.
-// ============================================================
-/* C48 reconstruction of SerzhSoft's 1998 Dizzy 4K intro. */
+/*
+ * Dizzy 4K Intro - C48 port/reconstruction.
+ * Original ZX Spectrum 4K intro by SerzhSoft, Funtop 1998.
+ * Public tape archive:
+ * https://www.planetemu.net/rom/sinclair-zx-spectrum-demos-tap/dizzy-4k-intro-1998-04-serzhsoft-ru-en-funtop
+ *
+ * This source is a C48 port of the original Dizzy 4K demo.
+ * The original demo remains the work of SerzhSoft.
+ */
 #include "demoapi.h"
 
 void blank_rows(int first, int last)
