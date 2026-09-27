@@ -28,6 +28,17 @@ ROOT = Path(__file__).resolve().parent
 SDK = ROOT.parent
 FONT = ROOT / "assets" / "SANYALnet-Labs-4x8-font-FINAL.bin"
 
+EXPECTED = {
+    "hanoi": {
+        "binary": "0592065adba7cf2b651f0015a85b785850d8444230e0a98d5164bfec911015bf",
+        "screen": "db087d44c1d01984de46ebaf83452b27d8a03f7fabd2f8612baf62ac89be69ac",
+    },
+    "queens8": {
+        "binary": "07c1c3a17e5692b56dbb7921e796bb770d3568dc1f7535872e27307ea39e5520",
+        "screen": "568f45c848f82a318c4942f28227015fd9625c3a9cfbe56bfe254ab1b7fa3efe",
+    },
+}
+
 from c48.screen import Font4x8, ZXScreen, attr_offset, bitmap_offset
 
 
@@ -193,6 +204,12 @@ def verify_case(
     run_program(name, frozen, fast_screen, fast=True)
     fast_bytes = fast_screen.read_bytes()
     check_half(name, fast_bytes)
+    binary_hash = sha(frozen)
+    screen_hash = sha(fast_screen)
+    if binary_hash != EXPECTED[name]["binary"]:
+        fail(name + ": frozen binary hash changed")
+    if screen_hash != EXPECTED[name]["screen"]:
+        fail(name + ": frozen final screen changed")
 
     if evidence is not None:
         evidence.mkdir(parents=True, exist_ok=True)
@@ -211,7 +228,7 @@ def verify_case(
             fail(name + ": normal and fast final screens differ")
         check_half(name, normal_screen.read_bytes())
 
-    return sha(frozen), sha(fast_screen)
+    return binary_hash, screen_hash
 
 
 def main(argv: list[str] | None = None) -> int:
