@@ -273,3 +273,4 @@ jobs:
             .doc-preview/*report.json
             .doc-preview/render/*/added-pages/*.png
           if-no-files-found: error
+          include-hidden-files: true
