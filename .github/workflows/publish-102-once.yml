@@ -1,0 +1,288 @@
+# ============================================================================
+# Copyright (c) 2026 SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# restricted model training is prohibited unless separately authorized.
+#
+# Attribution required: SANYALnet Labs.
+# ============================================================================
+name: Publish certified 1.0.2 release
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-102-once.yml"
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      TARGET_SHA: b1621338565ac3bd9d4eff4ecb5a2a77aee2ab6a
+      VERSION_TEXT: "1.0.2"
+      CANDIDATE_ARTIFACT_ID: "10944763559"
+      GUI_ARTIFACT_ID: "10944907496"
+      RUN_VERIFY: "36358952671"
+      RUN_BEEP: "36358952624"
+      RUN_GUI: "36358952691"
+      RUN_GRAPHICS: "36358952607"
+      RUN_RECURSIVE: "36358952849"
+      RUN_PACKAGE: "36358952676"
+    steps:
+      - name: Check exact certification
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          for pair in             "$RUN_VERIFY:C48 SDK verification"             "$RUN_BEEP:BEEP proof"             "$RUN_GUI:desktop acceptance"             "$RUN_GRAPHICS:graphics proof"             "$RUN_RECURSIVE:recursive proof"             "$RUN_PACKAGE:release packaging"; do
+            id="${pair%%:*}"
+            label="${pair#*:}"
+            status="$(gh api "/repos/$GITHUB_REPOSITORY/actions/runs/$id" --jq '.status + ":" + (.conclusion // "") + ":" + .head_sha')"
+            test "$status" = "completed:success:$TARGET_SHA" || {
+              echo "$label certification mismatch: $status" >&2
+              exit 1
+            }
+          done
+
+      - name: Download certified artifacts
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "/repos/$GITHUB_REPOSITORY/actions/artifacts/$CANDIDATE_ARTIFACT_ID/zip" > candidate.zip
+          gh api "/repos/$GITHUB_REPOSITORY/actions/artifacts/$GUI_ARTIFACT_ID/zip" > gui-source.zip
+          mkdir candidate
+          unzip -q candidate.zip -d candidate
+          source_zip="$(find candidate -maxdepth 1 -type f -name 'zx-ux-c48-sdk-*.zip' -print -quit)"
+          test -n "$source_zip"
+          cp "$source_zip" "zx-ux-c48-sdk-$VERSION_TEXT-$TARGET_SHA.zip"
+
+      - name: Verify package manifest and build release assets
+        shell: python
+        run: |
+          from pathlib import Path
+          import hashlib
+          import io
+          import json
+          import os
+          import zipfile
+
+          version = os.environ["VERSION_TEXT"]
+          sha = os.environ["TARGET_SHA"]
+          source = Path(f"zx-ux-c48-sdk-{version}-{sha}.zip")
+          gui_source = Path("gui-source.zip")
+
+          with zipfile.ZipFile(source, "r") as zf:
+              names = [n for n in zf.namelist() if not n.endswith("/")]
+              manifests = [n for n in names if n.endswith("/MANIFEST.sha256")]
+              if len(manifests) != 1:
+                  raise SystemExit("package manifest missing or ambiguous")
+              manifest = zf.read(manifests[0]).decode("ascii")
+
+          required = (
+              "c48srctap",
+              "c48srctap.bat",
+              "compiler/c48srctap.py",
+              "compiler/source_tape_manifest.json",
+              "compiler/refresh_source_tapes.py",
+              "compiler/tests/test_c48srctap.py",
+              "compiler/tests/test_source_tape_manifest.py",
+              "README.md",
+              "docs/ZX-UX C48 SDK User Manual.docx",
+              "docs/ZX-UX C48 SDK Technical Reference.docx",
+              "docs/ZX-UX C48 SDK Adversarial Security Review.docx",
+          )
+          for name in required:
+              if f"  {name}\n" not in manifest:
+                  raise SystemExit("manifest missing required member: " + name)
+          tapes = [
+              line for line in manifest.splitlines()
+              if line.endswith(".src.tap")
+          ]
+          if len(tapes) != 57:
+              raise SystemExit(
+                  f"manifest source-tape count is {len(tapes)}, expected 57"
+              )
+
+          gui_name = f"c48-{version}-gui-evidence-{sha}.zip"
+          with zipfile.ZipFile(gui_source, "r") as src:
+              members = sorted(n for n in src.namelist() if not n.endswith("/"))
+              with zipfile.ZipFile(
+                  gui_name,
+                  "w",
+                  compression=zipfile.ZIP_DEFLATED,
+                  compresslevel=9,
+              ) as dst:
+                  for name in members:
+                      pure = Path(name)
+                      if pure.is_absolute() or ".." in pure.parts:
+                          raise SystemExit("unsafe GUI evidence path")
+                      info = zipfile.ZipInfo(
+                          name,
+                          date_time=(1980, 1, 1, 0, 0, 0),
+                      )
+                      info.create_system = 3
+                      info.external_attr = 0o100644 << 16
+                      info.compress_type = zipfile.ZIP_DEFLATED
+                      dst.writestr(info, src.read(name))
+
+          def digest(path: Path) -> str:
+              return hashlib.sha256(path.read_bytes()).hexdigest()
+
+          metadata_name = f"RELEASE-METADATA-{version}.json"
+          sums_name = f"SHA256SUMS-{version}.txt"
+          metadata = {
+              "schema": 1,
+              "version": version,
+              "commit": sha,
+              "workflows": {
+                  "sdk_verification": int(os.environ["RUN_VERIFY"]),
+                  "beep_proof": int(os.environ["RUN_BEEP"]),
+                  "desktop_acceptance": int(os.environ["RUN_GUI"]),
+                  "graphics": int(os.environ["RUN_GRAPHICS"]),
+                  "recursive_demos": int(os.environ["RUN_RECURSIVE"]),
+                  "release_candidate": int(os.environ["RUN_PACKAGE"]),
+              },
+              "source_package": {
+                  "name": source.name,
+                  "sha256": digest(source),
+                  "manifest_entries": len(manifest.splitlines()),
+                  "source_tapes": 57,
+              },
+              "gui_evidence": {
+                  "name": gui_name,
+                  "sha256": digest(Path(gui_name)),
+              },
+          }
+          Path(metadata_name).write_text(
+              json.dumps(metadata, indent=2, sort_keys=True) + "\n",
+              encoding="ascii",
+              newline="\n",
+          )
+          assets = (
+              Path(gui_name),
+              Path(metadata_name),
+              source,
+          )
+          Path(sums_name).write_text(
+              "".join(f"{digest(p)}  {p.name}\n" for p in assets),
+              encoding="ascii",
+              newline="\n",
+          )
+
+      - name: Publish new release then remove old release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="$VERSION_TEXT"
+          source_asset="zx-ux-c48-sdk-$VERSION_TEXT-$TARGET_SHA.zip"
+          gui_asset="c48-$VERSION_TEXT-gui-evidence-$TARGET_SHA.zip"
+          metadata_asset="RELEASE-METADATA-$VERSION_TEXT.json"
+          sums_asset="SHA256SUMS-$VERSION_TEXT.txt"
+          cat > RELEASE-NOTES.txt <<EOF
+          C48 SDK $VERSION_TEXT
+
+          This certified release adds 57 native ZX-UX source-transfer tapes for
+          the supported C48 program corpus, the c48srctap cross-platform tape
+          builder, locked source-tape corpus verification, and documentation of
+          M48O USERHOME transfer and native compile/link use.
+
+          The README and all three SDK books document the new source-tape
+          workflow. The release package manifest includes the generator, tests,
+          locked mapping, all 57 source tapes, and the updated documentation.
+
+          Exact certified commit: $TARGET_SHA
+
+          Certification runs:
+          - SDK verification: $RUN_VERIFY
+          - BEEP proof: $RUN_BEEP
+          - desktop acceptance: $RUN_GUI
+          - graphics proof: $RUN_GRAPHICS
+          - recursive proof: $RUN_RECURSIVE
+          - release packaging: $RUN_PACKAGE
+
+          Certification includes three fresh-filesystem verifies and a virgin
+          ZIP extraction verification.
+          EOF
+
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          names = [
+              "1.0.2",
+              "C48 SDK 1.0.2",
+              Path("RELEASE-NOTES.txt").read_text(encoding="utf-8"),
+              "zx-ux-c48-sdk",
+              "c48-gui-evidence",
+          ]
+          data = "\n".join(names).encode("utf-8").lower()
+          terms = tuple(
+              bytes.fromhex(item)
+              for item in (
+                  "636c61756465",
+                  "636f646578",
+                  "6f70656e6169",
+                  "63686174677074",
+                  "6172746966696369616c20696e74656c6c6967656e6365",
+              )
+          )
+          if any(term in data for term in terms):
+              raise SystemExit("release metadata contains a forbidden term")
+          if re.search(rb"(^|[^a-z0-9_])ai([^a-z0-9_]|$)", data):
+              raise SystemExit("release metadata contains a forbidden whole word")
+          PY
+
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "release $tag already exists" >&2
+            exit 1
+          fi
+          gh release create "$tag"             "$source_asset" "$gui_asset" "$metadata_asset" "$sums_asset"             --target "$TARGET_SHA"             --title "C48 SDK $VERSION_TEXT"             --notes-file RELEASE-NOTES.txt
+
+          python - <<'PY'
+          import json
+          import os
+          import subprocess
+
+          tag = os.environ["VERSION_TEXT"]
+          expected = {
+              f"zx-ux-c48-sdk-{tag}-{os.environ['TARGET_SHA']}.zip",
+              f"c48-{tag}-gui-evidence-{os.environ['TARGET_SHA']}.zip",
+              f"RELEASE-METADATA-{tag}.json",
+              f"SHA256SUMS-{tag}.txt",
+          }
+          raw = subprocess.check_output(
+              [
+                  "gh", "api",
+                  f"/repos/{os.environ['GITHUB_REPOSITORY']}/releases/tags/{tag}",
+              ],
+              text=True,
+          )
+          release = json.loads(raw)
+          actual = {item["name"] for item in release.get("assets", [])}
+          if actual != expected:
+              raise SystemExit(
+                  f"new release asset set mismatch: {sorted(actual)}"
+              )
+          if release.get("tag_name") != tag or release.get("draft"):
+              raise SystemExit("new release state mismatch")
+          print("new release verified")
+          PY
+
+          if gh release view "1.0.1" >/dev/null 2>&1; then
+            gh release delete "1.0.1" --cleanup-tag --yes
+          fi
+          if gh api "/repos/$GITHUB_REPOSITORY/git/ref/tags/1.0.1" >/dev/null 2>&1; then
+            gh api --method DELETE "/repos/$GITHUB_REPOSITORY/git/refs/tags/1.0.1"
+          fi
