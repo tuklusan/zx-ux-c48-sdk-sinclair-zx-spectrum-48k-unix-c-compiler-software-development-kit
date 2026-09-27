@@ -50,9 +50,9 @@ jobs:
       - name: Run fast recursive proofs
         shell: bash
         run: |
-          ./c48run --headless --time-quota 120 \
+          ./c48run --headless --time-quota 120 -- \
             usr/bin/examples/hanoi.c48b --verify
-          ./c48run --headless --time-quota 120 \
+          ./c48run --headless --time-quota 120 -- \
             usr/bin/examples/queens8.c48b --verify
 
       - name: Stage generated artifacts
