@@ -13,7 +13,7 @@ SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 patent, trademark, and governing-law provisions.
 ============================================================================
 -->
-# 1.0.1 Host-Native Tk GUI Acceptance Gate
+# 1.0.2 Host-Native Tk GUI Acceptance Gate
 
 Status: **AUTOMATED HOST-NATIVE RELEASE GATE**
 
@@ -60,7 +60,7 @@ macOS keyboard-injection API.
 
 1. Run `compiler/verify_release.py` first and require PASS on the exact checked-out
    candidate commit.
-2. Run the platform `c48run --version` launcher and require `c48run 1.0.1`.
+2. Run the platform `c48run --version` launcher and require `c48run 1.0.2`.
 3. Launch `usr/bin/demos/forest.c48b` without `--headless`; require the Tk window,
    a fully mapped Spectrum canvas at the largest host-safe integer scale
    (normally 3x/960x720; constrained desktops may use 2x/640x480), with

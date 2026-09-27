@@ -55,7 +55,7 @@ class SourceTapeTests(unittest.TestCase):
             with self.assertRaises(SystemExit) as cm:
                 c48srctap.main(["--version"])
         self.assertEqual(cm.exception.code, 0)
-        self.assertEqual(out.getvalue().strip(), "c48srctap 1.0.1")
+        self.assertEqual(out.getvalue().strip(), "c48srctap 1.0.2")
 
     def test_crc_reference_vector(self):
         self.assertEqual(

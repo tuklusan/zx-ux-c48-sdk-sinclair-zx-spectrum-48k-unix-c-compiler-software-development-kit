@@ -128,7 +128,7 @@ def _check_version() -> str:
             f"c48run --version failed: {result.returncode}: {result.stderr}"
         )
     text = result.stdout.strip()
-    if text != "c48run 1.0.1":
+    if text != "c48run 1.0.2":
         raise AssertionError(f"unexpected c48run version: {text!r}")
     return text
 
