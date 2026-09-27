@@ -1,0 +1,25 @@
+name: One-time safety tag
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create safety tag
+        shell: bash
+        run: |
+          if git ls-remote --exit-code --tags origin "refs/tags/BEFORE-HANOI-8QUEENS" >/dev/null 2>&1; then
+            exit 0
+          fi
+          git tag "BEFORE-HANOI-8QUEENS" "83c51611424aa4aa40d817978b3828d2c81fd56f"
+          git push origin "refs/tags/BEFORE-HANOI-8QUEENS"
