@@ -6,7 +6,7 @@
 # ZX-UX C48 SDK
 # This file is governed by the SANYALnet Labs Non-Commercial License in the
 # root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
+# restricted model training are prohibited unless separately authorized.
 #
 # Attribution is required: "Based on original work by Supratim Sanyal of
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
@@ -128,7 +128,7 @@ def _check_version() -> str:
             f"c48run --version failed: {result.returncode}: {result.stderr}"
         )
     text = result.stdout.strip()
-    if text != "c48run 1.0.0":
+    if text != "c48run 1.0.1":
         raise AssertionError(f"unexpected c48run version: {text!r}")
     return text
 
