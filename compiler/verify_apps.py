@@ -12,7 +12,7 @@
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
 # patent, trademark, and governing-law provisions.
 # ============================================================================
-"""Verify the three shipped interactive C48 applications."""
+"""Verify the four shipped interactive C48 applications."""
 from __future__ import annotations
 
 import hashlib
@@ -27,6 +27,7 @@ ROOT = Path(__file__).resolve().parent
 SDK = ROOT.parent
 SRC = SDK / "usr" / "src" / "apps"
 BIN = SDK / "usr" / "bin" / "apps"
+IMG = SDK / "docs" / "images" / "apps"
 EXPECT_PATH = ROOT / "app_expectations.json"
 
 sys.path.insert(0, str(ROOT))
@@ -260,6 +261,33 @@ def check_regressions() -> None:
 }
 ''',
     )
+    run_probe(
+        "gp82",
+        r'''int main(void)
+{
+    gp_seed();
+    if (gp_wins[0] != 3 || gp_wins[1] != 4)
+        return 1;
+    if (gp_wins[2] != 4 || gp_wins[3] != 1)
+        return 2;
+    if (gp_podiums[0] != 11 || gp_podiums[3] != 7)
+        return 3;
+    if (gp_poles[0] != 3 || gp_poles[2] != 10)
+        return 4;
+    if (gp_owner[0] != 0 || gp_owner[4] != 1)
+        return 5;
+    if (gp_owner[8] != 2 || gp_owner[11] != 3)
+        return 6;
+    if (gp_owner[13] != 4 || gp_owner[15] != 6)
+        return 7;
+    if (gp_sector(0, 40) != 0)
+        return 8;
+    if (gp_sector(40, 0) != 4)
+        return 9;
+    return 0;
+}
+''',
+    )
     print("APP REGRESSION PROBES PASS", flush=True)
 
 
@@ -268,7 +296,7 @@ def main() -> int:
     if expect.get("schema") != 1:
         fail("app expectation schema mismatch")
     names = set(expect.get("apps", {}))
-    if names != {"sheet48", "write48", "wire3d"}:
+    if names != {"sheet48", "write48", "wire3d", "gp82"}:
         fail("app expectation member set mismatch")
     source_names = {p.stem for p in SRC.glob("*.c")}
     binary_names = {p.stem for p in BIN.glob("*.c48b")}
@@ -290,9 +318,15 @@ def main() -> int:
         screen = run_startup(name)
         if sha_bytes(screen.bytes()) != item["screen_sha256"]:
             fail(f"{name}: startup screen hash mismatch")
+        if "png_sha256" in item:
+            image = IMG / f"{name}.png"
+            if not image.is_file():
+                fail(f"{name}: checked-in image missing")
+            if sha(image) != item["png_sha256"]:
+                fail(f"{name}: checked-in image hash mismatch")
         print(f"APP VERIFY: {name} PASS", flush=True)
     check_regressions()
-    print("APP VERIFY PASS: 3 apps", flush=True)
+    print("APP VERIFY PASS: 4 apps", flush=True)
     return 0
 
 
