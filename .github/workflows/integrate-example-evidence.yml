@@ -39,7 +39,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python - <<'PY'
+          python -B - <<'PY'
           from pathlib import Path
 
           path = Path("scratch/C48-HANOI-QUEENS-RUNBOOK.runbook")
@@ -103,7 +103,7 @@ jobs:
           run_case queens8 --verify
           run_case udg
 
-          python - <<'PY'
+          python -B - <<'PY'
           from pathlib import Path
           import sys
 
@@ -143,6 +143,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          find compiler -type d -name __pycache__ -prune -exec rm -rf {} +
+          find compiler -type f -name '*.pyc' -delete
           python -B compiler/check_license_headers.py
           python -B compiler/verify_recursive_examples.py
           python -B compiler/verify_release.py
