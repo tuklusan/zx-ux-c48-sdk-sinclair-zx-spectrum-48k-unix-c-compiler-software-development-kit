@@ -32,7 +32,7 @@ PROJECT = "ZX-UX C48 SDK"
 
 # Header-safe source/document formats owned by this project.
 HEADER_SUFFIXES = {".py", ".c", ".h", ".md", ".txt", ".runbook", ".bat", ".yml", ".yaml"}
-HEADER_NAMES = {"c48", "c48run", ".gitignore", ".gitattributes"}
+HEADER_NAMES = {"c48", "c48run", "c48srctap", ".gitignore", ".gitattributes"}
 
 # Deliberate exemptions: adding text would corrupt the syntax/format/container,
 # or LICENSE must remain the exact license text rather than recursively header itself.

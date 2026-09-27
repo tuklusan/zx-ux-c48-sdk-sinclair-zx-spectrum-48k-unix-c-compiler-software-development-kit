@@ -91,7 +91,8 @@ def check_required_files() -> None:
         ".github/workflows/recursive-demos.yml",
         ".github/workflows/beep.yml",
         ".github/workflows/gui-desktop.yml",
-        "c48", "c48run", "c48.bat", "c48run.bat",
+        "c48", "c48run", "c48srctap", "c48.bat", "c48run.bat", "c48srctap.bat",
+        "compiler/c48srctap.py",
         "compiler/check_license_headers.py",
         "compiler/build_release_candidate.py",
         "compiler/check_legacy_sdk_paths.py", "compiler/c48/limits.py",
@@ -453,12 +454,17 @@ def check_launchers() -> None:
     expected_tail = {
         "c48": 'exec python3 -B "$(dirname "$0")/compiler/c48.py" "$@"',
         "c48run": 'exec python3 -B "$(dirname "$0")/compiler/c48run.py" "$@"',
+        "c48srctap": 'exec python3 -B "$(dirname "$0")/compiler/c48srctap.py" "$@"',
         "c48.bat": 'python -B "%~dp0compiler\\c48.py" %*\nexit /b %ERRORLEVEL%',
         "c48run.bat": 'python -B "%~dp0compiler\\c48run.py" %*\nexit /b %ERRORLEVEL%',
+        "c48srctap.bat": 'python -B "%~dp0compiler\\c48srctap.py" %*\nexit /b %ERRORLEVEL%',
     }
     for name, tail in expected_tail.items():
         actual = (SDK / name).read_text(encoding="ascii").replace("\r\n", "\n")
-        if "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs." not in actual[:2500]:
+        if not any(marker in actual[:2500] for marker in (
+            "Copyright (c) 2026 SANYALnet Labs.",
+            "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.",
+        )):
             fail(f"launcher license header missing: {name}")
         if name.endswith(".bat"):
             if not actual.startswith("@echo off\n"):
@@ -468,7 +474,7 @@ def check_launchers() -> None:
         if tail not in actual:
             fail(f"launcher command body mismatch: {name}")
     if os.name != "nt":
-        for name in ("c48", "c48run"):
+        for name in ("c48", "c48run", "c48srctap"):
             if not os.access(SDK / name, os.X_OK):
                 fail(f"POSIX launcher is not executable: {name}")
             cp = run([str(SDK / name), "--version"])

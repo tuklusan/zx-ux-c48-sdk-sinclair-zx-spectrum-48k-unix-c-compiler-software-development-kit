@@ -32,6 +32,8 @@ name: C48 SDK verification
       - "c48.bat"
       - "c48run"
       - "c48run.bat"
+      - "c48srctap"
+      - "c48srctap.bat"
       - ".github/workflows/verify.yml"
   workflow_dispatch:
 
@@ -80,6 +82,7 @@ jobs:
         run: |
           c48.bat --version
           c48run.bat --version
+          c48srctap.bat --version
 
       - name: Smoke-test POSIX launchers
         if: runner.os != 'Windows'
@@ -87,3 +90,4 @@ jobs:
         run: |
           ./c48 --version
           ./c48run --version
+          ./c48srctap --version
