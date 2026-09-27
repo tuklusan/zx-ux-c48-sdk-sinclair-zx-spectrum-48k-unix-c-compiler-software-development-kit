@@ -125,17 +125,32 @@ Together, the selection connects the SDK to the cultural memory and nostalgia of
 
 The authoritative [C48 language specification](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) lives upstream and defines the language baseline implemented here. `usr/src/c48host.h` is explicitly a **development-only Host Game API profile** and is not the final native ZX-UX `<c48.h>` ABI.
 
-## Applications gallery — 3 C48 applications
+## Applications gallery — 4 C48 applications
 
-The games above capture the exploratory, playful side of early computing; these applications tell the other half of the story—the point at which personal computers were expected to earn their keep. Word processing and spreadsheets symbolized the shift from hobby machine to everyday work tool, while interactive graphics turned the screen into a place to design and manipulate rather than merely print results. By the early 1990s, writing, personal finance and visual experimentation were established parts of serious home computing; the machine had, in effect, acquired a desk job.
+The applications corpus spans writing, spreadsheets, interactive
+geometry, and data visualization. **GP82** brings the collection back to
+the Spectrum's launch year with a compact dashboard built from real 1982
+Grand Prix season figures.
 
-| ![WRITE48](docs/images/apps/write48.png)<br>**WRITE48 — Resume Editor** | ![SHEET48](docs/images/apps/sheet48.png)<br>**SHEET48 — Home Brokerage** | ![WIRE3D](docs/images/apps/wire3d.png)<br>**WIRE3D — Imperial Cruiser** |
-|---|---|---|
-| <sub><a href="usr/src/apps/write48.c">write48.c</a></sub> | <sub><a href="usr/src/apps/sheet48.c">sheet48.c</a></sub> | <sub><a href="usr/src/apps/wire3d.c">wire3d.c</a></sub> |
+| ![WRITE48](docs/images/apps/write48.png)<br>**WRITE48 — Resume Editor** | ![SHEET48](docs/images/apps/sheet48.png)<br>**SHEET48 — Home Brokerage** |
+|---|---|
+| <sub><a href="usr/src/apps/write48.c">write48.c</a></sub> | <sub><a href="usr/src/apps/sheet48.c">sheet48.c</a></sub> |
+| ![WIRE3D](docs/images/apps/wire3d.png)<br>**WIRE3D — Imperial Cruiser** | ![GP82](docs/images/apps/gp82.png)<br>**GP82 — Grand Prix 1982** |
+| <sub><a href="usr/src/apps/wire3d.c">wire3d.c</a></sub> | <sub><a href="usr/src/apps/gp82.c">gp82.c</a></sub> |
 
-A [three-application contact sheet](docs/images/apps/contact-sheet.png) presents the verified screenshots together.
+The [four-application contact sheet](docs/images/apps/contact-sheet.png)
+assembles the verified startup screens.
 
-**WRITE48** evokes the word processors that turned a keyboard-and-screen micro into a practical writing desk; **SHEET48** recalls the spreadsheet tradition that helped establish personal computers as tools for planning, modelling and finance; and **WIRE3D** nods to the much older lineage of interactive computer graphics and CAD, compressed here into a tiny wireframe modeler. They are not replicas of particular historical products. Like the games, they are deliberately legible C48 programs: compact enough to read, but substantial enough to exercise editing, formulas, screen handling, geometry and interaction under severe constraints.
+**GP82** plots grouped wins, podiums, and poles for Ferrari, McLaren,
+Renault, and Williams on the left, with the 16 race wins divided among
+seven constructors in a pie chart on the right. Ferrari's 74-point
+constructors' title is called out beneath the chart. The values are based
+on the published 1982 season results and constructor statistics.
+
+**WRITE48**, **SHEET48**, and **WIRE3D** retain the practical and visual
+side of the corpus: text editing, formulas and tabular work, and compact
+wireframe geometry. All four are deliberately readable C48 programs that
+exercise substantial screen handling and interaction under tight limits.
 
 ## Runtime notes
 
@@ -179,7 +194,7 @@ usr/src/examples/             basic examples
 usr/src/sound/                BEEP demonstration
 usr/src/demos/                24 demos (22 frame-driven + 2 recursive)
 usr/src/games/                games
-usr/src/apps/                 larger applications
+usr/src/apps/                 4 larger applications
 usr/src/security/             adversarial fixtures
 usr/bin/                      matching frozen C48B1 programs
 docs/                         manuals, technical reference and images
