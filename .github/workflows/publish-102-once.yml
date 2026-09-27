@@ -35,6 +35,7 @@ jobs:
       RUN_GRAPHICS: "36358952607"
       RUN_RECURSIVE: "36358952849"
       RUN_PACKAGE: "36358952676"
+      GH_REPO: ${{ github.repository }}
     steps:
       - name: Check exact certification
         shell: bash
