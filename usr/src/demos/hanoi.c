@@ -1,13 +1,12 @@
 // ============================================================
 // Copyright (c) 2026 SANYALnet Labs.
-// Proprietary rights reserved except as expressly licensed herein.
+// Proprietary rights reserved except as licensed in LICENSE.
 //
 // ZX-UX C48 SDK
-// This file is governed by the SANYALnet Labs Non-Commercial License in the
-// root LICENSE file.
+// Governed by the SANYALnet Labs Non-Commercial License.
+// See root LICENSE for full terms.
 //
 // Attribution required: SANYALnet Labs.
-// See root LICENSE file for full terms.
 // ============================================================
 #include "../c48host.h"
 
