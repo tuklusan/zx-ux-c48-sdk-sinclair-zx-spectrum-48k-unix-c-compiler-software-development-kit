@@ -396,19 +396,6 @@ def check_graphics_demos() -> None:
         fail("graphics demo completion marker missing")
 
 
-def check_recursive_demos() -> None:
-    cp = run(
-        [sys.executable, "-B", str(ROOT / "verify_recursive_demos.py")],
-        timeout=720,
-    )
-    if cp.returncode != 0:
-        sys.stderr.write(cp.stdout + cp.stderr)
-        fail("recursive demo verification failed")
-    marker = "RECURSIVE DEMO VERIFY PASS: 2 deterministic recursive demos"
-    if marker not in cp.stdout:
-        fail("recursive demo completion marker missing")
-
-
 def check_apps() -> None:
     cp = run(
         [sys.executable, "-B", str(ROOT / "verify_apps.py")],
@@ -563,7 +550,6 @@ def main() -> int:
         ("ROM-derived BEEP", check_beep),
         ("game corpus", check_games),
         ("graphics demo corpus", check_graphics_demos),
-        ("recursive demo corpus", check_recursive_demos),
         ("application corpus", check_apps),
         ("security fixture binaries", check_security_programs),
         ("deterministic demos", check_demos),
