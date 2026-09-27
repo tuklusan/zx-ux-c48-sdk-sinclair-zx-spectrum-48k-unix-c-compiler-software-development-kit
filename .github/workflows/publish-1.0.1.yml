@@ -1,0 +1,326 @@
+# ============================================================================
+# Copyright (c) 2026 SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# Governed by the SANYALnet Labs Non-Commercial License in the root LICENSE.
+# Attribution required: SANYALnet Labs.
+# ============================================================================
+name: Publish certified 1.0.1 release
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/publish-1.0.1.yml"
+
+permissions:
+  contents: write
+
+env:
+  TARGET_SHA: a56ec8d099f8be88b27876df99b6050719e05e95
+  TARGET_TREE: 0dc9dbeea95f879362d321083d42f47ae5bf6d4a
+  RC_TAG: 1.0.1-RC1
+  FINAL_TAG: 1.0.1
+  OLD_TAG: 1.0.0
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Validate certified prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="$(gh api "repos/${GITHUB_REPOSITORY}/contents/VERSION?ref=${TARGET_SHA}" --jq .content | base64 -d | tr -d '\r\n')"
+          test "${version}" = "${FINAL_TAG}"
+          tree="$(gh api "repos/${GITHUB_REPOSITORY}/git/commits/${TARGET_SHA}" --jq .tree.sha)"
+          test "${tree}" = "${TARGET_TREE}"
+          target="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RC_TAG}" --jq .target_commitish)"
+          test "${target}" = "${TARGET_SHA}"
+          prerelease="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RC_TAG}" --jq .prerelease)"
+          test "${prerelease}" = "true"
+          resolved="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RC_TAG}" --jq .object.sha)"
+          test "${resolved}" = "${TARGET_SHA}"
+
+          MAIN_RC="zx-ux-c48-sdk-${RC_TAG}-${TARGET_SHA}.zip"
+          GUI_RC="c48-${RC_TAG}-gui-evidence-${TARGET_SHA}.zip"
+          mkdir -p rc
+          gh release download "${RC_TAG}" --repo "${GITHUB_REPOSITORY}" \
+            --pattern "${MAIN_RC}" \
+            --pattern "${GUI_RC}" \
+            --pattern "RC1-RELEASE-METADATA.json" \
+            --pattern "SHA256SUMS-${RC_TAG}.txt" \
+            --dir rc
+          test -s "rc/${MAIN_RC}"
+          test -s "rc/${GUI_RC}"
+          test -s "rc/RC1-RELEASE-METADATA.json"
+          test -s "rc/SHA256SUMS-${RC_TAG}.txt"
+
+          MAIN_RC="${MAIN_RC}" GUI_RC="${GUI_RC}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          meta = json.loads(
+              Path("rc/RC1-RELEASE-METADATA.json").read_text(encoding="ascii")
+          )
+          if meta.get("schema") != 1:
+              raise SystemExit("prerelease metadata schema mismatch")
+          if meta.get("release_tag") != os.environ["RC_TAG"]:
+              raise SystemExit("prerelease metadata tag mismatch")
+          if meta.get("version") != os.environ["FINAL_TAG"]:
+              raise SystemExit("prerelease metadata version mismatch")
+          if meta.get("commit") != os.environ["TARGET_SHA"]:
+              raise SystemExit("prerelease metadata commit mismatch")
+          if meta.get("tree") != os.environ["TARGET_TREE"]:
+              raise SystemExit("prerelease metadata tree mismatch")
+          if meta.get("prerelease") is not True:
+              raise SystemExit("prerelease metadata state mismatch")
+          required = {
+              "sdk_verification",
+              "beep_proof",
+              "host_native_gui",
+              "graphics",
+              "recursive_demos",
+              "release_candidate",
+              "recertification",
+          }
+          workflows = meta.get("workflows", {})
+          if set(workflows) != required:
+              raise SystemExit("prerelease workflow set mismatch")
+          if not all(isinstance(workflows[k], int) and workflows[k] > 0 for k in required):
+              raise SystemExit("prerelease workflow identifiers invalid")
+          if meta.get("source_package", {}).get("sha256") != sha(
+              "rc/" + os.environ["MAIN_RC"]
+          ):
+              raise SystemExit("prerelease source digest mismatch")
+          if meta.get("gui_evidence", {}).get("sha256") != sha(
+              "rc/" + os.environ["GUI_RC"]
+          ):
+              raise SystemExit("prerelease GUI digest mismatch")
+          print("CERTIFIED PRERELEASE VALIDATED")
+          PY
+
+      - name: Prepare final assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          MAIN_RC="zx-ux-c48-sdk-${RC_TAG}-${TARGET_SHA}.zip"
+          GUI_RC="c48-${RC_TAG}-gui-evidence-${TARGET_SHA}.zip"
+          MAIN_FINAL="zx-ux-c48-sdk-${FINAL_TAG}-${TARGET_SHA}.zip"
+          GUI_FINAL="c48-${FINAL_TAG}-gui-evidence-${TARGET_SHA}.zip"
+          cp "rc/${MAIN_RC}" "${MAIN_FINAL}"
+          cp "rc/${GUI_RC}" "${GUI_FINAL}"
+
+          MAIN_FINAL="${MAIN_FINAL}" GUI_FINAL="${GUI_FINAL}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          meta = json.loads(
+              Path("rc/RC1-RELEASE-METADATA.json").read_text(encoding="ascii")
+          )
+          meta["release_tag"] = os.environ["FINAL_TAG"]
+          meta["version"] = os.environ["FINAL_TAG"]
+          meta["commit"] = os.environ["TARGET_SHA"]
+          meta["tree"] = os.environ["TARGET_TREE"]
+          meta["prerelease"] = False
+          meta["application_count"] = 4
+          meta["supersedes"] = os.environ["OLD_TAG"]
+          meta["source_package"]["name"] = os.environ["MAIN_FINAL"]
+          meta["source_package"]["sha256"] = sha(os.environ["MAIN_FINAL"])
+          meta["gui_evidence"]["name"] = os.environ["GUI_FINAL"]
+          meta["gui_evidence"]["sha256"] = sha(os.environ["GUI_FINAL"])
+          Path("RELEASE-METADATA-1.0.1.json").write_text(
+              json.dumps(meta, indent=2, sort_keys=True) + "\n",
+              encoding="ascii",
+              newline="\n",
+          )
+
+          workflows = meta["workflows"]
+          notes = f"""# C48 SDK 1.0.1
+
+This certified release adds **GP82 — Grand Prix 1982** to the applications
+corpus. GP82 renders grouped wins, podiums and poles beside the 16-race
+constructor-win pie chart, with checked-in visual evidence under
+`docs/images/apps`.
+
+The applications gallery now contains four certified programs. The README
+and project documentation were swept for consistency, the repository
+sanity walk-through passed, and the tracked scratch workspace was cleared
+before release.
+
+Exact release commit: `{os.environ["TARGET_SHA"]}`
+Exact release tree: `{os.environ["TARGET_TREE"]}`
+
+Certification runs:
+- SDK verification: {workflows["sdk_verification"]}
+- BEEP numerical proof: {workflows["beep_proof"]}
+- Host-native desktop acceptance: {workflows["host_native_gui"]}
+- Graphics reel: {workflows["graphics"]}
+- Recursive-demo proof: {workflows["recursive_demos"]}
+- Release packaging: {workflows["release_candidate"]}
+- Packaged-document recertification: {workflows["recertification"]}
+
+Certification includes three fresh-filesystem release verifies and a
+virgin-package verification.
+
+Main package: `{os.environ["MAIN_FINAL"]}`
+
+Requires Python 3.10 or newer.
+"""
+          Path("release-notes.md").write_text(
+              notes,
+              encoding="ascii",
+              newline="\n",
+          )
+          PY
+
+          META="RELEASE-METADATA-1.0.1.json"
+          SUMS="SHA256SUMS-1.0.1.txt"
+          {
+            sha256sum "${MAIN_FINAL}"
+            sha256sum "${GUI_FINAL}"
+            sha256sum "${META}"
+          } > "${SUMS}"
+
+      - name: Publish final release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MAIN_FINAL="zx-ux-c48-sdk-${FINAL_TAG}-${TARGET_SHA}.zip"
+          GUI_FINAL="c48-${FINAL_TAG}-gui-evidence-${TARGET_SHA}.zip"
+          META="RELEASE-METADATA-1.0.1.json"
+          SUMS="SHA256SUMS-1.0.1.txt"
+
+          if gh release view "${FINAL_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            resolved="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${FINAL_TAG}" --jq .object.sha)"
+            test "${resolved}" = "${TARGET_SHA}"
+          else
+            gh release create "${FINAL_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --target "${TARGET_SHA}" \
+              --title "C48 SDK 1.0.1" \
+              --notes-file release-notes.md \
+              --latest
+          fi
+
+          gh release upload "${FINAL_TAG}" \
+            "${MAIN_FINAL}" "${GUI_FINAL}" "${META}" "${SUMS}" \
+            --repo "${GITHUB_REPOSITORY}" --clobber
+
+          release_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}" --jq .id)"
+          body="$(cat release-notes.md)"
+          gh api --method PATCH \
+            "repos/${GITHUB_REPOSITORY}/releases/${release_id}" \
+            -f tag_name="${FINAL_TAG}" \
+            -f target_commitish="${TARGET_SHA}" \
+            -f name="C48 SDK 1.0.1" \
+            -f body="${body}" \
+            -F draft=false -F prerelease=false -f make_latest=true >/dev/null
+
+      - name: Verify final release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MAIN_FINAL="zx-ux-c48-sdk-${FINAL_TAG}-${TARGET_SHA}.zip"
+          GUI_FINAL="c48-${FINAL_TAG}-gui-evidence-${TARGET_SHA}.zip"
+          resolved="$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${FINAL_TAG}" --jq .object.sha)"
+          test "${resolved}" = "${TARGET_SHA}"
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${FINAL_TAG}" > published.json
+
+          MAIN_FINAL="${MAIN_FINAL}" GUI_FINAL="${GUI_FINAL}" python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+
+          def sha(path):
+              return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+          release = json.loads(
+              Path("published.json").read_text(encoding="utf-8")
+          )
+          if release.get("draft") or release.get("prerelease"):
+              raise SystemExit("final release state mismatch")
+          if release.get("tag_name") != os.environ["FINAL_TAG"]:
+              raise SystemExit("final release tag mismatch")
+          if release.get("target_commitish") != os.environ["TARGET_SHA"]:
+              raise SystemExit("final release target mismatch")
+          expected = {
+              os.environ["MAIN_FINAL"]: sha(os.environ["MAIN_FINAL"]),
+              os.environ["GUI_FINAL"]: sha(os.environ["GUI_FINAL"]),
+              "RELEASE-METADATA-1.0.1.json": sha(
+                  "RELEASE-METADATA-1.0.1.json"
+              ),
+              "SHA256SUMS-1.0.1.txt": sha("SHA256SUMS-1.0.1.txt"),
+          }
+          actual = {}
+          for asset in release.get("assets", []):
+              digest = str(asset.get("digest") or "")
+              if digest.startswith("sha256:"):
+                  actual[str(asset["name"])] = digest.split(":", 1)[1]
+          if actual != expected:
+              raise SystemExit(
+                  f"final asset set or digest mismatch: {actual}"
+              )
+          meta = json.loads(
+              Path("RELEASE-METADATA-1.0.1.json").read_text(encoding="ascii")
+          )
+          if meta.get("commit") != os.environ["TARGET_SHA"]:
+              raise SystemExit("final metadata commit mismatch")
+          if meta.get("tree") != os.environ["TARGET_TREE"]:
+              raise SystemExit("final metadata tree mismatch")
+          if meta.get("release_tag") != os.environ["FINAL_TAG"]:
+              raise SystemExit("final metadata release mismatch")
+          if meta.get("prerelease") is not False:
+              raise SystemExit("final metadata state mismatch")
+          print("FINAL 1.0.1 RELEASE VERIFY PASS")
+          PY
+
+      - name: Remove superseded releases
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          remove_release_and_tag() {
+            tag="$1"
+            if gh release view "${tag}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+              if ! gh release delete "${tag}" --repo "${GITHUB_REPOSITORY}" --cleanup-tag --yes; then
+                gh release delete "${tag}" --repo "${GITHUB_REPOSITORY}" --yes || true
+                gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" >/dev/null 2>&1 || true
+              fi
+            else
+              gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/${tag}" >/dev/null 2>&1 || true
+            fi
+            if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${tag}" >/dev/null 2>&1; then
+              echo "superseded release remains: ${tag}" >&2
+              return 1
+            fi
+            if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${tag}" >/dev/null 2>&1; then
+              echo "superseded tag remains: ${tag}" >&2
+              return 1
+            fi
+          }
+
+          remove_release_and_tag "${OLD_TAG}"
+          remove_release_and_tag "${RC_TAG}"
+          echo "RELEASE REPLACEMENT CLEANUP PASS"
