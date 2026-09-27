@@ -1,3 +1,8 @@
+<!-- Copyright (c) 2026 SANYALnet Labs. -->
+<!-- ZX-UX C48 SDK -->
+<!-- This file is governed by the SANYALnet Labs Non-Commercial License in the root LICENSE file. -->
+<!-- Attribution required: SANYALnet Labs. -->
+
 # ailmzx48 source
 
 This directory contains the SDK-side C48 source for `ailmzx48`.

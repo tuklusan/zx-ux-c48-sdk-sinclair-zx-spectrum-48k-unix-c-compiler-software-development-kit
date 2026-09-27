@@ -12,6 +12,7 @@
 # provisions.
 # ============================================================================
 name: Source tape publisher
+# Policy-ready publisher.
 
 "on":
   push:
