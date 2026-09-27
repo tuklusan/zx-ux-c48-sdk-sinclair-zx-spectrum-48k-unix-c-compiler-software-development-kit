@@ -21,12 +21,12 @@ int h_count[3];
 int h_disc[3][7];
 int h_move_count;
 int h_current_disc;
-int h_current_source;
-int h_current_target;
+int h_cur_src;
+int h_cur_dst;
 int h_current_depth;
 int h_maximum_depth;
-int h_invariant_failures;
-int h_frame_guard_failures;
+int h_inv_fail;
+int h_guard_fail;
 int h_failed;
 int h_fast;
 
@@ -92,13 +92,13 @@ void h_text(int row, int col, char *s)
     if (h_failed)
         return;
     if (!h_text_ok(row, col, s)) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("TEXT RANGE");
         return;
     }
     h_style(7, 0, 1);
     if (print_at(row, col, s) != 0) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("TEXT HOST");
     }
 }
@@ -109,7 +109,7 @@ void h_num(int row, int col, int value, int width)
     int i;
     int v;
     if (width < 1 || width > 6) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("NUM WIDTH");
         return;
     }
@@ -144,13 +144,13 @@ void h_draw(int slot, int row, int col, int inkc)
     if (h_failed)
         return;
     if (!h_gfx_ok(slot, row, col)) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("DRAW RANGE");
         return;
     }
     h_style(inkc, 0, 1);
     if (udg_draw(slot, row, col) != 0) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("DRAW HOST");
     }
 }
@@ -158,12 +158,12 @@ void h_draw(int slot, int row, int col, int inkc)
 void h_define_udg(int slot)
 {
     if (slot < 0 || slot > 15) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("UDG RANGE");
         return;
     }
     if (udg_define(slot, h_udg + slot * 8) != 0) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("UDG HOST");
     }
 }
@@ -240,7 +240,7 @@ void h_draw_disc(int disc, int row, int col)
         h_draw(11, row, col + 2, inkc);
         return;
     }
-    h_invariant_failures++;
+    h_inv_fail++;
     h_fail("DISC RANGE");
 }
 
@@ -285,7 +285,7 @@ void h_repaint_stack(int pole)
 {
     int row;
     if (pole < 0 || pole > 2) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("POLE RANGE");
         return;
     }
@@ -311,18 +311,18 @@ void h_show_live(void)
     h_text(2, 0, "DISC ");
     h_num(2, 5, h_current_disc, 1);
     h_text(2, 7, " ");
-    s[0] = (char)('A' + h_current_source);
+    s[0] = (char)('A' + h_cur_src);
     s[1] = 0;
     h_text(2, 8, s);
     h_text(2, 9, "->");
-    s[0] = (char)('A' + h_current_target);
+    s[0] = (char)('A' + h_cur_dst);
     h_text(2, 11, s);
     h_text(20, 0, "FRAME GUARD OK");
     h_text(22, 0, "MAX DEP ");
     h_num(22, 8, h_maximum_depth, 1);
 }
 
-int h_validate_model(void)
+int h_validate(void)
 {
     int seen[8];
     int p;
@@ -359,7 +359,7 @@ int h_validate_model(void)
 int h_check_final(void)
 {
     int i;
-    if (!h_validate_model())
+    if (!h_validate())
         return 0;
     if (h_move_count != 127)
         return 0;
@@ -373,9 +373,9 @@ int h_check_final(void)
     }
     if (h_maximum_depth != 7)
         return 0;
-    if (h_invariant_failures != 0)
+    if (h_inv_fail != 0)
         return 0;
-    if (h_frame_guard_failures != 0)
+    if (h_guard_fail != 0)
         return 0;
     return 1;
 }
@@ -392,12 +392,12 @@ int h_move(int source, int target)
     if (h_failed)
         return 0;
     if (source < 0 || source > 2 || target < 0 || target > 2) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("MOVE POLE");
         return 0;
     }
     if (h_count[source] <= 0) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("EMPTY SOURCE");
         return 0;
     }
@@ -405,19 +405,19 @@ int h_move(int source, int target)
     target_count = h_count[target];
     disc = h_disc[source][old_count - 1];
     if (disc < 1 || disc > 7) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("MOVE DISC");
         return 0;
     }
     if (target_count > 0 &&
         h_disc[target][target_count - 1] < disc) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("ILLEGAL MOVE");
         return 0;
     }
     h_current_disc = disc;
-    h_current_source = source;
-    h_current_target = target;
+    h_cur_src = source;
+    h_cur_dst = target;
     h_show_live();
     h_count[source]--;
     row = 17 - old_count;
@@ -462,8 +462,8 @@ int h_move(int source, int target)
     h_restore_row(row);
     h_repaint_stack(source);
     h_repaint_stack(target);
-    if (!h_validate_model()) {
-        h_invariant_failures++;
+    if (!h_validate()) {
+        h_inv_fail++;
         h_fail("MODEL FAIL");
         return 0;
     }
@@ -490,7 +490,7 @@ int h_solve(int n, int source, int spare, int target,
         return 0;
     if (guard != n * 101 + source * 17 + spare * 7 +
         target * 3 + depth) {
-        h_frame_guard_failures++;
+        h_guard_fail++;
         h_fail("FRAME FAIL");
         return 0;
     }
@@ -501,7 +501,7 @@ int h_solve(int n, int source, int spare, int target,
         return 0;
     if (guard != n * 101 + source * 17 + spare * 7 +
         target * 3 + depth) {
-        h_frame_guard_failures++;
+        h_guard_fail++;
         h_fail("FRAME FAIL");
         return 0;
     }
@@ -523,12 +523,12 @@ void h_init_model(void)
         h_disc[0][i] = 7 - i;
     h_move_count = 0;
     h_current_disc = 0;
-    h_current_source = 0;
-    h_current_target = 2;
+    h_cur_src = 0;
+    h_cur_dst = 2;
     h_current_depth = 0;
     h_maximum_depth = 0;
-    h_invariant_failures = 0;
-    h_frame_guard_failures = 0;
+    h_inv_fail = 0;
+    h_guard_fail = 0;
     h_failed = 0;
 }
 
@@ -563,15 +563,15 @@ int main(int argc, char **argv)
         h_fast = 1;
     h_init_model();
     h_init_screen();
-    if (!h_validate_model()) {
-        h_invariant_failures++;
+    if (!h_validate()) {
+        h_inv_fail++;
         h_fail("INIT MODEL");
         return 1;
     }
     if (!h_solve(7, 0, 1, 2, 1))
         return 1;
     if (!h_check_final()) {
-        h_invariant_failures++;
+        h_inv_fail++;
         h_fail("FINAL FAIL");
         return 1;
     }

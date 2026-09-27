@@ -12,10 +12,10 @@
 #include "exapi.h"
 
 #define Q_SIZE 8
-#define Q_RIGHT_GCOL_MIN 16
-#define Q_RIGHT_GCOL_MAX 31
-#define Q_RIGHT_TCOL_MIN 32
-#define Q_RIGHT_TCOL_MAX 63
+#define Q_GCOL_MIN 16
+#define Q_GCOL_MAX 31
+#define Q_TCOL_MIN 32
+#define Q_TCOL_MAX 63
 
 int q_col[8];
 int q_col_used[8];
@@ -24,12 +24,12 @@ int q_up_used[15];
 int q_current_row;
 int q_current_col;
 int q_placed_count;
-int q_candidate_tests;
-int q_backtrack_count;
+int q_tests;
+int q_backtracks;
 int q_current_depth;
 int q_maximum_depth;
-int q_invariant_failures;
-int q_frame_guard_failures;
+int q_inv_fail;
+int q_guard_fail;
 int q_failed;
 int q_fast;
 
@@ -74,7 +74,7 @@ int q_text_ok(int row, int col, char *s)
     n = (int)strlen(s);
     if (row < 0 || row > 23)
         return 0;
-    if (col < Q_RIGHT_TCOL_MIN || col > Q_RIGHT_TCOL_MAX)
+    if (col < Q_TCOL_MIN || col > Q_TCOL_MAX)
         return 0;
     if (col + n > 64)
         return 0;
@@ -95,13 +95,13 @@ void q_text(int row, int col, char *s)
     if (q_failed)
         return;
     if (!q_text_ok(row, col, s)) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("TEXT RANGE");
         return;
     }
     q_style(7, 0, 1);
     if (print_at(row, col, s) != 0) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("TEXT HOST");
     }
 }
@@ -112,7 +112,7 @@ void q_num(int row, int col, int value, int width)
     int i;
     int v;
     if (width < 1 || width > 6) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("NUM WIDTH");
         return;
     }
@@ -137,7 +137,7 @@ int q_gfx_ok(int slot, int row, int col)
         return 0;
     if (row < 0 || row > 23)
         return 0;
-    if (col < Q_RIGHT_GCOL_MIN || col > Q_RIGHT_GCOL_MAX)
+    if (col < Q_GCOL_MIN || col > Q_GCOL_MAX)
         return 0;
     return 1;
 }
@@ -147,13 +147,13 @@ void q_draw(int slot, int row, int col, int inkc, int paperc)
     if (q_failed)
         return;
     if (!q_gfx_ok(slot, row, col)) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("DRAW RANGE");
         return;
     }
     q_style(inkc, paperc, 1);
     if (udg_draw(slot, row, col) != 0) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("DRAW HOST");
     }
 }
@@ -164,18 +164,18 @@ void q_draw_queen(int base, int row, int col, int inkc,
     if (q_failed)
         return;
     if (base != 16 && base != 20 && base != 24) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("QUEEN UDG");
         return;
     }
     if (row < 3 || row > 17 || col < 16 || col > 30) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("QUEEN RANGE");
         return;
     }
     q_style(inkc, paperc, 1);
     if (udg_draw_2x2(base, row, col) != 0) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("QUEEN HOST");
     }
 }
@@ -183,12 +183,12 @@ void q_draw_queen(int base, int row, int col, int inkc,
 void q_define_udg(int slot)
 {
     if (slot < 16 || slot > 31) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("UDG RANGE");
         return;
     }
     if (udg_define(slot, q_udg + (slot - 16) * 8) != 0) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("UDG HOST");
     }
 }
@@ -215,7 +215,7 @@ void q_board_square(int row, int col)
     int gc;
     int p;
     if (row < 0 || row > 7 || col < 0 || col > 7) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("BOARD RANGE");
         return;
     }
@@ -277,13 +277,13 @@ void q_live(void)
     q_text(20, 32, "PLACED ");
     q_num(20, 39, q_placed_count, 1);
     q_text(20, 41, "BACK ");
-    q_num(20, 46, q_backtrack_count, 3);
+    q_num(20, 46, q_backtracks, 3);
     q_text(21, 32, "FRAME GUARD OK");
     q_text(22, 32, "MAX DEP ");
     q_num(22, 40, q_maximum_depth, 1);
 }
 
-int q_validate_partial(void)
+int q_validate(void)
 {
     int cs[8];
     int ds[15];
@@ -346,17 +346,17 @@ int q_check_final(void)
     expected[5] = 6;
     expected[6] = 1;
     expected[7] = 3;
-    if (!q_validate_partial())
+    if (!q_validate())
         return 0;
     if (q_placed_count != 8 || q_maximum_depth != 8)
         return 0;
-    if (q_candidate_tests != 876)
+    if (q_tests != 876)
         return 0;
-    if (q_backtrack_count != 105)
+    if (q_backtracks != 105)
         return 0;
-    if (q_invariant_failures != 0)
+    if (q_inv_fail != 0)
         return 0;
-    if (q_frame_guard_failures != 0)
+    if (q_guard_fail != 0)
         return 0;
     for (r = 0; r < 8; r++) {
         if (q_col[r] != expected[r])
@@ -392,12 +392,12 @@ int q_place(int row, int depth)
         q_current_depth = depth;
         q_live();
         q_show_piece(row, col, 20, 6);
-        q_candidate_tests++;
+        q_tests++;
         q_pause(1);
         down = row - col + 7;
         up = row + col;
         if (down < 0 || down > 14 || up < 0 || up > 14) {
-            q_invariant_failures++;
+            q_inv_fail++;
             q_fail("DIAG RANGE");
             return 0;
         }
@@ -411,8 +411,8 @@ int q_place(int row, int depth)
         q_down_used[down] = 1;
         q_up_used[up] = 1;
         q_placed_count++;
-        if (!q_validate_partial()) {
-            q_invariant_failures++;
+        if (!q_validate()) {
+            q_inv_fail++;
             q_fail("MODEL FAIL");
             return 0;
         }
@@ -424,7 +424,7 @@ int q_place(int row, int depth)
         child = q_place(row + 1, depth + 1);
         if (guard != row * 101 + depth * 17 + col * 7 + 3 ||
             q_col[row] != col) {
-            q_frame_guard_failures++;
+            q_guard_fail++;
             q_fail("FRAME FAIL");
             return 0;
         }
@@ -440,10 +440,10 @@ int q_place(int row, int depth)
         q_down_used[down] = 0;
         q_up_used[up] = 0;
         q_placed_count--;
-        q_backtrack_count++;
+        q_backtracks++;
         q_board_square(row, col);
-        if (!q_validate_partial()) {
-            q_invariant_failures++;
+        if (!q_validate()) {
+            q_inv_fail++;
             q_fail("MODEL FAIL");
             return 0;
         }
@@ -466,12 +466,12 @@ void q_init_model(void)
     q_current_row = 0;
     q_current_col = 0;
     q_placed_count = 0;
-    q_candidate_tests = 0;
-    q_backtrack_count = 0;
+    q_tests = 0;
+    q_backtracks = 0;
     q_current_depth = 0;
     q_maximum_depth = 0;
-    q_invariant_failures = 0;
-    q_frame_guard_failures = 0;
+    q_inv_fail = 0;
+    q_guard_fail = 0;
     q_failed = 0;
 }
 
@@ -509,8 +509,8 @@ int main(int argc, char **argv)
         q_fast = 1;
     q_init_model();
     q_init_screen();
-    if (!q_validate_partial()) {
-        q_invariant_failures++;
+    if (!q_validate()) {
+        q_inv_fail++;
         q_fail("INIT MODEL");
         return 1;
     }
@@ -520,7 +520,7 @@ int main(int argc, char **argv)
         return 1;
     }
     if (!q_check_final()) {
-        q_invariant_failures++;
+        q_inv_fail++;
         q_fail("FINAL FAIL");
         return 1;
     }
