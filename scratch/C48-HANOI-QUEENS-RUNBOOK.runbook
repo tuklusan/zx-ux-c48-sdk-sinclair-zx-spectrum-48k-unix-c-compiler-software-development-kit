@@ -15,6 +15,10 @@ C48 RECURSION AND MULTITASK DISPLAY RUNBOOK
 Revision 1.1
 Date: 2026-09-27
 
+Status: CLOSED
+Phases 1 through 6 completed and accepted.
+Phase 7 remains deferred and separately executable only on request.
+
 1. PURPOSE
 
 This runbook freezes the design and later implementation procedure for two
@@ -775,40 +779,40 @@ Do not overwrite the other program's half to make the failure more visible.
 11. ACCEPTANCE CHECKLIST
 
 HANOI
-  [ ] source tracked in usr/src/examples
-  [ ] compiled artifact tracked in usr/bin/examples
-  [ ] no cls call
-  [ ] no border call
-  [ ] UDG slots limited to 0..15
-  [ ] graphics columns limited to 0..15
-  [ ] text columns limited to 0..31
-  [ ] seven discs
-  [ ] exactly 127 moves
-  [ ] maximum recursion depth seven
-  [ ] frame guards pass
-  [ ] final tower legal on C
-  [ ] default pacing readable
-  [ ] fast mode executes complete logic
-  [ ] final process status zero
+  [x] source tracked in usr/src/examples
+  [x] compiled artifact tracked in usr/bin/examples
+  [x] no cls call
+  [x] no border call
+  [x] UDG slots limited to 0..15
+  [x] graphics columns limited to 0..15
+  [x] text columns limited to 0..31
+  [x] seven discs
+  [x] exactly 127 moves
+  [x] maximum recursion depth seven
+  [x] frame guards pass
+  [x] final tower legal on C
+  [x] default pacing readable
+  [x] fast mode executes complete logic
+  [x] final process status zero
 
 8-QUEENS
-  [ ] source tracked in usr/src/examples
-  [ ] compiled artifact tracked in usr/bin/examples
-  [ ] no cls call
-  [ ] no border call
-  [ ] UDG slots limited to 16..31
-  [ ] graphics columns limited to 16..31
-  [ ] text columns limited to 32..63
-  [ ] board exactly 128x128 pixels
-  [ ] queen exactly 16x16 pixels
-  [ ] deterministic left-to-right search
-  [ ] maximum recursion depth eight
-  [ ] frame guards pass
-  [ ] final solution vector matches the frozen solution
-  [ ] final board conflict-free
-  [ ] default pacing readable
-  [ ] fast mode executes complete logic
-  [ ] final process status zero
+  [x] source tracked in usr/src/examples
+  [x] compiled artifact tracked in usr/bin/examples
+  [x] no cls call
+  [x] no border call
+  [x] UDG slots limited to 16..31
+  [x] graphics columns limited to 16..31
+  [x] text columns limited to 32..63
+  [x] board exactly 128x128 pixels
+  [x] queen exactly 16x16 pixels
+  [x] deterministic left-to-right search
+  [x] maximum recursion depth eight
+  [x] frame guards pass
+  [x] final solution vector matches the frozen solution
+  [x] final board conflict-free
+  [x] default pacing readable
+  [x] fast mode executes complete logic
+  [x] final process status zero
 
 DEFERRED CONCURRENT ZX-UX - RUN ONLY ON SEPARATE REQUEST
   [ ] both tasks visibly make progress during overlap
@@ -844,3 +848,10 @@ FINAL REVISION REVIEW 3 - ZERO GAPS
   requirement remains.
 
 ZERO-GAP STATUS: PASSED
+
+13. CLOSURE RECORD
+
+CLOSED: 2026-09-27
+Phases 1 through 6 are complete. The tracked sources, compiled artifacts, deterministic recursion proofs, frame guards, invariant checks, owned-half display proofs, and normal display evidence satisfy this runbook.
+
+Phase 7 is not closed or implied by this record. It remains a future native ZX-UX concurrent proof and requires a separate explicit request.
