@@ -1,0 +1,189 @@
+# ============================================================================
+# Copyright (c) 2026 SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
+# restricted model training is prohibited unless separately authorized.
+#
+# Attribution required: SANYALnet Labs.
+# ============================================================================
+name: Documentation source-tape sweep
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/doc-source-tape-sweep.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  sweep:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install document tooling
+        shell: bash
+        run: |
+          python -m pip install --disable-pip-version-check python-docx
+          if ! command -v libreoffice >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y libreoffice-writer poppler-utils
+          fi
+
+      - name: Update README and three books
+        shell: python
+        run: |
+          from pathlib import Path
+          from docx import Document
+          from docx.enum.text import WD_BREAK
+
+          readme = Path("README.md")
+          text = readme.read_text(encoding="utf-8")
+          marker = "## Applications gallery — 4 C48 applications"
+          heading = "## Native ZX-UX source tapes"
+          section = """## Native ZX-UX source tapes
+
+          The distribution includes **57 native ZX-UX source tapes** beside the
+          matching frozen programs under `usr/bin/`. Each `*.src.tap` image
+          carries the C48 program source plus the local header it needs, so the
+          same source corpus can be moved from a modern SDK host onto a real
+          ZX-UX system.
+
+          The tapes use ZX-UX **M48O version 1** RAW objects with the symbolic
+          **USERHOME** target. C files are stored as object type **C (5)**;
+          headers are stored as **TXT (1)**. Payload and header CRCs are
+          generated and verified by `c48srctap`. The tool accepts only
+          lowercase `.c`, `.h`, and `.txt` inputs and refuses a mixed or
+          unsupported command line before creating output.
+
+          A typical native workflow is:
+
+          ```text
+          attach or position the .src.tap cassette at its start
+          load exapi.h
+          load hello.c
+          cc hello.c
+          link the emitted OBJ1 with ld
+          run the resulting MEX1 program
+          ```
+
+          The tape order is deliberate: the required local header is first and
+          the C source follows it. `load` installs the objects into the current
+          user's home directory through USERHOME mapping. The native
+          compiler-resident `<c48.h>` remains part of ZX-UX itself and is not
+          duplicated on these tapes.
+
+          The complete locked mapping is recorded in
+          [`compiler/source_tape_manifest.json`](compiler/source_tape_manifest.json).
+          The generator is available as `c48srctap` / `c48srctap.bat`; run
+          `c48srctap --help` for syntax and examples.
+
+          """
+          section = "\n".join(line.strip() for line in section.splitlines()) + "\n"
+          if heading not in text:
+              if marker not in text:
+                  raise SystemExit("README insertion marker missing")
+              text = text.replace(marker, section + marker, 1)
+              readme.write_text(text, encoding="utf-8", newline="\n")
+
+          docs = Path("docs")
+          sections = {
+              "ZX-UX C48 SDK User Manual.docx": (
+                  "Native ZX-UX source tapes",
+                  [
+                      "The SDK distribution includes 57 native ZX-UX source tape images beside the matching frozen programs under usr/bin. Each .src.tap image carries the C48 program source and the local header needed by that program.",
+                      "Each tape stores ZX-UX M48O version-1 RAW objects targeted at USERHOME. C source is type C (5); .h and .txt source material is type TXT (1). USERHOME resolves to the current /home/<user> when ZX-UX loads the object.",
+                      "To use a tape, position or attach the .src.tap cassette at its start, load the header object first, then load the C object. For example, the hello tape is used as: load exapi.h, then load hello.c, then cc hello.c. Pass the emitted OBJ1 object to the native ld linker and run the resulting MEX1 program.",
+                      "The native compiler-resident <c48.h> is supplied by ZX-UX itself and is not included on the source tapes. The model program is intentionally excluded because its present single-translation-unit form exceeds current native compiler resource limits.",
+                      "The c48srctap host utility creates compatible source tapes. It accepts only lowercase .c, .h, and .txt inputs, validates names and text format, writes atomically, and performs an internal decode-and-compare check before success.",
+                  ],
+              ),
+              "ZX-UX C48 SDK Technical Reference.docx": (
+                  "Native source-tape transport",
+                  [
+                      "The release carries a locked corpus of 57 .src.tap images under usr/bin, one for every compiled C48 program in the supported corpus except the model program. The mapping is defined by compiler/source_tape_manifest.json and is verified against the tracked source corpus.",
+                      "c48srctap serializes each input as a ZX-UX M48O version-1 RAW object. The target directory ID is USERHOME (5). Lowercase .c files use object type C (5); lowercase .h and .txt files use TXT (1). Each object has a 32-byte M48O header, CRC-16/CCITT-FALSE header and logical-payload checksums, and payload transport blocks of at most 512 bytes.",
+                      "The generated source tape is a Spectrum TAP transport containing ZX-UX logical M48O records; it is not an alternate operating-system distribution image. Source tapes are intended for transfer into a running ZX-UX session.",
+                      "Program tapes place the required local header before the C source so a forward cassette session can load both in order. USERHOME resolves symbolically to the current user's home directory. The one source basename that exceeds the M48O ten-byte name limit is carried under the locked short tape name sprani.c; all other tape names match their source basenames.",
+                      "The host tool rejects unsupported extensions, uppercase extension variants, non-ASCII or CR-containing source text, NUL bytes, oversized objects, duplicate tape names, invalid M48O basenames, and unsafe overwrite attempts. Output is written through a temporary file and atomically replaced only after successful construction and internal round-trip validation.",
+                      "Native use is: load the local header, load the C source, compile the C object with cc, link the emitted OBJ1 using ld, and execute the resulting MEX1 program. Native <c48.h> remains compiler-resident and is not transported.",
+                  ],
+              ),
+              "ZX-UX C48 SDK Adversarial Security Review.docx": (
+                  "Source-tape generation and transport controls",
+                  [
+                      "The source-tape feature adds 57 deterministic .src.tap artifacts and the c48srctap generator. The generator is intentionally narrow: only lowercase .c, .h, and .txt input files are accepted. Unsupported or mixed input sets fail before an output file is created.",
+                      "Inputs must be ASCII text with LF line endings and no NUL bytes. Each M48O basename must satisfy the native 1-to-10-byte portable-name contract, object size is bounded by the native 32768-byte limit, duplicate tape names are rejected, and existing outputs require an explicit --force replacement request.",
+                      "Every generated object is RAW, targets USERHOME, carries both M48O header and logical-payload CRC-16/CCITT-FALSE values, and is emitted in bounded 512-byte payload blocks. The generator immediately decodes the completed in-memory tape and compares object names, types, targets, and payload bytes before writing the file.",
+                      "The locked release corpus is regenerated from tracked sources and compared byte-for-byte during verification. Corruption tests cover TAP checksum failure and M48O payload-CRC failure. The runner matrix exercises the implementation on Linux, Windows, macOS Arm, and macOS Intel.",
+                      "These controls make the source tapes deterministic transfer artifacts rather than trusted executable inputs: compilation and linking still occur inside native ZX-UX under its normal compiler, linker, object-type, memory, and runtime checks.",
+                  ],
+              ),
+          }
+
+          for name, (section_heading, paragraphs) in sections.items():
+              path = docs / name
+              doc = Document(path)
+              existing = {p.text.strip() for p in doc.paragraphs}
+              if section_heading not in existing:
+                  p = doc.add_paragraph()
+                  p.add_run().add_break(WD_BREAK.PAGE)
+                  doc.add_heading(section_heading, level=1)
+                  for body in paragraphs:
+                      doc.add_paragraph(body)
+                  doc.save(path)
+
+      - name: Render all books
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p qa
+          for f in docs/*.docx; do
+            case "$f" in
+              *"SDK User Manual.docx"|*"SDK Technical Reference.docx"|*"SDK Adversarial Security Review.docx")
+                stem="$(basename "$f" .docx)"
+                out="qa/$stem"
+                mkdir -p "$out"
+                libreoffice --headless --convert-to pdf --outdir "$out" "$f"
+                pdf="$(find "$out" -maxdepth 1 -name '*.pdf' -print -quit)"
+                test -n "$pdf"
+                pdftoppm -png -r 110 "$pdf" "$out/page" >/dev/null 2>&1
+                ;;
+            esac
+          done
+
+      - name: Upload document QA
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-tape-doc-qa-${{ github.sha }}
+          path: qa
+          if-no-files-found: error
+          retention-days: 7
+
+      - name: Commit documentation sweep
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "SANYALnet Labs"
+          git config user.email "sanyalnet-labs@users.noreply.github.com"
+          git add README.md docs/*.docx
+          git diff --cached --check
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Complete source tape documentation sweep"
+          git push origin main

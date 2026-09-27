@@ -346,7 +346,16 @@ def make_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="c48srctap",
         description=(
-            "Build a ZX-UX source TAP containing RAW M48O C/TXT objects."
+            "Build a ZX-UX source TAP containing RAW M48O C/TXT objects. "
+            "Inputs are restricted to lowercase .c, .h, and .txt files; "
+            "objects target USERHOME."
+        ),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=(
+            "examples:\n"
+            "  c48srctap exapi.h hello.c -o hello.src.tap\n"
+            "  c48srctap demoapi.h spriteanim.c "
+            "--name spriteanim.c sprani.c -o spriteanim.src.tap"
         ),
     )
     parser.add_argument("sources", nargs="+", metavar="SOURCE")

@@ -43,6 +43,12 @@ class SourceTapeTests(unittest.TestCase):
         self.assertIn("--name", help_text)
         self.assertIn("--force", help_text)
 
+    def test_help_states_source_policy(self):
+        help_text = c48srctap.make_parser().format_help()
+        self.assertIn("lowercase .c, .h, and .txt", help_text)
+        self.assertIn("USERHOME", help_text)
+        self.assertIn("examples:", help_text)
+
     def test_version_reports_sdk_version(self):
         out = io.StringIO()
         with contextlib.redirect_stdout(out):
