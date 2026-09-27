@@ -1,7 +1,7 @@
 ZX-UX C48 SDK
 SANYALnet Labs
 C48 RECURSION AND MULTITASK DISPLAY RUNBOOK
-Revision 1.0
+Revision 1.1
 Date: 2026-09-27
 
 1. PURPOSE
@@ -672,12 +672,22 @@ PHASE 6 - SDK INDIVIDUAL PROOF
   Capture evidence frames only after each program's owned-half geometry,
   colours, labels, and final state match this runbook.
 
-PHASE 7 - ZX-UX CONCURRENT PROOF
+PHASE 7 - ZX-UX CONCURRENT PROOF - DEFERRED, SEPARATELY EXECUTABLE
 
-  Launch both tracked programs as independent ZX-UX tasks using the native
-  multitasking facilities.
+  This phase is intentionally NOT part of the current SDK implementation,
+  verification, acceptance, or release-completion criteria.
 
-  Start order must be tested both ways:
+  ZX-UX is not yet ready for this concurrent proof.
+
+  Do not execute this phase automatically after Phase 6.
+
+  Execute Phase 7 only on a separate explicit request, after the native ZX-UX
+  multitasking environment is declared ready for the test.
+
+  When separately requested, launch both tracked programs as independent ZX-UX
+  tasks using the native multitasking facilities.
+
+  Start order must then be tested both ways:
     Hanoi first, then 8-Queens
     8-Queens first, then Hanoi
 
@@ -696,6 +706,9 @@ PHASE 7 - ZX-UX CONCURRENT PROOF
   Any visual corruption, wrong counter, wrong final board, wrong final tower,
   frame-guard failure, or non-zero process result is a failed multitasking
   proof.
+
+  Completion of Phase 6 is sufficient for the present SDK work. Phase 7 remains
+  a preserved future runbook procedure until separately requested.
 
 9. SDK VERIFICATION REQUIREMENTS
 
@@ -726,6 +739,10 @@ Hanoi additionally proves:
 
 The normal display runs are a second layer of proof and must not replace the
 headless or fast algorithm checks.
+
+Current SDK acceptance ends with Phase 6. The deferred concurrent ZX-UX proof
+in Phase 7 is not a prerequisite for current SDK acceptance and must be run
+only as a separately requested future procedure.
 
 10. FAILURE POLICY
 
@@ -782,7 +799,7 @@ HANOI
   [ ] fast mode executes complete logic
   [ ] final process status zero
 
-CONCURRENT ZX-UX
+DEFERRED CONCURRENT ZX-UX - RUN ONLY ON SEPARATE REQUEST
   [ ] both tasks visibly make progress during overlap
   [ ] no screen ownership violation
   [ ] no UDG ownership violation
@@ -809,8 +826,10 @@ FINAL REVISION REVIEW 2 - ZERO GAPS
 
 FINAL REVISION REVIEW 3 - ZERO GAPS
   Checked repository paths, tracked source/binary targets, independent SDK
-  proof, concurrent ZX-UX proof, shared-screen restrictions, scheduling points,
-  start-order independence, and acceptance criteria. No unresolved design
+  proof, deferred concurrent ZX-UX procedure, shared-screen restrictions,
+  scheduling points, start-order independence, and acceptance criteria.
+  Confirmed Phase 7 is preserved but excluded from current SDK completion and
+  executes only on a separate explicit future request. No unresolved design
   requirement remains.
 
 ZERO-GAP STATUS: PASSED
