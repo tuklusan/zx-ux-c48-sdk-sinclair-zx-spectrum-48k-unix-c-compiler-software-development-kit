@@ -1,0 +1,53 @@
+# ============================================================================
+# Copyright (c) 2026 SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file.
+#
+# Attribution required: SANYALnet Labs.
+# See root LICENSE file for full terms.
+# ============================================================================
+name: Recursive example verification
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "compiler/verify_recursive_examples.py"
+      - "compiler/c48/**/*.py"
+      - "compiler/c48.py"
+      - "compiler/c48run.py"
+      - "compiler/assets/SANYALnet-Labs-4x8-font-FINAL.bin"
+      - "usr/src/examples/exapi.h"
+      - "usr/src/examples/hanoi.c"
+      - "usr/src/examples/queens8.c"
+      - "usr/bin/examples/hanoi.c48b"
+      - "usr/bin/examples/queens8.c48b"
+      - ".github/workflows/recursive-examples.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run recursive example verifier
+        run: python -B compiler/verify_recursive_examples.py

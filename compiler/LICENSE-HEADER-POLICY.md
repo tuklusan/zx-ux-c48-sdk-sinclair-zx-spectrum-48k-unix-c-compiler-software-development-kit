@@ -1,6 +1,6 @@
 <!--
 ============================================================================
-Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+Copyright (c) 2026 SANYALnet Labs.
 Proprietary rights reserved except as expressly licensed herein.
 
 ZX-UX C48 SDK
@@ -8,9 +8,8 @@ This file is governed by the SANYALnet Labs Non-Commercial License in the
 root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
 for AI/ML model training are prohibited unless separately authorized.
 
-Attribution is required: "Based on original work by Supratim Sanyal of
-SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-patent, trademark, and governing-law provisions.
+Attribution required: SANYALnet Labs. See root LICENSE file for full terms,
+warranty disclaimer, termination, patent, trademark, and governing-law provisions.
 ============================================================================
 -->
 # License Header Policy
@@ -23,7 +22,7 @@ as part of `compiler/verify_release.py`.
 
 The gate requires the approved project header near the beginning of every project-owned
 file where an in-band text comment or heading is safe: Python, C48/C source, headers,
-Markdown, ordinary text, YAML (including GitHub Actions workflows), Windows batch
+Markdown, ordinary text, tracked runbooks, YAML (including GitHub Actions workflows), Windows batch
 files, the POSIX launchers, `.gitignore`, and `.gitattributes`.
 
 The POSIX shebang remains physical line 1. Windows batch launchers keep `@echo off` at
