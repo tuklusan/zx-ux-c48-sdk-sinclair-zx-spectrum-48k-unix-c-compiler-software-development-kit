@@ -24,6 +24,8 @@ import tempfile
 
 sys.dont_write_bytecode = True
 
+# Release 1.0.2 certification touch.
+
 ROOT = Path(__file__).resolve().parent
 SDK = ROOT.parent
 FONT = ROOT / "assets" / "SANYALnet-Labs-4x8-font-FINAL.bin"
