@@ -6,7 +6,7 @@
 # ZX-UX C48 SDK
 # This file is governed by the SANYALnet Labs Non-Commercial License in the
 # root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
+# restricted model training is prohibited unless separately authorized.
 #
 # Attribution is required: "Based on original work by Supratim Sanyal of
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
@@ -93,6 +93,10 @@ def check_required_files() -> None:
         ".github/workflows/gui-desktop.yml",
         "c48", "c48run", "c48srctap", "c48.bat", "c48run.bat", "c48srctap.bat",
         "compiler/c48srctap.py",
+        "compiler/source_tape_manifest.json",
+        "compiler/refresh_source_tapes.py",
+        "compiler/tests/test_c48srctap.py",
+        "compiler/tests/test_source_tape_manifest.py",
         "compiler/check_license_headers.py",
         "compiler/build_release_candidate.py",
         "compiler/check_legacy_sdk_paths.py", "compiler/c48/limits.py",
@@ -296,6 +300,23 @@ def check_c48_source_columns() -> None:
                 )
     if failures:
         fail("C48 64-column source contract violated: " + ", ".join(failures))
+
+
+def check_source_tapes() -> None:
+    cp = run(
+        [
+            sys.executable,
+            "-B",
+            str(ROOT / "refresh_source_tapes.py"),
+            "--check",
+        ],
+        timeout=120,
+    )
+    if cp.returncode != 0:
+        sys.stderr.write(cp.stdout + cp.stderr)
+        fail("source tape corpus verification failed")
+    if "source tape corpus: verified 57 tapes" not in cp.stdout:
+        fail("source tape corpus completion marker missing")
 
 
 def check_tests() -> None:
@@ -556,6 +577,7 @@ def main() -> int:
         ("version/about", check_versions),
         ("manifest policy", check_manifest),
         ("ailmzx48 design compliance", check_ailmzx48_design),
+        ("source tape corpus", check_source_tapes),
         ("automated tests", check_tests),
         ("ROM-derived BEEP", check_beep),
         ("game corpus", check_games),

@@ -5,7 +5,7 @@
 # ZX-UX C48 SDK
 # This file is governed by the SANYALnet Labs Non-Commercial License in the
 # root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
+# restricted model training is prohibited unless separately authorized.
 #
 # Attribution is required: "Based on original work by Supratim Sanyal of
 # SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
@@ -28,6 +28,7 @@ name: C48 SDK verification
       - "usr/src/**/*.c"
       - "usr/src/**/*.h"
       - "usr/bin/**/*.c48b"
+      - "usr/bin/**/*.src.tap"
       - "c48"
       - "c48.bat"
       - "c48run"
