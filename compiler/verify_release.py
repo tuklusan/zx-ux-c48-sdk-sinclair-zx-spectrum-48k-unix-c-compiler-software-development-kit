@@ -128,6 +128,10 @@ def check_required_files() -> None:
         "usr/src/apps/sheet48.c",
         "usr/src/apps/write48.c",
         "usr/src/apps/wire3d.c",
+        "usr/src/apps/gp82.c",
+        "usr/bin/apps/gp82.c48b",
+        "docs/images/apps/gp82.png",
+        "docs/images/apps/contact-sheet.png",
         "usr/src/security/secguard.c", "usr/src/security/secoob.c",
         "usr/src/security/secuaf.c", "usr/src/security/secfree.c",
         "usr/src/security/secdbl.c", "usr/src/security/secloop.c",
@@ -404,7 +408,7 @@ def check_apps() -> None:
     if cp.returncode != 0:
         sys.stderr.write(cp.stdout + cp.stderr)
         fail("application corpus verification failed")
-    if "APP VERIFY PASS: 3 apps" not in cp.stdout:
+    if "APP VERIFY PASS: 4 apps" not in cp.stdout:
         fail("application verifier completion marker missing")
 
 
