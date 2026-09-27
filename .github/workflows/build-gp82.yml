@@ -1,0 +1,73 @@
+# ============================================================================
+# Copyright (c) 2026 SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and
+# restricted model training are prohibited unless separately authorized.
+#
+# Attribution required: SANYALnet Labs. See LICENSE for full terms.
+# ============================================================================
+name: Build GP82 artifacts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "usr/src/apps/gp82.c"
+      - ".github/workflows/build-gp82.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build and render
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -B compiler/c48.py             usr/src/apps/gp82.c -o /tmp/gp82.c48b
+          python3 -B compiler/c48run.py             --headless --time-quota 45             --dump-screen /tmp/gp82.scr             /tmp/gp82.c48b verify
+          python3 -B - <<'PY'
+          import base64
+          import hashlib
+          import sys
+          from pathlib import Path
+
+          sys.path.insert(0, "compiler")
+          from c48.screen import Font4x8, ZXScreen
+          from verify_graphics_demos import png_bytes
+
+          font = Font4x8.load(
+              Path("compiler/assets/font4x8-tasword.bin")
+          )
+          screen = ZXScreen(font)
+          raw = Path("/tmp/gp82.scr").read_bytes()
+          if len(raw) != 6912:
+              raise SystemExit("unexpected screen size")
+          screen.mem[:] = raw
+          png = png_bytes(screen.render_rgb())
+
+          source = Path("usr/src/apps/gp82.c").read_bytes()
+          binary = Path("/tmp/gp82.c48b").read_bytes()
+
+          def digest(data):
+              return hashlib.sha256(data).hexdigest()
+
+          print("SRC_SHA=" + digest(source))
+          print("BIN_SHA=" + digest(binary))
+          print("SCREEN_SHA=" + digest(raw))
+          print("PNG_SHA=" + digest(png))
+          print("BINARY_BASE64_BEGIN")
+          print(base64.b64encode(binary).decode("ascii"))
+          print("BINARY_BASE64_END")
+          print("PNG_BASE64_BEGIN")
+          print(base64.b64encode(png).decode("ascii"))
+          print("PNG_BASE64_END")
+          PY
