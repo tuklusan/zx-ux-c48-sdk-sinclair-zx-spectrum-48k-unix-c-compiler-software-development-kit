@@ -304,6 +304,13 @@ def main() -> int:
         fail("app source member set mismatch")
     if binary_names != names:
         fail("app binary member set mismatch")
+    image_files = {p.name for p in IMG.glob("*.png")}
+    expected_images = {f"{name}.png" for name in names}
+    expected_images.add("contact-sheet.png")
+    if image_files != expected_images:
+        fail("app image member set mismatch")
+    if sha(IMG / "contact-sheet.png") != expect["contact_sheet_sha256"]:
+        fail("application contact-sheet hash mismatch")
     if sha(SRC / "appapi.h") != expect["helper_sha256"]:
         fail("appapi.h hash mismatch")
     for name, item in expect["apps"].items():
