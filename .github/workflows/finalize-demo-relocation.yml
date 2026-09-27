@@ -35,17 +35,6 @@ jobs:
         run: |
           set -euo pipefail
           blob="$(gh api "repos/${GITHUB_REPOSITORY}/contents/${SELF_PATH}?ref=main" --jq .sha)"
-          payload="$(python - <<'PY'
-          import json, os
-          print(json.dumps({
-              "message": "Remove release finalizer",
-              "sha": os.environ["BLOB_SHA"],
-              "branch": "main",
-              "author": {"name": "SANYALnet Labs", "email": "labs@sanyalnet.org"},
-              "committer": {"name": "SANYALnet Labs", "email": "labs@sanyalnet.org"},
-          }))
-          PY
-          )"
           BLOB_SHA="${blob}" python - <<'PY' > delete.json
           import json, os
           print(json.dumps({
