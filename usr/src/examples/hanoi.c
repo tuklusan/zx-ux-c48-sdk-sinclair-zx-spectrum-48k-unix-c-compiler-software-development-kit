@@ -18,7 +18,7 @@
 #define H_TRAVEL_ROW 4
 
 int h_count[3];
-int h_disc[3][7];
+int h_disc[21];
 int h_move_count;
 int h_current_disc;
 int h_cur_src;
@@ -276,7 +276,8 @@ void h_restore_row(int row)
         for (i = 0; i < h_count[p]; i++) {
             prow = 16 - i;
             if (prow == row)
-                h_draw_disc(h_disc[p][i], row, h_pole_col(p));
+                h_draw_disc(h_disc[p * 7 + i], row,
+                            h_pole_col(p));
         }
     }
 }
@@ -336,14 +337,14 @@ int h_validate(void)
         if (h_count[p] < 0 || h_count[p] > 7)
             return 0;
         for (i = 0; i < h_count[p]; i++) {
-            d = h_disc[p][i];
+            d = h_disc[p * 7 + i];
             if (d < 1 || d > 7)
                 return 0;
             if (seen[d])
                 return 0;
             seen[d] = 1;
             total++;
-            if (i > 0 && h_disc[p][i - 1] <= d)
+            if (i > 0 && h_disc[p * 7 + i - 1] <= d)
                 return 0;
         }
     }
@@ -368,7 +369,7 @@ int h_check_final(void)
     if (h_count[2] != 7)
         return 0;
     for (i = 0; i < 7; i++) {
-        if (h_disc[2][i] != 7 - i)
+        if (h_disc[14 + i] != 7 - i)
             return 0;
     }
     if (h_maximum_depth != 7)
@@ -403,14 +404,14 @@ int h_move(int source, int target)
     }
     old_count = h_count[source];
     target_count = h_count[target];
-    disc = h_disc[source][old_count - 1];
+    disc = h_disc[source * 7 + old_count - 1];
     if (disc < 1 || disc > 7) {
         h_inv_fail++;
         h_fail("MOVE DISC");
         return 0;
     }
     if (target_count > 0 &&
-        h_disc[target][target_count - 1] < disc) {
+        h_disc[target * 7 + target_count - 1] < disc) {
         h_inv_fail++;
         h_fail("ILLEGAL MOVE");
         return 0;
@@ -456,7 +457,7 @@ int h_move(int source, int target)
         if (h_failed)
             return 0;
     }
-    h_disc[target][target_count] = disc;
+    h_disc[target * 7 + target_count] = disc;
     h_count[target]++;
     h_move_count++;
     h_restore_row(row);
@@ -516,11 +517,11 @@ void h_init_model(void)
     for (p = 0; p < 3; p++) {
         h_count[p] = 0;
         for (i = 0; i < 7; i++)
-            h_disc[p][i] = 0;
+            h_disc[p * 7 + i] = 0;
     }
     h_count[0] = 7;
     for (i = 0; i < 7; i++)
-        h_disc[0][i] = 7 - i;
+        h_disc[i] = 7 - i;
     h_move_count = 0;
     h_current_disc = 0;
     h_cur_src = 0;
