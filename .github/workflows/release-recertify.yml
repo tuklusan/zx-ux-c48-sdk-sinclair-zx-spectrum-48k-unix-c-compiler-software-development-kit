@@ -31,11 +31,11 @@ permissions:
 
 jobs:
   recertify:
-    name: Recertify exact commit and publish RC5
+    name: Recertify exact commit and publish RC1
     runs-on: ubuntu-latest
     timeout-minutes: 240
     env:
-      RELEASE_TAG: 1.0.0-RC5
+      RELEASE_TAG: 1.0.1-RC1
     steps:
       - name: Dispatch and wait for exact-commit certification
         shell: bash
@@ -173,7 +173,7 @@ jobs:
               )
           PY
 
-      - name: Assemble and publish exact RC5 prerelease
+      - name: Assemble and publish exact RC1 prerelease
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
