@@ -180,7 +180,7 @@ jobs:
           Main package: `{os.environ["MAIN_FINAL"]}`
 
           Requires Python 3.10 or newer.
-"""
+          """
           Path("release-notes.md").write_text(
               notes,
               encoding="ascii",
