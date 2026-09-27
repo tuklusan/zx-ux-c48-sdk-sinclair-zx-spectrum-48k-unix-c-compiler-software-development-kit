@@ -8,7 +8,7 @@
 //
 // Attribution required: SANYALnet Labs.
 // ============================================================
-#include "../c48host.h"
+#include "recapi.h"
 
 #define H_DISCS 7
 #define H_POLES 3

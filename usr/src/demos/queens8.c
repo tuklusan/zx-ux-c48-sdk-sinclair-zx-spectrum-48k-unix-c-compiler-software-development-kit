@@ -8,7 +8,7 @@
 //
 // Attribution required: SANYALnet Labs.
 // ============================================================
-#include "../c48host.h"
+#include "recapi.h"
 
 #define Q_SIZE 8
 #define Q_GCOL_MIN 16

@@ -120,7 +120,7 @@ def check_required_files() -> None:
         "usr/src/sound/sndapi.h",
         "usr/src/sound/tune.c", "usr/bin/sound/tune.c48b",
         "usr/src/games/gameapi.h",
-        "usr/src/demos/demoapi.h",
+        "usr/src/demos/demoapi.h", "usr/src/demos/recapi.h",
         "usr/src/demos/hanoi.c", "usr/bin/demos/hanoi.c48b",
         "usr/src/demos/queens8.c", "usr/bin/demos/queens8.c48b",
         "docs/images/demos/hanoi.png", "docs/images/demos/queens8.png",

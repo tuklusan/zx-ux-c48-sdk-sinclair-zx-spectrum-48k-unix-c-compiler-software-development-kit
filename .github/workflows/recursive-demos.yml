@@ -20,7 +20,7 @@ name: Recursive demo verification
       - "compiler/c48.py"
       - "compiler/c48run.py"
       - "compiler/assets/SANYALnet-Labs-4x8-font-FINAL.bin"
-      - "usr/src/c48host.h"
+      - "usr/src/demos/recapi.h"
       - "usr/src/demos/hanoi.c"
       - "usr/src/demos/queens8.c"
       - "usr/bin/demos/hanoi.c48b"
