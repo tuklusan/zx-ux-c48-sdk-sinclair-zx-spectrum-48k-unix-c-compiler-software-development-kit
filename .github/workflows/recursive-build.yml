@@ -1,0 +1,76 @@
+# ============================================================================
+# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# This file is governed by the SANYALnet Labs Non-Commercial License in the
+# root LICENSE file. Non-Commercial use is permitted; Commercial Use and
+# restricted model training are prohibited unless separately authorized.
+#
+# Attribution is required: "Based on original work by Supratim Sanyal of
+# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer,
+# termination, patent, trademark, and governing-law provisions.
+# ============================================================================
+name: Recursive examples build
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "usr/src/examples/hanoi.c"
+      - "usr/src/examples/queens8.c"
+      - ".github/workflows/recursive-build.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Check source policy
+        run: python -B compiler/check_license_headers.py
+
+      - name: Compile recursive examples
+        shell: bash
+        run: |
+          ./c48 usr/src/examples/hanoi.c
+          ./c48 usr/src/examples/queens8.c
+
+      - name: Run fast recursive proofs
+        shell: bash
+        run: |
+          ./c48run --headless --time-quota 120 \
+            usr/bin/examples/hanoi.c48b --verify
+          ./c48run --headless --time-quota 120 \
+            usr/bin/examples/queens8.c48b --verify
+
+      - name: Stage generated artifacts
+        shell: bash
+        run: |
+          git add usr/bin/examples/hanoi.c48b
+          git add usr/bin/examples/queens8.c48b
+          git diff --cached --name-only
+          git diff --cached --stat
+          python -B compiler/check_project_banned_words.py .
+
+      - name: Commit generated artifacts
+        shell: bash
+        run: |
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git config user.name "SANYALnet Labs"
+          git config user.email "labs@sanyalnet.invalid"
+          git commit -m "Build recursive example artifacts"
+          git push origin HEAD:main
