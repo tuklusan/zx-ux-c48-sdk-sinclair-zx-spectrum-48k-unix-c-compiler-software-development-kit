@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
+# Copyright (c) 2026 SANYALnet Labs.
 # Proprietary rights reserved except as expressly licensed herein.
 #
 # ZX-UX C48 SDK
@@ -8,9 +8,9 @@
 # root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
 # restricted model training is prohibited unless separately authorized.
 #
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
+# Attribution required: SANYALnet Labs. See LICENSE for full terms,
+# warranty disclaimer, termination, patent, trademark, and governing-law
+# provisions.
 # ============================================================================
 from __future__ import annotations
 
@@ -21,13 +21,17 @@ import sys
 
 from check_project_banned_words import check_tree as check_banned_words
 
-COPYRIGHT = "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs."
+COPYRIGHT = "Copyright (c) 2026 SANYALnet Labs."
+LEGACY_COPYRIGHT = (
+    "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs."
+)
+ATTRIBUTION = "Attribution required: SANYALnet Labs."
 ATTRIBUTION_PREFIX = 'Attribution is required: \"Based on original work by Supratim Sanyal of'
 ATTRIBUTION_SUFFIX = 'SANYALnet Labs.\" See LICENSE for full terms'
 PROJECT = "ZX-UX C48 SDK"
 
 # Header-safe source/document formats owned by this project.
-HEADER_SUFFIXES = {".py", ".c", ".h", ".md", ".txt", ".bat", ".yml", ".yaml"}
+HEADER_SUFFIXES = {".py", ".c", ".h", ".md", ".txt", ".runbook", ".bat", ".yml", ".yaml"}
 HEADER_NAMES = {"c48", "c48run", ".gitignore", ".gitattributes"}
 
 # Deliberate exemptions: adding text would corrupt the syntax/format/container,
@@ -89,24 +93,34 @@ def check_tree(root: Path) -> list[str]:
         top = text[:3000]
         if rel.startswith("usr/src/") and path.suffix.lower() in {".c", ".h"}:
             # C48 artifacts use a deliberately compact <=64-column header.
-            required_markers = (
-                COPYRIGHT, PROJECT, "Non-Commercial License",
+            required_markers = (PROJECT, "Non-Commercial License")
+            legacy_attribution = (
                 "Attribution required: Based on original work by Supratim",
                 "Sanyal of SANYALnet Labs. See root LICENSE for full terms.",
             )
         else:
-            required_markers = (
-                COPYRIGHT, PROJECT, ATTRIBUTION_PREFIX, ATTRIBUTION_SUFFIX,
-                "root LICENSE file",
+            required_markers = (PROJECT, "root LICENSE file")
+            legacy_attribution = (
+                ATTRIBUTION_PREFIX,
+                ATTRIBUTION_SUFFIX,
             )
+        if COPYRIGHT not in top and LEGACY_COPYRIGHT not in top:
+            errors.append(f"missing copyright header marker: {rel}")
         for required in required_markers:
             if required not in top:
                 errors.append(
                     f"missing license header marker {required!r}: {rel}"
                 )
-        # The header itself must contain a copyright marker. User-facing CLI
-        # --about text may legitimately repeat the same copyright notice later.
-        if COPYRIGHT not in top[:1800]:
+        if ATTRIBUTION not in top and not all(
+            marker in top for marker in legacy_attribution
+        ):
+            errors.append(f"missing attribution header marker: {rel}")
+        # The header itself must contain a copyright marker.
+        top_header = top[:1800]
+        if (
+            COPYRIGHT not in top_header
+            and LEGACY_COPYRIGHT not in top_header
+        ):
             errors.append(f"copyright marker is not in the header block: {rel}")
     # Attribution is a source/document requirement. User-facing CLI text
     # is intentionally outside this source-header gate.
