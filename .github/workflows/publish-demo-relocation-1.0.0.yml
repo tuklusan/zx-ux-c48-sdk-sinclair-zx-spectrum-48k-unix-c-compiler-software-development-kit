@@ -19,7 +19,7 @@ permissions:
   actions: write
 
 env:
-  TARGET_SHA: 783da8e47ede152e8734ceb41f4a27f16781bfdb
+  TARGET_SHA: ca74576d56191fe75b04904f5f6e23edc969fb56
   TEMP_TAG: _demo-relocation-release-target
   RC_TAG: 1.0.0-RC5
   FINAL_TAG: 1.0.0
