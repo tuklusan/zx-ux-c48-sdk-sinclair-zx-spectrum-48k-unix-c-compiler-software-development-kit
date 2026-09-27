@@ -22,17 +22,17 @@ Phase 7 remains deferred and separately executable only on request.
 1. PURPOSE
 
 This runbook freezes the design and later implementation procedure for two
-tracked C48 examples:
+tracked C48 demos:
 
-  usr/src/examples/hanoi.c
-  usr/bin/examples/hanoi.c48b
+  usr/src/demos/hanoi.c
+  usr/bin/demos/hanoi.c48b
 
-  usr/src/examples/queens8.c
-  usr/bin/examples/queens8.c48b
+  usr/src/demos/queens8.c
+  usr/bin/demos/queens8.c48b
 
 The immediate SDK goal is to compile and prove each example independently.
 
-The larger ZX-UX goal is to run both examples as separate tasks on one
+The larger ZX-UX goal is to run both demos as separate tasks on one
 256x192 Spectrum display without either task writing into the other task's
 half of the screen or user-defined graphics allocation.
 
@@ -89,7 +89,7 @@ out-of-range coordinate before the host drawing call is made.
 
 3. SHARED-SCREEN MULTITASKING CONTRACT
 
-The examples are deliberately independent processes. They do not communicate
+The demos are deliberately independent processes. They do not communicate
 with each other and do not require a shared memory protocol.
 
 Their only shared hardware-facing resources are the screen and any ZX-UX
@@ -615,7 +615,7 @@ Implementation is to proceed in this order.
 
 PHASE 1 - HANOI LOGIC WITHOUT GRAPHICS
 
-  Create usr/src/examples/hanoi.c.
+  Create usr/src/demos/hanoi.c.
   Build the logical three-pole model.
   Implement seven-disc recursion.
   Implement frame guards.
@@ -637,7 +637,7 @@ PHASE 2 - HANOI OWNED-HALF DRAWING
 
 PHASE 3 - 8-QUEENS LOGIC WITHOUT GRAPHICS
 
-  Create usr/src/examples/queens8.c.
+  Create usr/src/demos/queens8.c.
   Implement deterministic row-first recursion.
   Implement column and diagonal occupancy tables.
   Implement frame guards.
@@ -659,12 +659,12 @@ PHASE 4 - 8-QUEENS OWNED-HALF DRAWING
 PHASE 5 - TRACKED COMPILED CORPUS
 
   Compile:
-    usr/src/examples/hanoi.c
-    usr/src/examples/queens8.c
+    usr/src/demos/hanoi.c
+    usr/src/demos/queens8.c
 
   Track:
-    usr/bin/examples/hanoi.c48b
-    usr/bin/examples/queens8.c48b
+    usr/bin/demos/hanoi.c48b
+    usr/bin/demos/queens8.c48b
 
   Recompile both from clean source and confirm the tracked compiled artifacts
   are deterministic.
@@ -727,7 +727,7 @@ PHASE 7 - ZX-UX CONCURRENT PROOF - DEFERRED, SEPARATELY EXECUTABLE
 
 9. SDK VERIFICATION REQUIREMENTS
 
-The repository verification work added with the examples must prove more than
+The repository verification work added with the demos must prove more than
 successful compilation.
 
 For each source/binary pair:
@@ -779,8 +779,8 @@ Do not overwrite the other program's half to make the failure more visible.
 11. ACCEPTANCE CHECKLIST
 
 HANOI
-  [x] source tracked in usr/src/examples
-  [x] compiled artifact tracked in usr/bin/examples
+  [x] source tracked in usr/src/demos
+  [x] compiled artifact tracked in usr/bin/demos
   [x] no cls call
   [x] no border call
   [x] UDG slots limited to 0..15
@@ -796,8 +796,8 @@ HANOI
   [x] final process status zero
 
 8-QUEENS
-  [x] source tracked in usr/src/examples
-  [x] compiled artifact tracked in usr/bin/examples
+  [x] source tracked in usr/src/demos
+  [x] compiled artifact tracked in usr/bin/demos
   [x] no cls call
   [x] no border call
   [x] UDG slots limited to 16..31
@@ -840,7 +840,7 @@ FINAL REVISION REVIEW 2 - ZERO GAPS
   and fast verification mode. Confirmed fast mode changes timing only.
 
 FINAL REVISION REVIEW 3 - ZERO GAPS
-  Checked repository paths, tracked source/binary targets, independent SDK
+  Checked repository paths under the demos corpus, tracked source/binary targets, independent SDK
   proof, deferred concurrent ZX-UX procedure, shared-screen restrictions,
   scheduling points, start-order independence, and acceptance criteria.
   Confirmed Phase 7 is preserved but excluded from current SDK completion and
@@ -852,6 +852,7 @@ ZERO-GAP STATUS: PASSED
 13. CLOSURE RECORD
 
 CLOSED: 2026-09-27
+Path-classification correction reviewed in three consecutive zero-gap passes on 2026-09-27. Hanoi and 8-Queens are demos and their tracked source, binary, and evidence locations use the demos corpus.
 Phases 1 through 6 are complete. The tracked sources, compiled artifacts, deterministic recursion proofs, frame guards, invariant checks, owned-half display proofs, and normal display evidence satisfy this runbook.
 
 Phase 7 is not closed or implied by this record. It remains a future native ZX-UX concurrent proof and requires a separate explicit request.
