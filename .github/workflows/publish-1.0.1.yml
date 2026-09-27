@@ -152,7 +152,7 @@ jobs:
           workflows = meta["workflows"]
           notes = f"""# C48 SDK 1.0.1
 
-          This certified release adds **GP82 — Grand Prix 1982** to the applications
+          This certified release adds **GP82 - Grand Prix 1982** to the applications
           corpus. GP82 renders grouped wins, podiums and poles beside the 16-race
           constructor-win pie chart, with checked-in visual evidence under
           `docs/images/apps`.
