@@ -1,0 +1,816 @@
+ZX-UX C48 SDK
+SANYALnet Labs
+C48 RECURSION AND MULTITASK DISPLAY RUNBOOK
+Revision 1.0
+Date: 2026-09-27
+
+1. PURPOSE
+
+This runbook freezes the design and later implementation procedure for two
+tracked C48 examples:
+
+  usr/src/examples/hanoi.c
+  usr/bin/examples/hanoi.c48b
+
+  usr/src/examples/queens8.c
+  usr/bin/examples/queens8.c48b
+
+The immediate SDK goal is to compile and prove each example independently.
+
+The larger ZX-UX goal is to run both examples as separate tasks on one
+256x192 Spectrum display without either task writing into the other task's
+half of the screen or user-defined graphics allocation.
+
+The secondary language goal is to provide strong, visible proof that C48
+recursive calls, local frame state, return paths, and repeated unwind/re-entry
+work correctly.
+
+This document is design and execution procedure only. It does not contain the
+program implementations.
+
+2. NON-NEGOTIABLE DISPLAY CONTRACT
+
+The physical display is 256x192 pixels.
+
+The C48 text surface is 64 columns by 24 rows. Each text column is 4 pixels
+wide and each text row is 8 pixels high.
+
+The user-defined graphics surface is 32 columns by 24 rows. Each graphics cell
+is 8x8 pixels.
+
+Resource ownership is exact:
+
+  HANOI
+    Pixels:              x=0..127
+    Human text columns:  1..32
+    C48 text columns:    0..31
+    Graphics columns:    0..15
+    UDG slots:           0..15
+
+  8-QUEENS
+    Pixels:              x=128..255
+    Human text columns:  33..64
+    C48 text columns:    32..63
+    Graphics columns:    16..31
+    UDG slots:           16..31
+
+The x=128 boundary is also an 8-pixel attribute-cell boundary. Therefore text,
+bitmap graphics, and colour attributes can all be partitioned without a cell
+straddling both programs.
+
+Neither program may call cls() at any point.
+
+Neither program may call border().
+
+Neither program may define, clear, or draw a UDG slot owned by the other
+program.
+
+Neither program may print, erase, or draw outside its owned columns.
+
+Each program must clear only its own half by local row repainting.
+
+Every draw helper must receive or derive an owned coordinate and reject an
+out-of-range coordinate before the host drawing call is made.
+
+3. SHARED-SCREEN MULTITASKING CONTRACT
+
+The examples are deliberately independent processes. They do not communicate
+with each other and do not require a shared memory protocol.
+
+Their only shared hardware-facing resources are the screen and any ZX-UX
+graphics state underlying the C48 host calls.
+
+The split UDG allocation prevents direct UDG definition collisions when the
+UDG table is shared.
+
+Each visible drawing operation must explicitly establish the required ink,
+paper, brightness, inverse, and over state before drawing. The concurrent ZX-UX
+test is expected to expose any failure by the operating system to preserve
+task-local graphics state across scheduling points.
+
+A task switch during recursive execution is intentional. Visible steps include
+yield or sleep scheduling points while parent recursive frames are still live.
+
+The programs never depend on the other task's speed, state, start order, or
+completion order.
+
+The SDK proves each program independently. Side-by-side scheduling is a
+ZX-UX integration proof and is not to be faked inside one SDK process.
+
+4. COMMON EXECUTION MODES
+
+Each program has two timing modes using the same algorithm and the same draw
+sequence.
+
+NORMAL MODE
+  Default when launched by a human.
+  Uses visible delays at 50-Hz tick granularity.
+  Intended to make recursion, motion, placement, and backtracking easy to
+  follow.
+
+FAST VERIFICATION MODE
+  Selected by a command-line argument reserved for verification.
+  Performs the complete recursion and the same state transitions.
+  Removes human pacing delays.
+  Still reaches scheduling/presentation points so the full execution path is
+  exercised.
+  Returns the same success or failure status as normal mode.
+
+Fast mode exists only to keep regression verification practical. It may not
+skip moves, candidate tests, recursive calls, invariant checks, or final-state
+validation.
+
+5. TOWERS OF HANOI: FROZEN DESIGN
+
+5.1 Workload
+
+Use seven discs.
+
+The correct move count is:
+
+  2^7 - 1 = 127 moves
+
+The recursive depth is seven Hanoi frames.
+
+The initial state is all seven discs on pole A, largest at the bottom.
+
+The target state is all seven discs on pole C, largest at the bottom.
+
+Pole B is the spare pole.
+
+5.2 Screen geometry
+
+Hanoi owns the complete left 128x192 half.
+
+Suggested fixed layout:
+
+  Row 0:  TOWERS OF HANOI
+  Row 1:  MOVE nnn/127   DEP d/7
+  Row 2:  DISC n   A->C style current-move text
+  Rows 3-5:
+          lift and horizontal travel zone
+  Rows 6-16:
+          pole and stack zone
+  Row 17:
+          common base
+  Row 18:
+          A / B / C pole labels
+  Row 19:
+          current action
+  Row 20:
+          frame-guard status
+  Row 21:
+          spare status line
+  Row 22:
+          maximum depth observed
+  Row 23:
+          SEARCHING, SOLVED, PASS, or FAIL
+
+Pole graphics-cell centres are:
+
+  A: graphics column 2, pixel centre near x=20
+  B: graphics column 7, pixel centre near x=60
+  C: graphics column 12, pixel centre near x=100
+
+This leaves visible separation between the widest discs on adjacent poles.
+
+The pole runs vertically through rows 6..16.
+
+Seven stacked discs occupy rows 10..16 at maximum height.
+
+The base occupies row 17.
+
+The raised travel path uses row 4.
+
+5.3 Disc geometry
+
+Disc widths are:
+
+  Disc 1:  8 pixels
+  Disc 2: 12 pixels
+  Disc 3: 16 pixels
+  Disc 4: 20 pixels
+  Disc 5: 24 pixels
+  Disc 6: 28 pixels
+  Disc 7: 32 pixels
+
+Disc 1 is smallest. Disc 7 is largest.
+
+The widths increase in four-pixel steps after the smallest disc. Cap patterns
+permit endpoints inside 8-pixel cells while keeping the disc centred on a pole
+cell.
+
+Disc shape is a compact rounded bar with a slightly narrower top and bottom
+scan line. Width, not colour, is the authoritative size cue.
+
+Use bright non-black Spectrum colours for the seven disc identities. The pole
+and base use a neutral high-contrast colour on black paper.
+
+5.4 Hanoi UDG allocation
+
+Slots 0..15 belong only to Hanoi.
+
+Freeze the pattern roles as:
+
+  0   blank/background
+  1   vertical pole
+  2   horizontal base
+  3   pole/base junction
+  4   left rounded cap, 2-pixel extent
+  5   left rounded cap, 4-pixel extent
+  6   left rounded cap, 6-pixel extent
+  7   left rounded cap, 8-pixel extent
+  8   full disc body
+  9   right rounded cap, 8-pixel extent
+  10  right rounded cap, 6-pixel extent
+  11  right rounded cap, 4-pixel extent
+  12  right rounded cap, 2-pixel extent
+  13  complete 8-pixel smallest disc
+  14  reserved
+  15  reserved
+
+The cap set is sufficient to render all seven frozen widths without borrowing a
+slot from the right-side program.
+
+5.5 Hanoi model state
+
+Keep the logical model separate from the display.
+
+Required state:
+
+  pole_count[3]
+  pole_disc[3][7]
+  move_count
+  current_disc
+  current_source
+  current_target
+  current_depth
+  maximum_depth
+  invariant_failures
+  frame_guard_failures
+
+The display is always derived from the logical model. Display pixels are never
+used as the source of truth for legal-move decisions.
+
+5.6 Hanoi recursive algorithm
+
+The recursive operation is the conventional form:
+
+  solve(n, source, spare, target, depth)
+
+For n greater than zero:
+
+  1. Establish a local frame guard derived from n, source, spare, target,
+     and depth.
+  2. Update current depth and maximum depth.
+  3. Recursively solve n-1 from source to spare using target as temporary.
+  4. After return, verify the local frame guard is unchanged.
+  5. Validate and animate exactly one legal move from source to target.
+  6. Recursively solve n-1 from spare to target using source as temporary.
+  7. After return, verify the local frame guard again.
+  8. Return to the caller.
+
+The explicit frame guard is part of the recursion proof. A frame-guard failure
+is fatal and must prevent PASS.
+
+5.7 Hanoi move validation
+
+Before every move:
+
+  source pole must not be empty
+  moving disc must be the top source disc
+  target must be empty or have a larger top disc
+  moving disc number must be 1..7
+
+After every move:
+
+  every pole must remain strictly largest-to-smallest from bottom to top
+  each disc 1..7 must exist exactly once
+  total disc count must remain seven
+  move_count must advance by exactly one
+
+A failure sets the program failure state and terminates with a non-zero status.
+
+5.8 Hanoi animation
+
+A legal move is displayed as:
+
+  LIFT
+    Raise the moving disc one 8-pixel row at a time from the source stack to
+    travel row 4.
+
+  TRAVEL
+    Move the disc horizontally one graphics column at a time toward the target
+    pole.
+
+  DROP
+    Lower it one row at a time to the correct target stack height.
+
+  SETTLE
+    Repaint the source and target stack regions from the logical model, update
+    counters, and pause briefly.
+
+No animation step writes outside graphics columns 0..15.
+
+Normal-mode pacing target:
+
+  moving step:    2 ticks
+  settled pause:  4 ticks
+
+One tick is 1/50 second in the SDK host runtime.
+
+A major move state also reaches a yield point. The intent is to permit task
+switching while recursive callers remain live.
+
+5.9 Hanoi completion proof
+
+PASS requires all of the following:
+
+  move_count == 127
+  pole A empty
+  pole B empty
+  pole C contains seven discs
+  pole C order is legal
+  each disc exists exactly once
+  maximum_depth == 7
+  invariant_failures == 0
+  frame_guard_failures == 0
+
+The final left-half display contains:
+
+  SOLVED
+  127/127 MOVES
+  MAX DEP 7
+  FRAME GUARD OK
+  PASS
+
+Normal mode holds the final frame long enough to read it and then exits with
+status zero.
+
+Fast verification mode reaches the same final state without the human hold.
+
+6. 8-QUEENS: FROZEN DESIGN
+
+6.1 Workload
+
+Solve the classic eight-queens placement problem.
+
+The search is deterministic:
+
+  rows are processed top to bottom
+  candidate columns are tested left to right
+
+Stop at the first valid complete solution.
+
+With zero-based columns, the frozen expected first solution is:
+
+  [0, 4, 7, 5, 2, 6, 1, 3]
+
+With human columns A..H, the same row-by-row solution is:
+
+  A, E, H, F, C, G, B, D
+
+The recursive depth is eight placement frames.
+
+6.2 Screen geometry
+
+8-Queens owns the complete right 128x192 half.
+
+Suggested fixed layout:
+
+  Row 0:  8 QUEENS - RECURSIVE SEARCH
+  Row 1:  TRY F6   DEP 6/8 style live text
+  Row 2:  A   B   C   D   E   F   G   H
+  Rows 3-18:
+          128x128 chessboard
+  Row 19:
+          current row and candidate
+  Row 20:
+          placed count and backtrack count
+  Row 21:
+          frame-guard status
+  Row 22:
+          maximum depth observed
+  Row 23:
+          SEARCHING, SOLVED, PASS, or FAIL
+
+The chessboard is exactly eight 16x16-pixel squares across and eight squares
+high.
+
+Each square is exactly 2x2 graphics cells.
+
+The board therefore occupies graphics columns 16..31 and rows 3..18 with no
+spill into the left half.
+
+6.3 Board and queen appearance
+
+Use alternating black and blue paper for the board.
+
+A queen is a true 16x16 silhouette made from four UDG cells. The silhouette
+has three crown points, a narrow neck, a wider body, and a flared base.
+
+Three queen visual states exist:
+
+  CANDIDATE
+    outline queen, bright cyan
+
+  COMMITTED
+    solid queen, bright white
+
+  BACKTRACK
+    removal-state queen, bright red
+
+The board square paper colour is restored before any queen state is drawn.
+Erasing a queen means repainting all four cells of that square with the blank
+board pattern and the correct square paper colour.
+
+6.4 8-Queens UDG allocation
+
+Slots 16..31 belong only to 8-Queens.
+
+Freeze the pattern roles as:
+
+  16..19  solid 2x2 queen
+  20..23  outline 2x2 candidate queen
+  24..27  backtrack 2x2 queen
+  28      blank board-cell pattern
+  29      conflict marker
+  30      solved marker
+  31      reserved
+
+The three 2x2 queen sets are arranged so udg_draw_2x2 can use bases 16, 20,
+and 24 directly.
+
+The blank board cell is drawn with individual udg_draw calls so slots 29..31
+remain available for their own roles.
+
+6.5 8-Queens model state
+
+Required state:
+
+  queen_col[8]
+  col_used[8]
+  diag_down_used[15]
+  diag_up_used[15]
+  current_row
+  current_col
+  placed_count
+  candidate_tests
+  backtrack_count
+  current_depth
+  maximum_depth
+  invariant_failures
+  frame_guard_failures
+
+queen_col[row] is -1 for an empty row or 0..7 for a committed queen.
+
+The model is authoritative. The board pixels are presentation only.
+
+6.6 8-Queens recursive algorithm
+
+The recursive operation is:
+
+  place(row, depth)
+
+For each candidate column 0..7:
+
+  1. Establish a local frame guard from row, depth, and the loop state.
+  2. Show the candidate queen.
+  3. Increment candidate_tests exactly once.
+  4. Test column and both diagonals.
+  5. If unsafe, erase the candidate and continue.
+  6. If safe, commit the queen and mark all three occupancy sets.
+  7. Increment placed_count.
+  8. If row is seven, validate the complete board and report success.
+  9. Otherwise recursively place row+1.
+  10. After recursive return, verify the caller's frame guard and loop state.
+  11. If the child succeeded, propagate success without modifying the solution.
+  12. If the child failed, show the backtrack state, remove the queen, clear
+      all three occupancy marks, decrement placed_count, increment
+      backtrack_count, and continue the caller's next column.
+
+A recursive call may never derive legality from the drawn board.
+
+6.7 Diagonal indexing
+
+Use fixed ranges that never require dynamic storage:
+
+  column index:
+    col = 0..7
+
+  descending diagonal:
+    row - col + 7 = 0..14
+
+  ascending diagonal:
+    row + col = 0..14
+
+All indexes must be range-checked during development verification.
+
+6.8 8-Queens frame-state proof
+
+The loop variable in each recursive caller must survive the child call so the
+caller can continue at the next candidate after a backtrack.
+
+In addition to that natural test, each recursive frame keeps a small local
+guard value.
+
+After child return:
+
+  guard must match its original value
+  row must still identify the caller's row
+  caller loop state must still identify the committed candidate
+
+Any mismatch is fatal and prevents PASS.
+
+6.9 8-Queens animation
+
+Every candidate is visible.
+
+Normal-mode pacing target:
+
+  rejected candidate outline:  1 tick
+  accepted placement pause:    4 ticks
+  backtrack display pause:     4 ticks
+  final solved hold:           100 ticks
+
+A major placement or removal state also reaches a yield point.
+
+This keeps the complete deterministic first-solution search visible while
+remaining in roughly the same human-scale running window as the seven-disc
+Hanoi demonstration.
+
+Fast verification mode removes the waits but performs every candidate test,
+placement, removal, recursive call, and frame-guard check.
+
+6.10 8-Queens completion proof
+
+PASS requires all of the following:
+
+  exactly eight queens are committed
+  every row contains one queen
+  every column contains one queen
+  no descending diagonal is shared
+  no ascending diagonal is shared
+  queen_col matches the frozen first-solution vector
+  placed_count == 8
+  maximum_depth == 8
+  invariant_failures == 0
+  frame_guard_failures == 0
+
+The final right-half display contains:
+
+  SOLUTION FOUND
+  8/8 QUEENS
+  MAX DEP 8
+  FRAME GUARD OK
+  PASS
+
+Normal mode holds the final frame long enough to read it and then exits with
+status zero.
+
+Fast verification mode reaches the same final state without the human hold.
+
+7. SIDE-BY-SIDE EXPECTED APPEARANCE
+
+The visual composition is intentionally balanced.
+
+LEFT HALF
+  Dark field.
+  Large, simple geometric pole-and-disc motion.
+  Three fixed poles.
+  Motion concentrated vertically and horizontally.
+  Live move and recursion counters.
+  Final complete tower at C.
+
+RIGHT HALF
+  Dense 8x8 chessboard.
+  Candidate flicker and visible backtracking.
+  Large 16x16 queen silhouettes.
+  Live depth and backtrack counters.
+  Final valid eight-queen arrangement.
+
+The centre boundary at x=128 remains visually clean. No separator line is
+required because the two full-height regions and different visual structures
+already create a strong division. A separator may only be added if each side
+draws its own edge pixel without crossing ownership.
+
+8. SOURCE IMPLEMENTATION PROCEDURE
+
+Implementation is to proceed in this order.
+
+PHASE 1 - HANOI LOGIC WITHOUT GRAPHICS
+
+  Create usr/src/examples/hanoi.c.
+  Build the logical three-pole model.
+  Implement seven-disc recursion.
+  Implement frame guards.
+  Implement legal-move and final-state validation.
+  Run fast mode with no decorative drawing.
+  Prove exactly 127 moves and depth seven.
+
+Do not proceed until the logic terminates with status zero.
+
+PHASE 2 - HANOI OWNED-HALF DRAWING
+
+  Add UDG definitions 0..15 only.
+  Add left-half clear helpers.
+  Add pole, base, disc, and status rendering.
+  Add lift/travel/drop animation.
+  Add normal pacing.
+  Re-run full fast verification.
+  Confirm no draw coordinate exceeds the left-half contract.
+
+PHASE 3 - 8-QUEENS LOGIC WITHOUT GRAPHICS
+
+  Create usr/src/examples/queens8.c.
+  Implement deterministic row-first recursion.
+  Implement column and diagonal occupancy tables.
+  Implement frame guards.
+  Validate the frozen first solution.
+  Prove depth eight and final board legality.
+
+Do not proceed until the logic terminates with status zero.
+
+PHASE 4 - 8-QUEENS OWNED-HALF DRAWING
+
+  Add UDG definitions 16..31 only.
+  Add right-half clear helpers.
+  Add board and queen rendering.
+  Add candidate and backtrack display states.
+  Add normal pacing.
+  Re-run full fast verification.
+  Confirm no draw coordinate enters the left half.
+
+PHASE 5 - TRACKED COMPILED CORPUS
+
+  Compile:
+    usr/src/examples/hanoi.c
+    usr/src/examples/queens8.c
+
+  Track:
+    usr/bin/examples/hanoi.c48b
+    usr/bin/examples/queens8.c48b
+
+  Recompile both from clean source and confirm the tracked compiled artifacts
+  are deterministic.
+
+PHASE 6 - SDK INDIVIDUAL PROOF
+
+  Run each tracked compiled artifact independently in fast verification mode.
+
+  Require:
+    clean process exit
+    zero status
+    complete recursion
+    expected maximum depth
+    final algorithm invariants
+    frame-guard success
+    final PASS state
+
+  Run each again in normal display mode for visual inspection.
+
+  Capture evidence frames only after each program's owned-half geometry,
+  colours, labels, and final state match this runbook.
+
+PHASE 7 - ZX-UX CONCURRENT PROOF
+
+  Launch both tracked programs as independent ZX-UX tasks using the native
+  multitasking facilities.
+
+  Start order must be tested both ways:
+    Hanoi first, then 8-Queens
+    8-Queens first, then Hanoi
+
+  During overlap verify:
+    both halves continue to advance
+    neither half is erased by the other task
+    no UDG pattern changes unexpectedly
+    no colour attributes bleed across x=128
+    neither task changes the border
+    both recursive displays survive scheduling
+    both final algorithm results remain valid
+
+  Repeat with forced or frequent task switches if the operating system test
+  environment provides such a facility.
+
+  Any visual corruption, wrong counter, wrong final board, wrong final tower,
+  frame-guard failure, or non-zero process result is a failed multitasking
+  proof.
+
+9. SDK VERIFICATION REQUIREMENTS
+
+The repository verification work added with the examples must prove more than
+successful compilation.
+
+For each source/binary pair:
+
+  source must compile successfully
+  output must match the tracked compiled artifact
+  fast mode must run the full algorithm to completion
+  process status must be zero
+  internal invariants must all pass
+  maximum recursion depth must match the frozen value
+  frame guards must remain intact
+  final state must match the frozen result
+
+Hanoi additionally proves:
+  127 legal moves
+  all seven discs transferred A to C
+  legal stack ordering after every move
+
+8-Queens additionally proves:
+  deterministic first solution
+  eight unique columns
+  conflict-free diagonals
+  repeated recursive backtracking
+
+The normal display runs are a second layer of proof and must not replace the
+headless or fast algorithm checks.
+
+10. FAILURE POLICY
+
+A program must fail closed.
+
+On an internal invariant failure:
+
+  stop making algorithmic progress
+  keep all further drawing inside the owned half
+  show FAIL and a short local reason
+  return a non-zero status
+
+Do not attempt to repair a corrupted logical model and continue.
+
+Do not clear the whole screen after failure.
+
+Do not overwrite the other program's half to make the failure more visible.
+
+11. ACCEPTANCE CHECKLIST
+
+HANOI
+  [ ] source tracked in usr/src/examples
+  [ ] compiled artifact tracked in usr/bin/examples
+  [ ] no cls call
+  [ ] no border call
+  [ ] UDG slots limited to 0..15
+  [ ] graphics columns limited to 0..15
+  [ ] text columns limited to 0..31
+  [ ] seven discs
+  [ ] exactly 127 moves
+  [ ] maximum recursion depth seven
+  [ ] frame guards pass
+  [ ] final tower legal on C
+  [ ] default pacing readable
+  [ ] fast mode executes complete logic
+  [ ] final process status zero
+
+8-QUEENS
+  [ ] source tracked in usr/src/examples
+  [ ] compiled artifact tracked in usr/bin/examples
+  [ ] no cls call
+  [ ] no border call
+  [ ] UDG slots limited to 16..31
+  [ ] graphics columns limited to 16..31
+  [ ] text columns limited to 32..63
+  [ ] board exactly 128x128 pixels
+  [ ] queen exactly 16x16 pixels
+  [ ] deterministic left-to-right search
+  [ ] maximum recursion depth eight
+  [ ] frame guards pass
+  [ ] final solution vector matches the frozen solution
+  [ ] final board conflict-free
+  [ ] default pacing readable
+  [ ] fast mode executes complete logic
+  [ ] final process status zero
+
+CONCURRENT ZX-UX
+  [ ] both tasks visibly make progress during overlap
+  [ ] no screen ownership violation
+  [ ] no UDG ownership violation
+  [ ] no attribute bleed across x=128
+  [ ] no border modification
+  [ ] no recursive frame corruption
+  [ ] both algorithms retain correct final results
+
+12. THREE-PASS ZERO-GAP REVIEW RECORD
+
+This revision is frozen only after three consecutive reviews of the final text
+with no gap found. If any gap is found, the text is updated and the count
+restarts from zero.
+
+FINAL REVISION REVIEW 1 - ZERO GAPS
+  Checked all pixel, text-column, graphics-column, row, board, pole, UDG, and
+  attribute-cell boundaries. Confirmed the x=128 split is exact and no planned
+  drawing primitive requires cross-boundary access.
+
+FINAL REVISION REVIEW 2 - ZERO GAPS
+  Checked both recursive algorithms, local frame-guard proof, deterministic
+  results, legality invariants, failure paths, finite completion, normal pacing,
+  and fast verification mode. Confirmed fast mode changes timing only.
+
+FINAL REVISION REVIEW 3 - ZERO GAPS
+  Checked repository paths, tracked source/binary targets, independent SDK
+  proof, concurrent ZX-UX proof, shared-screen restrictions, scheduling points,
+  start-order independence, and acceptance criteria. No unresolved design
+  requirement remains.
+
+ZERO-GAP STATUS: PASSED
