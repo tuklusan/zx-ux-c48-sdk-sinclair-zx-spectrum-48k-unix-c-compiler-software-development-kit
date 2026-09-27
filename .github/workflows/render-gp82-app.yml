@@ -1,0 +1,110 @@
+# ============================================================================
+# Copyright (c) 2026 SANYALnet Labs.
+# Proprietary rights reserved except as expressly licensed herein.
+#
+# ZX-UX C48 SDK
+# Governed by the SANYALnet Labs Non-Commercial License in the root LICENSE.
+# Attribution required: SANYALnet Labs.
+# ============================================================================
+name: Render GP82 application evidence
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/render-gp82-app.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Render verifier startup screen
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pillow
+          python3 -B - <<'PY'
+          import hashlib
+          import sys
+          from pathlib import Path
+
+          from PIL import Image
+
+          sys.path.insert(0, "compiler")
+          from c48.format import read
+          from c48.screen import Font4x8, ZXScreen
+          from c48.vm import C48VM
+          from verify_graphics_demos import png_bytes
+
+          font = Font4x8.load(
+              Path("compiler/assets/font4x8-tasword.bin")
+          )
+          program = read(Path("usr/bin/apps/gp82.c48b"))
+          screen = ZXScreen(font)
+          status = C48VM(
+              program,
+              screen,
+              argv=["gp82", "verify"],
+              max_steps=10000000,
+          ).run()
+          if status != 0:
+              raise SystemExit("GP82 startup did not complete")
+
+          raw = screen.bytes()
+          png = png_bytes(screen.render_rgb())
+          Path("docs/images/apps/gp82.png").write_bytes(png)
+
+          names = [
+              "write48.png",
+              "sheet48.png",
+              "wire3d.png",
+              "gp82.png",
+          ]
+          images = [
+              Image.open(Path("docs/images/apps") / name).convert("RGB")
+              for name in names
+          ]
+          w, h = images[0].size
+          sheet = Image.new("RGB", (w * 2, h * 2))
+          for index, img in enumerate(images):
+              if img.size != (w, h):
+                  raise SystemExit("application image size mismatch")
+              sheet.paste(
+                  img,
+                  ((index % 2) * w, (index // 2) * h),
+              )
+          contact = Path("docs/images/apps/contact-sheet.png")
+          sheet.save(contact, format="PNG")
+
+          def sha(data):
+              return hashlib.sha256(data).hexdigest()
+
+          print("SCREEN_SHA=" + sha(raw))
+          print("PNG_SHA=" + sha(png))
+          print("PNG_SIZE=" + str(len(png)))
+          cdata = contact.read_bytes()
+          print("CONTACT_SHA=" + sha(cdata))
+          print("CONTACT_SIZE=" + str(len(cdata)))
+          PY
+
+      - name: Upload image objects
+        shell: bash
+        run: |
+          set -euo pipefail
+          git lfs install --local
+          git add docs/images/apps/gp82.png
+          git add docs/images/apps/contact-sheet.png
+          gp_oid="$(sha256sum docs/images/apps/gp82.png | cut -d' ' -f1)"
+          ct_oid="$(sha256sum docs/images/apps/contact-sheet.png | cut -d' ' -f1)"
+          git lfs push --object-id origin "${gp_oid}"
+          git lfs push --object-id origin "${ct_oid}"
+          git reset -- docs/images/apps/gp82.png
+          git reset -- docs/images/apps/contact-sheet.png
