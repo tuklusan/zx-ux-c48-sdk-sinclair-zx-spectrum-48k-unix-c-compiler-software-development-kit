@@ -152,34 +152,34 @@ jobs:
           workflows = meta["workflows"]
           notes = f"""# C48 SDK 1.0.1
 
-This certified release adds **GP82 — Grand Prix 1982** to the applications
-corpus. GP82 renders grouped wins, podiums and poles beside the 16-race
-constructor-win pie chart, with checked-in visual evidence under
-`docs/images/apps`.
+          This certified release adds **GP82 — Grand Prix 1982** to the applications
+          corpus. GP82 renders grouped wins, podiums and poles beside the 16-race
+          constructor-win pie chart, with checked-in visual evidence under
+          `docs/images/apps`.
 
-The applications gallery now contains four certified programs. The README
-and project documentation were swept for consistency, the repository
-sanity walk-through passed, and the tracked scratch workspace was cleared
-before release.
+          The applications gallery now contains four certified programs. The README
+          and project documentation were swept for consistency, the repository
+          sanity walk-through passed, and the tracked scratch workspace was cleared
+          before release.
 
-Exact release commit: `{os.environ["TARGET_SHA"]}`
-Exact release tree: `{os.environ["TARGET_TREE"]}`
+          Exact release commit: `{os.environ["TARGET_SHA"]}`
+          Exact release tree: `{os.environ["TARGET_TREE"]}`
 
-Certification runs:
-- SDK verification: {workflows["sdk_verification"]}
-- BEEP numerical proof: {workflows["beep_proof"]}
-- Host-native desktop acceptance: {workflows["host_native_gui"]}
-- Graphics reel: {workflows["graphics"]}
-- Recursive-demo proof: {workflows["recursive_demos"]}
-- Release packaging: {workflows["release_candidate"]}
-- Packaged-document recertification: {workflows["recertification"]}
+          Certification runs:
+          - SDK verification: {workflows["sdk_verification"]}
+          - BEEP numerical proof: {workflows["beep_proof"]}
+          - Host-native desktop acceptance: {workflows["host_native_gui"]}
+          - Graphics reel: {workflows["graphics"]}
+          - Recursive-demo proof: {workflows["recursive_demos"]}
+          - Release packaging: {workflows["release_candidate"]}
+          - Packaged-document recertification: {workflows["recertification"]}
 
-Certification includes three fresh-filesystem release verifies and a
-virgin-package verification.
+          Certification includes three fresh-filesystem release verifies and a
+          virgin-package verification.
 
-Main package: `{os.environ["MAIN_FINAL"]}`
+          Main package: `{os.environ["MAIN_FINAL"]}`
 
-Requires Python 3.10 or newer.
+          Requires Python 3.10 or newer.
 """
           Path("release-notes.md").write_text(
               notes,
