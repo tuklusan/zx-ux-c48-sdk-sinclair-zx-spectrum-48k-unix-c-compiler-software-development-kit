@@ -10,7 +10,7 @@
 # Attribution required: SANYALnet Labs.
 # See root LICENSE file for full terms.
 # ============================================================================
-"""Deterministic proof for the recursive example pair."""
+"""Deterministic proof for the recursive demo pair."""
 
 from __future__ import annotations
 
@@ -40,10 +40,11 @@ EXPECTED = {
 }
 
 from c48.screen import Font4x8, ZXScreen, attr_offset, bitmap_offset
+from verify_graphics_demos import png_bytes
 
 
 def fail(message: str) -> None:
-    raise SystemExit("RECURSIVE VERIFY FAIL: " + message)
+    raise SystemExit("RECURSIVE DEMO VERIFY FAIL: " + message)
 
 
 def sha(path: Path) -> str:
@@ -185,8 +186,8 @@ def verify_case(
     root: Path,
     evidence: Path | None,
 ) -> tuple[str, str]:
-    source = SDK / "usr" / "src" / "examples" / (name + ".c")
-    frozen = SDK / "usr" / "bin" / "examples" / (name + ".c48b")
+    source = SDK / "usr" / "src" / "demos" / (name + ".c")
+    frozen = SDK / "usr" / "bin" / "demos" / (name + ".c48b")
     if not source.is_file() or not frozen.is_file():
         fail(name + ": tracked source/binary pair is missing")
     check_source(name, source)
@@ -210,6 +211,14 @@ def verify_case(
         fail(name + ": frozen binary hash changed")
     if screen_hash != EXPECTED[name]["screen"]:
         fail(name + ": frozen final screen changed")
+
+    image = SDK / "docs" / "images" / "demos" / (name + ".png")
+    if not image.is_file():
+        fail(name + ": checked-in screenshot is missing")
+    rendered = ZXScreen(Font4x8.load(FONT))
+    rendered.mem[:] = fast_bytes
+    if image.read_bytes() != png_bytes(rendered.render_rgb()):
+        fail(name + ": checked-in screenshot differs from executed final state")
 
     if evidence is not None:
         evidence.mkdir(parents=True, exist_ok=True)
@@ -250,14 +259,14 @@ def main(argv: list[str] | None = None) -> int:
     for name in ("hanoi", "queens8"):
         binary_hash, screen_hash = results[name]
         print(
-            "RECURSIVE VERIFY: "
+            "RECURSIVE DEMO VERIFY: "
             + name
             + " binary="
             + binary_hash
             + " screen="
             + screen_hash
         )
-    print("RECURSIVE VERIFY PASS: 2 deterministic recursive examples")
+    print("RECURSIVE DEMO VERIFY PASS: 2 deterministic recursive demos")
     return 0
 
 

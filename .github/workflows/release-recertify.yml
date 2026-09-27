@@ -64,6 +64,7 @@ jobs:
               ("beep.yml", "BEEP proof"),
               ("gui-desktop.yml", "host-native GUI"),
               ("graphics-demos.yml", "graphics"),
+              ("recursive-demos.yml", "recursive demos"),
               ("release-candidate.yml", "release package"),
           )
           headers = {
@@ -398,6 +399,7 @@ jobs:
                   "beep_proof": int(runs["beep.yml"]),
                   "host_native_gui": gui_run,
                   "graphics": int(runs["graphics-demos.yml"]),
+                  "recursive_demos": int(runs["recursive-demos.yml"]),
                   "release_candidate": candidate_run,
                   "recertification": int(os.environ["GITHUB_RUN_ID"]),
               },
@@ -433,18 +435,17 @@ jobs:
               f"BEEP proof workflow: {runs['beep.yml']}\n"
               f"Host-native GUI certification workflow: {gui_run}\n"
               f"Graphics certification workflow: {runs['graphics-demos.yml']}\n"
+              f"Recursive demo verification workflow: {runs['recursive-demos.yml']}\n"
               f"Release-candidate packaging workflow: {candidate_run}\n"
               f"Packaged-document recertification workflow: {os.environ['GITHUB_RUN_ID']}\n\n"
               "Release changes:\n"
-              "- document the portable-SDK host Escape mapping to byte 7 and its "
-              "native ZX-UX CAPS+1 equivalent, including write48 insert-mode use;\n"
-              "- correct the host keyboard-input documentation to match the bounded "
-              "FIFO implementation;\n"
-              "- recertify packaged documentation changes through the complete "
-              "exact-commit release gate.\n\n"
+              "- classify Towers of Hanoi and 8-Queens under the demos corpus;\n"
+              "- move their tracked source, binary, and display evidence to demos paths;\n"
+              "- add both recursive demos to the README showcase and exact release checks.\n\n"
               "Certification: full SDK verification matrix, BEEP numerical proof, "
-              "host-native GUI matrix, 21-demo graphics gate, three fresh-filesystem "
-              "release verifies, exact candidate packaging, and virgin-ZIP verification.\n"
+              "host-native GUI matrix, 22-frame-demo graphics gate, two recursive-demo "
+              "proofs, three fresh-filesystem release verifies, exact candidate packaging, "
+              "and virgin-ZIP verification.\n"
           )
 
           release = request_json(f"{api}/releases/tags/{tag}", allow_404=True)

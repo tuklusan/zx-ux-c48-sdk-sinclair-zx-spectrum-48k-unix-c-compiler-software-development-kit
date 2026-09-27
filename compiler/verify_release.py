@@ -88,6 +88,7 @@ def check_required_files() -> None:
         "VERSION", "README.md", "LICENSE", ".gitignore", ".gitattributes",
         ".github/workflows/verify.yml",
         ".github/workflows/graphics-demos.yml",
+        ".github/workflows/recursive-demos.yml",
         ".github/workflows/beep.yml",
         ".github/workflows/gui-desktop.yml",
         "c48", "c48run", "c48.bat", "c48run.bat",
@@ -99,6 +100,7 @@ def check_required_files() -> None:
         "compiler/tests/test_game_regressions.py", "compiler/verify_games.py",
         "compiler/tests/test_beep.py", "compiler/verify_beep.py",
         "compiler/verify_graphics_demos.py",
+        "compiler/verify_recursive_demos.py",
         "compiler/verify_gui_desktop.py",
         "compiler/verify_apps.py",
         "compiler/app_expectations.json",
@@ -119,6 +121,9 @@ def check_required_files() -> None:
         "usr/src/sound/tune.c", "usr/bin/sound/tune.c48b",
         "usr/src/games/gameapi.h",
         "usr/src/demos/demoapi.h",
+        "usr/src/demos/hanoi.c", "usr/bin/demos/hanoi.c48b",
+        "usr/src/demos/queens8.c", "usr/bin/demos/queens8.c48b",
+        "docs/images/demos/hanoi.png", "docs/images/demos/queens8.png",
         "usr/src/apps/appapi.h",
         "usr/src/apps/sheet48.c",
         "usr/src/apps/write48.c",
@@ -391,6 +396,19 @@ def check_graphics_demos() -> None:
         fail("graphics demo completion marker missing")
 
 
+def check_recursive_demos() -> None:
+    cp = run(
+        [sys.executable, "-B", str(ROOT / "verify_recursive_demos.py")],
+        timeout=720,
+    )
+    if cp.returncode != 0:
+        sys.stderr.write(cp.stdout + cp.stderr)
+        fail("recursive demo verification failed")
+    marker = "RECURSIVE DEMO VERIFY PASS: 2 deterministic recursive demos"
+    if marker not in cp.stdout:
+        fail("recursive demo completion marker missing")
+
+
 def check_apps() -> None:
     cp = run(
         [sys.executable, "-B", str(ROOT / "verify_apps.py")],
@@ -545,6 +563,7 @@ def main() -> int:
         ("ROM-derived BEEP", check_beep),
         ("game corpus", check_games),
         ("graphics demo corpus", check_graphics_demos),
+        ("recursive demo corpus", check_recursive_demos),
         ("application corpus", check_apps),
         ("security fixture binaries", check_security_programs),
         ("deterministic demos", check_demos),

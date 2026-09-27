@@ -36,7 +36,7 @@ jobs:
 
       - name: Run normal display proof
         run: >
-          python -B compiler/verify_recursive_examples.py
+          python -B compiler/verify_recursive_demos.py
           --normal-evidence recursive-evidence
 
       - name: List evidence hashes

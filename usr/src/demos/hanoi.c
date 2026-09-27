@@ -1,15 +1,15 @@
 // ============================================================
 // Copyright (c) 2026 SANYALnet Labs.
-// Proprietary rights reserved except as licensed in LICENSE.
+// Proprietary rights reserved except as expressly licensed herein.
 //
-// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.
-// Non-commercial use permitted; commercial use and restricted
-// model training prohibited unless separately authorized.
+// ZX-UX C48 SDK
+// This file is governed by the SANYALnet Labs Non-Commercial License in the
+// root LICENSE file.
 //
 // Attribution required: SANYALnet Labs.
-// See root LICENSE for full terms.
+// See root LICENSE file for full terms.
 // ============================================================
-#include "exapi.h"
+#include "../c48host.h"
 
 #define H_DISCS 7
 #define H_POLES 3

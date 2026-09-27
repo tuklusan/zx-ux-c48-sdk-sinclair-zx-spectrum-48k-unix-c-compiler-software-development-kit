@@ -56,7 +56,7 @@ jobs:
           fetch-depth: 0
           lfs: true
 
-      - name: Require same-commit GUI and graphics gates
+      - name: Require same-commit GUI, graphics, and recursive gates
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
@@ -125,6 +125,7 @@ jobs:
 
           require_gate("gui-desktop.yml", "GUI")
           require_gate("graphics-demos.yml", "graphics")
+          require_gate("recursive-demos.yml", "recursive demos")
           PY
 
       - name: Build materialized tracked-byte ZIP and metadata

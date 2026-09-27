@@ -174,13 +174,15 @@ def screen_metrics(screen: ZXScreen) -> tuple[int, int]:
 
 def check_members(expect: dict) -> None:
     names = set(expect["demos"])
+    recursive_names = {"hanoi", "queens8"}
+    all_names = names | recursive_names
     src_names = {p.stem for p in SRC.glob("*.c")}
     bin_names = {p.stem for p in BIN.glob("*.c48b")}
     img_files = {p.name for p in IMG.glob("*.png")}
-    expected_img_files = {f"{name}.png" for name in names} | {"contact-sheet.png"}
-    if src_names != names:
+    expected_img_files = {f"{name}.png" for name in all_names} | {"contact-sheet.png"}
+    if src_names != all_names:
         fail("graphics demo source member set mismatch")
-    if bin_names != names:
+    if bin_names != all_names:
         fail("graphics demo binary member set mismatch")
     if img_files != expected_img_files:
         fail("graphics demo image member set mismatch")

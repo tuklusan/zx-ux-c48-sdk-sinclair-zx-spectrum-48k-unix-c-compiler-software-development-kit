@@ -9,23 +9,25 @@
 # Attribution required: SANYALnet Labs.
 # See root LICENSE file for full terms.
 # ============================================================================
-name: Recursive example verification
+name: Recursive demo verification
 
 "on":
   push:
     branches: [main]
     paths:
-      - "compiler/verify_recursive_examples.py"
+      - "compiler/verify_recursive_demos.py"
       - "compiler/c48/**/*.py"
       - "compiler/c48.py"
       - "compiler/c48run.py"
       - "compiler/assets/SANYALnet-Labs-4x8-font-FINAL.bin"
-      - "usr/src/examples/exapi.h"
-      - "usr/src/examples/hanoi.c"
-      - "usr/src/examples/queens8.c"
-      - "usr/bin/examples/hanoi.c48b"
-      - "usr/bin/examples/queens8.c48b"
-      - ".github/workflows/recursive-examples.yml"
+      - "usr/src/c48host.h"
+      - "usr/src/demos/hanoi.c"
+      - "usr/src/demos/queens8.c"
+      - "usr/bin/demos/hanoi.c48b"
+      - "usr/bin/demos/queens8.c48b"
+      - "docs/images/demos/hanoi.png"
+      - "docs/images/demos/queens8.png"
+      - ".github/workflows/recursive-demos.yml"
   workflow_dispatch:
 
 permissions:
@@ -54,5 +56,5 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Run recursive example verifier
-        run: python -B compiler/verify_recursive_examples.py
+      - name: Run recursive demo verifier
+        run: python -B compiler/verify_recursive_demos.py
