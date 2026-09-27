@@ -125,6 +125,43 @@ Together, the selection connects the SDK to the cultural memory and nostalgia of
 
 The authoritative [C48 language specification](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project/blob/main/docs/04-C48%20Language%20Specification%20Rev%200.11.docx) lives upstream and defines the language baseline implemented here. `usr/src/c48host.h` is explicitly a **development-only Host Game API profile** and is not the final native ZX-UX `<c48.h>` ABI.
 
+## Native ZX-UX source tapes
+
+The distribution includes **57 native ZX-UX source tapes** beside the
+matching frozen programs under `usr/bin/`. Each `*.src.tap` image
+carries the C48 program source plus the local header it needs, so the
+same source corpus can be moved from a modern SDK host onto a real
+ZX-UX system.
+
+The tapes use ZX-UX **M48O version 1** RAW objects with the symbolic
+**USERHOME** target. C files are stored as object type **C (5)**;
+headers are stored as **TXT (1)**. Payload and header CRCs are
+generated and verified by `c48srctap`. The tool accepts only
+lowercase `.c`, `.h`, and `.txt` inputs and refuses a mixed or
+unsupported command line before creating output.
+
+A typical native workflow is:
+
+```text
+attach or position the .src.tap cassette at its start
+load exapi.h
+load hello.c
+cc hello.c
+link the emitted OBJ1 with ld
+run the resulting MEX1 program
+```
+
+The tape order is deliberate: the required local header is first and
+the C source follows it. `load` installs the objects into the current
+user's home directory through USERHOME mapping. The native
+compiler-resident `<c48.h>` remains part of ZX-UX itself and is not
+duplicated on these tapes.
+
+The complete locked mapping is recorded in
+[`compiler/source_tape_manifest.json`](compiler/source_tape_manifest.json).
+The generator is available as `c48srctap` / `c48srctap.bat`; run
+`c48srctap --help` for syntax and examples.
+
 ## Applications gallery — 4 C48 applications
 
 The applications corpus spans writing, spreadsheets, interactive
