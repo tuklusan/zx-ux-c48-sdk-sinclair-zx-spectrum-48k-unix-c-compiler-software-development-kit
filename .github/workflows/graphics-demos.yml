@@ -17,6 +17,8 @@ name: C48 graphics demo reel
       - "usr/src/demos/**/*.c"
       - "usr/src/demos/**/*.h"
       - "usr/bin/demos/**/*.c48b"
+      - "usr/bin/games/fortune.c48b"
+      - "usr/bin/games/snake.c48b"
       - "usr/src/c48host.h"
       - "c48"
       - "c48.bat"
@@ -24,7 +26,9 @@ name: C48 graphics demo reel
       - "c48run.bat"
       - ".github/workflows/graphics-demos.yml"
       - ".github/workflows/gui-desktop.yml"
+      - ".github/workflows/multitask.yml"
       - ".github/workflows/release-candidate.yml"
+      - ".gitattributes"
   pull_request:
     paths:
       - "VERSION"
@@ -35,6 +39,8 @@ name: C48 graphics demo reel
       - "usr/src/demos/**/*.c"
       - "usr/src/demos/**/*.h"
       - "usr/bin/demos/**/*.c48b"
+      - "usr/bin/games/fortune.c48b"
+      - "usr/bin/games/snake.c48b"
       - "usr/src/c48host.h"
       - "c48"
       - "c48.bat"
@@ -42,7 +48,9 @@ name: C48 graphics demo reel
       - "c48run.bat"
       - ".github/workflows/graphics-demos.yml"
       - ".github/workflows/gui-desktop.yml"
+      - ".github/workflows/multitask.yml"
       - ".github/workflows/release-candidate.yml"
+      - ".gitattributes"
   workflow_dispatch:
 
 concurrency:

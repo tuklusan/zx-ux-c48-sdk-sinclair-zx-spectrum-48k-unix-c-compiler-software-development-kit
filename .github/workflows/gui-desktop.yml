@@ -21,6 +21,7 @@ name: C48 host-native Tk desktop acceptance
       - "c48run.bat"
       - ".github/workflows/graphics-demos.yml"
       - ".github/workflows/gui-desktop.yml"
+      - ".github/workflows/multitask.yml"
       - ".github/workflows/release-candidate.yml"
       - ".gitattributes"
   pull_request:
@@ -37,6 +38,7 @@ name: C48 host-native Tk desktop acceptance
       - "c48run.bat"
       - ".github/workflows/graphics-demos.yml"
       - ".github/workflows/gui-desktop.yml"
+      - ".github/workflows/multitask.yml"
       - ".github/workflows/release-candidate.yml"
       - ".gitattributes"
   workflow_dispatch:
