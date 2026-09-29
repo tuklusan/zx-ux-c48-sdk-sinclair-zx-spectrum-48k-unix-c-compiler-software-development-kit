@@ -153,15 +153,15 @@ class MultitaskRuntimeTests(unittest.TestCase):
 
     def test_globals_and_heaps_are_process_private(self):
         first = compile_text(
-            "void *malloc(unsigned int n);int yield(void);int g;"
-            "int main(void){char *p;g=7;p=(char*)malloc(2);"
+            "char *malloc(unsigned int n);int yield(void);int g;"
+            "int main(void){char *p;g=7;p=malloc(2);"
             "if(p==0)return 2;*p=11;yield();"
             "if(g!=7)return 3;if(*p!=11)return 4;return 0;}\n",
             "first.c",
         )
         second = compile_text(
-            "void *malloc(unsigned int n);int yield(void);int g;"
-            "int main(void){char *p;g=9;p=(char*)malloc(2);"
+            "char *malloc(unsigned int n);int yield(void);int g;"
+            "int main(void){char *p;g=9;p=malloc(2);"
             "if(p==0)return 2;*p=13;yield();"
             "if(g!=9)return 3;if(*p!=13)return 4;return 0;}\n",
             "second.c",
