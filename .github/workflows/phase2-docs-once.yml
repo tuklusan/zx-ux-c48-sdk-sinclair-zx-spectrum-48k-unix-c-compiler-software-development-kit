@@ -1,0 +1,160 @@
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
+#
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
+name: Phase 2 manual updater
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/phase2-docs-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install document library
+        run: python -m pip install --disable-pip-version-check python-docx==1.2.0
+
+      - name: Apply multitask documentation
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from docx import Document
+
+          root = Path(".")
+          readme = root / "README.md"
+          text = readme.read_text(encoding="utf-8")
+          if "### Cooperative multitasking" in text:
+              raise SystemExit("README section already present")
+          anchor = "### Fonts"
+          if text.count(anchor) != 1:
+              raise SystemExit("README anchor mismatch")
+          section = """### Cooperative multitasking
+
+          `c48run --multitask` runs one through six C48B1 programs in one host session:
+
+          ```text
+          c48run --multitask PROGRAM1.c48b PROGRAM2.c48b [PROGRAM3.c48b ...]
+          ```
+
+          The session mirrors the native eight-slot identity shape without pretending to be a booted ZX-UX kernel: PID0 is synthetic idle state, PID1 is a synthetic session supervisor, and directly listed programs receive PID2 through PID7 in command-line order. Every positional token in multitask mode is a program path, and each process receives only that exact token as `argv[0]`. Native `spawn`, `wait`, and `kill` remain deliberately unsupported in this host mode.
+
+          Scheduling is cooperative round-robin. A process hands control back only at `yield()`, positive `sleep()`, blocking `getchar()`, termination, cancellation, or a configured session safety ceiling. `sleep(0)` returns without yielding. A CPU-bound process that never reaches one of those boundaries can starve its peers until a safety ceiling intervenes; that is a property of cooperative scheduling, not a surprise bonus feature.
+
+          Each process has private C48 memory, globals, locals, call/continuation frames, heap, argument storage, and status. The Spectrum screen, border, sound service, tick source, and keyboard are session devices shared in scheduler order. A waiting GUI input owner blocks only that process; unrelated runnable processes continue. Headless multitask execution never performs a blocking stdin read: an unprovided `getchar()` fails that process explicitly.
+
+          `--heap` is applied separately to every process. `--max-steps` and `--time-quota` are session-wide ceilings. A process runtime failure ends that process with status 1 while peers continue; after all processes end, the command returns zero only if all direct processes returned zero, otherwise it returns the first nonzero status in PID order. Shift+Space during a graphical session is a global BREAK and returns 130; after final completion it only closes the retained display. The completed-program footer is shown only after every direct process has terminated.
+
+          The acceptance proof runs the frozen `usr/bin/demos/hanoi.c48b` and `usr/bin/demos/queens8.c48b` together to their verified final states on one shared screen. A separate repeated synthetic tick/input regression requires identical status, scheduler trace, and final screen bytes from identical sessions. This is host-side evidence aligned to the pinned native process semantics; it is not a claim that the host VM is the native ZX-UX scheduler.
+
+          """
+          text = text.replace(anchor, section + anchor)
+          readme.write_text(text, encoding="utf-8", newline="\n")
+
+          additions = {
+              "docs/ZX-UX C48 SDK User Manual.docx": (
+                  "7. Spectrum Display and Keyboard Behavior",
+                  [
+                      ("Heading 2", "6.6 Cooperative multitask sessions"),
+                      ("Body Text", "Use c48run --multitask when several independently compiled C48B1 programs should share one host session. The admitted form is c48run --multitask PROGRAM1.c48b PROGRAM2.c48b [PROGRAM3.c48b ...]. One through six program paths are accepted. In this mode every positional token is a program path, not a per-process argument; each process receives only its supplied path token as argv[0]."),
+                      ("Body Text", "The host keeps the native eight-slot identity shape while remaining a host VM: PID0 is synthetic idle state, PID1 is a synthetic session supervisor, and direct programs receive PID2 through PID7 in command-line order. Native spawn, wait, and kill calls are not implemented in this mode. They fail rather than being partly imitated."),
+                      ("Body Text", "Scheduling is cooperative round-robin. yield() hands off; positive sleep() blocks the caller until its shared session tick deadline; sleep(0) returns without handing off; and a blocking getchar() blocks only its owning process. Ordinary C48 statements and expressions do not create hidden time slices. A process that never reaches a scheduling or blocking service can therefore starve peers until --max-steps or --time-quota stops the session."),
+                      ("Body Text", "Each process has private C48 memory, globals, local scopes, call/continuation frames, heap, argument storage, and exit status. The screen, border, sound service, tick source, and keyboard are shared session devices. --heap is a separate per-process ceiling. --max-steps and --time-quota are session-wide ceilings. Headless multitask mode never blocks on host stdin: an unprovided getchar() fails that process explicitly while other runnable processes may finish."),
+                      ("Body Text", "A process runtime failure ends that process with status 1 and does not automatically stop its peers. After all direct processes are terminal, the command returns zero only when all returned zero; otherwise it returns the first nonzero status in PID order. Shift+Space during a graphical session is a global BREAK and returns 130. The completed-program footer is withheld until every direct process has ended; after that point Shift+Space closes the retained final display."),
+                      ("Body Text", "The SDK proof runs the frozen Towers of Hanoi and 8-Queens C48B1 demo binaries together to their verified final states on one shared screen. A separate repeated synthetic tick/input regression requires identical status, scheduler trace, and final screen bytes from identical lightweight sessions. That is a host-side compatibility proof against the pinned native scheduling contract, not native kernel execution."),
+                  ],
+              ),
+              "docs/ZX-UX C48 SDK Technical Reference.docx": (
+                  "7. Logical Memory, Allocation Lifetime, and Pointer Provenance",
+                  [
+                      ("Heading 2", "6.5 Resumable cooperative multitask execution"),
+                      ("Body Text", "Multitask mode preserves the established single-program VM and adds a session-specific resumable engine. C48 function calls, compounds, loop state, expression evaluation, built-in calls, and returns are represented by explicit continuation frames. A process can suspend at an admitted scheduler boundary and later resume with the same semantic state without using a host thread as a C48 scheduler."),
+                      ("Body Text", "The session owns eight descriptors. PID0 represents idle work, PID1 is a synthetic supervisor, and direct programs occupy PID2 through PID7. Runnable user processes are selected round-robin. yield(), positive sleep(), blocking getchar(), termination, cancellation, and session ceilings are scheduling boundaries. sleep(0) completes in place. Ordinary frame steps are charged to the deterministic session budget but are not preemption points, so non-yielding computation can starve peers until a ceiling intervenes."),
+                      ("Body Text", "Each ResumableRomMathVM retains private memory, allocation provenance, globals, scopes, heap accounting, argv storage, object handles, call depth, and continuation frames. Invariant checks compare scope bookkeeping, entered call frames, and live heap accounting at every scheduling event. One shared ZXScreen and session device set receive graphics, text, border, sound, tick, and input effects in cooperative execution order."),
+                      ("Body Text", "The host does not implement native spawn, wait, or kill in this phase. Calls to those services are rejected in multitask mode. Process-local failures become status 1 and leave unrelated runnable processes alive; a global BREAK returns 130 and cancels live descriptors. The first nonzero direct-process status in PID order becomes the final session status after all processes are terminal."),
+                  ],
+                  "16. Float5 Representation and ROM-Derived Mathematics",
+                  [
+                      ("Heading 2", "15.5 Multitask input, presentation, and final completion"),
+                      ("Body Text", "The GUI worker thread runs one complete CooperativeSession target; it never chooses individual C48 processes. Multitask getchar() uses non-blocking FIFO polling. If several processes wait, an existing owner is retained; otherwise the lowest waiting PID becomes owner. One delivered byte wakes only that owner, allowing unrelated runnable processes to continue. Headless mode has no blocking stdin fallback for multitask input."),
+                      ("Body Text", "yield(), positive sleep(), and blocking input publish the shared framebuffer through the same generation/presentation fence used by the single-program GUI. The final footer is tied to completion of the whole session target, not to any individual process exit. It therefore remains in BREAK mode while any direct process is runnable, sleeping, or input-blocked and changes to the completed state only after the last direct process terminates. Shift+Space before that transition requests global session BREAK; afterward it closes the retained final display."),
+                  ],
+              ),
+              "docs/ZX-UX C48 SDK Adversarial Security Review.docx": (
+                  "10. Screen, GUI, Host BREAK, Math, and Sound",
+                  [
+                      ("Heading 2", "9.3 Cooperative multitask starvation and session ceilings"),
+                      ("Body Text", "Multitask scheduling is deliberately cooperative rather than preemptive. A process that performs ordinary computation without reaching yield(), positive sleep(), blocking input, termination, or cancellation can starve all peers. This matches the pinned native scheduling rule, but it is still a denial-of-service shape on the host. The mitigation is explicit: --max-steps is one deterministic session-wide semantic-step ceiling and --time-quota is one session-wide wall-clock ceiling. Reaching either cancels the remaining live processes and produces a nonzero session result."),
+                      ("Body Text", "Process isolation is stronger than device isolation. Each direct process has its own VM memory, pointer provenance, globals, locals, continuation stack, heap, argv, and status. The Spectrum screen, border, sound service, ticks, and keyboard are shared. The security boundary is therefore private process state plus intentionally shared session devices, not an invented collection of virtual Spectrums."),
+                  ],
+                  "11. Application Buffers and Conversation State",
+                  [
+                      ("Heading 2", "10.5 Multitask input, BREAK, and completion state"),
+                      ("Body Text", "A multitask getchar() wait is an explicit blocked-process state. GUI input is polled without blocking the scheduler, and a delivered byte wakes only the current input owner. In headless multitask mode there is no blocking stdin read; a process that requests input without an injected event source fails explicitly. This keeps one waiting program from freezing unrelated runnable programs or the host session."),
+                      ("Body Text", "The graphical completed-program footer is session-scoped. One child exiting does not mark the GUI complete. The footer changes from BREAK guidance only after every direct process is terminal. Shift+Space before that point is a global abort request, returns status 130, and cancels live processes; after completion it is only the close acknowledgement."),
+                  ],
+                  "16. Release and Package Supply Chain",
+                  [
+                      ("Heading 2", "15.5 Cooperative multitask regression evidence"),
+                      ("Body Text", "The Phase-2 regression set covers the eight-slot capacity model, PID assignment, explicit-yield round robin, zero-duration and positive sleep behavior, recursive continuation preservation, private globals and heaps, argv isolation, non-blocking input ownership, process-local failure, global abort, starvation under a deterministic safety ceiling, and session-wide resource ceilings. The frozen Hanoi and 8-Queens binaries are run together to their verified final states on one shared screen. A separate repeated synthetic tick/input regression requires identical status, event trace, and final shared screen bytes."),
+                      ("Body Text", "The proof is intentionally bounded. It demonstrates the host cooperative contract against the pinned native semantic reference. It does not claim that host process descriptors are native kernel structures, that host wall-clock timing is repeatable, or that deferred native spawn, wait, and kill services have been emulated."),
+                  ],
+              ),
+          }
+
+          for file_name, spec in additions.items():
+              doc = Document(file_name)
+              pairs = list(zip(spec[0::2], spec[1::2]))
+              for heading, paragraphs in pairs:
+                  if any(p.text == paragraphs[0][1] for p in doc.paragraphs):
+                      raise SystemExit(f"{file_name}: section already present")
+                  anchors = [p for p in doc.paragraphs if p.text == heading and p.style.name == "Heading 1"]
+                  if len(anchors) != 1:
+                      raise SystemExit(f"{file_name}: anchor mismatch: {heading}")
+                  anchor_para = anchors[0]
+                  for style, body in paragraphs:
+                      anchor_para.insert_paragraph_before(body, style=style)
+              doc.save(file_name)
+          PY
+
+      - name: Commit exact documentation bytes and retire updater
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/phase2-docs-once.yml
+          git diff --quiet -- usr/src/demos usr/src/examples usr/src/apps
+          git config user.name "SANYALnet Labs Release Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add README.md             "docs/ZX-UX C48 SDK Adversarial Security Review.docx"             "docs/ZX-UX C48 SDK Technical Reference.docx"             "docs/ZX-UX C48 SDK User Manual.docx"             .github/workflows/phase2-docs-once.yml
+          actual="$(git diff --cached --name-only | LC_ALL=C sort)"
+          expected="$(printf '%s\n'             '.github/workflows/phase2-docs-once.yml'             'README.md'             'docs/ZX-UX C48 SDK Adversarial Security Review.docx'             'docs/ZX-UX C48 SDK Technical Reference.docx'             'docs/ZX-UX C48 SDK User Manual.docx' | LC_ALL=C sort)"
+          test "$actual" = "$expected"
+          git commit -m "Document cooperative multitask runtime"
+          git push origin HEAD:main
+
+      - name: Preserve generated manuals
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase2-manuals-${{ github.run_id }}
+          path: |
+            README.md
+            docs/ZX-UX C48 SDK Adversarial Security Review.docx
+            docs/ZX-UX C48 SDK Technical Reference.docx
+            docs/ZX-UX C48 SDK User Manual.docx
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
