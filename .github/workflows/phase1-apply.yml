@@ -69,9 +69,17 @@ jobs:
               if reverse.returncode == 0:
                   print(f"already applied: {path}")
                   continue
+              threeway = subprocess.run(
+                  ["git", "apply", "--3way", include, str(patch_path)],
+                  stdout=subprocess.PIPE, stderr=subprocess.PIPE
+              )
+              if threeway.returncode == 0:
+                  print(f"three-way applied: {path}")
+                  continue
               raise SystemExit(
-                  "payload path is neither cleanly applicable nor already applied: "
-                  + path + "\n" + forward.stderr.decode("utf-8", "replace")
+                  "payload path is neither cleanly applicable, already applied, nor mergeable: "
+                  + path + "\nforward:\n" + forward.stderr.decode("utf-8", "replace")
+                  + "\nthree-way:\n" + threeway.stderr.decode("utf-8", "replace")
               )
           PY
 
