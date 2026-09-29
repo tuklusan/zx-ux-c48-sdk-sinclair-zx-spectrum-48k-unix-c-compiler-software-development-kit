@@ -124,6 +124,14 @@ jobs:
           readme.write_text(text, encoding="utf-8", newline="\n")
           PY
 
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("compiler/release_expectations.json")
+          data = json.loads(path.read_text(encoding="ascii"))
+          data["test_count"] = 379
+          path.write_text(json.dumps(data, indent=2) + "\n", encoding="ascii", newline="\n")
+          PY
           python -B compiler/refresh_source_tapes.py
           chmod +x c48 c48run c48srctap
           rm -f scratch/.phase1-part*.dat
