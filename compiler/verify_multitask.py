@@ -133,6 +133,12 @@ def main() -> int:
     yields = [event[1] for event in first[2] if event[0] == "yield"]
     if 2 not in yields or 3 not in yields:
         fail("both recursive processes must reach cooperative yield boundaries")
+    sleepers = [event[1] for event in first[2] if event[0] == "sleep"]
+    if 2 not in sleepers or 3 not in sleepers:
+        fail("both recursive processes must reach positive-sleep boundaries")
+    wakes = [event[1] for event in first[2] if event[0] == "wake"]
+    if 2 not in wakes or 3 not in wakes:
+        fail("both recursive processes must resume after positive sleep")
     dispatches = [event[1] for event in first[2] if event[0] == "dispatch"]
     if 2 not in dispatches or 3 not in dispatches:
         fail("both recursive processes must be dispatched")
