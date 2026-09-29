@@ -342,7 +342,17 @@ Exact option names may be refined during implementation, but the final interface
 9. Route supported runtime/library calls to the pinned native-compatible runtime contract.
 10. Add instruction-level golden tests and semantic differential tests against `c48run` for representable pure-computation programs.
 
-## Step 3.5 — OBJ1 writer
+## Step 3.5 — Freeze and ship the native runtime/link support set
+
+1. Pin the exact read-only native ZX-UX commit that defines the runtime/linker contract consumed by this tool.
+2. Build or import only deterministic SDK-owned copies of the exact runtime support artifacts required for host linking, with provenance metadata and immutable hashes; never reach into an unpinned moving upstream checkout at normal tool runtime.
+3. Include the native startup object and every runtime/library member required by the supported C48B1 surface. The startup path, not `main` directly, owns process-entry setup and the eventual call to `main`.
+4. Define the complete supported external-symbol set and fail closed on any unresolved or unsupported symbol.
+5. Implement fixed-point archive/member extraction so transitive runtime dependencies are resolved in the same semantic manner as the native linker contract.
+6. Add completeness tests proving that every builtin/runtime symbol accepted by the target lowering either resolves to an exact shipped native implementation or is rejected before output commit.
+7. Record provenance, source commit, member hashes, exported symbols, and archive ordering in deterministic SDK metadata checked by release verification.
+
+## Step 3.6 — OBJ1 writer
 
 1. Emit exact OBJ1 header fields, text/data, BSS size, symbol table, relocation table, body CRC, and header CRC.
 2. Enforce identifier/name limits and symbol uniqueness.
@@ -351,55 +361,58 @@ Exact option names may be refined during implementation, but the final interface
 5. Validate every generated OBJ1 with an independent SDK-side decoder and, where practical, the read-only native format oracle/reference behavior.
 6. Require byte-for-byte deterministic rebuilds.
 
-## Step 3.6 — Host linker and MEX1 writer
+## Step 3.7 — Host linker and MEX1 writer
 
-1. Consume the generated OBJ1 through a separate validated interface.
-2. Resolve symbols/runtime references deterministically.
-3. Lay out image+BSS within the native 32,768-byte contract.
-4. Compute entry offset, minimum FAST stack, relocation list, body CRC, and header CRC exactly.
-5. Enforce exact stored-length and relocation constraints.
-6. Reject unresolved symbols, overflow, invalid addends, stack-policy violations, and image+BSS overflow before output commit.
+1. Consume the generated program OBJ1 plus the shipped, pinned native runtime/startup OBJ1/archive support set through separately validated interfaces.
+2. Resolve symbols and runtime-library members deterministically using the frozen fixed-point archive rule.
+3. Set the final executable entry to the native startup entry, not directly to `main`, unless the pinned native ABI explicitly proves a different entry for that exact case.
+4. Lay out image+BSS within the native 32,768-byte image-plus-BSS contract.
+5. Compute minimum FAST stack, final relocation list, body CRC, and header CRC exactly; also enforce the independent 32,768-byte exact stored-MEX1-length ceiling including relocation bytes.
+6. Reject unresolved symbols, overflow, invalid addends, stack-policy violations, image+BSS overflow, and stored-length overflow before output commit.
 7. Validate every MEX1 with an independent decoder.
 8. Where possible, compare selected outputs/behavior against native `cc` + `ld` results for equivalent programs without requiring byte identity when legal code generation differs.
 
-## Step 3.7 — M48O executable cassette object and TAP writer
+## Step 3.8 — M48O executable cassette object and TAP writer
 
-1. Define the executable object type/target placement exactly according to the native loader contract.
-2. Wrap the final MEX1 bytes in a valid M48O version-1 envelope with exact name, target, physical/logical lengths, payload CRC, header CRC, flags, codec, and reserved bytes.
-3. Emit standard Spectrum TAP framing expected by the ZX-UX loader.
-4. Use atomic output semantics: failure must not leave a partially valid-looking output.
-5. Add independent TAP/M48O decode-and-verify tests.
-6. Add negative tests for invalid names, oversized images, corrupt C48B1, unsupported builtins, CRC failures, and output-path errors.
+1. Freeze the native executable cassette contract to an M48O version-1 RAW `BIN` object targeted to `BIN`, whose exact logical/physical payload is the complete MEX1 byte sequence.
+2. Derive the default cassette object name only when the intended executable basename satisfies the native 1..10-byte portable name contract; otherwise require an explicit valid output/object name and fail before creating output.
+3. Emit exact M48O name, target, type, physical/logical lengths, RAW flags/codec, payload CRC, header CRC, and reserved bytes.
+4. Reuse or refactor the already-certified `c48srctap` M48O/TAP framing and CRC primitives where semantics are identical instead of creating a second drifting implementation.
+5. Emit standard Spectrum TAP framing expected by the ZX-UX loader.
+6. Use atomic output semantics: failure must not leave a partially valid-looking output.
+7. Add independent TAP/M48O decode-and-verify tests, and prove existing 57 source tapes remain byte-identical.
+8. Add negative tests for invalid names, wrong type/target, oversized images, corrupt C48B1, unsupported builtins, CRC failures, and output-path errors.
 
-## Step 3.8 — Native execution proof
+## Step 3.9 — Native execution proof
 
-1. Use a real ZX Spectrum 48K/native ZX-UX-compatible execution harness or the repository's established native validation method; do not certify solely by re-reading generated bytes.
-2. Load generated TAP through the native cassette object path.
-3. Prove the M48O envelope is accepted.
-4. Prove the MEX1 loader accepts and relocates the executable.
+1. Use the native repository's canonical project-local interpreter, assembler/emulator/test-driver/toolchain from an exact pinned read-only native ZX-UX commit. Do not substitute ambient host tools or certify solely by re-reading generated bytes.
+2. Load generated TAP through the real native cassette object path with the same loader constraints used by native certification.
+3. Prove the M48O envelope is accepted as a BIN object in the native executable namespace.
+4. Prove the MEX1 loader accepts, allocates, relocates, and starts the executable through the native startup entry.
 5. Execute representative generated programs to completion.
 6. Compare observable results with `c48run` for the same C48B1 input where semantics overlap.
-7. Include recursion, graphics/text, integer arithmetic, globals, strings, and runtime-call coverage.
-8. Record exact generated OBJ1/MEX1/TAP hashes for deterministic proof fixtures.
+7. Include recursion, graphics/text, integer arithmetic, globals, strings, runtime calls, startup/exit, and relocation coverage.
+8. Record exact generated OBJ1/MEX1/TAP hashes plus the pinned native toolchain/reference commit for deterministic proof fixtures.
 
-## Step 3.9 — Large-program cross-development proof
+## Step 3.10 — Large-program cross-development proof
 
-1. Add a dedicated non-corpus test fixture outside the immutable demos/examples/apps directories.
-2. Construct a valid C48 source fixture whose source size is approximately 30 KiB and compile it to C48B1 on the host.
-3. Generate a native executable whose stored MEX1 size is also approximately 30 KiB while remaining strictly inside the 32,768-byte native format ceiling including all required overhead.
-4. Record exact source, C48B1, OBJ1, MEX1, and TAP sizes and hashes.
-5. Prove the native executable loads and executes successfully.
-6. Demonstrate that host compilation/code generation avoids the native compiler's self-hosting memory pressure; state this as a cross-development capability, not as a change to native ZX-UX memory limits.
-7. Add boundary tests immediately below and above the native executable size ceiling; the valid case must succeed and the overflow case must fail cleanly without output commit.
+1. Generate a dedicated non-corpus C48 source fixture in external scratch or a temporary test workspace; do not add or alter a program under the immutable demos/examples/apps directories merely to obtain size.
+2. Make the generated source byte length fall in a fixed acceptance band of 29 KiB through 31 KiB and record the exact size/hash used for proof.
+3. Include sufficient initialized/static data or emitted target code to force the final stored MEX1 itself into the same 29 KiB through 31 KiB band; a large source that collapses mostly into BSS is not sufficient.
+4. Enforce both independent native limits: `image_size + bss_size <= 32768` and exact stored MEX1 length `<= 32768`, including relocation-table bytes.
+5. Record exact source, C48B1, OBJ1, MEX1, and TAP sizes and hashes.
+6. Prove the native executable loads and executes successfully.
+7. Demonstrate that host compilation/code generation avoids the native compiler's self-hosting memory pressure; state this as a cross-development capability, not as a change to native ZX-UX memory limits.
+8. Add deterministic boundary fixtures immediately below each applicable native ceiling and a deliberately overflowing fixture above it; valid cases must succeed and overflow must fail atomically.
 
-## Step 3.10 — Interaction with `c48run --multitask`
+## Step 3.11 — Interaction with `c48run --multitask`
 
 1. Use shared semantic fixtures to compare host VM results with generated native executable results.
 2. Where generated programs use process-related calls supported by Phase 2 and native ZX-UX, compare documented behavior rather than assuming host and native implementation details are identical.
 3. Do not claim native concurrent proof unless a real native multitasking execution test has actually been performed.
 4. Keep any deferred native concurrency proof explicitly outside this runbook unless separately authorized.
 
-## Step 3.11 — Documentation polish
+## Step 3.12 — Documentation polish
 
 Update root README and every project Microsoft Word manual with:
 
@@ -416,12 +429,13 @@ Update root README and every project Microsoft Word manual with:
 
 Render and inspect every page of each modified Word manual after edits.
 
-## Step 3.12 — Phase-3 acceptance gate
+## Step 3.13 — Phase-3 acceptance gate
 
 Require:
 
 - complete backend/unit tests pass;
 - deterministic OBJ1/MEX1/TAP rebuilds pass;
+- shipped native startup/runtime support has pinned provenance, deterministic hashes, complete supported-symbol coverage, and fixed archive ordering;
 - independent decoders validate every proof artifact;
 - native loader/execution proof passes;
 - large-program proof passes;
@@ -441,7 +455,7 @@ Commit and push Phase 3 only after the complete gate passes.
 
 ## Goal
 
-Perform one deliberate static-analysis campaign after feature implementation is complete, make warranted code changes from the findings, prove those changes, obtain a reviewed clean result or explicitly justified non-applicable findings, and then remove the temporary scanning machinery.
+Perform one deliberate static-analysis campaign after feature implementation is complete, make warranted code changes from the findings, prove those changes, obtain a reviewed clean result or explicitly justified non-applicable findings, and then remove the temporary scanning machinery. "One-time" means one temporary review campaign, not exactly one analysis execution: reruns after fixes are required until closure, but no recurring scan workflow remains afterward.
 
 ## Step 4.1 — Create one-time CodeQL workflow
 
@@ -508,14 +522,15 @@ Commit and push the Phase-4 remediation and the final temporary-workflow removal
 
 Audit the complete tracked repository after all implementation and static-analysis changes. This is not a sampling exercise. Every tracked byte must be read. Every text/source line must be accounted for. Every document/container must be structurally inspected. Then perform intra-artifact and cross-artifact consistency review.
 
-## Step 5.1 — Freeze audit input
+## Step 5.1 — Freeze a fresh exact audit copy
 
 1. Record the exact Phase-4-complete commit.
-2. Require a clean working tree.
-3. Enumerate all tracked files using the version-control index, not filesystem guesses.
-4. Record count, path, byte length, and SHA-256 for every tracked file.
-5. Read every tracked file completely in binary mode at least once and verify the bytes read equal the recorded file length.
-6. Re-run the immutable pinned-corpus digest guard before any audit correction.
+2. Require a clean `main` working tree and verify the local object/tree identity against that commit before copying.
+3. Create a fresh filesystem copy from that exact committed tree for the audit pass; do not reuse a stale working directory or previously expanded release package.
+4. Enumerate all tracked files from version-control metadata for that exact commit, not filesystem guesses.
+5. Record count, path, byte length, and SHA-256 for every tracked file in the fresh copy.
+6. Read every tracked file completely in binary mode from that fresh copy and verify the bytes read equal the recorded file length.
+7. Re-run the immutable pinned-corpus digest guard before any audit correction.
 
 ## Step 5.2 — File-by-file structural validation
 
@@ -543,7 +558,7 @@ Imported third-party/reference material must be read and integrity-checked but n
 
 ## Step 5.3 — Line-by-line source/document sanity review
 
-1. Read every governed text/source file without truncation.
+1. Manually read every tracked text/source file line-by-line without truncation, including header-exempt project text and imported/reference text. Machine parsers/searches may assist but do not replace the complete human-readable line pass.
 2. Check stale versions, obsolete counts, old tool names, dead paths, contradictory comments, misleading host/native terminology, incorrect examples, unreachable/dead configuration, duplicate policy text, and TODOs that contradict completed behavior.
 3. Confirm comments describe current code rather than historical behavior unless explicitly marked historical.
 4. Confirm error messages and CLI help match actual options and failure conditions.
@@ -611,19 +626,37 @@ No contradiction may remain between implementation, tests, README, Word manuals,
 2. Do not modify pinned C/H corpus files. If a defect appears to require such a change, stop and treat it as an external pin/design issue rather than changing the corpus.
 3. Do not cosmetically normalize imported third-party reference material.
 4. After each correction batch, rerun the relevant focused checks.
-5. After the last correction, repeat the complete Phase-5 audit from Step 5.1; partial reruns do not close the phase.
-6. Require at least one complete final pass with zero findings. If runbook execution adopts a stricter repeated-zero-pass policy during audit, record it and apply it consistently.
+5. After every correction, discard the prior audit copy and repeat the complete Phase-5 audit from Step 5.1 on a new exact fresh filesystem copy; partial reruns do not close the phase.
+6. After the last correction, require three successive complete fresh-copy Phase-5 passes with zero new findings. Any byte change resets the count to zero.
+
+## Step 5.8 — Retire scratch planning material before release-tree certification
+
+1. Preserve an external copy/hash of this runbook and the Phase-1-through-5 closeout evidence before deleting tracked planning material.
+2. Remove this tracked runbook and remove `scratch/` if it is then empty; no implementation scratch files may survive into the release tree.
+3. Commit the scratch retirement on `main`.
+4. Because tracked bytes changed, reset the Phase-5 zero-gap counter and restart the complete fresh-copy audit from Step 5.1.
+
+## Step 5.9 — Freeze the prospective release version before the final zero-gap passes
+
+1. Verify the latest published release and determine the next version under the repository's release policy; at the current baseline the expected patch successor to 1.0.2 is 1.0.3, but do not force that value if release history legitimately advanced.
+2. Apply the version to `VERSION`, `compiler/release_expectations.json`, authoritative tool/runtime version constants, and current-scope README/Word-manual metadata or text that explicitly carries the release version. Preserve statements explicitly describing historical versions.
+3. Update test-count or release-count expectations only from measured post-change facts.
+4. Commit and push the version-only release-tree preparation.
+5. Reset the Phase-5 zero-gap counter and restart Step 5.1.
+6. The exact prospective release tree, including final version bytes and with `scratch/` absent, must then complete three successive zero-gap fresh-copy audits. No tracked byte may change after the third clean pass without returning to Phase 5.
 
 ## Phase-5 acceptance gate
 
 Require:
 
 - every tracked byte read and accounted for;
-- every governed text/source file reviewed without truncation;
+- every tracked text/source file manually reviewed line-by-line without truncation;
 - all Office manuals structurally and visually reviewed page-by-page;
 - all intra-artifact checks clean;
 - all cross-artifact consistency checks clean;
-- all corrections reverified by a complete final pass;
+- tracked scratch planning material retired before the final release-tree passes;
+- final release version already frozen in the audited tree;
+- all corrections and release-tree preparation reverified by three successive complete fresh-copy zero-gap passes;
 - full test/release verifier clean;
 - immutable pinned C/H corpus unchanged;
 - no transient files;
@@ -637,29 +670,20 @@ Only after Phase 5 closes cleanly may Phase 6 begin.
 
 ## Goal
 
-Cut the next release only from the fully verified Phase-5 tree, publish exact certified bytes, verify the published release, then remove the prior release. No feature work or opportunistic cleanup is allowed in this phase.
-
-At the current baseline the published SDK version is 1.0.2, so the expected next patch release is 1.0.3. Immediately before execution, verify the latest published version; if repository history has legitimately advanced, compute the next version from the then-current release policy rather than blindly forcing 1.0.3.
+Cut the next release only from the fully verified, already-versioned Phase-5 tree, publish exact certified bytes, verify the published release, then remove the prior release. Phase 6 is intentionally non-developmental: no tracked source, documentation, policy, version, test, or package-input byte may be edited here. Any required tracked-byte change returns execution to Phase 5 and resets its zero-gap audit count.
 
 ## Step 6.1 — Release preflight
 
-1. Confirm Phase-5 acceptance record is complete with zero unresolved findings.
-2. Confirm `main` is clean and points to the exact audited commit.
-3. Confirm immutable pinned-corpus hashes still match the baseline inventory.
-4. Confirm the safety baseline tag still points to its original commit.
-5. Determine the next release version.
-6. Inventory the currently published release that will become prior after successful publication.
-7. Record its release ID/tag/assets before any deletion.
+1. Confirm the Phase-5 acceptance record includes three successive complete zero-gap passes over the exact prospective release tree.
+2. Confirm `main` is clean and points to that exact audited prospective-release commit.
+3. Confirm `VERSION`, release expectations, tool/runtime version constants, README/manual current-version text, and package naming agree with the Phase-5-frozen version.
+4. Confirm immutable pinned-corpus hashes still match the baseline inventory.
+5. Confirm the safety baseline tag still points to its original commit.
+6. Confirm `scratch/` is absent from the prospective release tree.
+7. Inventory the currently published release that will become prior after successful publication and record its release ID/tag/assets before any deletion.
+8. Make no tracked-byte changes in this preflight. Any discrepancy returns to Phase 5.
 
-## Step 6.2 — Apply version change only
-
-1. Update `VERSION`.
-2. Update `compiler/release_expectations.json` version and any other authoritative runtime/tool version constants.
-3. Update version-specific current-scope manual metadata/text only where required; preserve statements explicitly describing historical versions.
-4. Do not mix unrelated changes into the version commit.
-5. Run complete verification after the version change.
-
-## Step 6.3 — Same-commit certification
+## Step 6.2 — Same-commit certification
 
 Require the exact release commit to pass all applicable repository gates, including at minimum:
 
@@ -676,7 +700,7 @@ Require the exact release commit to pass all applicable repository gates, includ
 
 Any failure returns to the phase that owns the defect. Do not patch directly in the publication step.
 
-## Step 6.4 — Build and preserve exact release candidate
+## Step 6.3 — Build and preserve exact release candidate
 
 1. Use the repository release-candidate builder, not a local ad-hoc ZIP command.
 2. Materialize required upstream specification content according to existing package policy.
@@ -685,15 +709,15 @@ Any failure returns to the phase that owns the defect. Do not patch directly in 
 5. Confirm package contains `c48run --multitask`, `c48b2tap`, their launchers/modules/tests/docs, and no temporary Phase-4 workflow or audit debris.
 6. Confirm package does not modify the pinned C/H corpus bytes.
 
-## Step 6.5 — Publish the new release
+## Step 6.4 — Publish the new release
 
-1. Tag the exact certified release commit with the new version tag according to existing release convention.
-2. Publish the exact certified archive and release metadata/assets; do not rebuild after certification.
+1. Tag the exact certified Phase-5 release-tree commit with the new version tag according to existing release convention.
+2. Publish the exact certified archive and release metadata/assets; do not rebuild after certification. If repository permissions require a one-time temporary publisher workflow, its add/remove housekeeping commits may exist after the certified commit, but the final tracked tree on `main` must be proven byte/tree-identical to the certified Phase-5 tree before release closure; the release tag remains on the certified commit.
 3. Use release notes that accurately summarize Phase 1 policy cleanup, multitasking runtime mode, native executable tape cross-development tool, CodeQL review, and repository audit without unsupported claims.
 4. Verify asset digest, size, tag target, release version, and published commit.
 5. Download the published archive and re-run digest/virgin-extraction verification against the published bytes.
 
-## Step 6.6 — Remove the prior release only after new-release verification
+## Step 6.5 — Remove the prior release only after new-release verification
 
 1. Do not remove the prior release before the new release is fully published and independently verified.
 2. Remove the prior release object according to established project release policy.
@@ -701,14 +725,14 @@ Any failure returns to the phase that owns the defect. Do not patch directly in 
 4. Preserve historical version tags unless established project policy explicitly requires their removal; if a prior version tag is to be removed, record that action separately and verify no safety tag is affected.
 5. Confirm the repository's visible latest release is the new version and that no obsolete release is still published.
 
-## Step 6.7 — Final post-release certification
+## Step 6.6 — Final post-release certification
 
-1. Verify `main` points to the intended final commit.
-2. Verify the release tag points to the certified release commit.
+1. Verify `main` either points to the certified release commit itself or, if one-time publication housekeeping required later commits, has a tracked tree exactly identical to the certified release tree with a zero-file compare/tree-equivalence proof.
+2. Verify the release tag points to the certified Phase-5 release-tree commit.
 3. Verify all expected workflow badges/gates are green for the certified commit.
 4. Verify the published archive digest and virgin extraction one final time.
 5. Verify immutable pinned C/H corpus hashes one final time.
-6. Verify no temporary workflow, release helper, cache, generated local evidence, or scratch implementation debris remains except this tracked runbook if project policy keeps it.
+6. Verify no temporary workflow, release helper, cache, generated local evidence, tracked runbook, or `scratch/` implementation/planning debris remains.
 7. Verify repository clean state.
 8. Record final release ID/tag/commit/archive digest and prior-release removal result.
 
