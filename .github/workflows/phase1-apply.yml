@@ -76,14 +76,52 @@ jobs:
               if threeway.returncode == 0:
                   print(f"three-way applied: {path}")
                   continue
-              if path == "compiler/LICENSE-HEADER-POLICY.md":
-                  print(f"deferred for explicit policy reconciliation: {path}")
+              deferred = {
+                  "compiler/LICENSE-HEADER-POLICY.md",
+                  "usr/bin/ailmzx48/README.md",
+                  "scratch/C48-MULTITASK-NATIVE-TAPE-RELEASE-RUNBOOK.runbook",
+              }
+              if path in deferred:
+                  print(f"deferred for explicit reconciliation: {path}")
                   continue
               raise SystemExit(
                   "payload path is neither cleanly applicable, already applied, nor mergeable: "
                   + path + "\nforward:\n" + forward.stderr.decode("utf-8", "replace")
                   + "\nthree-way:\n" + threeway.stderr.decode("utf-8", "replace")
               )
+          PY
+
+          python - <<'PY'
+          from pathlib import Path
+
+          runbook = Path("scratch/C48-MULTITASK-NATIVE-TAPE-RELEASE-RUNBOOK.runbook")
+          text = runbook.read_text(encoding="utf-8").replace("\r\n", "\n")
+          old = (
+              "# Copyright (c) 2026 SANYALnet Labs.\n"
+              "# ZX-UX C48 SDK\n"
+              "# root LICENSE file\n"
+              "# Attribution required: SANYALnet Labs.\n\n"
+          )
+          new = (
+              "ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com\n\n"
+              "SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information\n\n"
+          )
+          if text.startswith(old):
+              text = new + text[len(old):]
+          elif not text.startswith(new):
+              raise SystemExit("runbook header is neither legacy nor canonical")
+          runbook.write_text(text, encoding="utf-8", newline="\n")
+
+          readme = Path("usr/bin/ailmzx48/README.md")
+          text = readme.read_text(encoding="utf-8").replace("\r\n", "\n")
+          legacy = (
+              "<!-- ZX-UX C48 SDK -->\n"
+              "<!-- This file is governed by the SANYALnet Labs Non-Commercial License in the root LICENSE file. -->\n"
+              "<!-- Attribution required: SANYALnet Labs. -->\n\n"
+          )
+          if legacy in text:
+              text = text.replace(legacy, "", 1)
+          readme.write_text(text, encoding="utf-8", newline="\n")
           PY
 
           rm -f scratch/.phase1-part*.dat
