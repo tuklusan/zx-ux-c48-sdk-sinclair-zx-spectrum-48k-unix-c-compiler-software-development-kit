@@ -11,6 +11,8 @@ name: C48 release candidate packaging gate
       # requires successful GUI and graphics runs for the exact same commit
       # before it can preserve candidate bytes.
       - "VERSION"
+      - "README.md"
+      - "docs/*.docx"
       - "compiler/**/*.py"
       - "compiler/**/*.json"
       - "compiler/**/*.bin"

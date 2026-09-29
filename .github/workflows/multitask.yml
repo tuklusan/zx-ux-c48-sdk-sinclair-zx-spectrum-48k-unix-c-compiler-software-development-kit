@@ -10,6 +10,8 @@ name: C48 cooperative multitask verification
       # The release-candidate gate waits for a same-commit multitask result.
       # Keep every candidate-producing execution input covered here.
       - "VERSION"
+      - "README.md"
+      - "docs/*.docx"
       - "compiler/**/*.py"
       - "compiler/**/*.json"
       - "compiler/**/*.bin"

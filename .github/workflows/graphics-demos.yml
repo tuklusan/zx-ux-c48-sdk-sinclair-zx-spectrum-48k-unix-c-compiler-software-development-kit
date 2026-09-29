@@ -7,9 +7,11 @@ name: C48 graphics demo reel
   push:
     branches: [main]
     paths:
-      # Only files that can change compiler/demo execution belong here.
-      # Documentation and image-only edits must not fan out into 21 runners.
+      # Exact-candidate inputs belong here so a documentation-bearing release
+      # commit receives the same-commit execution evidence required by packaging.
       - "VERSION"
+      - "README.md"
+      - "docs/*.docx"
       - "compiler/**/*.py"
       - "compiler/**/*.json"
       - "compiler/**/*.bin"
@@ -32,6 +34,8 @@ name: C48 graphics demo reel
   pull_request:
     paths:
       - "VERSION"
+      - "README.md"
+      - "docs/*.docx"
       - "compiler/**/*.py"
       - "compiler/**/*.json"
       - "compiler/**/*.bin"

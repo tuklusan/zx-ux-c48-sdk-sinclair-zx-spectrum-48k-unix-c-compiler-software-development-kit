@@ -7,9 +7,11 @@ name: C48 SDK verification
   push:
     branches: [main, cleanup/deep-clean-2026-09-14]
     paths:
-      # Executable/test inputs only. Documentation, images, retained evidence,
-      # and generated checksum metadata must not consume the 8-row CI matrix.
+      # Exact-candidate inputs, including release-facing documentation, run the
+      # full matrix so the release commit itself carries verification evidence.
       - "VERSION"
+      - "README.md"
+      - "docs/*.docx"
       - ".gitattributes"
       - "compiler/**/*.py"
       - "compiler/**/*.json"

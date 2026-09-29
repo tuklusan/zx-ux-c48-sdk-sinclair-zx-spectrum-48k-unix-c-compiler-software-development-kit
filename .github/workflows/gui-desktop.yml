@@ -7,9 +7,11 @@ name: C48 host-native Tk desktop acceptance
   push:
     branches: [main]
     paths:
-      # Host-GUI execution inputs only. Generated probe/checksum evidence is
-      # uploaded as bounded Actions artifacts, not committed to the source tree.
+      # Exact-candidate inputs, including release-facing documentation. Generated
+      # probe/checksum evidence is uploaded as bounded Actions artifacts.
       - "VERSION"
+      - "README.md"
+      - "docs/*.docx"
       - "compiler/**/*.py"
       - "compiler/**/*.json"
       - "compiler/**/*.bin"
@@ -27,6 +29,8 @@ name: C48 host-native Tk desktop acceptance
   pull_request:
     paths:
       - "VERSION"
+      - "README.md"
+      - "docs/*.docx"
       - "compiler/**/*.py"
       - "compiler/**/*.json"
       - "compiler/**/*.bin"
