@@ -5,7 +5,7 @@
 
 # C48 Multitasking, Native Executable Tape, Repository Cleanup, Review, and Release Runbook
 
-Status: INITIAL DRAFT FOR AUDIT ONLY — DO NOT EXECUTE
+Status: AUDIT CANDIDATE — DO NOT EXECUTE UNTIL EXPLICITLY AUTHORIZED
 
 Baseline safety tag: `BASELINE-BEFORE-MULTITASKING-AND-BIN-TAPE-TOOL`
 Baseline commit: `f8d44fd0aa7fe54d691bfd13638ba6e8802ad453`
@@ -17,7 +17,7 @@ This runbook defines six ordered phases. A later phase may not begin until every
 
 The baseline tag above is the recovery point for the complete effort. Never move, recreate, or delete that tag. Before execution begins, verify that both the tag and the expected baseline commit exist and that the tag resolves to the exact baseline commit.
 
-All repository changes are made directly on `main`. Before every commit or repository write, run the project forbidden-term gate over all staged or proposed file names and contents. Keep the working tree free of generated caches and transient files. Commit useful checkpoints regularly, and verify that each pushed checkpoint corresponds to the intended tree.
+All repository changes are made directly on `main`. Never create a branch, force-push `main`, rewrite published history, or move an existing safety/release tag as a recovery shortcut. If a committed defect must be corrected, correct it with a new ordinary `main` commit. Before every commit or repository write, run the project forbidden-term gate over all staged or proposed file names and contents. Keep the working tree free of generated caches and transient files. Commit useful checkpoints regularly, and verify that each pushed checkpoint corresponds to the intended tree.
 
 ### 0.1 Immutable C48 corpus guard — mandatory for all six phases
 
@@ -32,7 +32,7 @@ The existing C48 demos/examples/apps C and header corpus is pinned by the native
 
 This prohibition includes license-header normalization. Those pinned files are explicit Phase-1 license-header-checker exemptions for this runbook. Existing frozen binaries, source tapes, screenshots, manifests, and verification expectations derived from those pinned files must not be refreshed merely because Phase 1 changes repository header policy.
 
-Before the first modification, generate a machine-readable immutable-corpus inventory containing path, byte length, and SHA-256 for every pre-existing pinned C/H file above. Store the inventory as run evidence outside the tracked tree unless an existing repository evidence convention requires otherwise. At the end of every phase, regenerate the inventory and require exact path set, byte length, and digest equality. Any mismatch is a hard stop. Restore the pinned files from the baseline before continuing.
+Before the first modification, enumerate the exact pre-existing pinned C/H path set from version-control metadata under the three directories above; do not rely on shell `**` expansion. Generate a machine-readable immutable-corpus inventory containing each exact path, byte length, and SHA-256. Store the inventory as run evidence outside the tracked tree unless an existing repository evidence convention requires otherwise. At the end of every phase and immediately before every commit that could touch `usr/src/`, regenerate the inventory and require exact path set, byte length, and digest equality. Any mismatch is a hard stop. Restore exact baseline bytes with an ordinary corrective `main` commit if a mismatch has already been committed; never reset or force-push published `main`.
 
 New test-only C/H fixtures may be added outside the three pinned directories when required. They must not masquerade as corpus programs and must be clearly located under test/fixture ownership. Prefer synthetic C48B1 fixtures where source is not required.
 
@@ -56,6 +56,10 @@ At the end of each phase, record at minimum:
 6. clean-tree result;
 7. unresolved defects, which must be zero before advancing.
 
+### 0.5 Iterative zero-gap review rule
+
+After the last byte change in every phase, perform a complete review pass over that phase's changed artifacts, their tests, their documentation, and every interface they touch. If any defect, omission, ambiguity, stale reference, or unproved assumption is found, correct it and reset the clean-pass counter to zero. A phase may close only after three successive complete review passes find zero new defects or gaps. Any byte change after a clean pass resets the counter. Phase 5 applies this rule to the entire tracked repository, not merely the files changed by this runbook. Record all three zero-gap passes in the phase closeout evidence.
+
 ---
 
 # Phase 1 — License-header policy normalization and repository-wide header cleanup
@@ -66,11 +70,11 @@ Replace the current mixed/legacy source-header policy with one exact short heade
 
 The canonical new header text is exactly these two logical lines:
 
-`ZX-UX Unix ZX Spectrum 48K SDK © 2026 Supratim Sanyal supratim-sanyal.blogspot.com`
+ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 
-`SANYALnet Labs Non-Commercial License, attribution required, see LICENSE for more information`
+SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 
-Each file format may add only the minimum comment delimiters required by that format. The words and punctuation of the two logical lines must otherwise remain exact. Preserve shebangs and required launcher preambles as physical line 1 where necessary.
+Each file format may add only the minimum comment delimiters required by that format. The words, order, and punctuation of the two logical lines must otherwise remain exact. Preserve shebangs and required launcher preambles as physical line 1 where necessary. For C48 text sources governed by the repository's 64-column contract, the two logical lines may be physically wrapped at word boundaries into comment continuation lines; the checker must reconstruct and compare the exact logical text, and no physical line may exceed the C48 limit.
 
 ## Step 1.1 — Freeze the pre-change state
 
@@ -85,18 +89,18 @@ Each file format may add only the minimum comment delimiters required by that fo
 1. Remove acceptance of legacy header variants.
 2. Define one canonical two-line logical header and format-aware wrappers.
 3. Preserve fail-closed behavior for unclassified artifact types.
-4. Exempt root `README.md` explicitly.
-5. Exempt root `LICENSE` explicitly.
-6. Exempt Microsoft Office formats at minimum: `.docx`, `.xlsx`, `.xlsm`, `.pptx`, `.doc`, `.xls`, `.ppt`; also classify other Office container/template formats encountered during the full tree walk rather than leaving them unknown.
+4. Exempt root `README.md` explicitly from license-header enforcement only; it remains subject to all other repository policy/content gates.
+5. Exempt root `LICENSE` explicitly from license-header enforcement only; it remains subject to all other repository policy/content gates.
+6. Exempt Microsoft Office document, workbook, presentation, template, add-in, database, diagram, project, note, mail-data, and legacy container formats from license-header enforcement only. The explicit suffix set must include at least `.doc`, `.docx`, `.docm`, `.dot`, `.dotx`, `.dotm`, `.xls`, `.xlsx`, `.xlsm`, `.xlsb`, `.xlt`, `.xltx`, `.xltm`, `.xlam`, `.ppt`, `.pptx`, `.pptm`, `.pot`, `.potx`, `.potm`, `.pps`, `.ppsx`, `.ppsm`, `.vsd`, `.vsdx`, `.vsdm`, `.vst`, `.vstx`, `.vstm`, `.pub`, `.mdb`, `.accdb`, `.mpp`, `.mpt`, `.one`, `.onetoc2`, `.msg`, `.pst`, and `.ost`; classify any additional Office format encountered during the full tree walk explicitly rather than leaving it unknown. Office exemption does not exempt container contents from other project-wide content/security review.
 7. Preserve necessary machine/binary/container exemptions such as version files, manifests, JSON where comments are invalid, binary assets, images, C48B1, TAP, ZIP, ROM, and generated evidence.
 8. Preserve the imported-reference exemption for `docs/reference/` without modifying imported bytes.
 9. Add explicit immutable-corpus exemptions for all pre-existing pinned C/H paths under `usr/src/examples`, `usr/src/demos`, and `usr/src/apps`. Make the exemption narrow enough that a newly added unrelated file is not silently exempted unless intended.
 10. Require the canonical header near the beginning of every governed text/source file.
 11. For POSIX launchers, require the shebang first and canonical header immediately after it.
 12. For Windows batch launchers, require `@echo off` first and canonical header immediately after it.
-13. For C/H or other syntax-sensitive sources, use the correct comment syntax without changing the logical header text.
+13. For C/H or other syntax-sensitive sources, use the correct comment syntax without changing the logical header text; for governed C48 C/H files outside the immutable corpus, enforce the 64-column-safe wrapped representation defined above.
 14. Keep the checker deterministic and independent of working-directory accidents.
-15. Add/adjust focused tests that prove accepted forms, rejected legacy forms, each exemption class, unknown-file failure, launcher preamble handling, and pinned-corpus immutability behavior.
+15. Add/adjust focused tests that prove accepted forms, 64-column-safe logical-line reconstruction, rejected legacy forms, each exemption class, unknown-file failure, launcher preamble handling, and pinned-corpus immutability behavior.
 
 ## Step 1.3 — Update the human-readable license-header policy
 
@@ -122,10 +126,11 @@ Each file format may add only the minimum comment delimiters required by that fo
 ## Step 1.5 — Reconcile other policy gates
 
 1. Update `compiler/check_project_banned_words.py` only as necessary to make the project-wide policy correct and complete, without weakening its coverage.
-2. Ensure filename/path checks are included wherever project policy requires them.
-3. Ensure container/document handling is explicitly defined rather than accidentally skipped.
-4. Keep the license-header checker and forbidden-term checker logically separate: one enforces header placement; the other enforces repository-wide forbidden content.
-5. Add regressions for every gap discovered during the earlier repository audit.
+2. The durable implementation itself must obey the project's non-persistence rule: prohibited terms may not be embedded, encoded, split, disguised, written into generated configuration, or introduced into repository/API text merely so the checker can recognize them. If exact self-contained enforcement cannot satisfy that rule, stop Phase 1 and resolve the enforcement design rather than shipping a misleading partial gate.
+3. Ensure filename/path checks are included wherever project policy requires them.
+4. Ensure container/document handling is explicitly defined rather than accidentally skipped.
+5. Keep the license-header checker and forbidden-term checker logically separate: one enforces header placement; the other enforces repository-wide forbidden content.
+6. Add regressions for every gap discovered during the earlier repository audit.
 
 ## Step 1.6 — Verification and acceptance gate
 
@@ -147,6 +152,7 @@ Acceptance requires:
 - Office files are ignored by the header checker;
 - pinned C/H corpus bytes are unchanged;
 - legacy header variants are no longer accepted for governed files;
+- governed C48 source/header files outside the pinned corpus still satisfy the existing 64-column contract;
 - all tests and release verification pass;
 - no unclassified tracked artifact remains;
 - no transient files remain.
@@ -159,7 +165,7 @@ Commit and push Phase 1 only after the complete gate passes.
 
 ## Goal
 
-Add a deterministic cooperative multitasking mode to `c48run` that models the relevant ZX-UX process/scheduler semantics on the host without using host-thread scheduling for C48 processes. Existing single-program behavior must remain backward compatible.
+Add a deterministic cooperative multitasking mode to `c48run` that models the relevant ZX-UX process/scheduler semantics on the host without using host-thread scheduling for C48 processes. Existing single-program behavior must remain backward compatible. Multitask scheduling is cooperative: never add arbitrary VM-step time slicing or host-scheduler preemption merely to make progress. A process switch occurs only at an explicitly frozen scheduling boundary such as `yield`, a blocking service, termination, or cancellation.
 
 The user-facing primary form is:
 
@@ -179,43 +185,46 @@ Directly listed programs are session processes. Any additional process-control s
 1. Preserve current non-multitask syntax and behavior byte-for-byte where practical.
 2. Define `--multitask` as a mode switch that changes positional interpretation from one program plus argv to multiple program paths.
 3. Reject an empty multitask program list.
-4. Define and enforce the maximum direct process count according to the chosen ZX-UX fidelity model.
-5. Define whether per-process argv is unsupported initially or supplied by an explicit unambiguous syntax; do not overload positional tokens ambiguously.
-6. Define `--headless`, screen-dump, frame-dump, heap, step quota, time quota, font, sound, and approximation options for a session containing multiple processes.
-7. Define overall command exit status: successful session only when all processes terminate normally according to the frozen policy; global abort and process failures produce deterministic nonzero status.
-8. Update launcher smoke tests so root launchers expose and pass through the new mode.
+4. Mirror the native eight-slot identity model: reserve PID0 as idle and PID1 as a synthetic session supervisor, assign directly launched C48 programs to PID2 through PID7 in command-line order, and reject more than six directly launched programs. The synthetic PID1 is host orchestration state, not a hidden C48 program.
+5. In the first admitted CLI contract, positional tokens after `--multitask` are program paths only; each process receives only its exact program token as `argv[0]`. Do not ambiguously mix per-process argv into the same positional list. Any later per-process argument syntax must be explicit, independently parsed, and regression-tested.
+6. In multitask mode, `--heap` applies independently to each process; `--max-steps` is a session-wide deterministic semantic-step ceiling; `--time-quota` is a session-wide wall-clock ceiling; `ticks()` uses one shared session tick source; screen/frame dumps capture the final shared screen. Preserve existing single-program meanings outside multitask mode.
+7. Define `--headless`, font, sound, approximation, input, and dump behavior for a session containing multiple processes.
+8. Define overall command exit status: successful session only when all processes terminate normally according to the frozen policy; global abort and process failures produce deterministic nonzero status.
+9. Update launcher smoke tests so root launchers expose and pass through the new mode.
 
 ## Step 2.3 — Refactor the VM into resumable execution
 
 The present evaluator uses the host call stack for C48 calls/control flow. Multitasking requires resumable C48 state.
 
-1. Introduce explicit VM execution frames/continuations for function calls, compound statements, loop state, expression evaluation, and returns.
-2. Ensure a process can stop only at defined safe scheduling points and later resume with identical semantic state.
-3. Preserve C48 value conversion, pointer provenance, local-scope lifetime, recursion limits, global initialization, and runtime-error behavior.
-4. Keep each process's C48 memory, globals, locals, heap, argv, call stack, continuation state, exit status, and accounting isolated.
-5. Do not implement C48 process scheduling with host threads. The scheduler must choose and run one C48 process at a time deterministically.
-6. Keep the existing wall-clock quota mechanism separate from process scheduling.
-7. Add snapshot/invariant checks sufficient to detect frame leaks, scope leaks, heap leakage between processes, and continuation corruption.
+1. Introduce explicit VM execution frames/continuations for function calls, compound statements, loop state, expression evaluation, builtin calls, and returns.
+2. Ensure a process can stop only at a defined scheduling boundary and later resume with identical semantic state; an ordinary expression/statement step must not become an implicit preemption point.
+3. Convert multitask-mode `yield`, positive-duration `sleep`, blocking input, and any admitted blocking process service from host-blocking calls into scheduler events. In particular, multitask `sleep` must not call a host sleep that stalls all peers. Preserve native zero-duration sleep behavior rather than silently treating it as `yield`.
+4. Preserve C48 value conversion, pointer provenance, local-scope lifetime, recursion limits, global initialization, and runtime-error behavior.
+5. Keep each process's C48 memory, globals, locals, heap, argv, call stack, continuation state, exit status, and accounting isolated.
+6. Do not implement C48 process scheduling with host threads. The scheduler must choose and run one C48 process at a time deterministically. A host helper used only to feed GUI/input events must never decide C48 execution order.
+7. Keep the session wall-clock quota mechanism separate from process scheduling.
+8. Add snapshot/invariant checks sufficient to detect frame leaks, scope leaks, heap leakage between processes, and continuation corruption.
 
 ## Step 2.4 — Implement the cooperative session scheduler
 
 1. Add an explicit process descriptor model with PID, state, parent/session relationship where applicable, exit status, wake deadline, cancellation flag, and VM reference.
 2. Model the native process-count ceiling selected in Step 2.1.
-3. Implement deterministic round-robin selection among runnable processes.
-4. Implement an idle path when every live process is sleeping/blocked.
-5. Implement explicit `yield` as a scheduler handoff.
-6. Implement `sleep` using the session tick source and deterministic wake rules.
+3. Implement deterministic round-robin selection among runnable PID2..PID7 processes, preserving command-line order as the initial queue order.
+4. Implement an idle path when every live process is sleeping or blocked.
+5. Implement explicit `yield` as a scheduler handoff and positive-duration `sleep` as a SLEEPING transition with deterministic wake rules; zero-duration sleep follows the pinned native contract.
+6. Make `getpid` return the assigned multitask PID while preserving the established single-program result outside multitask mode.
 7. Implement process exit and terminal-state accounting.
 8. Implement cancellation/global abort without leaving partially live descriptors.
-9. If `getpid`, `spawn`, `wait`, or `kill` are exposed in this phase, implement them against the frozen native semantics and include negative/permission/capacity tests. If any are deliberately outside Phase-2 scope, state that explicitly in code, tests, README, and manuals rather than implying support.
-10. No process may observe another process's private VM memory, call frames, locals, or heap.
+9. Freeze the Phase-2 scope for `spawn`, `wait`, and `kill` before coding. If admitted, define a deterministic session executable registry and implement the pinned native permission/state/error rules with negative and capacity tests. If deferred, keep them explicitly unsupported in multitask mode and state that limitation consistently in code, tests, README, and manuals; do not emulate them partially.
+10. Switch processes only at the frozen cooperative boundaries; prove that a CPU-bound process that never calls a scheduling/blocking service can starve peers, matching the native cooperative model.
+11. No process may observe another process's private VM memory, call frames, locals, or heap.
 
 ## Step 2.5 — Define shared device semantics
 
 1. Use one shared ZX screen/session display unless a documented native contract requires otherwise.
 2. Serialize graphics/text operations by cooperative execution order.
 3. Define border, flash/tick, sound, and display-present behavior across process switches.
-4. Define keyboard/input ownership. Blocking input must not deadlock the scheduler or starve unrelated runnable processes.
+4. Define keyboard/input ownership. A process waiting for input must enter an explicit blocked state; GUI input wakes only the owner according to the frozen policy, and unrelated runnable processes continue. Headless live-stdin behavior must use a non-blocking/session-safe design or fail explicitly; it may not block the scheduler accidentally.
 5. Define output ordering deterministically.
 6. Ensure headless mode follows the same scheduler semantics without GUI dependencies.
 
@@ -232,7 +241,7 @@ The present evaluator uses the host call stack for C48 calls/control flow. Multi
 
 1. Add new test-only fixtures outside the pinned corpus if source changes are needed.
 2. Use existing frozen Hanoi and 8-Queens C48B1 binaries as a primary two-process proof where possible, without touching their pinned C/H sources.
-3. Prove deterministic interleaving with explicit yield points or scheduler-safe points.
+3. Prove deterministic interleaving only at the frozen cooperative boundaries, including the existing explicit `yield`/`sleep` points in the recursive demo binaries; prove there is no hidden VM-step preemption.
 4. Prove each recursive workload reaches its independently known final state.
 5. Prove one process finishing early does not terminate or corrupt the other.
 6. Prove globals, stack/recursion frames, and heap allocations are isolated.
@@ -266,6 +275,8 @@ Require all of the following:
 - deterministic multitask proof passes;
 - recursive Hanoi/8-Queens proof passes without source/header modification;
 - GUI footer timing behavior is proved;
+- no hidden VM-step preemption exists, and a non-yielding CPU-bound process demonstrably can starve peers until a configured safety ceiling intervenes;
+- session-wide step/time ceilings and per-process heap behavior match the frozen CLI contract;
 - host-platform workflow coverage passes;
 - README and all Word manuals are consistent with implementation;
 - immutable pinned-corpus digest inventory is unchanged;
