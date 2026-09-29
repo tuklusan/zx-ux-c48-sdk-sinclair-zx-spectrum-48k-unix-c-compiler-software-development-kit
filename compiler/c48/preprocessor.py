@@ -16,6 +16,15 @@ from .limits import ResourceBudget
 
 PORTABLE_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]{1,10}$")
 
+CANONICAL_C_HEADER = (
+    "// ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs\n"
+    "// supratim-sanyal.blogspot.com\n"
+    "//\n"
+    "// SANYALnet Labs Non-Commercial License, attribution to\n"
+    "// SANYALnet Labs required, see LICENSE for more information\n"
+)
+CANONICAL_C_HEADER_BYTES = CANONICAL_C_HEADER.encode("utf-8")
+
 @dataclass
 class Macro:
     name: str
@@ -58,16 +67,8 @@ class Preprocessor:
     def preprocess_bytes(self, data: bytes, *, source_name: str, base_dir: Path, include_depth: int = 0) -> list[Token]:
         source_pos = SourcePos(source_name, 1, 1)
         self.budget.add_source_object(len(data), source_pos)
-        canonical_header = (
-            "// ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs\n"
-            "// supratim-sanyal.blogspot.com\n"
-            "//\n"
-            "// SANYALnet Labs Non-Commercial License, attribution to\n"
-            "// SANYALnet Labs required, see LICENSE for more information\n"
-        )
-        canonical_bytes = canonical_header.encode("utf-8")
-        if data.startswith(canonical_bytes):
-            tail = data[len(canonical_bytes):]
+        if data.startswith(CANONICAL_C_HEADER_BYTES):
+            tail = data[len(CANONICAL_C_HEADER_BYTES):]
             try:
                 tail_text = tail.decode("ascii")
             except UnicodeDecodeError as e:
@@ -83,7 +84,7 @@ class Preprocessor:
             # The glyph occupies two UTF-8 bytes. Replace it with two spaces in
             # the already-commented header so host character positions retain
             # native byte-column width while the lexer sees canonical ASCII.
-            text = canonical_header.replace("©", "  ") + tail_text
+            text = CANONICAL_C_HEADER.replace("©", "  ") + tail_text
         else:
             try:
                 text = data.decode("ascii")

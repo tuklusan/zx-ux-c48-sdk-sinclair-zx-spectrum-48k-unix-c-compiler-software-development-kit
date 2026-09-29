@@ -13,6 +13,7 @@ COMPILER=ROOT/"compiler"
 sys.path.insert(0,str(COMPILER))
 import check_license_headers as headers
 import c48srctap
+from c48 import preprocessor
 
 class LicenseHeaderPolicyTests(unittest.TestCase):
     def test_canonical_python_and_launcher_forms(self):
@@ -38,6 +39,7 @@ class LicenseHeaderPolicyTests(unittest.TestCase):
         self.assertEqual(headers.classify("usr/src/examples/hello.c"),"pinned")
         self.assertEqual(headers.classify("usr/src/examples/new-file.c"),"header")
     def test_c48_header_reconstructs_and_compiles(self):
+        self.assertEqual(preprocessor.CANONICAL_C_HEADER,headers.C_HEADER)
         parts=headers.C_HEADER.splitlines(); self.assertTrue(all(len(line.encode("utf-8"))<=64 for line in parts))
         self.assertEqual(parts[0][3:]+" "+parts[1][3:],headers.LINE1)
         self.assertEqual(parts[3][3:]+" "+parts[4][3:],headers.LINE2)
