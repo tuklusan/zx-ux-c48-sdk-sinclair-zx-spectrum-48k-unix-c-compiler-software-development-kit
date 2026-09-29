@@ -310,7 +310,7 @@ def check_source_tapes() -> None:
 
 
 def check_tests() -> None:
-    cp = run([sys.executable, "-B", str(ROOT / "run_tests.py")])
+    cp = run([sys.executable, "-B", str(ROOT / "run_tests.py")], timeout=180)
     if cp.returncode != 0:
         sys.stderr.write(cp.stdout + cp.stderr)
         fail("automated conformance suite failed")

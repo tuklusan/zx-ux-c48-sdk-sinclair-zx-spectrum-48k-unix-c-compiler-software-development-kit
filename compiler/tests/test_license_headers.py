@@ -48,6 +48,9 @@ class LicenseHeaderPolicyTests(unittest.TestCase):
             src.write_text(headers.C_HEADER+"int main(void) { return 0; }\n",encoding="utf-8")
             cp=subprocess.run([sys.executable,"-B",str(COMPILER/"c48.py"),str(src),"-o",str(out)],cwd=ROOT,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
             self.assertEqual(cp.returncode,0,cp.stderr); self.assertTrue(out.is_file())
+            src.write_bytes((headers.C_HEADER+"int main(void) { return 0; }\n").encode("utf-8").replace(b"\n",b"\r\n"))
+            cp=subprocess.run([sys.executable,"-B",str(COMPILER/"c48.py"),str(src),"-o",str(out)],cwd=ROOT,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+            self.assertEqual(cp.returncode,0,"canonical CRLF header must compile: "+cp.stderr)
     def test_source_tape_canonical_header_exception_is_narrow(self):
         with tempfile.TemporaryDirectory() as td:
             p=Path(td)/"x.c"; good=headers.C_HEADER.encode("utf-8")+b"int main(void) { return 0; }\n"

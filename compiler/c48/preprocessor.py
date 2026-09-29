@@ -67,12 +67,21 @@ class Preprocessor:
     def preprocess_bytes(self, data: bytes, *, source_name: str, base_dir: Path, include_depth: int = 0) -> list[Token]:
         source_pos = SourcePos(source_name, 1, 1)
         self.budget.add_source_object(len(data), source_pos)
+        # Honor the documented CRLF normalization before matching the one
+        # permitted UTF-8 sequence in the canonical leading C/H header.
+        # Source-object accounting above still uses the original byte count.
+        if self.normalize_crlf and b"\r" in data:
+            if b"\r" in data.replace(b"\r\n", b""):
+                raise LexicalError(
+                    "CR is not canonical C48 source; normalize CRLF first", source_pos
+                )
+            data = data.replace(b"\r\n", b"\n")
         if data.startswith(CANONICAL_C_HEADER_BYTES):
             tail = data[len(CANONICAL_C_HEADER_BYTES):]
             try:
                 tail_text = tail.decode("ascii")
             except UnicodeDecodeError as e:
-                off = len(canonical_bytes) + e.start
+                off = len(CANONICAL_C_HEADER_BYTES) + e.start
                 prefix = data[:off]
                 line = prefix.count(b"\n") + 1
                 last = prefix.rfind(b"\n")
