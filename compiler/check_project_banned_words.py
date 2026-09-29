@@ -9,6 +9,7 @@ supplies the active rule set ephemerally outside the tracked tree.
 """
 from __future__ import annotations
 from pathlib import Path
+import sys
 
 class PolicyContextUnavailable(RuntimeError):
     pass
@@ -23,3 +24,15 @@ def check_tree(root: Path, *, terms: tuple[bytes, ...] | None = None) -> list[st
         for index,term in enumerate(terms,1):
             if term in path_bytes or term in data: errors.append(f"policy match #{index}: {rel}")
     return errors
+
+
+def main(argv: list[str] | None = None) -> int:
+    print(
+        "project-content policy context unavailable: supply the active policy through the external execution guard",
+        file=sys.stderr,
+    )
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
