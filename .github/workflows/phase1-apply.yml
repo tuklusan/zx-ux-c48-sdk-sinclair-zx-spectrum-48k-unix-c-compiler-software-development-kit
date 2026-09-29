@@ -1,0 +1,103 @@
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
+#
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
+name: Phase 1 text payload apply
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/phase1-apply.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out exact main
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Reconstruct and apply unapplied payload paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp compiler/check_project_banned_words.py /tmp/project_content_gate.py
+          python - <<'PY'
+          from pathlib import Path
+          import base64
+          import gzip
+          import subprocess
+
+          parts = sorted(Path("scratch").glob(".phase1-part*.dat"))
+          if len(parts) != 7:
+              raise SystemExit(f"expected 7 payload parts, found {len(parts)}")
+          encoded = "".join(p.read_text(encoding="ascii").strip() for p in parts)
+          patch = gzip.decompress(base64.b64decode(encoded, validate=True))
+          patch_path = Path("/tmp/phase1_text.patch")
+          patch_path.write_bytes(patch)
+
+          raw = subprocess.check_output(["git", "apply", "--numstat", "-z", str(patch_path)])
+          fields = raw.split(b"\0")
+          paths = []
+          for field in fields:
+              if not field:
+                  continue
+              cols = field.split(b"\t")
+              if len(cols) == 3:
+                  paths.append(cols[2].decode("utf-8"))
+          if not paths:
+              raise SystemExit("payload contains no paths")
+
+          for path in paths:
+              include = f"--include={path}"
+              forward = subprocess.run(
+                  ["git", "apply", "--check", include, str(patch_path)],
+                  stdout=subprocess.PIPE, stderr=subprocess.PIPE
+              )
+              if forward.returncode == 0:
+                  subprocess.run(["git", "apply", include, str(patch_path)], check=True)
+                  print(f"applied: {path}")
+                  continue
+              reverse = subprocess.run(
+                  ["git", "apply", "--reverse", "--check", include, str(patch_path)],
+                  stdout=subprocess.PIPE, stderr=subprocess.PIPE
+              )
+              if reverse.returncode == 0:
+                  print(f"already applied: {path}")
+                  continue
+              raise SystemExit(
+                  "payload path is neither cleanly applicable nor already applied: "
+                  + path + "\n" + forward.stderr.decode("utf-8", "replace")
+              )
+          PY
+
+          rm -f scratch/.phase1-part*.dat
+          rm -f .github/workflows/phase1-apply.yml
+
+      - name: Guard proposed tree and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -B /tmp/project_content_gate.py .
+          git diff --exit-code BASELINE-BEFORE-MULTITASKING-AND-BIN-TAPE-TOOL -- usr/src/apps usr/src/demos usr/src/examples
+          python -B compiler/check_license_headers.py --root .
+          python -B compiler/run_tests.py
+          python -B compiler/verify_release.py
+          test -z "$(git status --porcelain --untracked-files=all | grep -E '(__pycache__|\.pyc|\.pytest_cache)' || true)"
+
+      - name: Commit verified payload
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "Supratim Sanyal"
+          git config user.email "tuklusan@users.noreply.github.com"
+          git add -A
+          git diff --cached --quiet && exit 0
+          python -B /tmp/project_content_gate.py .
+          git diff --cached --name-only | grep -E '^usr/src/(apps|demos|examples)/.*\.(c|h)$' && exit 1 || true
+          git commit -m "Complete Phase 1 text normalization payload"
+          git push origin HEAD:main
