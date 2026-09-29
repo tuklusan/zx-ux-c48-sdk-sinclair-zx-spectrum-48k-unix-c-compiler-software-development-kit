@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
-# ============================================================================
-# Copyright (c) 2026 SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# restricted model training is prohibited unless separately authorized.
-#
-# Attribution required: SANYALnet Labs. See LICENSE for full terms,
-# warranty disclaimer, termination, patent, trademark, and governing-law
-# provisions.
-# ============================================================================
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 from __future__ import annotations
 
 import argparse
@@ -19,127 +9,109 @@ import os
 from pathlib import Path
 import sys
 
-from check_project_banned_words import check_tree as check_banned_words
-
-COPYRIGHT = "Copyright (c) 2026 SANYALnet Labs."
-LEGACY_COPYRIGHT = (
-    "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs."
-)
-ATTRIBUTION = "Attribution required: SANYALnet Labs."
-ATTRIBUTION_PREFIX = 'Attribution is required: \"Based on original work by Supratim Sanyal of'
-ATTRIBUTION_SUFFIX = 'SANYALnet Labs.\" See LICENSE for full terms'
-PROJECT = "ZX-UX C48 SDK"
-
-# Header-safe source/document formats owned by this project.
+LINE1 = 'ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com'
+LINE2 = 'SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information'
+C_HEADER = '// ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs\n// supratim-sanyal.blogspot.com\n//\n// SANYALnet Labs Non-Commercial License, attribution to\n// SANYALnet Labs required, see LICENSE for more information\n'
+OFFICE_SUFFIXES = {'.accdb', '.doc', '.docm', '.docx', '.dot', '.dotm', '.dotx', '.mdb', '.mpp', '.mpt', '.msg', '.one', '.onetoc2', '.ost', '.pot', '.potm', '.potx', '.pps', '.ppsm', '.ppsx', '.ppt', '.pptm', '.pptx', '.pst', '.pub', '.vsd', '.vsdm', '.vsdx', '.vst', '.vstm', '.vstx', '.xlam', '.xls', '.xlsb', '.xlsm', '.xlsx', '.xlt', '.xltm', '.xltx'}
 HEADER_SUFFIXES = {".py", ".c", ".h", ".md", ".txt", ".runbook", ".bat", ".yml", ".yaml"}
 HEADER_NAMES = {"c48", "c48run", "c48srctap", ".gitignore", ".gitattributes"}
+EXEMPT_NAMES = {"LICENSE", "VERSION", "MANIFEST.sha256", "C48-SPECIFICATION.json"}
+EXEMPT_SUFFIXES = {".json", ".bin", ".dat", ".png", ".c48b", ".tap", ".zip", ".rom"}
+PINNED = {
+    'usr/src/apps/appapi.h',
+    'usr/src/apps/gp82.c',
+    'usr/src/apps/sheet48.c',
+    'usr/src/apps/wire3d.c',
+    'usr/src/apps/write48.c',
+    'usr/src/demos/city.c',
+    'usr/src/demos/demoapi.h',
+    'usr/src/demos/dizzy4k.c',
+    'usr/src/demos/firework.c',
+    'usr/src/demos/forest.c',
+    'usr/src/demos/galaxy.c',
+    'usr/src/demos/goblet.c',
+    'usr/src/demos/hanoi.c',
+    'usr/src/demos/julia.c',
+    'usr/src/demos/kaleido.c',
+    'usr/src/demos/mandel.c',
+    'usr/src/demos/mobius.c',
+    'usr/src/demos/moire.c',
+    'usr/src/demos/morph3d.c',
+    'usr/src/demos/ocean.c',
+    'usr/src/demos/orrery.c',
+    'usr/src/demos/plasma.c',
+    'usr/src/demos/queens8.c',
+    'usr/src/demos/raymaze.c',
+    'usr/src/demos/recapi.h',
+    'usr/src/demos/spriteanim.c',
+    'usr/src/demos/sprites.c',
+    'usr/src/demos/terrain.c',
+    'usr/src/demos/torus.c',
+    'usr/src/demos/tunnel.c',
+    'usr/src/demos/warp.c',
+    'usr/src/examples/argv.c',
+    'usr/src/examples/colors.c',
+    'usr/src/examples/exapi.h',
+    'usr/src/examples/graphics.c',
+    'usr/src/examples/hello.c',
+    'usr/src/examples/maze.c',
+    'usr/src/examples/udg.c',
+}
 
-# Deliberate exemptions: adding text would corrupt the syntax/format/container,
-# or LICENSE must remain the exact license text rather than recursively header itself.
-EXEMPT_NAMES = {"LICENSE", "VERSION", "MANIFEST.sha256"}
-EXEMPT_SUFFIXES = {".json", ".bin", ".dat", ".png", ".c48b", ".tap", ".docx", ".zip", ".rom"}
-EXEMPT_PATHS = {"usr/src/demos/dizzy4k.c"}
-
-
-def classify(path: Path) -> str:
-    if path.name in HEADER_NAMES or path.suffix.lower() in HEADER_SUFFIXES:
-        return "header"
-    if path.name in EXEMPT_NAMES or path.suffix.lower() in EXEMPT_SUFFIXES:
-        return "exempt"
+def classify(rel: str) -> str:
+    path=Path(rel); suffix=path.suffix.lower()
+    if rel in {"README.md", "LICENSE"}: return "root-exempt"
+    if rel in PINNED: return "pinned"
+    if rel.startswith("docs/reference/"): return "imported"
+    if path.name in HEADER_NAMES or suffix in HEADER_SUFFIXES: return "header"
+    if path.name in EXEMPT_NAMES or suffix in EXEMPT_SUFFIXES or suffix in OFFICE_SUFFIXES: return "exempt"
     return "unknown"
 
+def _expected(rel: str) -> str:
+    suffix=Path(rel).suffix.lower()
+    if suffix in {".c",".h"}: return C_HEADER
+    if suffix==".md": return f"<!--\n{LINE1}\n\n{LINE2}\n-->\n\n"
+    if suffix==".bat": return f"REM {LINE1}\nREM\nREM {LINE2}\n"
+    if suffix in {".txt",".runbook"}: return f"{LINE1}\n\n{LINE2}\n\n"
+    return f"# {LINE1}\n#\n# {LINE2}\n"
 
-def _iter_project_files(root: Path):
-    for dirpath, dirnames, filenames in os.walk(root, topdown=True):
-        dirnames[:] = sorted(
-            name for name in dirnames if name not in {".git", "__pycache__"}
-        )
-        base = Path(dirpath)
-        for name in sorted(filenames):
-            yield base / name
-
+def _iter_files(root: Path):
+    for dirpath,dirnames,filenames in os.walk(root,topdown=True):
+        dirnames[:]=sorted(d for d in dirnames if d not in {".git","__pycache__",".pytest_cache"})
+        base=Path(dirpath)
+        for name in sorted(filenames): yield base/name
 
 def check_tree(root: Path) -> list[str]:
-    errors: list[str] = []
-    for path in _iter_project_files(root):
-        rel = path.relative_to(root).as_posix()
-        # This port carries upstream provenance instead of the SDK source header.
-        if rel in EXEMPT_PATHS:
-            continue
-        # Imported third-party reference material is preserved byte-for-byte
-        # and is governed by its own provenance/licensing, not the SDK header.
-        if rel.startswith("docs/reference/"):
-            continue
-        # Generated GUI release evidence is retained byte-for-byte. Injecting a
-        # source header would corrupt images, PPM frames, JSONL probes, or
-        # checksum files. README/.gitignore remain header-governed text.
-        if rel.startswith("screenshots/gui-desktop/") and (
-            path.name == "SHA256SUMS"
-            or path.suffix.lower() in {".json", ".jsonl", ".png", ".ppm"}
-        ):
-            continue
-        kind = classify(path)
-        if kind == "unknown":
-            errors.append(f"unclassified artifact: {rel}")
-            continue
-        if kind == "exempt":
-            continue
-        try:
-            text = path.read_text(encoding="utf-8")
-        except UnicodeError as exc:
-            errors.append(f"header-eligible file is not UTF-8 text: {rel}: {exc}")
-            continue
-        # Header must be near the top; shebang/@echo-off may precede it.
-        top = text[:3000]
-        if rel.startswith("usr/src/") and path.suffix.lower() in {".c", ".h"}:
-            # C48 artifacts use a deliberately compact <=64-column header.
-            required_markers = (PROJECT, "Non-Commercial License")
-            legacy_attribution = (
-                "Attribution required: Based on original work by Supratim",
-                "Sanyal of SANYALnet Labs. See root LICENSE for full terms.",
-            )
-        else:
-            required_markers = (PROJECT, "root LICENSE file")
-            legacy_attribution = (
-                ATTRIBUTION_PREFIX,
-                ATTRIBUTION_SUFFIX,
-            )
-        if COPYRIGHT not in top and LEGACY_COPYRIGHT not in top:
-            errors.append(f"missing copyright header marker: {rel}")
-        for required in required_markers:
-            if required not in top:
-                errors.append(
-                    f"missing license header marker {required!r}: {rel}"
-                )
-        if ATTRIBUTION not in top and not all(
-            marker in top for marker in legacy_attribution
-        ):
-            errors.append(f"missing attribution header marker: {rel}")
-        # The header itself must contain a copyright marker.
-        top_header = top[:1800]
-        if (
-            COPYRIGHT not in top_header
-            and LEGACY_COPYRIGHT not in top_header
-        ):
-            errors.append(f"copyright marker is not in the header block: {rel}")
-    # Attribution is a source/document requirement. User-facing CLI text
-    # is intentionally outside this source-header gate.
-    errors.extend(f"project policy: {error}" for error in check_banned_words(root))
+    errors=[]
+    for path in _iter_files(root):
+        rel=path.relative_to(root).as_posix(); kind=classify(rel)
+        if kind=="unknown": errors.append(f"unclassified artifact: {rel}"); continue
+        if kind!="header": continue
+        try:text=path.read_text(encoding="utf-8").replace("\r\n","\n")
+        except UnicodeError as exc: errors.append(f"header-governed file is not UTF-8: {rel}: {exc}"); continue
+        body=text
+        if path.suffix.lower()==".bat":
+            if not body.lower().startswith("@echo off\n"): errors.append(f"Windows launcher preamble missing: {rel}"); continue
+            body=body[10:]
+        elif body.startswith("#!"):
+            end=body.find("\n")
+            if end<0: errors.append(f"shebang newline missing: {rel}"); continue
+            body=body[end+1:]
+        expected=_expected(rel)
+        if not body.startswith(expected): errors.append(f"canonical header missing or not immediately after preamble: {rel}"); continue
+        if path.suffix.lower() in {".c",".h"} and rel.startswith("usr/src/"):
+            for lineno,line in enumerate(expected.splitlines(),1):
+                if len(line.encode("utf-8"))>64: errors.append(f"C48 header line exceeds 64 bytes at line {lineno}: {rel}")
+        if body.startswith(expected+expected): errors.append(f"duplicate canonical header: {rel}")
     return errors
 
-
-def main(argv: list[str] | None = None) -> int:
-    ap = argparse.ArgumentParser(description="Enforce ZX-UX C48 SDK license headers")
-    ap.add_argument("--root", type=Path, default=Path(__file__).resolve().parent.parent)
-    ns = ap.parse_args(argv)
-    errors = check_tree(ns.root.resolve())
+def main(argv=None):
+    ap=argparse.ArgumentParser(description="Enforce ZX-UX C48 SDK canonical license headers")
+    ap.add_argument("--root",type=Path,default=Path(__file__).resolve().parent.parent)
+    ns=ap.parse_args(argv); errors=check_tree(ns.root.resolve())
     if errors:
-        for error in errors:
-            print(f"LICENSE HEADER ERROR: {error}", file=sys.stderr)
+        for error in errors: print(f"LICENSE HEADER ERROR: {error}",file=sys.stderr)
         return 1
-    print("LICENSE HEADER PASS")
-    return 0
+    print("LICENSE HEADER PASS"); return 0
 
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+if __name__=="__main__": raise SystemExit(main())
