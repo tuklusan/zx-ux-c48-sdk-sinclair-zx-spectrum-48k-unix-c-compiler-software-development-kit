@@ -13,7 +13,7 @@ name: C48 release candidate packaging gate
       - "VERSION"
       - "README.md"
       - "docs/*.docx"
-      - "compiler/**/*.py"
+      - "compiler/**/*.py"\n      - "compiler/**/*.md"
       - "compiler/**/*.json"
       - "compiler/**/*.bin"
       - "compiler/**/*.rom"
@@ -31,7 +31,7 @@ name: C48 release candidate packaging gate
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
