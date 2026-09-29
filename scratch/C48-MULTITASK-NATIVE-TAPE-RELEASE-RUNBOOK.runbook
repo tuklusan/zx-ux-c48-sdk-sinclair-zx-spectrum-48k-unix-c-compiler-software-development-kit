@@ -32,7 +32,7 @@ The existing C48 demos/examples/apps C and header corpus is pinned by the native
 
 This prohibition includes license-header normalization. Those pinned files are explicit Phase-1 license-header-checker exemptions for this runbook. Existing frozen binaries, source tapes, screenshots, manifests, and verification expectations derived from those pinned files must not be refreshed merely because Phase 1 changes repository header policy.
 
-Before the first modification, enumerate the exact pre-existing pinned C/H path set from version-control metadata under the three directories above; do not rely on shell `**` expansion. Generate a machine-readable immutable-corpus inventory containing each exact path, byte length, and SHA-256. Store the inventory as run evidence outside the tracked tree unless an existing repository evidence convention requires otherwise. At the end of every phase and immediately before every commit that could touch `usr/src/`, regenerate the inventory and require exact path set, byte length, and digest equality. Any mismatch is a hard stop. Restore exact baseline bytes with an ordinary corrective `main` commit if a mismatch has already been committed; never reset or force-push published `main`.
+Before the first modification, enumerate the exact pre-existing pinned C/H path set from version-control metadata under the three directories above; do not rely on shell `**` expansion. Generate a machine-readable immutable-corpus inventory from the canonical Git blob bytes at the baseline commit, containing each exact path, Git blob object ID, blob byte length, and SHA-256. This canonical-blob inventory, not a platform-dependent checkout with possible line-ending conversion, is the immutability authority. Store it as run evidence outside the tracked tree unless an existing repository evidence convention requires otherwise. At the end of every phase and immediately before every commit that could touch `usr/src/`, regenerate the canonical-blob inventory for the candidate commit and require exact path set, blob IDs, byte lengths, and digest equality. Also require a clean working tree so checkout transformations cannot hide a proposed content change. Any mismatch is a hard stop. Restore exact baseline blob bytes with an ordinary corrective `main` commit if a mismatch has already been committed; never reset or force-push published `main`.
 
 New test-only C/H fixtures may be added outside the three pinned directories when required. They must not masquerade as corpus programs and must be clearly located under test/fixture ownership. Prefer synthetic C48B1 fixtures where source is not required.
 
@@ -146,7 +146,8 @@ Run, at minimum:
 - `python -B compiler/run_tests.py`;
 - `python -B compiler/verify_release.py`;
 - immutable pinned-corpus digest comparison;
-- clean-tree/cache scan.
+- clean-tree/cache scan;
+- applicable cross-platform workflow verification on the Phase-1 checkpoint, including Windows launcher smoke coverage and YAML workflow parsing/execution.
 
 Acceptance requires:
 
@@ -160,7 +161,8 @@ Acceptance requires:
 - every derived artifact affected by a permitted non-pinned header-byte change has been regenerated or explicitly proved unchanged, while all pinned-corpus-derived artifacts remain consistent with their unchanged pinned inputs;
 - all tests and release verification pass;
 - no unclassified tracked artifact remains;
-- no transient files remain.
+- no transient files remain;
+- the applicable cross-platform workflow matrix passes on the exact Phase-1 checkpoint, so the Unicode/comment-wrapper sweep is proved on Windows, Linux, and macOS rather than only by a local verifier.
 
 Commit and push Phase 1 only after the complete gate passes.
 
@@ -352,7 +354,7 @@ Exact option names may be refined during implementation, but the final interface
 ## Step 3.5 — Freeze and ship the native runtime/link support set
 
 1. Pin the exact read-only native ZX-UX commit that defines the runtime/linker contract consumed by this tool.
-2. Build or import only deterministic SDK-owned copies of the exact runtime support artifacts required for host linking, with provenance metadata and immutable hashes; never reach into an unpinned moving upstream checkout at normal tool runtime.
+2. Build or import only deterministic SDK-owned copies of the exact runtime support artifacts required for host linking, with provenance metadata and immutable hashes; never reach into an unpinned moving upstream checkout at normal tool runtime. Track a deterministic reproduction recipe naming the exact pinned upstream source inputs/tool versions and prove any shipped binary runtime/archive bytes reproduce exactly from that recipe before release certification.
 3. Include the native startup object and every runtime/library member required by the supported C48B1 surface. The startup path, not `main` directly, owns process-entry setup and the eventual call to `main`.
 4. Define the complete supported external-symbol set and fail closed on any unresolved or unsupported symbol.
 5. Implement fixed-point archive/member extraction so transitive runtime dependencies are resolved in the same semantic manner as the native linker contract.
@@ -365,7 +367,7 @@ Exact option names may be refined during implementation, but the final interface
 2. Enforce identifier/name limits and symbol uniqueness.
 3. Emit strictly increasing, non-overlapping relocation records.
 4. Reject image/BSS/stored-length overflow before writing a committed output.
-5. Validate every generated OBJ1 with an independent SDK-side decoder and, where practical, the read-only native format oracle/reference behavior.
+5. Validate every generated OBJ1 with an independent SDK-side decoder and also with the pinned read-only native format oracle for every proof artifact for which that oracle exists; inability to run an available native oracle is a proof failure, not a reason to skip it.
 6. Require byte-for-byte deterministic rebuilds.
 
 ## Step 3.7 — Host linker and MEX1 writer
@@ -376,7 +378,7 @@ Exact option names may be refined during implementation, but the final interface
 4. Lay out image+BSS within the native 32,768-byte image-plus-BSS contract.
 5. Compute minimum FAST stack, final relocation list, body CRC, and header CRC exactly; also enforce the independent 32,768-byte exact stored-MEX1-length ceiling including relocation bytes.
 6. Reject unresolved symbols, overflow, invalid addends, stack-policy violations, image+BSS overflow, and stored-length overflow before output commit.
-7. Validate every MEX1 with an independent decoder.
+7. Validate every MEX1 with an independent SDK-side decoder and also with the pinned read-only native MEX1 format oracle for every proof artifact.
 8. Where possible, compare selected outputs/behavior against native `cc` + `ld` results for equivalent programs without requiring byte identity when legal code generation differs.
 
 ## Step 3.8 — M48O executable cassette object and TAP writer
@@ -403,8 +405,8 @@ Exact option names may be refined during implementation, but the final interface
 
 ## Step 3.10 — Large-program cross-development proof
 
-1. Generate a dedicated non-corpus C48 source fixture in external scratch or a temporary test workspace; do not add or alter a program under the immutable demos/examples/apps directories merely to obtain size.
-2. Make the generated source byte length fall in a fixed acceptance band of 29 KiB through 31 KiB and record the exact size/hash used for proof.
+1. Add a tracked deterministic test generator under test ownership that emits the dedicated non-corpus C48 source fixture into a fresh temporary workspace; do not track a giant generated source file and do not add or alter a program under the immutable demos/examples/apps directories merely to obtain size. The generator, seed/parameters, and expected structural invariants must be versioned so the proof is reproducible from a clean checkout.
+2. Make the generated source byte length fall in a fixed acceptance band of 29 KiB through 31 KiB and record the exact size/hash used for proof; repeated generation from the same tracked generator/parameters must produce identical bytes.
 3. Include sufficient initialized/static data or emitted target code to force the final stored MEX1 itself into the same 29 KiB through 31 KiB band; a large source that collapses mostly into BSS is not sufficient.
 4. Enforce both independent native limits: `image_size + bss_size <= 32768` and exact stored MEX1 length `<= 32768`, including relocation-table bytes.
 5. Record exact source, C48B1, OBJ1, MEX1, and TAP sizes and hashes.
@@ -466,7 +468,7 @@ Perform one deliberate static-analysis campaign after feature implementation is 
 
 ## Step 4.1 — Create one-time CodeQL workflow
 
-1. Add a temporary workflow dedicated to this phase only.
+1. Add a temporary workflow dedicated to this phase only. Give it a manual-dispatch input naming the exact target commit to analyze; validate that input as the recorded Phase-3-complete commit for the first run, then explicitly check out that target commit rather than implicitly analyzing the later workflow-add commit.
 2. Scan the host implementation languages that CodeQL supports and that are materially present in the SDK, at minimum Python.
 3. Do not attempt to rewrite or modify the immutable pinned C48 corpus to satisfy host static analysis.
 4. Configure the workflow to produce reviewable SARIF/output as an artifact even if repository code-scanning alert permissions are unavailable.
@@ -476,7 +478,7 @@ Perform one deliberate static-analysis campaign after feature implementation is 
 
 ## Step 4.2 — First CodeQL run
 
-1. Run the temporary workflow against the exact Phase-3-complete commit.
+1. Dispatch the temporary workflow with the exact recorded Phase-3-complete commit as its target, and prove from the job metadata/log that the checkout and analysis target SHA equal that commit. The workflow-definition commit itself is not the analysis target.
 2. Download and preserve the result artifact for the phase record.
 3. Review every result, including severity, path, rule, dataflow, and reachability/context.
 4. Classify each result as real defect, hardening opportunity, false positive/non-applicable, or generated/imported/reference content.
@@ -495,7 +497,7 @@ For each real defect or warranted hardening finding:
 
 ## Step 4.4 — Repeat analysis until closure
 
-1. Rerun the same one-time CodeQL configuration after remediation.
+1. Rerun the same one-time CodeQL configuration after remediation, each time dispatching the exact remediation commit as the explicit analysis target and recording that target SHA.
 2. Continue until there are no unresolved actionable results.
 3. Any remaining result must have a concrete, file/rule-specific written justification demonstrating why it is non-applicable; generic suppression is not acceptable.
 4. Prefer source fixes over suppressions. Any suppression requires a regression or invariant proving the safety assumption.
@@ -534,11 +536,11 @@ Audit the complete tracked repository after all implementation and static-analys
 
 1. Record the exact Phase-4-complete commit.
 2. Require a clean `main` working tree and verify the local object/tree identity against that commit before copying.
-3. Create a fresh filesystem copy from that exact committed tree for the audit pass; do not reuse a stale working directory or previously expanded release package.
-4. Enumerate all tracked files from version-control metadata for that exact commit, not filesystem guesses.
-5. Record count, path, byte length, and SHA-256 for every tracked file in the fresh copy.
-6. Read every tracked file completely in binary mode from that fresh copy and verify the bytes read equal the recorded file length.
-7. Re-run the immutable pinned-corpus digest guard before any audit correction.
+3. Create a fresh filesystem checkout from that exact committed tree for the audit pass; do not reuse a stale working directory or previously expanded release package. Materialize all tracked large-file objects required by `.gitattributes`, run the repository's large-file integrity check, and fail if any tracked large-file path remains only a pointer placeholder instead of its verified object bytes.
+4. Enumerate all tracked files from version-control metadata for that exact commit, not filesystem guesses. Record each canonical Git blob object ID as well as the materialized disk path.
+5. Record count, path, canonical blob identity, materialized byte length, and SHA-256 for every tracked file in the fresh copy. For large-file-managed paths, also record and verify the pointer object identity/declared object digest against the materialized object.
+6. Read every materialized tracked file completely in binary mode from that fresh copy and verify the bytes read equal the recorded materialized file length. Separately account for every canonical tracked Git blob so neither pointer metadata nor materialized object bytes escape the audit.
+7. Re-run the immutable pinned-corpus canonical-blob digest guard before any audit correction.
 
 ## Step 5.2 — File-by-file structural validation
 
@@ -557,7 +559,7 @@ For each tracked file, apply all relevant checks:
 11. PNG/image decode and expected dimensions where applicable;
 12. Office ZIP/container integrity and internal XML relationship validation;
 13. ZIP/package integrity and no unexpected member paths;
-14. binary asset expected size/hash/format checks;
+14. binary asset expected size/hash/format checks, including large-file pointer-to-object digest consistency where applicable;
 15. license-header classification and canonical-header enforcement for governed files;
 16. forbidden-term path/content gate;
 17. no cache/temp/build-trash files.
@@ -639,9 +641,9 @@ No contradiction may remain between implementation, tests, README, Word manuals,
 
 ## Step 5.8 — Retire scratch planning material before release-tree certification
 
-1. Preserve an external copy/hash of this runbook and the Phase-1-through-5 closeout evidence before deleting tracked planning material.
+1. Preserve an exact external copy/hash of this runbook, the completed Phase-1-through-4 closeout records, and all Phase-5 audit evidence accumulated so far before deleting tracked planning material. The final Phase-5 closeout record cannot exist yet and must be written to the external evidence set after the final zero-gap passes.
 2. Remove this tracked runbook and remove `scratch/` if it is then empty; no implementation scratch files may survive into the release tree.
-3. Commit the scratch retirement on `main`.
+3. Commit the scratch retirement on `main`. From this point onward, continue execution only from the hash-verified external runbook copy preserved in Step 1; do not improvise missing instructions after the tracked copy is gone.
 4. Because tracked bytes changed, reset the Phase-5 zero-gap counter and restart the complete fresh-copy audit from Step 5.1.
 
 ## Step 5.9 — Freeze the prospective release version before the final zero-gap passes
@@ -693,7 +695,7 @@ Cut the next release only from the fully verified, already-versioned Phase-5 tre
 
 ## Step 6.2 — Same-commit certification
 
-Require the exact release commit to pass all applicable repository gates, including at minimum:
+Require the exact release commit to pass all applicable repository gates. Because ordinary push path filters may not trigger every gate on a version-only prospective-release commit, while `main` still points to the exact audited release commit explicitly dispatch every required manually-dispatchable gate and verify each resulting run reports that exact head SHA; do not rely on incidental path-filter activation. Include at minimum:
 
 - complete SDK verification matrix;
 - graphics demo verification;
@@ -710,12 +712,12 @@ Any failure returns to the phase that owns the defect. Do not patch directly in 
 
 ## Step 6.3 — Build and preserve exact release candidate
 
-1. Use the repository release-candidate builder, not a local ad-hoc ZIP command.
-2. Materialize required upstream specification content according to existing package policy.
-3. Produce release metadata and SHA-256 files.
-4. Verify the ZIP from a virgin extraction with packaged-spec mode enabled.
-5. Confirm package contains `c48run --multitask`, `c48b2tap`, their launchers/modules/tests/docs, and no temporary Phase-4 workflow or audit debris.
-6. Confirm package does not modify the pinned C/H corpus bytes.
+1. Retrieve and preserve the exact release archive, metadata, provenance, and SHA-256 files produced by the successful same-commit release-candidate packaging gate from Step 6.2. That workflow artifact is the publication source of record.
+2. Do not rebuild the publication archive after certification. A local rebuild may be used only as an independent byte-for-byte comparison against the certified artifact and must never replace it.
+3. Verify the certified artifact records the exact audited release commit and materialized upstream specification provenance required by existing package policy.
+4. Verify the certified ZIP from a virgin extraction with packaged-spec mode enabled.
+5. Confirm the certified package contains `c48run --multitask`, `c48b2tap`, their launchers/modules/tests/docs, and no temporary Phase-4 workflow or audit debris.
+6. Confirm the certified package does not modify the pinned C/H corpus bytes.
 
 ## Step 6.4 — Publish the new release
 
