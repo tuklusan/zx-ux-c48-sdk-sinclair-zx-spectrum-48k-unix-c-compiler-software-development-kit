@@ -120,7 +120,7 @@ Each file format may add only the minimum comment delimiters required by that fo
 3. For every governed text/source file, remove the existing project license-header block completely.
 4. Insert the canonical two-line header with the appropriate comment wrapper.
 5. Do not modify any file solely for whitespace, formatting, or style beyond the header replacement unless a correctness issue is discovered and separately justified.
-6. Do not modify root `README.md`, root `LICENSE`, any Microsoft Office file, imported reference bytes, generated evidence, or any pinned C/H corpus file as part of header normalization.
+6. Root `README.md` is header-exempt: remove its existing project source-header boilerplate and leave it headerless; do not insert the canonical header there. Root `LICENSE` is also header-exempt and must never receive a source header, although a separate policy-content correction may edit its license prose when required by the project-wide content gate while preserving intended legal restrictions. Do not inject source headers into Microsoft Office files. Do not modify imported reference bytes, generated evidence, or any pinned C/H corpus file.
 7. Verify no governed file contains two project headers or remnants of the old header block.
 8. Verify the new canonical header occurs exactly once in each governed file.
 9. Build a dependency map for every governed source/header byte change. Regenerate and revalidate only derived tracked artifacts that actually embed or hash those changed bytes, including affected source tapes and expectation hashes. Rebuild C48B1 only when deterministic recompilation proves its bytes should change. Never regenerate a pinned-corpus-derived artifact merely to normalize the immutable pinned source/header bytes.
@@ -151,7 +151,7 @@ Acceptance requires:
 
 - every governed file has the exact canonical header;
 - every exempt class is intentional and documented;
-- root README and LICENSE are ignored by the header checker;
+- root README and LICENSE are ignored by the header checker, root README contains no legacy project source-header boilerplate, and root LICENSE contains no recursively inserted source header;
 - Office files are ignored by the header checker;
 - pinned C/H corpus bytes are unchanged;
 - legacy header variants are no longer accepted for governed files;
@@ -323,7 +323,8 @@ Exact option names may be refined during implementation, but the final interface
 4. Add backend modules under `compiler/c48/` or another clearly owned compiler namespace.
 5. Add `--version`, `--about`, `--help`, deterministic error text, and nonzero failure behavior consistent with existing SDK tools.
 6. Update release-required-file checks, launcher checks, packaging, manifest logic, and workflow path triggers to include the new tool.
-7. Apply the canonical Phase-1 license header to all new governed files.
+7. Update the Phase-1 license-header classifier so the suffixless `c48b2tap` launcher is governed and any newly tracked format-native binary artifacts such as OBJ1/MEX1/runtime archive payloads are explicitly classified as format-exempt rather than becoming unknown artifacts.
+8. Apply the canonical Phase-1 license header to all new governed files.
 
 ## Step 3.3 — C48B1 input validation and lowering boundary
 
@@ -470,6 +471,7 @@ Perform one deliberate static-analysis campaign after feature implementation is 
 4. Configure the workflow to produce reviewable SARIF/output as an artifact even if repository code-scanning alert permissions are unavailable.
 5. Pin action major versions consistently with repository workflow policy.
 6. Grant only the minimum workflow permissions required.
+7. Give the temporary workflow the canonical Phase-1 governed-text header and ensure it passes the license/header and project-content gates before analysis starts.
 
 ## Step 4.2 — First CodeQL run
 
