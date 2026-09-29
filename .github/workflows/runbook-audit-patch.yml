@@ -1,0 +1,111 @@
+# Copyright (c) 2026 SANYALnet Labs.
+# ZX-UX C48 SDK
+# root LICENSE file
+# Attribution required: SANYALnet Labs.
+name: Runbook audit patch
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/runbook-audit-patch.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Apply audited runbook corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("scratch/C48-MULTITASK-NATIVE-TAPE-RELEASE-RUNBOOK.runbook")
+          text = path.read_text(encoding="utf-8")
+
+          replacements = [
+              (
+                  "Before the first modification, enumerate the exact pre-existing pinned C/H path set from version-control metadata under the three directories above; do not rely on shell `**` expansion. Generate a machine-readable immutable-corpus inventory containing each exact path, byte length, and SHA-256. Store the inventory as run evidence outside the tracked tree unless an existing repository evidence convention requires otherwise. At the end of every phase and immediately before every commit that could touch `usr/src/`, regenerate the inventory and require exact path set, byte length, and digest equality. Any mismatch is a hard stop. Restore exact baseline bytes with an ordinary corrective `main` commit if a mismatch has already been committed; never reset or force-push published `main`.",
+                  "Before the first modification, enumerate the exact pre-existing pinned C/H path set from version-control metadata under the three directories above; do not rely on shell `**` expansion. Generate a machine-readable immutable-corpus inventory from the canonical Git blob bytes at the baseline commit, containing each exact path, Git blob object ID, blob byte length, and SHA-256. This canonical-blob inventory, not a platform-dependent checkout with possible line-ending conversion, is the immutability authority. Store it as run evidence outside the tracked tree unless an existing repository evidence convention requires otherwise. At the end of every phase and immediately before every commit that could touch `usr/src/`, regenerate the canonical-blob inventory for the candidate commit and require exact path set, blob IDs, byte lengths, and digest equality. Also require a clean working tree so checkout transformations cannot hide a proposed content change. Any mismatch is a hard stop. Restore exact baseline blob bytes with an ordinary corrective `main` commit if a mismatch has already been committed; never reset or force-push published `main`."
+              ),
+              (
+                  "- clean-tree/cache scan.\n\nAcceptance requires:",
+                  "- clean-tree/cache scan;\n- applicable cross-platform workflow verification on the Phase-1 checkpoint, including Windows launcher smoke coverage and YAML workflow parsing/execution.\n\nAcceptance requires:"
+              ),
+              (
+                  "- no transient files remain.\n\nCommit and push Phase 1 only after the complete gate passes.",
+                  "- no transient files remain;\n- the applicable cross-platform workflow matrix passes on the exact Phase-1 checkpoint, so the Unicode/comment-wrapper sweep is proved on Windows, Linux, and macOS rather than only by a local verifier.\n\nCommit and push Phase 1 only after the complete gate passes."
+              ),
+              (
+                  "2. Build or import only deterministic SDK-owned copies of the exact runtime support artifacts required for host linking, with provenance metadata and immutable hashes; never reach into an unpinned moving upstream checkout at normal tool runtime.",
+                  "2. Build or import only deterministic SDK-owned copies of the exact runtime support artifacts required for host linking, with provenance metadata and immutable hashes; never reach into an unpinned moving upstream checkout at normal tool runtime. Track a deterministic reproduction recipe naming the exact pinned upstream source inputs/tool versions and prove any shipped binary runtime/archive bytes reproduce exactly from that recipe before release certification."
+              ),
+              (
+                  "5. Validate every generated OBJ1 with an independent SDK-side decoder and, where practical, the read-only native format oracle/reference behavior.",
+                  "5. Validate every generated OBJ1 with an independent SDK-side decoder and also with the pinned read-only native format oracle for every proof artifact for which that oracle exists; inability to run an available native oracle is a proof failure, not a reason to skip it."
+              ),
+              (
+                  "7. Validate every MEX1 with an independent decoder.",
+                  "7. Validate every MEX1 with an independent SDK-side decoder and also with the pinned read-only native MEX1 format oracle for every proof artifact."
+              ),
+              (
+                  "1. Generate a dedicated non-corpus C48 source fixture in external scratch or a temporary test workspace; do not add or alter a program under the immutable demos/examples/apps directories merely to obtain size.\n2. Make the generated source byte length fall in a fixed acceptance band of 29 KiB through 31 KiB and record the exact size/hash used for proof.",
+                  "1. Add a tracked deterministic test generator under test ownership that emits the dedicated non-corpus C48 source fixture into a fresh temporary workspace; do not track a giant generated source file and do not add or alter a program under the immutable demos/examples/apps directories merely to obtain size. The generator, seed/parameters, and expected structural invariants must be versioned so the proof is reproducible from a clean checkout.\n2. Make the generated source byte length fall in a fixed acceptance band of 29 KiB through 31 KiB and record the exact size/hash used for proof; repeated generation from the same tracked generator/parameters must produce identical bytes."
+              ),
+              (
+                  "1. Add a temporary workflow dedicated to this phase only.\n2. Scan the host implementation languages that CodeQL supports and that are materially present in the SDK, at minimum Python.",
+                  "1. Add a temporary workflow dedicated to this phase only. Give it a manual-dispatch input naming the exact target commit to analyze; validate that input as the recorded Phase-3-complete commit for the first run, then explicitly check out that target commit rather than implicitly analyzing the later workflow-add commit.\n2. Scan the host implementation languages that CodeQL supports and that are materially present in the SDK, at minimum Python."
+              ),
+              (
+                  "1. Run the temporary workflow against the exact Phase-3-complete commit.\n2. Download and preserve the result artifact for the phase record.",
+                  "1. Dispatch the temporary workflow with the exact recorded Phase-3-complete commit as its target, and prove from the job metadata/log that the checkout and analysis target SHA equal that commit. The workflow-definition commit itself is not the analysis target.\n2. Download and preserve the result artifact for the phase record."
+              ),
+              (
+                  "1. Rerun the same one-time CodeQL configuration after remediation.\n2. Continue until there are no unresolved actionable results.",
+                  "1. Rerun the same one-time CodeQL configuration after remediation, each time dispatching the exact remediation commit as the explicit analysis target and recording that target SHA.\n2. Continue until there are no unresolved actionable results."
+              ),
+              (
+                  "3. Create a fresh filesystem copy from that exact committed tree for the audit pass; do not reuse a stale working directory or previously expanded release package.\n4. Enumerate all tracked files from version-control metadata for that exact commit, not filesystem guesses.\n5. Record count, path, byte length, and SHA-256 for every tracked file in the fresh copy.\n6. Read every tracked file completely in binary mode from that fresh copy and verify the bytes read equal the recorded file length.\n7. Re-run the immutable pinned-corpus digest guard before any audit correction.",
+                  "3. Create a fresh filesystem checkout from that exact committed tree for the audit pass; do not reuse a stale working directory or previously expanded release package. Materialize all tracked large-file objects required by `.gitattributes`, run the repository's large-file integrity check, and fail if any tracked large-file path remains only a pointer placeholder instead of its verified object bytes.\n4. Enumerate all tracked files from version-control metadata for that exact commit, not filesystem guesses. Record each canonical Git blob object ID as well as the materialized disk path.\n5. Record count, path, canonical blob identity, materialized byte length, and SHA-256 for every tracked file in the fresh copy. For large-file-managed paths, also record and verify the pointer object identity/declared object digest against the materialized object.\n6. Read every materialized tracked file completely in binary mode from that fresh copy and verify the bytes read equal the recorded materialized file length. Separately account for every canonical tracked Git blob so neither pointer metadata nor materialized object bytes escape the audit.\n7. Re-run the immutable pinned-corpus canonical-blob digest guard before any audit correction."
+              ),
+              (
+                  "14. binary asset expected size/hash/format checks;\n15. license-header classification",
+                  "14. binary asset expected size/hash/format checks, including large-file pointer-to-object digest consistency where applicable;\n15. license-header classification"
+              ),
+              (
+                  "1. Preserve an external copy/hash of this runbook and the Phase-1-through-5 closeout evidence before deleting tracked planning material.\n2. Remove this tracked runbook and remove `scratch/` if it is then empty; no implementation scratch files may survive into the release tree.\n3. Commit the scratch retirement on `main`.\n4. Because tracked bytes changed, reset the Phase-5 zero-gap counter and restart the complete fresh-copy audit from Step 5.1.",
+                  "1. Preserve an exact external copy/hash of this runbook, the completed Phase-1-through-4 closeout records, and all Phase-5 audit evidence accumulated so far before deleting tracked planning material. The final Phase-5 closeout record cannot exist yet and must be written to the external evidence set after the final zero-gap passes.\n2. Remove this tracked runbook and remove `scratch/` if it is then empty; no implementation scratch files may survive into the release tree.\n3. Commit the scratch retirement on `main`. From this point onward, continue execution only from the hash-verified external runbook copy preserved in Step 1; do not improvise missing instructions after the tracked copy is gone.\n4. Because tracked bytes changed, reset the Phase-5 zero-gap counter and restart the complete fresh-copy audit from Step 5.1."
+              ),
+              (
+                  "Require the exact release commit to pass all applicable repository gates, including at minimum:",
+                  "Require the exact release commit to pass all applicable repository gates. Because ordinary push path filters may not trigger every gate on a version-only prospective-release commit, while `main` still points to the exact audited release commit explicitly dispatch every required manually-dispatchable gate and verify each resulting run reports that exact head SHA; do not rely on incidental path-filter activation. Include at minimum:"
+              ),
+              (
+                  "1. Use the repository release-candidate builder, not a local ad-hoc ZIP command.\n2. Materialize required upstream specification content according to existing package policy.\n3. Produce release metadata and SHA-256 files.\n4. Verify the ZIP from a virgin extraction with packaged-spec mode enabled.\n5. Confirm package contains `c48run --multitask`, `c48b2tap`, their launchers/modules/tests/docs, and no temporary Phase-4 workflow or audit debris.\n6. Confirm package does not modify the pinned C/H corpus bytes.",
+                  "1. Retrieve and preserve the exact release archive, metadata, provenance, and SHA-256 files produced by the successful same-commit release-candidate packaging gate from Step 6.2. That workflow artifact is the publication source of record.\n2. Do not rebuild the publication archive after certification. A local rebuild may be used only as an independent byte-for-byte comparison against the certified artifact and must never replace it.\n3. Verify the certified artifact records the exact audited release commit and materialized upstream specification provenance required by existing package policy.\n4. Verify the certified ZIP from a virgin extraction with packaged-spec mode enabled.\n5. Confirm the certified package contains `c48run --multitask`, `c48b2tap`, their launchers/modules/tests/docs, and no temporary Phase-4 workflow or audit debris.\n6. Confirm the certified package does not modify the pinned C/H corpus bytes."
+              ),
+          ]
+
+          for old, new in replacements:
+              if old not in text:
+                  raise SystemExit(f"expected runbook text missing: {old[:80]!r}")
+              text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding="utf-8", newline="\n")
+          PY
+          git diff --check
+          test "$(git diff --name-only | wc -l)" -eq 1
+          test "$(git diff --name-only)" = "scratch/C48-MULTITASK-NATIVE-TAPE-RELEASE-RUNBOOK.runbook"
+          git config user.name "SANYALnet Labs"
+          git config user.email "sanyalnet-labs@users.noreply.github.com"
+          git add scratch/C48-MULTITASK-NATIVE-TAPE-RELEASE-RUNBOOK.runbook
+          git diff --cached --check
+          git commit -m "Close final runbook audit gaps"
+          git push origin main
