@@ -1,4 +1,9 @@
-<!-- Copyright (c) 2026 SANYALnet Labs. -->
+<!--
+ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
+
+SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
+-->
+
 <!-- ZX-UX C48 SDK -->
 <!-- This file is governed by the SANYALnet Labs Non-Commercial License in the root LICENSE file. -->
 <!-- Attribution required: SANYALnet Labs. -->
