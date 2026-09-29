@@ -7,6 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 HERE = Path(__file__).resolve().parent
 COMPILER = HERE.parent
@@ -154,14 +155,14 @@ class MultitaskRuntimeTests(unittest.TestCase):
     def test_globals_and_heaps_are_process_private(self):
         first = compile_text(
             "char *malloc(unsigned int n);int yield(void);int g;"
-            "int main(void){char *p;g=7;p=malloc(2);"
+            "int main(void){char *p;g=7;p=malloc(48);"
             "if(p==0)return 2;*p=11;yield();"
             "if(g!=7)return 3;if(*p!=11)return 4;return 0;}\n",
             "first.c",
         )
         second = compile_text(
             "char *malloc(unsigned int n);int yield(void);int g;"
-            "int main(void){char *p;g=9;p=malloc(2);"
+            "int main(void){char *p;g=9;p=malloc(48);"
             "if(p==0)return 2;*p=13;yield();"
             "if(g!=9)return 3;if(*p!=13)return 4;return 0;}\n",
             "second.c",
@@ -223,6 +224,95 @@ class MultitaskRuntimeTests(unittest.TestCase):
         self.assertIn(("input", 2, 65), session.trace)
         self.assertTrue(input_calls)
         self.assertTrue(all(pid == 2 for pid in input_calls))
+
+    def test_replay_is_identical_with_synthetic_ticks_and_input(self):
+        program = compile_text(
+            "int getchar(void);int sleep(unsigned int t);int plot(int x,int y);"
+            "int main(void){int c;c=getchar();plot(c,10);sleep(2);return 0;}\n",
+            "replay.c",
+        )
+
+        def run_once():
+            ticks = TickSource()
+            polls = {2: 0, 3: 0}
+
+            def poll(pid: int) -> int | None:
+                polls[pid] += 1
+                if polls[pid] == 1:
+                    return None
+                return 63 + pid
+
+            screen = new_screen()
+            session = CooperativeSession(
+                [program, program],
+                ["left", "right"],
+                screen,
+                tick_provider=ticks.now,
+                idle_wait=ticks.advance_to,
+                input_poll=poll,
+            )
+            status = session.run()
+            statuses = [
+                session.descriptors[pid].exit_status for pid in (2, 3)
+            ]
+            return status, tuple(session.trace), screen.bytes(), statuses
+
+        first = run_once()
+        second = run_once()
+        self.assertEqual(first, second)
+        self.assertEqual(first[0], 0)
+        self.assertEqual(first[3], [0, 0])
+        self.assertTrue(any(event[0] == "idle" for event in first[1]))
+        self.assertTrue(any(event[0] == "input" for event in first[1]))
+
+    def test_global_abort_returns_130_and_cancels_every_live_process(self):
+        spinner = compile_text(
+            "int main(void){int x;x=0;while(1){x=x+1;}return 0;}\n",
+            "abort.c",
+        )
+        checks = 0
+
+        def abort_requested() -> bool:
+            nonlocal checks
+            checks += 1
+            return checks >= 20
+
+        session = CooperativeSession(
+            [spinner, spinner],
+            ["left", "right"],
+            new_screen(),
+            max_steps=100000,
+            abort_requested=abort_requested,
+        )
+        self.assertEqual(session.run(), 130)
+        self.assertTrue(session.descriptors[2].cancelled)
+        self.assertTrue(session.descriptors[3].cancelled)
+        self.assertIn(("session_stop", 130), session.trace)
+
+    def test_session_time_quota_cancels_all_live_processes(self):
+        spinner = compile_text(
+            "int main(void){int x;x=0;while(1){x=x+1;}return 0;}\n",
+            "quota.c",
+        )
+        fake_now = 0.0
+
+        def monotonic() -> float:
+            nonlocal fake_now
+            fake_now += 0.0005
+            return fake_now
+
+        with patch("c48.multitask.time.monotonic", side_effect=monotonic):
+            session = CooperativeSession(
+                [spinner, spinner],
+                ["left", "right"],
+                new_screen(),
+                max_steps=100000,
+                time_quota=0.003,
+            )
+            self.assertEqual(session.run(), 1)
+        self.assertTrue(session.descriptors[2].cancelled)
+        self.assertTrue(session.descriptors[3].cancelled)
+        self.assertIn(("session_stop", 1), session.trace)
 
     def test_headless_input_fails_that_process_and_peer_finishes(self):
         reader = compile_text(

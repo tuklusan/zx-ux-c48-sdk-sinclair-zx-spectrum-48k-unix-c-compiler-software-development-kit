@@ -123,15 +123,12 @@ def main() -> int:
     )
 
     first = run_pair(programs)
-    second = run_pair(programs)
-    if first[0] != 0 or second[0] != 0:
+    if first[0] != 0:
         fail("cooperative pair returned nonzero")
-    if first[3] != [0, 0] or second[3] != [0, 0]:
+    if first[3] != [0, 0]:
         fail("one or more direct processes did not terminate normally")
-    if first[1] != expected or second[1] != expected:
+    if first[1] != expected:
         fail("shared final screen differs from independent half-screen merge")
-    if first[1] != second[1] or first[2] != second[2]:
-        fail("identical deterministic inputs produced different results")
 
     yields = [event[1] for event in first[2] if event[0] == "yield"]
     if 2 not in yields or 3 not in yields:
