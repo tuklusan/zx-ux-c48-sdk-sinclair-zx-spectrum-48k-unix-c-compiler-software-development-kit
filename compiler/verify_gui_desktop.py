@@ -140,6 +140,26 @@ def _start(program: Path, probe: Path, *args: str) -> subprocess.Popen:
     )
 
 
+def _start_multitask(programs: list[Path], probe: Path) -> subprocess.Popen:
+    probe.unlink(missing_ok=True)
+    env = os.environ.copy()
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
+    env["C48_GUI_PROBE"] = str(probe)
+    return subprocess.Popen(
+        _launcher_command(
+            "--time-quota",
+            f"{VM_TIME_QUOTA:g}",
+            "--multitask",
+            *(str(program) for program in programs),
+        ),
+        cwd=ROOT,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+
+
 def _terminate_process_tree(process: subprocess.Popen) -> tuple[str, str]:
     """Terminate a failed GUI launch without allowing inherited pipes to hang."""
     if process.poll() is None:
@@ -706,6 +726,93 @@ def _snake(evidence: Path) -> dict:
             _terminate_process_tree(process)
 
 
+def _multitask_footer(evidence: Path) -> dict:
+    name = "multitask-footer"
+    probe = evidence / f"probe-{name}.jsonl"
+    process = _start_multitask(
+        [
+            ROOT / "usr/bin/examples/hello.c48b",
+            ROOT / "usr/bin/games/fortune.c48b",
+        ],
+        probe,
+    )
+    title = "ZX-UX C48 - multitask"
+    try:
+        window = _wait_event(probe, "window_ready", process=process)
+        first_wait = _wait_event(probe, "input_waiting", process=process)
+        before_final = [
+            record for record in _records(probe)
+            if int(record["seq"]) <= int(first_wait["seq"])
+        ]
+        if any(record["event"] == "footer_done" for record in before_final):
+            raise AssertionError(
+                "multitask completion footer appeared before the final process ended"
+            )
+        if any(record["event"] == "program_done" for record in before_final):
+            raise AssertionError(
+                "multitask session completed while a direct process was input-blocked"
+            )
+        frame = _latest(probe, "frame_rendered")
+        capture = _screenshot(evidence, name, window, frame)
+
+        _send_key(process, title, "x")
+        accepted_x = _wait_event(
+            probe,
+            "key_accepted",
+            process=process,
+            after_seq=int(first_wait["seq"]),
+            predicate=lambda r: int(r["value"]) == ord("x"),
+        )
+        second_wait = _wait_event(
+            probe,
+            "input_waiting",
+            process=process,
+            after_seq=int(accepted_x["seq"]),
+        )
+        _send_key(process, title, "q")
+        _wait_event(
+            probe,
+            "key_accepted",
+            process=process,
+            after_seq=int(second_wait["seq"]),
+            predicate=lambda r: int(r["value"]) == ord("q"),
+        )
+        done = _wait_event(
+            probe,
+            "program_done",
+            process=process,
+            predicate=lambda r: int(r["status"]) == 0 and r["error_type"] is None,
+        )
+        footer = _wait_event(
+            probe,
+            "footer_done",
+            process=process,
+            after_seq=int(done["seq"]),
+        )
+        if footer["text"] != footer_text(True):
+            raise AssertionError(
+                f"wrong multitask completed footer: {footer['text']!r}"
+            )
+        _send_key(process, title, "space", shift=True)
+        stdout, stderr = _finish(process, 0)
+        break_event = _latest(probe, "break_key")
+        if not break_event["done"] or break_event["break_running"]:
+            raise AssertionError(
+                "completed multitask Shift+Space was misclassified as BREAK"
+            )
+        return {
+            "capture": capture,
+            "first_wait_seq": int(first_wait["seq"]),
+            "done_seq": int(done["seq"]),
+            "footer_seq": int(footer["seq"]),
+            "stdout": stdout,
+            "stderr": stderr,
+        }
+    finally:
+        if process.poll() is None:
+            _terminate_process_tree(process)
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(
         description="Verify the real Tk desktop event loop, painting and input path"
@@ -736,6 +843,7 @@ def main(argv: list[str] | None = None) -> int:
         ("forest", _forest),
         ("fortune", _fortune),
         ("snake", _snake),
+        ("multitask-footer", _multitask_footer),
     ):
         results["tests"][name] = test(evidence)
         print(f"GUI PASS: {name}")
