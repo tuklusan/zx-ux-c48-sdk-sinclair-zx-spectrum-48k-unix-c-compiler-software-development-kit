@@ -28,7 +28,7 @@ name: C48 SDK verification
       - "c48srctap"
       - "c48srctap.bat"
       - ".github/workflows/verify.yml"
-      - ".github/workflows/multitask.yml"\n      - ".github/workflows/graphics-demos.yml"\n      - ".github/workflows/gui-desktop.yml"\n      - ".github/workflows/release-candidate.yml"
+      - ".github/workflows/multitask.yml"
   workflow_dispatch:
 
 concurrency:

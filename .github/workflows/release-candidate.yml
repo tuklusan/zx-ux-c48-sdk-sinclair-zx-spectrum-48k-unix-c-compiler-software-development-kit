@@ -13,7 +13,7 @@ name: C48 release candidate packaging gate
       - "VERSION"
       - "README.md"
       - "docs/*.docx"
-      - "compiler/**/*.py"\n      - "compiler/**/*.md"
+      - "compiler/**/*.py"
       - "compiler/**/*.json"
       - "compiler/**/*.bin"
       - "compiler/**/*.rom"
