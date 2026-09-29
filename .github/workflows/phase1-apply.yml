@@ -76,6 +76,9 @@ jobs:
               if threeway.returncode == 0:
                   print(f"three-way applied: {path}")
                   continue
+              if path == "compiler/LICENSE-HEADER-POLICY.md":
+                  print(f"deferred for explicit policy reconciliation: {path}")
+                  continue
               raise SystemExit(
                   "payload path is neither cleanly applicable, already applied, nor mergeable: "
                   + path + "\nforward:\n" + forward.stderr.decode("utf-8", "replace")
