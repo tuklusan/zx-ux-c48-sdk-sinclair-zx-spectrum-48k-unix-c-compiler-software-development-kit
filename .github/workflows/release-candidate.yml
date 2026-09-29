@@ -22,6 +22,7 @@ name: C48 release candidate packaging gate
       - "c48run.bat"
       - ".github/workflows/graphics-demos.yml"
       - ".github/workflows/gui-desktop.yml"
+      - ".github/workflows/multitask.yml"
       - ".github/workflows/release-candidate.yml"
       - ".gitattributes"
   workflow_dispatch:
@@ -115,6 +116,7 @@ jobs:
 
           require_gate("gui-desktop.yml", "GUI")
           require_gate("graphics-demos.yml", "graphics")
+          require_gate("multitask.yml", "multitask")
           PY
 
       - name: Build materialized tracked-byte ZIP and metadata

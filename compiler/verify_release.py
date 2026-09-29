@@ -94,7 +94,9 @@ def check_required_files() -> None:
         "compiler/tests/test_security_review.py",
         "compiler/tests/test_multitask.py",
         "compiler/c48/multitask.py",
+        "compiler/verify_multitask.py",
         "compiler/C48RUN-MULTITASK-CONTRACT.md",
+        ".github/workflows/multitask.yml",
         "compiler/tests/test_game_regressions.py", "compiler/verify_games.py",
         "compiler/tests/test_beep.py", "compiler/verify_beep.py",
         "compiler/verify_graphics_demos.py",
@@ -320,6 +322,18 @@ def check_tests() -> None:
     m = re.search(r"Ran (\d+) tests?", cp.stdout + cp.stderr)
     if not m or int(m.group(1)) != int(EXPECT["test_count"]):
         fail(f"test count mismatch: expected {EXPECT['test_count']}, got {m.group(1) if m else 'unreported'}")
+
+
+def check_multitask() -> None:
+    cp = run(
+        [sys.executable, "-B", str(ROOT / "verify_multitask.py")],
+        timeout=180,
+    )
+    if cp.returncode != 0:
+        sys.stderr.write(cp.stdout + cp.stderr)
+        fail("cooperative multitask verification failed")
+    if "MULTITASK VERIFY PASS:" not in cp.stdout:
+        fail("cooperative multitask completion marker missing")
 
 
 def check_beep() -> None:
@@ -569,6 +583,7 @@ def main() -> int:
         ("ailmzx48 design compliance", check_ailmzx48_design),
         ("source tape corpus", check_source_tapes),
         ("automated tests", check_tests),
+        ("cooperative multitask runtime", check_multitask),
         ("ROM-derived BEEP", check_beep),
         ("game corpus", check_games),
         ("graphics demo corpus", check_graphics_demos),

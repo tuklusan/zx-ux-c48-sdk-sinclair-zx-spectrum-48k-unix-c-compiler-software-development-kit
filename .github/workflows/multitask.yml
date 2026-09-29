@@ -1,31 +1,22 @@
 # ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
 # SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
-name: C48 SDK verification
+name: C48 cooperative multitask verification
 
 "on":
   push:
-    branches: [main, cleanup/deep-clean-2026-09-14]
+    branches: [main]
     paths:
-      # Executable/test inputs only. Documentation, images, retained evidence,
-      # and generated checksum metadata must not consume the 8-row CI matrix.
-      - "VERSION"
-      - ".gitattributes"
-      - "compiler/**/*.py"
-      - "compiler/**/*.json"
-      - "compiler/**/*.bin"
-      - "compiler/**/*.rom"
-      - "usr/src/**/*.c"
-      - "usr/src/**/*.h"
-      - "usr/bin/**/*.c48b"
-      - "usr/bin/**/*.src.tap"
-      - "c48"
-      - "c48.bat"
+      - "compiler/c48run.py"
+      - "compiler/c48/multitask.py"
+      - "compiler/c48/gui.py"
+      - "compiler/tests/test_multitask.py"
+      - "compiler/verify_multitask.py"
+      - "compiler/C48RUN-MULTITASK-CONTRACT.md"
+      - "usr/bin/demos/hanoi.c48b"
+      - "usr/bin/demos/queens8.c48b"
       - "c48run"
       - "c48run.bat"
-      - "c48srctap"
-      - "c48srctap.bat"
-      - ".github/workflows/verify.yml"
       - ".github/workflows/multitask.yml"
   workflow_dispatch:
 
@@ -62,24 +53,18 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
 
-      - name: Run forensic review regressions
-        run: python -B compiler/tests/forensic_review_regression.py
+      - name: Run cooperative runtime regressions
+        run: python -B compiler/tests/test_multitask.py
 
-      - name: Run complete C48 SDK verifier
-        run: python -B compiler/verify_release.py
+      - name: Run frozen recursive-pair proof
+        run: python -B compiler/verify_multitask.py
 
-      - name: Smoke-test Windows launchers
+      - name: Smoke-test Windows launcher
         if: runner.os == 'Windows'
         shell: cmd
-        run: |
-          c48.bat --version
-          c48run.bat --version
-          c48srctap.bat --version
+        run: c48run.bat --version
 
-      - name: Smoke-test POSIX launchers
+      - name: Smoke-test POSIX launcher
         if: runner.os != 'Windows'
         shell: bash
-        run: |
-          ./c48 --version
-          ./c48run --version
-          ./c48srctap --version
+        run: ./c48run --version
