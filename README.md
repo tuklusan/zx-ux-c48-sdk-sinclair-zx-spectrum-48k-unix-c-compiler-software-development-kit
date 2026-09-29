@@ -1,18 +1,3 @@
-<!--
-============================================================================
-Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-Proprietary rights reserved except as expressly licensed herein.
-
-ZX-UX C48 SDK
-This file is governed by the SANYALnet Labs Non-Commercial License in the
-root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-for machine-learning model training are prohibited unless separately authorized.
-
-Attribution is required: "Based on original work by Supratim Sanyal of
-SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-patent, trademark, and governing-law provisions.
-============================================================================
--->
 # ZX-UX C48 SDK — Portable C compiler and runtime for Sinclair ZX Spectrum 48K development
 
 | ![Torus Reactor wireframe torus demo screen](docs/images/demos/torus.png)<br>**Torus Reactor** | ![Sprite Storm animated sprite demo screen](docs/images/demos/sprites.png)<br>**Sprite Storm** | ![Spectrum Plasma color plasma demo screen](docs/images/demos/plasma.png)<br>**Spectrum Plasma** |
