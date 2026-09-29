@@ -7,17 +7,26 @@ name: C48 cooperative multitask verification
   push:
     branches: [main]
     paths:
-      - "compiler/c48run.py"
-      - "compiler/c48/multitask.py"
-      - "compiler/c48/gui.py"
-      - "compiler/tests/test_multitask.py"
-      - "compiler/verify_multitask.py"
+      # The release-candidate gate waits for a same-commit multitask result.
+      # Keep every candidate-producing execution input covered here.
+      - "VERSION"
+      - "compiler/**/*.py"
+      - "compiler/**/*.json"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
       - "compiler/C48RUN-MULTITASK-CONTRACT.md"
+      - "usr/bin/demos/forest.c48b"
       - "usr/bin/demos/hanoi.c48b"
       - "usr/bin/demos/queens8.c48b"
+      - "usr/bin/games/fortune.c48b"
+      - "usr/bin/games/snake.c48b"
       - "c48run"
       - "c48run.bat"
+      - ".github/workflows/graphics-demos.yml"
+      - ".github/workflows/gui-desktop.yml"
       - ".github/workflows/multitask.yml"
+      - ".github/workflows/release-candidate.yml"
+      - ".gitattributes"
   workflow_dispatch:
 
 concurrency:
