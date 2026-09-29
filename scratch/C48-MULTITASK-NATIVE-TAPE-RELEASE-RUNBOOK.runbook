@@ -1,0 +1,718 @@
+# Copyright (c) 2026 SANYALnet Labs.
+# ZX-UX C48 SDK
+# root LICENSE file
+# Attribution required: SANYALnet Labs.
+
+# C48 Multitasking, Native Executable Tape, Repository Cleanup, Review, and Release Runbook
+
+Status: INITIAL DRAFT FOR AUDIT ONLY — DO NOT EXECUTE
+
+Baseline safety tag: `BASELINE-BEFORE-MULTITASKING-AND-BIN-TAPE-TOOL`
+Baseline commit: `f8d44fd0aa7fe54d691bfd13638ba6e8802ad453`
+Execution branch: `main` only. Creating or using another branch is forbidden.
+
+## 0. Purpose and non-negotiable execution rules
+
+This runbook defines six ordered phases. A later phase may not begin until every acceptance gate of the preceding phase is satisfied and recorded. If a later phase discovers a defect owned by an earlier phase, return to the owning phase, correct it, rerun that phase's complete acceptance gate, and then rerun every later phase already completed. Phase 6 is release-only; it must contain no exploratory development.
+
+The baseline tag above is the recovery point for the complete effort. Never move, recreate, or delete that tag. Before execution begins, verify that both the tag and the expected baseline commit exist and that the tag resolves to the exact baseline commit.
+
+All repository changes are made directly on `main`. Before every commit or repository write, run the project forbidden-term gate over all staged or proposed file names and contents. Keep the working tree free of generated caches and transient files. Commit useful checkpoints regularly, and verify that each pushed checkpoint corresponds to the intended tree.
+
+### 0.1 Immutable C48 corpus guard — mandatory for all six phases
+
+The existing C48 demos/examples/apps C and header corpus is pinned by the native ZX-UX project and is immutable for this runbook. No execution step may edit, reformat, rewrite, regenerate, normalize line endings in, alter comments in, change headers in, rename, move, delete, or replace any pre-existing `*.c` or `*.h` file under these paths:
+
+- `usr/src/examples/**/*.c`
+- `usr/src/examples/**/*.h`
+- `usr/src/demos/**/*.c`
+- `usr/src/demos/**/*.h`
+- `usr/src/apps/**/*.c`
+- `usr/src/apps/**/*.h`
+
+This prohibition includes license-header normalization. Those pinned files are explicit Phase-1 license-header-checker exemptions for this runbook. Existing frozen binaries, source tapes, screenshots, manifests, and verification expectations derived from those pinned files must not be refreshed merely because Phase 1 changes repository header policy.
+
+Before the first modification, generate a machine-readable immutable-corpus inventory containing path, byte length, and SHA-256 for every pre-existing pinned C/H file above. Store the inventory as run evidence outside the tracked tree unless an existing repository evidence convention requires otherwise. At the end of every phase, regenerate the inventory and require exact path set, byte length, and digest equality. Any mismatch is a hard stop. Restore the pinned files from the baseline before continuing.
+
+New test-only C/H fixtures may be added outside the three pinned directories when required. They must not masquerade as corpus programs and must be clearly located under test/fixture ownership. Prefer synthetic C48B1 fixtures where source is not required.
+
+### 0.2 Read-only upstream rule
+
+The native ZX-UX repository and every other repository are reference-only. They may be read to freeze ABI, object-format, scheduler, syscall, or proof contracts, but this runbook must not modify them. All implementation changes belong only to this SDK repository.
+
+### 0.3 Documentation rule
+
+Phases 2 and 3 are incomplete until the root README and all project Microsoft Word manuals are updated and internally consistent. Documentation must distinguish host SDK behavior from native ZX-UX behavior, state limitations explicitly, and include tested command examples. Office files are binary/container artifacts and are exempt from the source-header checker.
+
+### 0.4 Required phase closeout record
+
+At the end of each phase, record at minimum:
+
+1. starting and ending commit IDs;
+2. exact files changed;
+3. commands/tests executed and exit status;
+4. immutable-corpus digest comparison result;
+5. forbidden-term gate result;
+6. clean-tree result;
+7. unresolved defects, which must be zero before advancing.
+
+---
+
+# Phase 1 — License-header policy normalization and repository-wide header cleanup
+
+## Goal
+
+Replace the current mixed/legacy source-header policy with one exact short header, while explicitly exempting the root README, root LICENSE, Microsoft Office files, format-unsafe artifacts, imported references, generated evidence, and the immutable pinned C/H corpus defined above.
+
+The canonical new header text is exactly these two logical lines:
+
+`ZX-UX Unix ZX Spectrum 48K SDK © 2026 Supratim Sanyal supratim-sanyal.blogspot.com`
+
+`SANYALnet Labs Non-Commercial License, attribution required, see LICENSE for more information`
+
+Each file format may add only the minimum comment delimiters required by that format. The words and punctuation of the two logical lines must otherwise remain exact. Preserve shebangs and required launcher preambles as physical line 1 where necessary.
+
+## Step 1.1 — Freeze the pre-change state
+
+1. Confirm `main` is at the expected starting commit and the baseline safety tag resolves to the recorded baseline commit.
+2. Enumerate all tracked paths with `git ls-files -z`.
+3. Build the immutable C/H corpus digest inventory described in Rule 0.1.
+4. Record the current license-checker classifications and all currently exempt paths/suffixes.
+5. Run the existing complete verifier and record its baseline result before changing policy.
+
+## Step 1.2 — Redesign `compiler/check_license_headers.py`
+
+1. Remove acceptance of legacy header variants.
+2. Define one canonical two-line logical header and format-aware wrappers.
+3. Preserve fail-closed behavior for unclassified artifact types.
+4. Exempt root `README.md` explicitly.
+5. Exempt root `LICENSE` explicitly.
+6. Exempt Microsoft Office formats at minimum: `.docx`, `.xlsx`, `.xlsm`, `.pptx`, `.doc`, `.xls`, `.ppt`; also classify other Office container/template formats encountered during the full tree walk rather than leaving them unknown.
+7. Preserve necessary machine/binary/container exemptions such as version files, manifests, JSON where comments are invalid, binary assets, images, C48B1, TAP, ZIP, ROM, and generated evidence.
+8. Preserve the imported-reference exemption for `docs/reference/` without modifying imported bytes.
+9. Add explicit immutable-corpus exemptions for all pre-existing pinned C/H paths under `usr/src/examples`, `usr/src/demos`, and `usr/src/apps`. Make the exemption narrow enough that a newly added unrelated file is not silently exempted unless intended.
+10. Require the canonical header near the beginning of every governed text/source file.
+11. For POSIX launchers, require the shebang first and canonical header immediately after it.
+12. For Windows batch launchers, require `@echo off` first and canonical header immediately after it.
+13. For C/H or other syntax-sensitive sources, use the correct comment syntax without changing the logical header text.
+14. Keep the checker deterministic and independent of working-directory accidents.
+15. Add/adjust focused tests that prove accepted forms, rejected legacy forms, each exemption class, unknown-file failure, launcher preamble handling, and pinned-corpus immutability behavior.
+
+## Step 1.3 — Update the human-readable license-header policy
+
+1. Rewrite `compiler/LICENSE-HEADER-POLICY.md` to state the new exact header.
+2. Document root README and LICENSE exemptions.
+3. Document Office-format exemptions.
+4. Document the immutable pinned C/H corpus exemption and why it exists.
+5. Document imported-reference/generated-evidence exemptions.
+6. Document fail-closed handling of unknown artifact types.
+7. Ensure policy wording matches the checker exactly; there must be no second interpretation of the policy.
+
+## Step 1.4 — Repository-wide legacy-header replacement
+
+1. Walk every tracked file, not merely known source extensions.
+2. Classify each file as governed, exempt, imported/reference, generated evidence, pinned immutable corpus, or unknown.
+3. For every governed text/source file, remove the existing project license-header block completely.
+4. Insert the canonical two-line header with the appropriate comment wrapper.
+5. Do not modify any file solely for whitespace, formatting, or style beyond the header replacement unless a correctness issue is discovered and separately justified.
+6. Do not modify root `README.md`, root `LICENSE`, any Microsoft Office file, imported reference bytes, generated evidence, or any pinned C/H corpus file as part of header normalization.
+7. Verify no governed file contains two project headers or remnants of the old header block.
+8. Verify the new canonical header occurs exactly once in each governed file.
+
+## Step 1.5 — Reconcile other policy gates
+
+1. Update `compiler/check_project_banned_words.py` only as necessary to make the project-wide policy correct and complete, without weakening its coverage.
+2. Ensure filename/path checks are included wherever project policy requires them.
+3. Ensure container/document handling is explicitly defined rather than accidentally skipped.
+4. Keep the license-header checker and forbidden-term checker logically separate: one enforces header placement; the other enforces repository-wide forbidden content.
+5. Add regressions for every gap discovered during the earlier repository audit.
+
+## Step 1.6 — Verification and acceptance gate
+
+Run, at minimum:
+
+- focused license-header tests;
+- `python -B compiler/check_license_headers.py --root .`;
+- the project forbidden-term gate over the full tree;
+- `python -B compiler/run_tests.py`;
+- `python -B compiler/verify_release.py`;
+- immutable pinned-corpus digest comparison;
+- clean-tree/cache scan.
+
+Acceptance requires:
+
+- every governed file has the exact canonical header;
+- every exempt class is intentional and documented;
+- root README and LICENSE are ignored by the header checker;
+- Office files are ignored by the header checker;
+- pinned C/H corpus bytes are unchanged;
+- legacy header variants are no longer accepted for governed files;
+- all tests and release verification pass;
+- no unclassified tracked artifact remains;
+- no transient files remain.
+
+Commit and push Phase 1 only after the complete gate passes.
+
+---
+
+# Phase 2 — `c48run --multitask` cooperative ZX-UX process-model execution
+
+## Goal
+
+Add a deterministic cooperative multitasking mode to `c48run` that models the relevant ZX-UX process/scheduler semantics on the host without using host-thread scheduling for C48 processes. Existing single-program behavior must remain backward compatible.
+
+The user-facing primary form is:
+
+`c48run --multitask PROGRAM1.c48b PROGRAM2.c48b [PROGRAM3.c48b ...]`
+
+Directly listed programs are session processes. Any additional process-control surface implemented inside C48 must be documented and tested. A multitask GUI session must not display its final `Press Shift+Space to exit` footer until all user processes have ended. During execution, Shift+Space remains the global session BREAK/abort control.
+
+## Step 2.1 — Freeze native reference semantics before implementation
+
+1. Read and record the current native ZX-UX process table, scheduler, process-control runtime, and C48 syscall contracts from the read-only native repository.
+2. Pin the exact upstream commit used as the semantic reference in a tracked SDK design/test metadata file or documentation section.
+3. Record the native fixed process limit, process states, cooperative scheduling rule, yield/sleep behavior, exit/zombie/wait behavior, cancellation behavior, PID rules, and any relevant input-owner behavior.
+4. Explicitly list host-only deviations required by `c48run` and test each deviation; do not silently claim full OS emulation.
+
+## Step 2.2 — Freeze multitask CLI and compatibility rules
+
+1. Preserve current non-multitask syntax and behavior byte-for-byte where practical.
+2. Define `--multitask` as a mode switch that changes positional interpretation from one program plus argv to multiple program paths.
+3. Reject an empty multitask program list.
+4. Define and enforce the maximum direct process count according to the chosen ZX-UX fidelity model.
+5. Define whether per-process argv is unsupported initially or supplied by an explicit unambiguous syntax; do not overload positional tokens ambiguously.
+6. Define `--headless`, screen-dump, frame-dump, heap, step quota, time quota, font, sound, and approximation options for a session containing multiple processes.
+7. Define overall command exit status: successful session only when all processes terminate normally according to the frozen policy; global abort and process failures produce deterministic nonzero status.
+8. Update launcher smoke tests so root launchers expose and pass through the new mode.
+
+## Step 2.3 — Refactor the VM into resumable execution
+
+The present evaluator uses the host call stack for C48 calls/control flow. Multitasking requires resumable C48 state.
+
+1. Introduce explicit VM execution frames/continuations for function calls, compound statements, loop state, expression evaluation, and returns.
+2. Ensure a process can stop only at defined safe scheduling points and later resume with identical semantic state.
+3. Preserve C48 value conversion, pointer provenance, local-scope lifetime, recursion limits, global initialization, and runtime-error behavior.
+4. Keep each process's C48 memory, globals, locals, heap, argv, call stack, continuation state, exit status, and accounting isolated.
+5. Do not implement C48 process scheduling with host threads. The scheduler must choose and run one C48 process at a time deterministically.
+6. Keep the existing wall-clock quota mechanism separate from process scheduling.
+7. Add snapshot/invariant checks sufficient to detect frame leaks, scope leaks, heap leakage between processes, and continuation corruption.
+
+## Step 2.4 — Implement the cooperative session scheduler
+
+1. Add an explicit process descriptor model with PID, state, parent/session relationship where applicable, exit status, wake deadline, cancellation flag, and VM reference.
+2. Model the native process-count ceiling selected in Step 2.1.
+3. Implement deterministic round-robin selection among runnable processes.
+4. Implement an idle path when every live process is sleeping/blocked.
+5. Implement explicit `yield` as a scheduler handoff.
+6. Implement `sleep` using the session tick source and deterministic wake rules.
+7. Implement process exit and terminal-state accounting.
+8. Implement cancellation/global abort without leaving partially live descriptors.
+9. If `getpid`, `spawn`, `wait`, or `kill` are exposed in this phase, implement them against the frozen native semantics and include negative/permission/capacity tests. If any are deliberately outside Phase-2 scope, state that explicitly in code, tests, README, and manuals rather than implying support.
+10. No process may observe another process's private VM memory, call frames, locals, or heap.
+
+## Step 2.5 — Define shared device semantics
+
+1. Use one shared ZX screen/session display unless a documented native contract requires otherwise.
+2. Serialize graphics/text operations by cooperative execution order.
+3. Define border, flash/tick, sound, and display-present behavior across process switches.
+4. Define keyboard/input ownership. Blocking input must not deadlock the scheduler or starve unrelated runnable processes.
+5. Define output ordering deterministically.
+6. Ensure headless mode follows the same scheduler semantics without GUI dependencies.
+
+## Step 2.6 — Final GUI completion/footer behavior
+
+1. While any user process is runnable, sleeping, blocked, or otherwise live, suppress the final post-run exit footer.
+2. When one process exits, retain the session and continue scheduling the others.
+3. Only after the final user process reaches terminal state may the GUI present the final framebuffer and `Press Shift+Space to exit` footer.
+4. Shift+Space before final completion is a global BREAK/abort request, not the post-run acknowledgement.
+5. Shift+Space after final completion closes the retained final display.
+6. Add GUI tests that prove the footer is absent after the first process exits and appears only after the final process exits.
+
+## Step 2.7 — Multitasking proof suite
+
+1. Add new test-only fixtures outside the pinned corpus if source changes are needed.
+2. Use existing frozen Hanoi and 8-Queens C48B1 binaries as a primary two-process proof where possible, without touching their pinned C/H sources.
+3. Prove deterministic interleaving with explicit yield points or scheduler-safe points.
+4. Prove each recursive workload reaches its independently known final state.
+5. Prove one process finishing early does not terminate or corrupt the other.
+6. Prove globals, stack/recursion frames, and heap allocations are isolated.
+7. Add capacity-boundary tests, zero-program rejection, malformed-program rejection, process runtime failure, global abort, sleep/wake, and deterministic replay tests.
+8. Run the same deterministic headless multitask proof repeatedly and require identical status, event trace, and final screen bytes when the inputs/options are identical.
+9. Add Windows, Linux, and macOS coverage for the mode where the existing workflow matrix supports those hosts.
+
+## Step 2.8 — Documentation polish
+
+Update root `README.md` and all project Microsoft Word manuals to include:
+
+1. what `--multitask` does and does not emulate;
+2. exact CLI syntax and examples;
+3. cooperative scheduling semantics;
+4. process-count/resource limits;
+5. screen/input/shared-device behavior;
+6. Shift+Space behavior during execution and after final completion;
+7. Hanoi + 8-Queens proof description;
+8. differences between host multitask execution and native ZX-UX;
+9. troubleshooting/error behavior;
+10. updated architecture diagrams/tables/counts where applicable.
+
+Render every modified Word document and inspect every page for layout regression, clipping, blank pages, broken tables, stale cross-references, or inconsistent terminology.
+
+## Step 2.9 — Phase-2 acceptance gate
+
+Require all of the following:
+
+- old single-program `c48run` regression suite passes unchanged;
+- new scheduler/unit tests pass;
+- deterministic multitask proof passes;
+- recursive Hanoi/8-Queens proof passes without source/header modification;
+- GUI footer timing behavior is proved;
+- host-platform workflow coverage passes;
+- README and all Word manuals are consistent with implementation;
+- immutable pinned-corpus digest inventory is unchanged;
+- full `compiler/run_tests.py` passes;
+- full `compiler/verify_release.py` passes;
+- clean-tree and forbidden-term gates pass.
+
+Commit and push Phase 2 only after the complete gate passes.
+
+---
+
+# Phase 3 — `c48b2tap` native ZX-UX executable tape cross-development tool
+
+## Goal
+
+Add a host cross-development tool that consumes validated SDK C48B1 and emits native ZX-UX Z80 program artifacts, with independently testable OBJ1 and MEX1 stages and a final M48O cassette object inside a `.tap`. The tool must not pretend C48B1 is already native code: it must perform real target code generation and native-format construction.
+
+Primary user forms:
+
+- `c48b2tap --obj INPUT.c48b OUTPUT.obj`
+- `c48b2tap --mex INPUT.c48b OUTPUT.mex`
+- `c48b2tap INPUT.c48b OUTPUT.tap`
+
+Exact option names may be refined during implementation, but the final interface must retain independently testable OBJ1, MEX1, and TAP outputs and must be frozen before documentation is finalized.
+
+## Step 3.1 — Freeze the target-native contract
+
+1. Read the native ZX-UX C48 ABI, `C48_REGCALL`, startup contract, OBJ1 format, MEX1 format, M48O format, loader constraints, runtime interfaces, supported Z80 instruction policy, and C48 system/runtime entry points from the read-only native repository.
+2. Pin the exact native reference commit in SDK metadata/tests.
+3. Translate the required immutable target contract into a reviewed SDK-side descriptor/constants layer with source provenance.
+4. Add independent validators for OBJ1, MEX1, and M48O/TAP output. Validators must not reuse the same unchecked assumptions as the writers.
+5. Require all size/offset arithmetic to be widened before narrowing and require exact CRC validation.
+
+## Step 3.2 — Add tool entry points and packaging
+
+1. Add root POSIX launcher `c48b2tap`.
+2. Add root Windows launcher `c48b2tap.bat`.
+3. Add `compiler/c48b2tap.py` as the command entry point.
+4. Add backend modules under `compiler/c48/` or another clearly owned compiler namespace.
+5. Add `--version`, `--about`, `--help`, deterministic error text, and nonzero failure behavior consistent with existing SDK tools.
+6. Update release-required-file checks, launcher checks, packaging, manifest logic, and workflow path triggers to include the new tool.
+7. Apply the canonical Phase-1 license header to all new governed files.
+
+## Step 3.3 — C48B1 input validation and lowering boundary
+
+1. Reuse the existing strict C48B1 reader/schema validation rather than bypassing it.
+2. Reject malformed, unsupported, oversized, or semantically unrepresentable C48B1 before output commit.
+3. Build a target-lowering representation that preserves C48 integer widths, pointer width, arrays, globals, strings, five-byte floating values, function signatures, control flow, and initialization semantics.
+4. Freeze evaluation-order rules so native output matches the SDK semantic contract.
+5. Make unsupported host-only builtins fail explicitly rather than being silently stubbed.
+6. Maintain deterministic symbol naming and stable output for identical input/tool version/options.
+
+## Step 3.4 — Native Z80 code generator
+
+1. Implement documented Z80 instruction emission only.
+2. Implement C48 scalar/pointer operations, signed/unsigned arithmetic, comparisons, shifts, branches, loops, calls, returns, pointer arithmetic, loads/stores, and initialization.
+3. Implement `C48_REGCALL` argument placement and caller cleanup exactly.
+4. Implement return conventions for 8-bit, 16-bit/pointer, and five-byte float results.
+5. Preserve required register-clobber/callee-preserve rules.
+6. Implement local frame layout and stack alignment/bounds.
+7. Implement recursion with deterministic frame allocation and test deep-but-valid recursion plus frame-guard failure.
+8. Implement global data/BSS/string placement and required relocations.
+9. Route supported runtime/library calls to the pinned native-compatible runtime contract.
+10. Add instruction-level golden tests and semantic differential tests against `c48run` for representable pure-computation programs.
+
+## Step 3.5 — OBJ1 writer
+
+1. Emit exact OBJ1 header fields, text/data, BSS size, symbol table, relocation table, body CRC, and header CRC.
+2. Enforce identifier/name limits and symbol uniqueness.
+3. Emit strictly increasing, non-overlapping relocation records.
+4. Reject image/BSS/stored-length overflow before writing a committed output.
+5. Validate every generated OBJ1 with an independent SDK-side decoder and, where practical, the read-only native format oracle/reference behavior.
+6. Require byte-for-byte deterministic rebuilds.
+
+## Step 3.6 — Host linker and MEX1 writer
+
+1. Consume the generated OBJ1 through a separate validated interface.
+2. Resolve symbols/runtime references deterministically.
+3. Lay out image+BSS within the native 32,768-byte contract.
+4. Compute entry offset, minimum FAST stack, relocation list, body CRC, and header CRC exactly.
+5. Enforce exact stored-length and relocation constraints.
+6. Reject unresolved symbols, overflow, invalid addends, stack-policy violations, and image+BSS overflow before output commit.
+7. Validate every MEX1 with an independent decoder.
+8. Where possible, compare selected outputs/behavior against native `cc` + `ld` results for equivalent programs without requiring byte identity when legal code generation differs.
+
+## Step 3.7 — M48O executable cassette object and TAP writer
+
+1. Define the executable object type/target placement exactly according to the native loader contract.
+2. Wrap the final MEX1 bytes in a valid M48O version-1 envelope with exact name, target, physical/logical lengths, payload CRC, header CRC, flags, codec, and reserved bytes.
+3. Emit standard Spectrum TAP framing expected by the ZX-UX loader.
+4. Use atomic output semantics: failure must not leave a partially valid-looking output.
+5. Add independent TAP/M48O decode-and-verify tests.
+6. Add negative tests for invalid names, oversized images, corrupt C48B1, unsupported builtins, CRC failures, and output-path errors.
+
+## Step 3.8 — Native execution proof
+
+1. Use a real ZX Spectrum 48K/native ZX-UX-compatible execution harness or the repository's established native validation method; do not certify solely by re-reading generated bytes.
+2. Load generated TAP through the native cassette object path.
+3. Prove the M48O envelope is accepted.
+4. Prove the MEX1 loader accepts and relocates the executable.
+5. Execute representative generated programs to completion.
+6. Compare observable results with `c48run` for the same C48B1 input where semantics overlap.
+7. Include recursion, graphics/text, integer arithmetic, globals, strings, and runtime-call coverage.
+8. Record exact generated OBJ1/MEX1/TAP hashes for deterministic proof fixtures.
+
+## Step 3.9 — Large-program cross-development proof
+
+1. Add a dedicated non-corpus test fixture outside the immutable demos/examples/apps directories.
+2. Construct a valid C48 source fixture whose source size is approximately 30 KiB and compile it to C48B1 on the host.
+3. Generate a native executable whose stored MEX1 size is also approximately 30 KiB while remaining strictly inside the 32,768-byte native format ceiling including all required overhead.
+4. Record exact source, C48B1, OBJ1, MEX1, and TAP sizes and hashes.
+5. Prove the native executable loads and executes successfully.
+6. Demonstrate that host compilation/code generation avoids the native compiler's self-hosting memory pressure; state this as a cross-development capability, not as a change to native ZX-UX memory limits.
+7. Add boundary tests immediately below and above the native executable size ceiling; the valid case must succeed and the overflow case must fail cleanly without output commit.
+
+## Step 3.10 — Interaction with `c48run --multitask`
+
+1. Use shared semantic fixtures to compare host VM results with generated native executable results.
+2. Where generated programs use process-related calls supported by Phase 2 and native ZX-UX, compare documented behavior rather than assuming host and native implementation details are identical.
+3. Do not claim native concurrent proof unless a real native multitasking execution test has actually been performed.
+4. Keep any deferred native concurrency proof explicitly outside this runbook unless separately authorized.
+
+## Step 3.11 — Documentation polish
+
+Update root README and every project Microsoft Word manual with:
+
+1. purpose of `c48b2tap` as a cross-development tool;
+2. clear statement that C48B1 is host representation, not native machine code;
+3. complete OBJ1/MEX1/TAP command examples;
+4. native ABI and format boundaries at an appropriate user level;
+5. 32,768-byte MEX1 constraints;
+6. large-program capability and limitations;
+7. error behavior and deterministic-build guarantees;
+8. relationship to native `cc`/`ld` and source tapes;
+9. relationship to `c48run --multitask`;
+10. installation/package contents including the new launchers.
+
+Render and inspect every page of each modified Word manual after edits.
+
+## Step 3.12 — Phase-3 acceptance gate
+
+Require:
+
+- complete backend/unit tests pass;
+- deterministic OBJ1/MEX1/TAP rebuilds pass;
+- independent decoders validate every proof artifact;
+- native loader/execution proof passes;
+- large-program proof passes;
+- overflow/negative tests pass;
+- `c48run` single and multitask regressions pass;
+- README and Word manuals match the final CLI and behavior;
+- immutable pinned C/H corpus remains byte-identical;
+- full `compiler/run_tests.py` and `compiler/verify_release.py` pass;
+- relevant cross-platform workflows pass;
+- clean-tree and forbidden-term gates pass.
+
+Commit and push Phase 3 only after the complete gate passes.
+
+---
+
+# Phase 4 — One-time CodeQL review and CodeQL-driven remediation
+
+## Goal
+
+Perform one deliberate static-analysis campaign after feature implementation is complete, make warranted code changes from the findings, prove those changes, obtain a reviewed clean result or explicitly justified non-applicable findings, and then remove the temporary scanning machinery.
+
+## Step 4.1 — Create one-time CodeQL workflow
+
+1. Add a temporary workflow dedicated to this phase only.
+2. Scan the host implementation languages that CodeQL supports and that are materially present in the SDK, at minimum Python.
+3. Do not attempt to rewrite or modify the immutable pinned C48 corpus to satisfy host static analysis.
+4. Configure the workflow to produce reviewable SARIF/output as an artifact even if repository code-scanning alert permissions are unavailable.
+5. Pin action major versions consistently with repository workflow policy.
+6. Grant only the minimum workflow permissions required.
+
+## Step 4.2 — First CodeQL run
+
+1. Run the temporary workflow against the exact Phase-3-complete commit.
+2. Download and preserve the result artifact for the phase record.
+3. Review every result, including severity, path, rule, dataflow, and reachability/context.
+4. Classify each result as real defect, hardening opportunity, false positive/non-applicable, or generated/imported/reference content.
+5. Do not dismiss a result solely because existing tests pass.
+
+## Step 4.3 — Remediation
+
+For each real defect or warranted hardening finding:
+
+1. add a focused regression test that fails before the correction when practical;
+2. make the smallest correct source change;
+3. preserve backward compatibility unless the finding demonstrates unsafe behavior requiring a documented contract change;
+4. update documentation if user-visible behavior changes;
+5. rerun focused tests and complete verification;
+6. recheck immutable pinned-corpus hashes.
+
+## Step 4.4 — Repeat analysis until closure
+
+1. Rerun the same one-time CodeQL configuration after remediation.
+2. Continue until there are no unresolved actionable results.
+3. Any remaining result must have a concrete, file/rule-specific written justification demonstrating why it is non-applicable; generic suppression is not acceptable.
+4. Prefer source fixes over suppressions. Any suppression requires a regression or invariant proving the safety assumption.
+
+## Step 4.5 — Remove temporary CodeQL machinery
+
+1. Remove the one-time workflow and any temporary helper files created only for this review.
+2. Keep durable tests and real code corrections.
+3. Verify the final tree contains no recurring CodeQL workflow unless separately requested.
+4. Run full verification again after workflow removal.
+
+## Phase-4 acceptance gate
+
+Require:
+
+- one-time analysis completed on Phase-3-complete code;
+- every result reviewed;
+- all actionable findings corrected;
+- final rerun has no unresolved actionable result;
+- temporary workflow removed;
+- complete test/release verification passes after remediation;
+- immutable pinned C/H corpus unchanged;
+- clean-tree and forbidden-term gates pass.
+
+Commit and push the Phase-4 remediation and the final temporary-workflow removal as useful main-branch checkpoints.
+
+---
+
+# Phase 5 — Full byte/line/file repository sanity and consistency audit
+
+## Goal
+
+Audit the complete tracked repository after all implementation and static-analysis changes. This is not a sampling exercise. Every tracked byte must be read. Every text/source line must be accounted for. Every document/container must be structurally inspected. Then perform intra-artifact and cross-artifact consistency review.
+
+## Step 5.1 — Freeze audit input
+
+1. Record the exact Phase-4-complete commit.
+2. Require a clean working tree.
+3. Enumerate all tracked files using the version-control index, not filesystem guesses.
+4. Record count, path, byte length, and SHA-256 for every tracked file.
+5. Read every tracked file completely in binary mode at least once and verify the bytes read equal the recorded file length.
+6. Re-run the immutable pinned-corpus digest guard before any audit correction.
+
+## Step 5.2 — File-by-file structural validation
+
+For each tracked file, apply all relevant checks:
+
+1. text encoding and newline validity for text files;
+2. Python parse/compile checks;
+3. JSON full parse and schema/invariant checks where defined;
+4. YAML workflow full parse plus trigger/path/permission consistency;
+5. Markdown local-link/image-target validation;
+6. launcher executable/preamble/command validation;
+7. C48 C/H compile or parser validation where applicable, without modifying pinned inputs;
+8. C48B1 schema validation and deterministic correspondence checks;
+9. TAP framing and M48O decode/CRC validation;
+10. OBJ1/MEX1 validation for new native artifacts/fixtures;
+11. PNG/image decode and expected dimensions where applicable;
+12. Office ZIP/container integrity and internal XML relationship validation;
+13. ZIP/package integrity and no unexpected member paths;
+14. binary asset expected size/hash/format checks;
+15. license-header classification and canonical-header enforcement for governed files;
+16. forbidden-term path/content gate;
+17. no cache/temp/build-trash files.
+
+Imported third-party/reference material must be read and integrity-checked but not normalized or reformatted unless it is demonstrably corrupted relative to its tracked provenance.
+
+## Step 5.3 — Line-by-line source/document sanity review
+
+1. Read every governed text/source file without truncation.
+2. Check stale versions, obsolete counts, old tool names, dead paths, contradictory comments, misleading host/native terminology, incorrect examples, unreachable/dead configuration, duplicate policy text, and TODOs that contradict completed behavior.
+3. Confirm comments describe current code rather than historical behavior unless explicitly marked historical.
+4. Confirm error messages and CLI help match actual options and failure conditions.
+5. Confirm all workflow path filters include every file class capable of changing the behavior they certify.
+6. Confirm release-required-file lists include all new durable files.
+7. Confirm the new two-line header policy has no legacy-header remnants in governed files.
+
+## Step 5.4 — Microsoft Word manual review
+
+For every project Word manual:
+
+1. extract all text, tables, headers/footers, metadata, relationships, and hyperlinks;
+2. search for stale release versions, test counts, program counts, obsolete paths, old tool syntax, and contradictory native/host descriptions;
+3. verify `c48run --multitask` coverage is complete and consistent;
+4. verify `c48b2tap` coverage is complete and consistent;
+5. verify source-tape documentation remains correct;
+6. normalize document metadata where project policy requires SANYALnet Labs attribution;
+7. render the complete document and inspect every page visually for clipping, blank pages, broken tables, bad page breaks, orphan headings, malformed code samples, and thumbnail/reference drift;
+8. repeat edit/render/inspection until every page passes.
+
+## Step 5.5 — Intra-artifact consistency
+
+Within each subsystem, prove internal consistency:
+
+1. compiler code vs compiler tests;
+2. VM/runtime code vs runtime tests;
+3. multitask scheduler vs process tests and GUI behavior;
+4. native backend writer vs independent format validators;
+5. C48B1 inputs vs frozen binaries;
+6. source-tape manifest vs actual tapes;
+7. release expectations vs current corpus and test count;
+8. graphics/app/recursive expectation files vs actual programs/screens;
+9. launchers vs command entry points;
+10. workflow names/triggers vs commands they invoke;
+11. package builder vs release verifier/member expectations.
+
+## Step 5.6 — Cross-source and cross-document review
+
+Build and check a consistency matrix covering at minimum:
+
+- VERSION and all tool version strings;
+- README version-neutral/current statements;
+- all Word manuals;
+- CLI help and examples;
+- process-count and multitask semantics;
+- final-footer behavior;
+- C48B1 terminology;
+- OBJ1/MEX1/M48O/TAP terminology and limits;
+- 32,768-byte native executable constraint;
+- corpus counts for examples/demos/apps/games/sound/security as applicable;
+- 57 source-tape mapping unless intentionally changed by a separately justified feature;
+- test count;
+- graphics/recursive/app verification counts;
+- release-required files;
+- workflow gates;
+- package contents;
+- license-header policy/exemptions;
+- immutable pinned-corpus rule.
+
+No contradiction may remain between implementation, tests, README, Word manuals, workflows, package logic, or release expectations.
+
+## Step 5.7 — Correct audit findings
+
+1. Correct every repository-owned defect discovered.
+2. Do not modify pinned C/H corpus files. If a defect appears to require such a change, stop and treat it as an external pin/design issue rather than changing the corpus.
+3. Do not cosmetically normalize imported third-party reference material.
+4. After each correction batch, rerun the relevant focused checks.
+5. After the last correction, repeat the complete Phase-5 audit from Step 5.1; partial reruns do not close the phase.
+6. Require at least one complete final pass with zero findings. If runbook execution adopts a stricter repeated-zero-pass policy during audit, record it and apply it consistently.
+
+## Phase-5 acceptance gate
+
+Require:
+
+- every tracked byte read and accounted for;
+- every governed text/source file reviewed without truncation;
+- all Office manuals structurally and visually reviewed page-by-page;
+- all intra-artifact checks clean;
+- all cross-artifact consistency checks clean;
+- all corrections reverified by a complete final pass;
+- full test/release verifier clean;
+- immutable pinned C/H corpus unchanged;
+- no transient files;
+- no unresolved findings.
+
+Only after Phase 5 closes cleanly may Phase 6 begin.
+
+---
+
+# Phase 6 — Next certified release and prior-release removal
+
+## Goal
+
+Cut the next release only from the fully verified Phase-5 tree, publish exact certified bytes, verify the published release, then remove the prior release. No feature work or opportunistic cleanup is allowed in this phase.
+
+At the current baseline the published SDK version is 1.0.2, so the expected next patch release is 1.0.3. Immediately before execution, verify the latest published version; if repository history has legitimately advanced, compute the next version from the then-current release policy rather than blindly forcing 1.0.3.
+
+## Step 6.1 — Release preflight
+
+1. Confirm Phase-5 acceptance record is complete with zero unresolved findings.
+2. Confirm `main` is clean and points to the exact audited commit.
+3. Confirm immutable pinned-corpus hashes still match the baseline inventory.
+4. Confirm the safety baseline tag still points to its original commit.
+5. Determine the next release version.
+6. Inventory the currently published release that will become prior after successful publication.
+7. Record its release ID/tag/assets before any deletion.
+
+## Step 6.2 — Apply version change only
+
+1. Update `VERSION`.
+2. Update `compiler/release_expectations.json` version and any other authoritative runtime/tool version constants.
+3. Update version-specific current-scope manual metadata/text only where required; preserve statements explicitly describing historical versions.
+4. Do not mix unrelated changes into the version commit.
+5. Run complete verification after the version change.
+
+## Step 6.3 — Same-commit certification
+
+Require the exact release commit to pass all applicable repository gates, including at minimum:
+
+- complete SDK verification matrix;
+- graphics demo verification;
+- recursive demo verification;
+- GUI desktop acceptance;
+- sound numerical proof;
+- application verification through the complete release verifier;
+- release-candidate packaging gate;
+- fresh-filesystem verification copies;
+- virgin ZIP extraction verification;
+- package manifest/hash verification.
+
+Any failure returns to the phase that owns the defect. Do not patch directly in the publication step.
+
+## Step 6.4 — Build and preserve exact release candidate
+
+1. Use the repository release-candidate builder, not a local ad-hoc ZIP command.
+2. Materialize required upstream specification content according to existing package policy.
+3. Produce release metadata and SHA-256 files.
+4. Verify the ZIP from a virgin extraction with packaged-spec mode enabled.
+5. Confirm package contains `c48run --multitask`, `c48b2tap`, their launchers/modules/tests/docs, and no temporary Phase-4 workflow or audit debris.
+6. Confirm package does not modify the pinned C/H corpus bytes.
+
+## Step 6.5 — Publish the new release
+
+1. Tag the exact certified release commit with the new version tag according to existing release convention.
+2. Publish the exact certified archive and release metadata/assets; do not rebuild after certification.
+3. Use release notes that accurately summarize Phase 1 policy cleanup, multitasking runtime mode, native executable tape cross-development tool, CodeQL review, and repository audit without unsupported claims.
+4. Verify asset digest, size, tag target, release version, and published commit.
+5. Download the published archive and re-run digest/virgin-extraction verification against the published bytes.
+
+## Step 6.6 — Remove the prior release only after new-release verification
+
+1. Do not remove the prior release before the new release is fully published and independently verified.
+2. Remove the prior release object according to established project release policy.
+3. Do not delete or move `BASELINE-BEFORE-MULTITASKING-AND-BIN-TAPE-TOOL`.
+4. Preserve historical version tags unless established project policy explicitly requires their removal; if a prior version tag is to be removed, record that action separately and verify no safety tag is affected.
+5. Confirm the repository's visible latest release is the new version and that no obsolete release is still published.
+
+## Step 6.7 — Final post-release certification
+
+1. Verify `main` points to the intended final commit.
+2. Verify the release tag points to the certified release commit.
+3. Verify all expected workflow badges/gates are green for the certified commit.
+4. Verify the published archive digest and virgin extraction one final time.
+5. Verify immutable pinned C/H corpus hashes one final time.
+6. Verify no temporary workflow, release helper, cache, generated local evidence, or scratch implementation debris remains except this tracked runbook if project policy keeps it.
+7. Verify repository clean state.
+8. Record final release ID/tag/commit/archive digest and prior-release removal result.
+
+Phase 6 closes only when the published release is verified, the prior release has been removed as specified, the repository is clean, and all six phase acceptance records are complete.
+
+---
+
+# Runbook completion criteria
+
+The runbook is complete only when all of the following are true:
+
+1. Phase 1 canonical header policy is enforced with the required README/LICENSE/Office/pinned-corpus exemptions.
+2. `c48run --multitask` is deterministic, cooperatively scheduled, documented, and fully verified, with final footer displayed only after all user processes terminate.
+3. `c48b2tap` emits independently validated native OBJ1, MEX1, M48O/TAP artifacts and passes real native load/execution proof including the large-program case.
+4. One-time CodeQL review is complete, actionable findings are remediated, and temporary scanning workflow is removed.
+5. Full byte/line/file and cross-artifact audit closes with zero unresolved findings.
+6. The next certified release is published from the audited tree and the prior release is removed only afterward.
+7. Every pre-existing pinned `usr/src/examples`, `usr/src/demos`, and `usr/src/apps` C/H file remains byte-for-byte identical to the baseline for the entire execution.
