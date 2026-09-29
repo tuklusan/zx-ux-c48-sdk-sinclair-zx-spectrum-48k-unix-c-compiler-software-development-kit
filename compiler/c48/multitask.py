@@ -885,16 +885,6 @@ class ResumableRomMathVM(RomMathVM):
         if len(args_nodes) != len(params):
             raise RuntimeC48Error("internal argument-count mismatch")
 
-        if frame.pc == 90:
-            if "resume_value" not in frame.data:
-                raise RuntimeC48Error(
-                    "multitask scheduler boundary resumed without a value"
-                )
-            value = int(frame.data.pop("resume_value"))
-            frame.data.pop("boundary", None)
-            self._complete(Value(INT, value))
-            return None
-
         if frame.pc == 41:
             index = frame.data["arg_index"]
             value = self._take()

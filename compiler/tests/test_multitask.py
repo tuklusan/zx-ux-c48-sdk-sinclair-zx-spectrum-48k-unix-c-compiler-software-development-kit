@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 from pathlib import Path
+import io
 import sys
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -17,6 +19,7 @@ from c48.compiler import compile_bytes
 from c48.errors import RuntimeC48Error
 from c48.multitask import CooperativeSession, SLEEPING, WAIT_INPUT, ZOMBIE
 from c48.screen import Font4x8, ZXScreen
+import c48run
 
 FONT = Font4x8.load(COMPILER / "assets" / "SANYALnet-Labs-4x8-font-FINAL.bin")
 
@@ -58,6 +61,18 @@ class MultitaskRuntimeTests(unittest.TestCase):
                 [str(i) for i in range(7)],
                 new_screen(),
             )
+
+    def test_cli_rejects_malformed_program_before_session_start(self):
+        with tempfile.TemporaryDirectory() as td:
+            bad = Path(td) / "bad.c48b"
+            bad.write_bytes(b"not-a-c48b")
+            stderr = io.StringIO()
+            with patch("sys.stderr", stderr):
+                status = c48run.main(
+                    ["--multitask", "--headless", str(bad)]
+                )
+            self.assertEqual(status, 1)
+            self.assertIn("c48run:", stderr.getvalue())
 
     def test_pid_assignment_uses_slots_two_through_seven(self):
         source = "int getpid(void);int main(void){return getpid();}\n"
