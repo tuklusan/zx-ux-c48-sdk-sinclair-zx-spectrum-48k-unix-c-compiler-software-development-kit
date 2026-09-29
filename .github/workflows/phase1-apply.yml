@@ -138,6 +138,7 @@ jobs:
           import json
           import sys
           from pathlib import Path
+          sys.dont_write_bytecode = True
           root = Path.cwd()
           sys.path.insert(0, str(root / "compiler"))
           import verify_graphics_demos as vg
@@ -155,6 +156,7 @@ jobs:
               image.write_bytes(png)
               print(f"reconciled deterministic demo PNG: {name}")
           PY
+          rm -rf compiler/__pycache__ compiler/c48/__pycache__ compiler/tests/__pycache__
           chmod +x c48 c48run c48srctap
           rm -f scratch/.phase1-part*.dat
           rm -f .github/workflows/phase1-apply.yml
