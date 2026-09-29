@@ -158,14 +158,15 @@ Acceptance requires:
 - Office files are ignored by the header checker;
 - pinned C/H corpus bytes are unchanged;
 - legacy header variants are no longer accepted for governed files;
-- governed C48 source/header files outside the pinned corpus still satisfy the existing 64-column contract and the pinned native lexer compatibility proof for the canonical comment header;\n- `c48srctap` accepts the canonical UTF-8 header only through the narrowly proved leading-header exception, rejects all other non-ASCII source bytes, and independently round-trips every regenerated affected tape;
+- governed C48 source/header files outside the pinned corpus still satisfy the existing 64-column contract and the pinned native lexer compatibility proof for the canonical comment header;
+- `c48srctap` accepts the canonical UTF-8 header only through the narrowly proved leading-header exception, rejects all other non-ASCII source bytes, and independently round-trips every regenerated affected tape;
 - every derived artifact affected by a permitted non-pinned header-byte change has been regenerated or explicitly proved unchanged, while all pinned-corpus-derived artifacts remain consistent with their unchanged pinned inputs;
 - all tests and release verification pass;
 - no unclassified tracked artifact remains;
 - no transient files remain;
 - the applicable cross-platform workflow matrix passes on the exact Phase-1 checkpoint, so the Unicode/comment-wrapper sweep is proved on Windows, Linux, and macOS rather than only by a local verifier.
 
-Commit and push Phase 1 only after the complete gate passes.
+After all local Phase-1 gates pass, create and push one Phase-1 candidate checkpoint so the required remote/cross-platform workflows can run on exact committed bytes. If any remote gate fails, correct the owning Phase-1 defect with an ordinary `main` commit, rerun all affected local gates, and create a new candidate checkpoint. Phase 1 closes only when every required remote gate passes on the exact candidate checkpoint; do not add a tracked closeout-only commit afterward.
 
 ---
 
@@ -292,7 +293,7 @@ Require all of the following:
 - full `compiler/verify_release.py` passes;
 - clean-tree and forbidden-term gates pass.
 
-Commit and push Phase 2 only after the complete gate passes.
+After all local Phase-2 gates pass, create and push one Phase-2 candidate checkpoint so the required remote/cross-platform workflows can run on exact committed bytes. If any remote gate fails, correct the owning Phase-2 defect with an ordinary `main` commit, rerun all affected local gates, and create a new candidate checkpoint. Phase 2 closes only when every required remote gate passes on the exact candidate checkpoint; do not add a tracked closeout-only commit afterward.
 
 ---
 
@@ -461,7 +462,7 @@ Require:
 - relevant cross-platform workflows pass;
 - clean-tree and forbidden-term gates pass.
 
-Commit and push Phase 3 only after the complete gate passes.
+After all local Phase-3 gates pass, create and push one Phase-3 candidate checkpoint so the required remote/cross-platform workflows can run on exact committed bytes. If any remote gate fails, correct the owning Phase-3 defect with an ordinary `main` commit, rerun all affected local gates, and create a new candidate checkpoint. Phase 3 closes only when every required remote gate passes on the exact candidate checkpoint; do not add a tracked closeout-only commit afterward.
 
 ---
 
