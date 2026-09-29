@@ -1,12 +1,9 @@
-// ============================================================
-// Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-// Proprietary rights reserved except as licensed in LICENSE.
+// ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs
+// supratim-sanyal.blogspot.com
 //
-// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.
-// Attribution required: Based on original work by Supratim
-// Sanyal of SANYALnet Labs. See root LICENSE for full terms.
+// SANYALnet Labs Non-Commercial License, attribution to
+// SANYALnet Labs required, see LICENSE for more information
 // Generated hot/cold A48M identity constants.
-// ============================================================
 unsigned char ai_cvid[8] = {
     76, 56, 201, 63, 158, 33, 134, 105
 };

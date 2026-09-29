@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
-# ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
-#
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
-# ============================================================================
-
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 from __future__ import annotations
 
 import argparse
@@ -310,17 +299,11 @@ def build(
     )
 
     hdr = [
-        "// ============================================================",
-        "// Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.",
-        "// Proprietary rights reserved except as licensed in LICENSE.",
+        "// ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs",
+        "// supratim-sanyal.blogspot.com",
         "//",
-        "// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.",
-        "// Non-commercial use permitted; Commercial Use and AI/ML",
-        "// model training prohibited unless separately authorized.",
-        "//",
-        "// Attribution required: Based on original work by Supratim",
-        "// Sanyal of SANYALnet Labs. See root LICENSE for full terms.",
-        "// ============================================================",
+        "// SANYALnet Labs Non-Commercial License, attribution to",
+        "// SANYALnet Labs required, see LICENSE for more information",
         f"unsigned int ai_vcnt = {len(vocab)};",
         f"unsigned int ai_tcnt = {len(TOPICS)};",
         "unsigned int ai_t_unknown = 0;",
@@ -374,7 +357,7 @@ def build(
         "ai_vblob", "unsigned char", list(blob)
     ))
     out_h.parent.mkdir(parents=True, exist_ok=True)
-    out_h.write_text("\n".join(hdr) + "\n", encoding="ascii")
+    out_h.write_text("\n".join(hdr) + "\n", encoding="utf-8")
     return body
 
 

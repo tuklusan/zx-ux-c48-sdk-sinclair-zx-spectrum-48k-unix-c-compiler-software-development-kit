@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
-# ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
-#
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
-# ============================================================================
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 """Verify the shipped C48 game corpus and simulated-player sessions."""
 from __future__ import annotations
 
@@ -30,7 +20,7 @@ SDK = ROOT.parent
 SRC = SDK / "usr" / "src" / "games"
 BIN = SDK / "usr" / "bin" / "games"
 EXPECT = json.loads(
-    (ROOT / "release_expectations.json").read_text(encoding="ascii")
+    (ROOT / "release_expectations.json").read_text(encoding="utf-8")
 )
 
 sys.path.insert(0, str(ROOT))
@@ -376,7 +366,7 @@ def check_batch2_regressions() -> None:
             if not back:
                 fail(f"wump: one-way tunnel {room}->{neighbor}")
 
-    arith_source = (SRC / "arith.c").read_text(encoding="ascii")
+    arith_source = (SRC / "arith.c").read_text(encoding="utf-8")
     if "key <= '9' && digits < 3)" not in arith_source:
         fail("arith: three-digit input guard missing")
     vma, _text, _count = run_script(

@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
-# ============================================================================
-# Copyright (c) 2026 SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# restricted model training is prohibited unless separately authorized.
-#
-# Attribution required: SANYALnet Labs. See LICENSE for full terms,
-# warranty disclaimer, termination, patent, trademark, and governing-law
-# provisions.
-# ============================================================================
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 from __future__ import annotations
 
 import argparse
@@ -105,20 +95,42 @@ def _validate_tape_name(name: str, expected_suffix: str) -> None:
         )
 
 
+CANONICAL_LINE1 = 'ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com'
+CANONICAL_LINE2 = 'SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information'
+CANONICAL_C_HEADER = '// ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs\n// supratim-sanyal.blogspot.com\n//\n// SANYALnet Labs Non-Commercial License, attribution to\n// SANYALnet Labs required, see LICENSE for more information\n'.encode("utf-8")
+CANONICAL_TEXT_HEADER = (CANONICAL_LINE1 + "\n\n" + CANONICAL_LINE2 + "\n\n").encode("utf-8")
+
 def _validate_source_text(path: Path, payload: bytes) -> None:
     if len(payload) > MAX_PAYLOAD:
         raise SourceTapeError(
             f"input is too large for one M48O object ({len(payload)} bytes): "
             f"{path}"
         )
-    try:
-        payload.decode("ascii")
-    except UnicodeDecodeError as exc:
-        raise SourceTapeError(f"input must be ASCII text: {path}") from exc
     if b"\r" in payload:
         raise SourceTapeError(f"input must use LF line endings: {path}")
     if b"\0" in payload:
         raise SourceTapeError(f"input contains a NUL byte: {path}")
+    try:
+        payload.decode("ascii")
+        return
+    except UnicodeDecodeError:
+        pass
+    try:
+        payload.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        raise SourceTapeError(f"input contains malformed UTF-8: {path}") from exc
+    header = CANONICAL_TEXT_HEADER if path.suffix == ".txt" else CANONICAL_C_HEADER
+    if not payload.startswith(header):
+        raise SourceTapeError(
+            f"non-ASCII bytes are allowed only in the canonical leading license header: {path}"
+        )
+    remainder = payload[len(header):]
+    try:
+        remainder.decode("ascii")
+    except UnicodeDecodeError as exc:
+        raise SourceTapeError(
+            f"non-ASCII source data outside the canonical leading license header: {path}"
+        ) from exc
 
 
 def _object_type(suffix: str) -> int:

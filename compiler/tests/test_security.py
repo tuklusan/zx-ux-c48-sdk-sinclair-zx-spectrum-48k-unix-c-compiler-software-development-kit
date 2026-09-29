@@ -1,16 +1,6 @@
-# ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
-#
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
-# ============================================================================
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 """Adversarial hostile-input and C48 memory-boundary regression tests."""
 from __future__ import annotations
 
@@ -364,11 +354,11 @@ class PresentationContractTests(unittest.TestCase):
             if path.suffix not in {".c", ".h"}:
                 continue
             for line_no, line in enumerate(
-                path.read_text(encoding="ascii").splitlines(), 1
+                path.read_text(encoding="utf-8").splitlines(), 1
             ):
-                if len(line) > 64:
+                if len(line.encode("utf-8")) > 64:
                     failures.append(
-                        f"{path.name}:{line_no}: {len(line)} columns"
+                        f"{path.name}:{line_no}: {len(line.encode('utf-8'))} bytes"
                     )
         self.assertEqual(failures, [])
 

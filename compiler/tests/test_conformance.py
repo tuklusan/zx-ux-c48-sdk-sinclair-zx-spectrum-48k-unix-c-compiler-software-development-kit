@@ -1,16 +1,6 @@
-# ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
-#
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
-# ============================================================================
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 from __future__ import annotations
 
 import hashlib
@@ -525,7 +515,7 @@ class RemainingRequiredCorpus(unittest.TestCase):
     def test_invalid_udg_operations_return_einval_before_memory_access(self):
         with tempfile.TemporaryDirectory() as td:
             d=Path(td)
-            (d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(), encoding='ascii')
+            (d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(encoding='utf-8'), encoding='utf-8')
             src=d/'u.c'
             src.write_text(
                 '#include "c48host.h"\n'
@@ -577,7 +567,7 @@ class FloatCorpus(unittest.TestCase):
 
     def test_strict_transcendental_runtime_is_bounded(self):
         with tempfile.TemporaryDirectory() as td:
-            d=Path(td);(d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(),encoding='ascii')
+            d=Path(td);(d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(encoding='utf-8'),encoding='utf-8')
             src=d/'m.c';src.write_text('#include "c48host.h"\nint main(void){float x=0.5;x=sin(x);return 0;}\n',encoding='ascii')
             p=compile_file(src);screen=ZXScreen(Font4x8.load(FONT_PATH))
             with self.assertRaises(RuntimeC48Error):C48VM(p,screen).run()
@@ -798,7 +788,7 @@ class AdditionalCrossCompilerCases(unittest.TestCase):
 
     def test_strncpy_is_bounded_and_zero_count_touches_no_memory(self):
         with tempfile.TemporaryDirectory() as td:
-            d=Path(td);(d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(),encoding='ascii')
+            d=Path(td);(d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(encoding='utf-8'),encoding='utf-8')
             src=d/'s.c'
             src.write_text(
                 '#include "c48host.h"\n'
@@ -810,7 +800,7 @@ class AdditionalCrossCompilerCases(unittest.TestCase):
 
     def test_zero_length_memory_primitives_touch_no_pointer_memory(self):
         with tempfile.TemporaryDirectory() as td:
-            d=Path(td);(d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(),encoding='ascii')
+            d=Path(td);(d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(encoding='utf-8'),encoding='utf-8')
             src=d/'z.c'
             src.write_text(
                 '#include "c48host.h"\n'
@@ -822,7 +812,7 @@ class AdditionalCrossCompilerCases(unittest.TestCase):
 
     def test_free_rejects_interior_malloc_pointer(self):
         with tempfile.TemporaryDirectory() as td:
-            d=Path(td);(d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(),encoding='ascii')
+            d=Path(td);(d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(encoding='utf-8'),encoding='utf-8')
             src=d/'f.c';src.write_text(
                 '#include "c48host.h"\nint main(void){char *p;p=malloc(4);if(p==0)return 1;free(p+1);return 0;}\n',encoding='ascii')
             program=compile_file(src);screen=ZXScreen(Font4x8.load(FONT_PATH))
@@ -830,7 +820,7 @@ class AdditionalCrossCompilerCases(unittest.TestCase):
 
     def test_invalid_print_at_returns_einval_before_text_dereference(self):
         with tempfile.TemporaryDirectory() as td:
-            d=Path(td);(d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(),encoding='ascii')
+            d=Path(td);(d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(encoding='utf-8'),encoding='utf-8')
             src=d/'p.c';src.write_text(
                 '#include "c48host.h"\nint main(void){char *p=0;if(print_at(24,0,p)==1)return 0;return 1;}\n',encoding='ascii')
             program=compile_file(src);screen=ZXScreen(Font4x8.load(FONT_PATH))
@@ -839,7 +829,7 @@ class AdditionalCrossCompilerCases(unittest.TestCase):
     def test_malloc_free_and_void_call_runtime(self):
         with tempfile.TemporaryDirectory() as td:
             d = Path(td)
-            (d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(), encoding='ascii')
+            (d/'c48host.h').write_text((SDK/'usr/src/c48host.h').read_text(encoding='utf-8'), encoding='utf-8')
             src = d/'m.c'
             src.write_text('#include "c48host.h"\nint main(void){int *p;p=malloc(2);if(p==0)return 1;*p=123;if(*p!=123)return 2;free(p);return 0;}\n', encoding='ascii')
             program = compile_file(src)

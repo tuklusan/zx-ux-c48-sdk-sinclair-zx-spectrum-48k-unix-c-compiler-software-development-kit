@@ -1,16 +1,6 @@
-# ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
-#
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
-# ============================================================================
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 from __future__ import annotations
 
 from pathlib import Path
@@ -54,10 +44,10 @@ class RoundRegressions(unittest.TestCase):
             "trek.c": 1,
         }
         for name, clears in expectations.items():
-            text = (games / name).read_text(encoding="ascii")
+            text = (games / name).read_text(encoding="utf-8")
             self.assertEqual(text.count("cls();"), clears, name)
 
-        snake = (games / "snake.c").read_text(encoding="ascii")
+        snake = (games / "snake.c").read_text(encoding="utf-8")
         self.assertEqual(snake.count("cls();"), 3)
         self.assertIn("s_draw_board();\n    while (1)", snake)
 

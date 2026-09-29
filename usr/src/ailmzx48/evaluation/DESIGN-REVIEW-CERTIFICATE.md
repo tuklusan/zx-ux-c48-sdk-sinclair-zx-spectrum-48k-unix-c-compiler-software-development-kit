@@ -1,18 +1,9 @@
 <!--
-============================================================================
-Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-Proprietary rights reserved except as expressly licensed herein.
+ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 
-ZX-UX C48 SDK
-This file is governed by the SANYALnet Labs Non-Commercial License in the
-root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-for AI/ML model training are prohibited unless separately authorized.
-
-Attribution is required: "Based on original work by Supratim Sanyal of
-SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-patent, trademark, and governing-law provisions.
-============================================================================
+SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 -->
+
 # ailmzx48 Design Compliance Certificate
 
 This certificate supersedes the historical Revision-0.11 design-only review
@@ -24,8 +15,8 @@ this certificate states the current qualified SDK scope.
 
 - detailed-design revision: `0.29-draft`
 - detailed-design Git blob: `f8120b66ade6029665cbd11910bdea593f9d64d9`
-- detailed-design SHA-256: `796b2f9c6f6b1c630b2e7ef709f1969f264ce1bacf4edd3ae570f27c51778ad9`
-- repaired C48 source SHA-256: `b660cf6c9122b900e07ebe37a08534b37ddd92af89e4db4888e2beb640fa06d3`
+- detailed-design SHA-256: `d9aafe1b867eb80d343c87d1f0e8993028f6565a773573d4c3b57e93bb3aee9b`
+- repaired C48 source SHA-256: `92764ab2025ebac33a5cf4d1d91f7bfa65ee7b740beb4edbfb8bf15f24548253`
 - SDK C48B1 artifact SHA-256: `73e07177c16a07fee979a0ba37d174c5d95a13559aebacfdc8060de10649f209`
 - cold A48M SHA-256: `a0b87573f6e380bf33ba4f4803e9abd917f64c958793717da6d6130dc5fa1096`
 - cold A48M logical length: `8566` bytes

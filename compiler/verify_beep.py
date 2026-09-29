@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
-# ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
-#
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
-# ============================================================================
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 """Numerical and synchronization proof for C48's ROM-derived beep()."""
 from __future__ import annotations
 
@@ -37,7 +27,7 @@ from c48.romvm import RomMathVM
 from c48.sound import BeepPlan, WAV_SAMPLE_RATE, plan_beep
 from c48.vm import C48VM
 
-HEADER = (SDK / "usr" / "src" / "c48host.h").read_text(encoding="ascii")
+HEADER = (SDK / "usr" / "src" / "c48host.h").read_text(encoding="utf-8")
 FONT = Font4x8.load(ROOT / "assets" / "font4x8-tasword.bin")
 
 

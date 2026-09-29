@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
-# ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
-#
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
-# ============================================================================
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 from __future__ import annotations
 
 import hashlib
@@ -150,15 +140,12 @@ def main() -> int:
     vocab = list(data[8:16])
     interface = list(data[16:24])
     header = [
-        "// ============================================================",
-        "// Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.",
-        "// Proprietary rights reserved except as licensed in LICENSE.",
+        "// ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs",
+        "// supratim-sanyal.blogspot.com",
         "//",
-        "// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.",
-        "// Attribution required: Based on original work by Supratim",
-        "// Sanyal of SANYALnet Labs. See root LICENSE for full terms.",
+        "// SANYALnet Labs Non-Commercial License, attribution to",
+        "// SANYALnet Labs required, see LICENSE for more information",
         "// Generated hot/cold A48M identity constants.",
-        "// ============================================================",
         "unsigned char ai_cvid[8] = {",
         "    " + ", ".join(str(v) for v in vocab),
         "};",
@@ -167,7 +154,7 @@ def main() -> int:
         "};",
     ]
     out_header.write_text(
-        "\n".join(header) + "\n", encoding="ascii", newline="\n"
+        "\n".join(header) + "\n", encoding="utf-8", newline="\n"
     )
     report = {
         "schema": 1,

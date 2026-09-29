@@ -30,7 +30,7 @@
   "runner_max_seconds": 1200,
   "schema": 1,
   "semantic_retrieval_uses": 2,
-  "source_sha256": "b660cf6c9122b900e07ebe37a08534b37ddd92af89e4db4888e2beb640fa06d3",
+  "source_sha256": "92764ab2025ebac33a5cf4d1d91f7bfa65ee7b740beb4edbfb8bf15f24548253",
   "trigram_uses": 2,
   "vm_steps": 1824795,
   "vm_turn_steps": [

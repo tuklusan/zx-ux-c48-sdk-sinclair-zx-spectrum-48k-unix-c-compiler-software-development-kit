@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
-# ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# restricted model training is prohibited unless separately authorized.
-#
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
-# ============================================================================
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 from __future__ import annotations
 
 import ast
@@ -290,13 +280,13 @@ def check_c48_source_columns() -> None:
             continue
         rel = path.relative_to(source_root).as_posix()
         try:
-            lines = path.read_text(encoding="ascii").splitlines()
+            lines = path.read_text(encoding="utf-8").splitlines()
         except UnicodeError as exc:
-            fail(f"non-ASCII shipped C48 source {rel}: {exc}")
+            fail(f"invalid UTF-8 shipped C48 source {rel}: {exc}")
         for line_no, line in enumerate(lines, 1):
-            if len(line) > 64:
+            if len(line.encode("utf-8")) > 64:
                 failures.append(
-                    f"{rel}:{line_no}={len(line)} columns"
+                    f"{rel}:{line_no}={len(line.encode('utf-8'))} bytes"
                 )
     if failures:
         fail("C48 64-column source contract violated: " + ", ".join(failures))
@@ -481,12 +471,9 @@ def check_launchers() -> None:
         "c48srctap.bat": 'python -B "%~dp0compiler\\c48srctap.py" %*\nexit /b %ERRORLEVEL%',
     }
     for name, tail in expected_tail.items():
-        actual = (SDK / name).read_text(encoding="ascii").replace("\r\n", "\n")
-        if not any(marker in actual[:2500] for marker in (
-            "Copyright (c) 2026 SANYALnet Labs.",
-            "Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.",
-        )):
-            fail(f"launcher license header missing: {name}")
+        actual = (SDK / name).read_text(encoding="utf-8").replace("\r\n", "\n")
+        if 'ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com' not in actual[:2500]:
+            fail(f"launcher canonical license header missing: {name}")
         if name.endswith(".bat"):
             if not actual.startswith("@echo off\n"):
                 fail(f"Windows launcher must begin with @echo off: {name}")

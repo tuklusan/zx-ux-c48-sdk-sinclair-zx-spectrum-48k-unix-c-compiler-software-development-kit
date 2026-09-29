@@ -1,16 +1,6 @@
-# ============================================================================
-# Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
-# Proprietary rights reserved except as expressly licensed herein.
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 #
-# ZX-UX C48 SDK
-# This file is governed by the SANYALnet Labs Non-Commercial License in the
-# root LICENSE file. Non-Commercial use is permitted; Commercial Use and use
-# for AI/ML model training are prohibited unless separately authorized.
-#
-# Attribution is required: "Based on original work by Supratim Sanyal of
-# SANYALnet Labs." See LICENSE for full terms, warranty disclaimer, termination,
-# patent, trademark, and governing-law provisions.
-# ============================================================================
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -68,14 +58,41 @@ class Preprocessor:
     def preprocess_bytes(self, data: bytes, *, source_name: str, base_dir: Path, include_depth: int = 0) -> list[Token]:
         source_pos = SourcePos(source_name, 1, 1)
         self.budget.add_source_object(len(data), source_pos)
-        try:
-            text = data.decode("ascii")
-        except UnicodeDecodeError as e:
-            prefix = data[:e.start]
-            line = prefix.count(b"\n") + 1
-            last = prefix.rfind(b"\n")
-            column = e.start + 1 if last < 0 else e.start - last
-            raise LexicalError(f"source is not canonical ASCII (byte offset {e.start})", SourcePos(source_name, line, column)) from None
+        canonical_header = (
+            "// ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs\n"
+            "// supratim-sanyal.blogspot.com\n"
+            "//\n"
+            "// SANYALnet Labs Non-Commercial License, attribution to\n"
+            "// SANYALnet Labs required, see LICENSE for more information\n"
+        )
+        canonical_bytes = canonical_header.encode("utf-8")
+        if data.startswith(canonical_bytes):
+            tail = data[len(canonical_bytes):]
+            try:
+                tail_text = tail.decode("ascii")
+            except UnicodeDecodeError as e:
+                off = len(canonical_bytes) + e.start
+                prefix = data[:off]
+                line = prefix.count(b"\n") + 1
+                last = prefix.rfind(b"\n")
+                column = off + 1 if last < 0 else off - last
+                raise LexicalError(
+                    f"non-ASCII source data outside canonical header (byte offset {off})",
+                    SourcePos(source_name, line, column),
+                ) from None
+            # The glyph occupies two UTF-8 bytes. Replace it with two spaces in
+            # the already-commented header so host character positions retain
+            # native byte-column width while the lexer sees canonical ASCII.
+            text = canonical_header.replace("©", "  ") + tail_text
+        else:
+            try:
+                text = data.decode("ascii")
+            except UnicodeDecodeError as e:
+                prefix = data[:e.start]
+                line = prefix.count(b"\n") + 1
+                last = prefix.rfind(b"\n")
+                column = e.start + 1 if last < 0 else e.start - last
+                raise LexicalError(f"source is not canonical ASCII (byte offset {e.start})", SourcePos(source_name, line, column)) from None
         # A host may normalize complete CRLF pairs to canonical LF before lexical
         # analysis, but every other source byte must already be TAB, LF, or
         # printable ASCII.  Validate this *before* splitlines(), whose Unicode
@@ -288,7 +305,7 @@ class Preprocessor:
             if self._header_included:return
             self._header_included=True
             if self.builtin_header:
-                header_bytes = self.builtin_header.encode("ascii")
+                header_bytes = self.builtin_header.encode("utf-8")
                 self.budget.add_source_object(
                     len(header_bytes), SourcePos("<c48.h>", 1, 1)
                 )

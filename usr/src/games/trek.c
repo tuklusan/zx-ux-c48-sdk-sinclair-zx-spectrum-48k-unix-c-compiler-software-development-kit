@@ -1,14 +1,8 @@
-// ============================================================
-// Copyright (c) 2026 SANYALnet Labs.
-// Proprietary rights reserved except as licensed in LICENSE.
+// ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs
+// supratim-sanyal.blogspot.com
 //
-// ZX-UX C48 SDK - SANYALnet Labs Non-Commercial License.
-// Non-commercial use permitted; Commercial Use and model
-// training prohibited unless separately authorized.
-//
-// Attribution required: SANYALnet Labs.
-// See root LICENSE for full terms.
-// ============================================================
+// SANYALnet Labs Non-Commercial License, attribution to
+// SANYALnet Labs required, see LICENSE for more information
 #include "gameapi.h"
 
 int t_quad;

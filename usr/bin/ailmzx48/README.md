@@ -4,10 +4,6 @@ ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.c
 SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
 -->
 
-<!-- ZX-UX C48 SDK -->
-<!-- This file is governed by the SANYALnet Labs Non-Commercial License in the root LICENSE file. -->
-<!-- Attribution required: SANYALnet Labs. -->
-
 # ailmzx48 SDK artifacts
 
 This directory contains SDK-side runtime artifacts for `ailmzx48`.
