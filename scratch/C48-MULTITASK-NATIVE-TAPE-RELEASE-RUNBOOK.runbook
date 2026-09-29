@@ -126,14 +126,15 @@ Each file format may add only the minimum comment delimiters required by that fo
 9. Build a dependency map for every governed source/header byte change. Regenerate and revalidate only derived tracked artifacts that actually embed or hash those changed bytes, including affected source tapes and expectation hashes. Rebuild C48B1 only when deterministic recompilation proves its bytes should change. Never regenerate a pinned-corpus-derived artifact merely to normalize the immutable pinned source/header bytes.
 10. For every regenerated source tape, decode it independently and prove the embedded source/header payload exactly matches the intended tracked source bytes, then update any owning manifest/hash expectation deterministically.
 
-## Step 1.5 — Reconcile other policy gates
+## Step 1.5 — Reconcile other project-content policy gates
 
-1. Update `compiler/check_project_banned_words.py` only as necessary to make the project-wide policy correct and complete, without weakening its coverage.
-2. The durable implementation itself must obey the project's non-persistence rule: prohibited terms may not be embedded, encoded, split, disguised, written into generated configuration, or introduced into repository/API text merely so the checker can recognize them. If exact self-contained enforcement cannot satisfy that rule, stop Phase 1 and resolve the enforcement design rather than shipping a misleading partial gate.
-3. Ensure filename/path checks are included wherever project policy requires them.
-4. Ensure container/document handling is explicitly defined rather than accidentally skipped.
-5. Keep the license-header checker and forbidden-term checker logically separate: one enforces header placement; the other enforces repository-wide forbidden content.
-6. Add regressions for every gap discovered during the earlier repository audit.
+1. Remove the existing tracked encoded/disguised deny-list implementation from `compiler/check_project_banned_words.py`; a tracked checker may not persist prohibited terms in literal, encoded, split, hashed, transformed, or otherwise disguised form.
+2. Remove the license-header checker's dependency on that deny-list implementation. License-header enforcement remains a self-contained repository gate concerned only with header classification and placement.
+3. During this runbook, perform the exact project-content/path validation with a non-tracked ephemeral execution guard supplied by the active project policy context. The guard must inspect proposed path names and complete proposed bytes before every repository write/commit and must inspect decoded text inside supported containers during full-tree gates. Do not write its prohibited-term rule material, transformed equivalents, or raw matching text into tracked files, logs, artifacts, commit text, or repository API bodies.
+4. If a durable tracked generic policy wrapper is retained, it may orchestrate caller-supplied ephemeral rules but must contain no embedded or reconstructable prohibited-term set and must fail closed when required policy context is unavailable. Do not claim that such a wrapper independently knows the prohibited vocabulary.
+5. Update `compiler/verify_release.py`, focused tests, and policy documentation so they accurately distinguish the tracked license-header gate from the required ephemeral project-content gate; remove any false claim that a self-contained tracked checker enforces vocabulary it cannot legally persist.
+6. Ensure the ephemeral gate covers tracked/proposed filenames, ordinary file bytes/text, and decoded textual content of supported containers. Preserve narrow binary/imported-content handling only where project policy explicitly permits it.
+7. Add regressions for the tracked policy plumbing and every earlier checker-integration gap without embedding the prohibited vocabulary in the regression corpus.
 
 ## Step 1.6 — Verification and acceptance gate
 
