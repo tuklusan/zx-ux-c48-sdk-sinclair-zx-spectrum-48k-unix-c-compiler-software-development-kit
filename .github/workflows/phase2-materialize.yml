@@ -1,0 +1,47 @@
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
+#
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
+name: Phase 2 core materializer
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - scratch/.phase2-multitask-core.dat
+      - .github/workflows/phase2-materialize.yml
+
+permissions:
+  contents: write
+
+jobs:
+  materialize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Materialize runtime core
+        shell: bash
+        run: |
+          python - <<'PY'
+          import gzip
+          from pathlib import Path
+          payload = Path('scratch/.phase2-multitask-core.dat').read_bytes()
+          Path('compiler/c48/multitask.py').write_bytes(gzip.decompress(payload))
+          PY
+          rm scratch/.phase2-multitask-core.dat
+          rm .github/workflows/phase2-materialize.yml
+          python -m py_compile compiler/c48/multitask.py
+          python compiler/check_license_headers.py
+          git diff --check
+      - name: Commit materialized core
+        shell: bash
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add compiler/c48/multitask.py scratch/.phase2-multitask-core.dat .github/workflows/phase2-materialize.yml
+          git commit -m "Materialize cooperative multitask runtime core"
+          git push origin HEAD:main
