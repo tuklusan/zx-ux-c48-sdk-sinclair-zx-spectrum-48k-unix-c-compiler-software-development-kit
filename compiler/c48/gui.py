@@ -266,6 +266,7 @@ class TkDisplay:
         self._present_reason: str | None = None
         self._present_scheduled_generation = -1
         self._stop = False
+        self._abort_event = threading.Event()
         self._root = None
         self._photo = None
         self._copy_font = None
@@ -303,6 +304,27 @@ class TkDisplay:
                 "input_return", value=value, queued=len(self._key_queue)
             )
             return value
+
+    def abort_requested(self) -> bool:
+        """Return whether BREAK was requested while execution is active."""
+        return self._abort_event.is_set()
+
+    def poll_input(self) -> int | None:
+        """Return one queued console byte without blocking the caller."""
+        with self._key_cond:
+            if self._stop:
+                return None
+            if not self._key_queue:
+                if not self._key_waiting:
+                    self._key_waiting = True
+                    self._probe("input_waiting", queued=0)
+                return None
+            value = self._key_queue.popleft()
+            self._key_waiting = False
+            self._probe(
+                "input_return", value=value, queued=len(self._key_queue)
+            )
+            return int(value)
 
     def _offer_key(self, value: int) -> bool:
         """Queue one console byte, preserving bounded typeahead."""
@@ -405,6 +427,7 @@ class TkDisplay:
             import tkinter.font as tkfont
         except Exception as exc:  # pragma: no cover - host-specific
             raise RuntimeError(f"Tkinter is unavailable: {exc}") from exc
+        self._abort_event.clear()
         root = tk.Tk()
         self._root = root
         root.title(self.title)
@@ -527,6 +550,8 @@ class TkDisplay:
         def key(event):
             if is_break_key(event.keysym, int(event.state)):
                 result["break_running"] = not bool(result["done"])
+                if result["break_running"]:
+                    self._abort_event.set()
                 self._probe(
                     "break_key",
                     done=bool(result["done"]),

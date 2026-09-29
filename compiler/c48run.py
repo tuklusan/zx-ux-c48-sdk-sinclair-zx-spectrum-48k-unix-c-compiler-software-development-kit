@@ -28,6 +28,7 @@ from c48.gui import (
 )
 from c48.screen import Font4x8, ZXScreen
 from c48.romvm import RomMathVM
+from c48.multitask import CooperativeSession
 
 
 class _QuotaRomMathVM(RomMathVM):
@@ -116,6 +117,11 @@ def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="c48run", description="Portable ZX-UX C48 host runtime")
     ap.add_argument("--version", action="version", version=f"%(prog)s {SDK_VERSION}")
     ap.add_argument(
+        "--multitask",
+        action="store_true",
+        help="run one to six C48B1 programs in one cooperative session",
+    )
+    ap.add_argument(
         "--about",
         action="version",
         version=(
@@ -126,7 +132,7 @@ def main(argv: list[str] | None = None) -> int:
         ),
         help="show copyright and license information and exit",
     )
-    ap.add_argument("program", help="C48B1 program path")
+    ap.add_argument("program", nargs="?", help="C48B1 program path")
     ap.add_argument("args", nargs="*")
     ap.add_argument("--headless", action="store_true", help="run without opening a display window")
     ap.add_argument("--dump-screen", type=Path, help="write exact 6912-byte ZX screen after execution")
@@ -172,32 +178,82 @@ def main(argv: list[str] | None = None) -> int:
         if not math.isfinite(ns.time_quota) or ns.time_quota < 0.0:
             raise RuntimeC48Error("--time-quota must be zero or a finite positive number")
         max_steps = None if ns.max_steps == 0 else ns.max_steps
-        program_path = Path(ns.program)
-        program = read(program_path)
+        if ns.program is None:
+            if ns.multitask:
+                raise RuntimeC48Error(
+                    "--multitask requires at least one C48B1 program path"
+                )
+            ap.error("the following arguments are required: program")
+
         font = Font4x8.load(ns.font)
         screen = ZXScreen(font)
-        # Preserve argv[0] as the exact host command token supplied for the program.
-        pargv = [ns.program, *ns.args]
-        if ns.headless:
-            vm = _new_vm(
-                program, screen, argv=pargv,
-                approximate_rom_math=ns.allow_approx_rom_math,
-                heap_size=ns.heap, max_steps=max_steps,
-                time_quota=ns.time_quota,
-            )
-            status = vm.run()
+        if ns.multitask:
+            program_tokens = [ns.program, *ns.args]
+            if len(program_tokens) > 6:
+                raise RuntimeC48Error(
+                    "--multitask supports at most six C48B1 programs"
+                )
+            programs = [read(Path(token)) for token in program_tokens]
+            if ns.headless:
+                session = CooperativeSession(
+                    programs,
+                    program_tokens,
+                    screen,
+                    approximate_rom_math=ns.allow_approx_rom_math,
+                    heap_size=ns.heap,
+                    max_steps=max_steps,
+                    time_quota=ns.time_quota,
+                )
+                status = session.run()
+            else:
+                display = TkDisplay(
+                    screen,
+                    scale=ns.scale,
+                    title="ZX-UX C48 - multitask",
+                )
+                session = CooperativeSession(
+                    programs,
+                    program_tokens,
+                    screen,
+                    approximate_rom_math=ns.allow_approx_rom_math,
+                    heap_size=ns.heap,
+                    max_steps=max_steps,
+                    time_quota=ns.time_quota,
+                    input_poll=lambda pid: display.poll_input(),
+                    display_update=display.update,
+                    display_present=display.present,
+                    abort_requested=display.abort_requested,
+                )
+                status = _run_display_with_sdk_icon(display, session.run)
         else:
-            display = TkDisplay(screen, scale=ns.scale, title=f"ZX-UX C48 - {program_path.name}")
-            vm = _new_vm(
-                program, screen, argv=pargv,
-                approximate_rom_math=ns.allow_approx_rom_math,
-                heap_size=ns.heap, max_steps=max_steps,
-                time_quota=ns.time_quota,
-                input_provider=display.input_char,
-                display_update=display.update,
-                display_present=display.present,
-            )
-            status = _run_display_with_sdk_icon(display, vm.run)
+            program_path = Path(ns.program)
+            program = read(program_path)
+            # Preserve argv[0] as the exact host command token supplied for the program.
+            pargv = [ns.program, *ns.args]
+            if ns.headless:
+                vm = _new_vm(
+                    program, screen, argv=pargv,
+                    approximate_rom_math=ns.allow_approx_rom_math,
+                    heap_size=ns.heap, max_steps=max_steps,
+                    time_quota=ns.time_quota,
+                )
+                status = vm.run()
+            else:
+                display = TkDisplay(
+                    screen,
+                    scale=ns.scale,
+                    title=f"ZX-UX C48 - {program_path.name}",
+                )
+                vm = _new_vm(
+                    program, screen, argv=pargv,
+                    approximate_rom_math=ns.allow_approx_rom_math,
+                    heap_size=ns.heap, max_steps=max_steps,
+                    time_quota=ns.time_quota,
+                    input_provider=display.input_char,
+                    display_update=display.update,
+                    display_present=display.present,
+                )
+                status = _run_display_with_sdk_icon(display, vm.run)
         if ns.dump_screen:
             ns.dump_screen.parent.mkdir(parents=True, exist_ok=True)
             ns.dump_screen.write_bytes(screen.bytes())

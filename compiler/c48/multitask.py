@@ -245,7 +245,7 @@ class ResumableRomMathVM(RomMathVM):
         except RuntimeExit as exc:
             self.cancel_cleanup()
             return VMEvent("exit", exc.status & 0xFF)
-        except BaseException:
+        except (RuntimeC48Error, MemoryError, RecursionError):
             self.cancel_cleanup()
             raise
 
