@@ -55,5 +55,8 @@ class LicenseHeaderPolicyTests(unittest.TestCase):
     def test_generic_policy_hook_requires_external_context(self):
         spec=importlib.util.spec_from_file_location("policy",COMPILER/"check_project_banned_words.py"); module=importlib.util.module_from_spec(spec); assert spec and spec.loader; spec.loader.exec_module(module)
         with self.assertRaises(module.PolicyContextUnavailable): module.check_tree(ROOT)
+        cp=subprocess.run([sys.executable,"-B",str(COMPILER/"check_project_banned_words.py")],cwd=ROOT,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        self.assertNotEqual(cp.returncode,0)
+        self.assertIn("policy context unavailable",cp.stderr)
 
 if __name__=="__main__": unittest.main()
