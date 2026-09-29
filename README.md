@@ -176,6 +176,24 @@ exercise substantial screen handling and interaction under tight limits.
 
 ## Runtime notes
 
+### Cooperative multitasking
+
+`c48run --multitask` runs one through six C48B1 programs in one host session:
+
+```text
+c48run --multitask PROGRAM1.c48b PROGRAM2.c48b [PROGRAM3.c48b ...]
+```
+
+The session mirrors the native eight-slot identity shape without pretending to be a booted ZX-UX kernel: PID0 is synthetic idle state, PID1 is a synthetic session supervisor, and directly listed programs receive PID2 through PID7 in command-line order. Every positional token in multitask mode is a program path, and each process receives only that exact token as `argv[0]`. Native `spawn`, `wait`, and `kill` remain deliberately unsupported in this host mode.
+
+Scheduling is cooperative round-robin. A process hands control back only at `yield()`, positive `sleep()`, blocking `getchar()`, termination, cancellation, or a configured session safety ceiling. `sleep(0)` returns without yielding. A CPU-bound process that never reaches one of those boundaries can starve its peers until a safety ceiling intervenes; that is a property of cooperative scheduling, not a surprise bonus feature.
+
+Each process has private C48 memory, globals, locals, call/continuation frames, heap, argument storage, and status. The Spectrum screen, border, sound service, tick source, and keyboard are session devices shared in scheduler order. A waiting GUI input owner blocks only that process; unrelated runnable processes continue. Headless multitask execution never performs a blocking stdin read: an unprovided `getchar()` fails that process explicitly.
+
+`--heap` is applied separately to every process. `--max-steps` and `--time-quota` are session-wide ceilings. A process runtime failure ends that process with status 1 while peers continue; after all processes end, the command returns zero only if all direct processes returned zero, otherwise it returns the first nonzero status in PID order. Shift+Space during a graphical session is a global BREAK and returns 130; after final completion it only closes the retained display. The completed-program footer is shown only after every direct process has terminated.
+
+The acceptance proof runs the frozen `usr/bin/demos/hanoi.c48b` and `usr/bin/demos/queens8.c48b` together to their verified final states on one shared screen. A separate repeated synthetic tick/input regression requires identical status, scheduler trace, and final screen bytes from identical sessions. This is host-side evidence aligned to the pinned native process semantics; it is not a claim that the host VM is the native ZX-UX scheduler.
+
 ### Fonts
 
 The runtime defaults to the SANYALnet Labs final 4x8 font, where every pixel has a job and none has time for decorative flourishes:
