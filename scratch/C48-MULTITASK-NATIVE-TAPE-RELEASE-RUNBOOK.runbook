@@ -120,11 +120,12 @@ Each file format may add only the minimum comment delimiters required by that fo
 3. For every governed text/source file, remove the existing project license-header block completely.
 4. Insert the canonical two-line header with the appropriate comment wrapper.
 5. Do not modify any file solely for whitespace, formatting, or style beyond the header replacement unless a correctness issue is discovered and separately justified.
-6. Root `README.md` is header-exempt: remove its existing project source-header boilerplate and leave it headerless; do not insert the canonical header there. Root `LICENSE` is also header-exempt and must never receive a source header, although a separate policy-content correction may edit its license prose when required by the project-wide content gate while preserving intended legal restrictions. Do not inject source headers into Microsoft Office files. Do not modify imported reference bytes, generated evidence, or any pinned C/H corpus file.
-7. Verify no governed file contains two project headers or remnants of the old header block.
-8. Verify the new canonical header occurs exactly once in each governed file.
-9. Build a dependency map for every governed source/header byte change. Regenerate and revalidate only derived tracked artifacts that actually embed or hash those changed bytes, including affected source tapes and expectation hashes. Rebuild C48B1 only when deterministic recompilation proves its bytes should change. Never regenerate a pinned-corpus-derived artifact merely to normalize the immutable pinned source/header bytes.
-10. For every regenerated source tape, decode it independently and prove the embedded source/header payload exactly matches the intended tracked source bytes, then update any owning manifest/hash expectation deterministically.
+6. Root `README.md` is header-exempt: remove its existing project source-header boilerplate and leave it headerless; do not insert the canonical header there. Root `LICENSE` is also header-exempt and must never receive a source header, although a separate policy-content correction may edit its license prose when required by the project-wide content gate while preserving intended legal restrictions. Do not inject source headers into Microsoft Office files. Do not modify imported reference bytes, generated evidence, or any pinned C/H corpus file merely for header normalization.
+7. The imported/reference byte-preservation rule is only a license-header normalization exemption. If a higher project-content/security gate rejects an imported artifact, do not edit the upstream bytes in place; remove the tracked artifact or replace it with a permissible clean reference after reviewing provenance and all dependent tests/documentation, then rerun the full affected gate.
+8. Verify no governed file contains two project headers or remnants of the old header block.
+9. Verify the new canonical header occurs exactly once in each governed file.
+10. Build a dependency map for every governed source/header byte change. Regenerate and revalidate only derived tracked artifacts that actually embed or hash those changed bytes, including affected source tapes and expectation hashes. Rebuild C48B1 only when deterministic recompilation proves its bytes should change. Never regenerate a pinned-corpus-derived artifact merely to normalize the immutable pinned source/header bytes.
+11. For every regenerated source tape, decode it independently and prove the embedded source/header payload exactly matches the intended tracked source bytes, then update any owning manifest/hash expectation deterministically.
 
 ## Step 1.5 — Reconcile other project-content policy gates
 
@@ -172,7 +173,7 @@ Commit and push Phase 1 only after the complete gate passes.
 
 ## Goal
 
-Add a deterministic cooperative multitasking mode to `c48run` that models the relevant ZX-UX process/scheduler semantics on the host without using host-thread scheduling for C48 processes. Existing single-program behavior must remain backward compatible. Multitask scheduling is cooperative: never add arbitrary VM-step time slicing or host-scheduler preemption merely to make progress. A process switch occurs only at an explicitly frozen scheduling boundary such as `yield`, a blocking service, termination, or cancellation.
+Add a deterministic cooperative multitasking mode to `c48run` that models the relevant ZX-UX process/scheduler semantics on the host without using host-thread scheduling for C48 processes. Existing single-program behavior must remain backward compatible. Multitask scheduling is cooperative: never add arbitrary VM-step time slicing or host-scheduler preemption merely to make progress. A process switch occurs only at an explicitly frozen scheduling boundary such as `yield`, a blocking service, termination, or cancellation. Scheduler determinism means that the same ordered program actions plus the same tick/input event stream produce the same schedule and observable result; live wall-clock and human-input timing are external events and are not falsely claimed to be inherently repeatable.
 
 The user-facing primary form is:
 
@@ -194,7 +195,7 @@ Directly listed programs are session processes. Any additional process-control s
 3. Reject an empty multitask program list.
 4. Mirror the native eight-slot identity model: reserve PID0 as idle and PID1 as a synthetic session supervisor, assign directly launched C48 programs to PID2 through PID7 in command-line order, and reject more than six directly launched programs. The synthetic PID1 is host orchestration state, not a hidden C48 program.
 5. In the first admitted CLI contract, positional tokens after `--multitask` are program paths only; each process receives only its exact program token as `argv[0]`. Do not ambiguously mix per-process argv into the same positional list. Any later per-process argument syntax must be explicit, independently parsed, and regression-tested.
-6. In multitask mode, `--heap` applies independently to each process; `--max-steps` is a session-wide deterministic semantic-step ceiling; `--time-quota` is a session-wide wall-clock ceiling; `ticks()` uses one shared session tick source; screen/frame dumps capture the final shared screen. Preserve existing single-program meanings outside multitask mode.
+6. In multitask mode, `--heap` applies independently to each process; `--max-steps` is a session-wide deterministic semantic-step ceiling; `--time-quota` is a session-wide wall-clock ceiling; `ticks()` uses one shared session tick source; screen/frame dumps capture the final shared screen. The scheduler must accept an injected deterministic tick/input source for proof tests while production GUI/live-input mode uses the documented live event sources. Preserve existing single-program meanings outside multitask mode.
 7. Define `--headless`, font, sound, approximation, input, and dump behavior for a session containing multiple processes.
 8. Define overall command exit status: successful session only when all processes terminate normally according to the frozen policy; global abort and process failures produce deterministic nonzero status.
 9. Update launcher smoke tests so root launchers expose and pass through the new mode.
@@ -253,7 +254,7 @@ The present evaluator uses the host call stack for C48 calls/control flow. Multi
 5. Prove one process finishing early does not terminate or corrupt the other.
 6. Prove globals, stack/recursion frames, and heap allocations are isolated.
 7. Add capacity-boundary tests, zero-program rejection, malformed-program rejection, process runtime failure, global abort, sleep/wake, and deterministic replay tests.
-8. Run the same deterministic headless multitask proof repeatedly and require identical status, event trace, and final screen bytes when the inputs/options are identical.
+8. Run the same deterministic headless multitask proof repeatedly with an explicitly injected synthetic tick/input event stream and require identical status, event trace, and final screen bytes when the programs, options, and event stream are identical. Separately test live event integration without claiming wall-clock timing itself is deterministic.
 9. Add Windows, Linux, and macOS coverage for the mode where the existing workflow matrix supports those hosts.
 
 ## Step 2.8 — Documentation polish
@@ -325,9 +326,11 @@ Exact option names may be refined during implementation, but the final interface
 3. Add `compiler/c48b2tap.py` as the command entry point.
 4. Add backend modules under `compiler/c48/` or another clearly owned compiler namespace.
 5. Add `--version`, `--about`, `--help`, deterministic error text, and nonzero failure behavior consistent with existing SDK tools.
-6. Update release-required-file checks, launcher checks, packaging, manifest logic, and workflow path triggers to include the new tool.
-7. Update the Phase-1 license-header classifier so the suffixless `c48b2tap` launcher is governed and any newly tracked format-native binary artifacts such as OBJ1/MEX1/runtime archive payloads are explicitly classified as format-exempt rather than becoming unknown artifacts.
-8. Apply the canonical Phase-1 license header to all new governed files.
+6. Before coding the writer, freeze and test the complete file contract: exactly one validated `.c48b` input; the mode-specific output form/suffix; input-output alias rejection; existing-output/overwrite policy; regular-file/symlink handling; and deterministic diagnostics for every invalid combination.
+7. All OBJ1, MEX1, and TAP modes must write transactionally to a temporary peer and publish the requested output only after generation plus independent validation succeeds; every failure path must leave no new or partially replaced output.
+8. Update release-required-file checks, launcher checks, packaging, manifest logic, and workflow path triggers to include the new tool.
+9. Update the Phase-1 license-header classifier so the suffixless `c48b2tap` launcher is governed and any newly tracked format-native binary artifacts such as OBJ1/MEX1/runtime archive payloads are explicitly classified as format-exempt rather than becoming unknown artifacts.
+10. Apply the canonical Phase-1 license header to all new governed files.
 
 ## Step 3.3 — C48B1 input validation and lowering boundary
 
@@ -368,7 +371,8 @@ Exact option names may be refined during implementation, but the final interface
 3. Emit strictly increasing, non-overlapping relocation records.
 4. Reject image/BSS/stored-length overflow before writing a committed output.
 5. Validate every generated OBJ1 with an independent SDK-side decoder and also with the pinned read-only native format oracle for every proof artifact for which that oracle exists; inability to run an available native oracle is a proof failure, not a reason to skip it.
-6. Require byte-for-byte deterministic rebuilds.
+6. Feed representative generated OBJ1 files directly to the pinned native linker and require successful native consumption/linking; this proves interoperability rather than merely proving that two decoders accept the header. Compare the resulting native-linker executable behavior with the host-linker result without requiring byte identity when legal layout/code-generation choices differ.
+7. Require byte-for-byte deterministic rebuilds.
 
 ## Step 3.7 — Host linker and MEX1 writer
 
@@ -446,6 +450,7 @@ Require:
 - deterministic OBJ1/MEX1/TAP rebuilds pass;
 - shipped native startup/runtime support has pinned provenance, deterministic hashes, complete supported-symbol coverage, and fixed archive ordering;
 - independent decoders validate every proof artifact;
+- representative generated OBJ1 artifacts are accepted and linked by the pinned native linker;
 - native loader/execution proof passes;
 - large-program proof passes;
 - overflow/negative tests pass;
