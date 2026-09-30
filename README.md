@@ -165,7 +165,7 @@ c48b2tap --name PROGRAM program.c48b program.tap
 ```
 
 TAP object names are portable ZX-UX names of 1–10 bytes. `--stack BYTES`
-sets the requested FAST stack within the native 64–4096 byte range. Generated
+sets an even requested FAST stack within the native 64–4096 byte range. Generated
 executables must satisfy both native ceilings independently: image plus BSS
 must fit within 32,768 bytes, and the complete stored MEX1 including relocation
 records must also fit within 32,768 bytes. The release proof includes a
