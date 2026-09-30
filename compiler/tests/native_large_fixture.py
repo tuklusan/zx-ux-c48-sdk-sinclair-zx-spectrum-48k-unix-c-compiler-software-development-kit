@@ -6,22 +6,32 @@ from __future__ import annotations
 import hashlib
 
 SOURCE_SIZE = 30 * 1024
-PAYLOAD_SIZE = 30000
+CHUNK_SIZE = 7500
+CHUNK_COUNT = 4
 
 
 def generate_large_native_source() -> bytes:
-    body = (
-        'char payload[30001]="' + ("Z" * PAYLOAD_SIZE) + '";'
+    lines = [
+        f'char payload{index}[{CHUNK_SIZE + 1}]="' + ("Z" * CHUNK_SIZE) + '";\n'
+        for index in range(CHUNK_COUNT)
+    ]
+    lines.append(
         "int main(void){"
-        "if(payload[0]!='Z')return 1;"
-        "if(payload[29999]!='Z')return 2;"
-        "return 0;}"
-    ).encode("ascii")
-    if len(body) >= SOURCE_SIZE:
+        "if(payload0[0]!='Z')return 1;"
+        "if(payload1[7499]!='Z')return 2;"
+        "if(payload2[0]!='Z')return 3;"
+        "if(payload3[7499]!='Z')return 4;"
+        "return 0;}\n"
+    )
+    body = "".join(lines).encode("ascii")
+    remaining = SOURCE_SIZE - len(body)
+    if remaining < 5:
         raise AssertionError("large native fixture body exceeds fixed source size")
-    source = body + b" " * (SOURCE_SIZE - len(body) - 1) + b"\n"
+    source = body + b"/*" + (b"P" * (remaining - 5)) + b"*/\n"
     if len(source) != SOURCE_SIZE:
         raise AssertionError("large native fixture source size drift")
+    if max(len(line) for line in source.splitlines()) > 8192:
+        raise AssertionError("large native fixture exceeds source-line safety ceiling")
     return source
 
 
