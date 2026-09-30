@@ -7,12 +7,28 @@ name: C48 native format interoperability
   push:
     branches: [main]
     paths:
-      - "compiler/c48/native_*.py"
-      - "compiler/c48b2tap.py"
-      - "compiler/verify_native_interop.py"
-      - "compiler/tests/test_native_*.py"
+      - "VERSION"
+      - "README.md"
+      - "docs/*.docx"
+      - ".gitattributes"
+      - "compiler/**/*.py"
+      - "compiler/**/*.json"
+      - "compiler/**/*.bin"
+      - "compiler/**/*.rom"
+      - "usr/src/**/*.c"
+      - "usr/src/**/*.h"
+      - "usr/bin/**/*.c48b"
+      - "usr/bin/**/*.src.tap"
+      - "c48"
+      - "c48.bat"
+      - "c48run"
+      - "c48run.bat"
+      - "c48srctap"
+      - "c48srctap.bat"
       - "c48b2tap"
       - "c48b2tap.bat"
+      - ".github/workflows/verify.yml"
+      - ".github/workflows/multitask.yml"
       - ".github/workflows/native-interop.yml"
   workflow_dispatch:
 
