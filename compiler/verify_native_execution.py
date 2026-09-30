@@ -469,6 +469,10 @@ def assemble_fixture(root: Path, temp: Path):
             "p514_committed",
             "zx48_p511_format",
             "zx48_p514_tape_format",
+            "p514_tape_logical_pos",
+            "p514_m48_logical_length",
+            "p514_tape_phys_remaining",
+            "p514_tape_chunk_left",
             "p514_remaining",
             "p514_reloc_offset",
             "p514_previous_reloc",
@@ -1492,14 +1496,19 @@ def run_tape_case(
     )
     for index, (address, status) in enumerate(internal_failures, 2):
         debugger_parts.append(f"breakpoint 0x{address:04x}\ncommands {index}\n")
-        if status == 34:
-            for field in (
+        if status in (32, 34):
+            fields = (
+                "p514_tape_logical_pos",
+                "p514_m48_logical_length",
+                "p514_tape_phys_remaining",
+                "p514_tape_chunk_left",
                 "p514_remaining",
                 "p514_reloc_offset",
                 "p514_previous_reloc",
                 "p514_image_size",
                 "p514_image_base",
-            ):
+            )
+            for field in fields:
                 address = syms[field]
                 debugger_parts.append(
                     f"print [0x{address:04x}] + 256 * [0x{address + 1:04x}]\n"
