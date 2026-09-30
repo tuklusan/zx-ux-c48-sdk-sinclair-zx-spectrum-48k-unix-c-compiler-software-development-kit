@@ -81,8 +81,15 @@ def check_required_files() -> None:
         ".github/workflows/recursive-demos.yml",
         ".github/workflows/beep.yml",
         ".github/workflows/gui-desktop.yml",
-        "c48", "c48run", "c48srctap", "c48.bat", "c48run.bat", "c48srctap.bat",
-        "compiler/c48srctap.py",
+        "c48", "c48run", "c48srctap", "c48b2tap",
+        "c48.bat", "c48run.bat", "c48srctap.bat", "c48b2tap.bat",
+        "compiler/c48srctap.py", "compiler/c48b2tap.py",
+        "compiler/C48B2TAP-NATIVE-CONTRACT.md",
+        "compiler/c48/native_backend.py", "compiler/c48/native_format.py",
+        "compiler/c48/native_link.py", "compiler/c48/native_runtime.py",
+        "compiler/verify_native_interop.py",
+        "compiler/tests/test_native_backend.py", "compiler/tests/test_native_formats.py",
+        ".github/workflows/native-interop.yml",
         "compiler/source_tape_manifest.json",
         "compiler/refresh_source_tapes.py",
         "compiler/tests/test_c48srctap.py",
@@ -471,9 +478,11 @@ def check_launchers() -> None:
         "c48": 'exec python3 -B "$(dirname "$0")/compiler/c48.py" "$@"',
         "c48run": 'exec python3 -B "$(dirname "$0")/compiler/c48run.py" "$@"',
         "c48srctap": 'exec python3 -B "$(dirname "$0")/compiler/c48srctap.py" "$@"',
+        "c48b2tap": 'exec python3 -B "$(dirname "$0")/compiler/c48b2tap.py" "$@"',
         "c48.bat": 'python -B "%~dp0compiler\\c48.py" %*\nexit /b %ERRORLEVEL%',
         "c48run.bat": 'python -B "%~dp0compiler\\c48run.py" %*\nexit /b %ERRORLEVEL%',
         "c48srctap.bat": 'python -B "%~dp0compiler\\c48srctap.py" %*\nexit /b %ERRORLEVEL%',
+        "c48b2tap.bat": 'python -B "%~dp0compiler\\c48b2tap.py" %*\nexit /b %ERRORLEVEL%',
     }
     for name, tail in expected_tail.items():
         actual = (SDK / name).read_text(encoding="utf-8").replace("\r\n", "\n")
@@ -487,7 +496,7 @@ def check_launchers() -> None:
         if tail not in actual:
             fail(f"launcher command body mismatch: {name}")
     if os.name != "nt":
-        for name in ("c48", "c48run", "c48srctap"):
+        for name in ("c48", "c48run", "c48srctap", "c48b2tap"):
             if not os.access(SDK / name, os.X_OK):
                 fail(f"POSIX launcher is not executable: {name}")
             cp = run([str(SDK / name), "--version"])
@@ -531,7 +540,7 @@ def check_versions() -> None:
     from c48 import __version__ as package_version
     if package_version != EXPECT["version"]:
         fail(f"c48 package __version__ mismatch: {package_version!r}")
-    for tool in (ROOT / "c48.py", ROOT / "c48run.py"):
+    for tool in (ROOT / "c48.py", ROOT / "c48run.py", ROOT / "c48b2tap.py"):
         cp = run([sys.executable, "-B", str(tool), "--version"])
         if cp.returncode != 0 or cp.stdout.strip() != f"{tool.stem} {EXPECT['version']}":
             fail(f"{tool.name}: --version mismatch: {cp.stdout.strip()!r} {cp.stderr.strip()!r}")
