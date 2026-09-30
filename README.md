@@ -147,6 +147,44 @@ The complete locked mapping is recorded in
 The generator is available as `c48srctap` / `c48srctap.bat`; run
 `c48srctap --help` for syntax and examples.
 
+## Native executable tape cross-development
+
+`c48b2tap` converts one validated SDK `.c48b` program into target-native
+ZX-UX artifacts without pretending that C48B1 itself is machine code. C48B1 is
+the deterministic host representation used by the SDK. `c48b2tap` lowers that
+representation to relocatable Z80 `OBJ1`, links `MEX1` through the pinned
+ZX-UX startup/runtime contract, and can wrap the complete MEX1 as a native
+M48O version-1 RAW `BIN` object in a standard Spectrum `.tap` stream.
+
+Typical commands are:
+
+```text
+c48b2tap --obj program.c48b program.obj
+c48b2tap --mex program.c48b program.mex
+c48b2tap --name PROGRAM program.c48b program.tap
+```
+
+TAP object names are portable ZX-UX names of 1–10 bytes. `--stack BYTES`
+sets the requested FAST stack within the native 64–4096 byte range. Generated
+executables must satisfy both native ceilings independently: image plus BSS
+must fit within 32,768 bytes, and the complete stored MEX1 including relocation
+records must also fit within 32,768 bytes. The release proof includes a
+deterministic generated source in the 29–31 KiB band whose final stored MEX1 is
+also in that band, demonstrating useful host cross-development without changing
+any native ZX-UX memory limit.
+
+OBJ1, MEX1 and TAP output is deterministic for identical input, options and
+tool version. Output is written transactionally and is published only after
+generation and validation succeed; unsupported native operations, unresolved
+symbols, format overflow, invalid paths or invalid object names fail without
+leaving a partial replacement.
+
+The native executable backend and `c48run --multitask` share C48 semantic
+fixtures where their contracts overlap, but they solve different problems:
+`c48run --multitask` is a cooperative host execution model, while
+`c48b2tap` creates target-native single-process executable artifacts. This
+release does not claim a native concurrent-execution proof.
+
 ## Applications gallery — 4 C48 applications
 
 The applications corpus spans writing, spreadsheets, interactive
@@ -246,7 +284,7 @@ Sources under `usr/src/` compile by default to the matching relative path under 
 
 Copyright (c) 2026 Supratim Sanyal of SANYALnet Labs.
 
-This repository is distributed under the **SANYALnet Labs Non-Commercial License** in [`LICENSE`](LICENSE). Non-commercial personal, educational and hobbyist use is permitted subject to the license terms; commercial use and use for AI/ML model training are prohibited unless separately authorized.
+This repository is distributed under the **SANYALnet Labs Non-Commercial License** in [`LICENSE`](LICENSE). Non-commercial personal, educational and hobbyist use is permitted subject to the license terms; commercial use and use for machine-learning model training are prohibited unless separately authorized.
 
 Required attribution:
 
