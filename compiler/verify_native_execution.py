@@ -22,6 +22,7 @@ from c48.native_format import build_bin_tap, decode_mex1, encode_mex1, encode_ob
 from c48.native_link import link_mex
 from c48.native_runtime import RUNTIME_MEMBERS
 from tests.native_large_fixture import generate_large_native_source
+from tests.native_semantic_fixtures import SHARED_RECURSION_SOURCE
 
 REFERENCE_COMMIT = "69348ee366c48b436aa0d07237ae2e7473e55327"
 DIRECT_TAPE_ERRATUM = "P514 image byte is not restored after CRC update"
@@ -1151,10 +1152,7 @@ def main() -> int:
         ),
         (
             "recursion",
-            (
-                b"int fact(int n){if(n<2)return 1;return n*fact(n-1);}"
-                b"int main(void){if(fact(5)!=120)return 1;return 0;}"
-            ),
+            SHARED_RECURSION_SOURCE.encode("ascii"),
             "plain",
         ),
         (

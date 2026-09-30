@@ -19,6 +19,7 @@ from c48.compiler import compile_bytes
 from c48.errors import RuntimeC48Error
 from c48.multitask import CooperativeSession, SLEEPING, WAIT_INPUT, ZOMBIE
 from c48.screen import Font4x8, ZXScreen
+from tests.native_semantic_fixtures import SHARED_RECURSION_SOURCE
 import c48run
 
 FONT = Font4x8.load(COMPILER / "assets" / "SANYALnet-Labs-4x8-font-FINAL.bin")
@@ -150,6 +151,17 @@ class MultitaskRuntimeTests(unittest.TestCase):
         self.assertIn(("sleep", 2, 5, 15), session.trace)
         self.assertIn(("wake", 2, 15), session.trace)
         self.assertEqual(session.descriptors[2].state, ZOMBIE)
+
+    def test_shared_native_semantic_fixture_matches_multitask_vm(self):
+        program = compile_text(SHARED_RECURSION_SOURCE, "shared-native.c")
+        session = CooperativeSession(
+            [program, program],
+            ["shared-left", "shared-right"],
+            new_screen(),
+        )
+        self.assertEqual(session.run(), 0)
+        self.assertEqual(session.descriptors[2].exit_status, 0)
+        self.assertEqual(session.descriptors[3].exit_status, 0)
 
     def test_recursive_continuations_survive_repeated_handoffs(self):
         source = (

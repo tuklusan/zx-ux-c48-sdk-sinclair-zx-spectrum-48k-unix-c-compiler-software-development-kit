@@ -52,6 +52,21 @@ class NativeBackendTests(unittest.TestCase):
         self.assertGreater(len(mex.image), 20)
         self.assertGreater(len(mex.relocs), 0)
 
+    def test_generated_integer_function_has_stable_instruction_bytes(self) -> None:
+        obj = native_from_source("int main(void){return 0;}")
+        self.assertEqual(
+            obj.text.hex(),
+            "dde5dd210000dd39210000c30000210100ddf9dde1c9",
+        )
+        self.assertEqual(
+            [(s.name, s.value, s.section, s.flags) for s in obj.symbols],
+            [("main", 0, 1, 1), ("_L00001", 17, 1, 0)],
+        )
+        self.assertEqual(
+            [(r.offset, r.symbol, r.kind) for r in obj.relocs],
+            [(12, 1, 1)],
+        )
+
     def test_startup_matches_pinned_native_crt0_obj1(self) -> None:
         startup = next(m for m in RUNTIME_MEMBERS if m.name == "startup")
         expected = bytes.fromhex(
@@ -135,6 +150,29 @@ class NativeBackendTests(unittest.TestCase):
             tuple(m for m in RUNTIME_MEMBERS if m.name != "startup"),
         )])
 
+    def test_runtime_surface_is_completely_classified(self) -> None:
+        admitted = {
+            "exit", "yield", "sleep", "getpid", "getchar", "putchar", "puts",
+            "strlen", "strcmp", "strcpy", "strncpy", "memcpy", "memmove",
+            "memchr", "memset", "cls", "plot", "ink", "paper", "bright",
+            "flash", "inverse", "over", "border", "udg_clear", "ticks",
+            "sin", "cos", "tan", "asin", "acos", "atan", "sqrt", "exp",
+            "log", "fabs", "pow",
+        }
+        rejected = {
+            "beep", "malloc", "free", "point", "draw", "circle", "print_at",
+            "udg_define", "udg_get", "udg_draw", "udg_draw_2x2",
+        }
+        host_surface = admitted | rejected
+        self.assertEqual(len(host_surface), 48)
+        exports = {
+            symbol
+            for member in RUNTIME_MEMBERS
+            for symbol in member.provides
+        }
+        self.assertTrue(admitted <= exports)
+        self.assertTrue(rejected.isdisjoint(exports))
+
     def test_linker_matches_pinned_even_module_layout(self) -> None:
         user = native_from_source("int main(void){return 0;}")
         startup = next(m for m in RUNTIME_MEMBERS if m.name == "startup")
@@ -163,6 +201,115 @@ class NativeBackendTests(unittest.TestCase):
         self.assertLessEqual(len(stored), 31 * 1024)
         self.assertLessEqual(len(mex.image) + mex.bss_size, 32768)
         self.assertLessEqual(len(stored), 32768)
+
+    def test_cli_surface_and_complete_path_contract(self) -> None:
+        cli = SDK / "compiler" / "c48b2tap.py"
+        for option, expected in (
+            ("--help", "Lower a validated C48B1 program"),
+            ("--version", "c48b2tap "),
+            ("--about", "native cross-backend"),
+        ):
+            cp = subprocess.run(
+                [sys.executable, str(cli), option],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(cp.returncode, 0, cp.stderr)
+            self.assertIn(expected, cp.stdout)
+
+        cp = subprocess.run(
+            [sys.executable, str(cli)],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(cp.returncode, 2)
+
+        program = compile_bytes(
+            b"int main(void){return 0;}",
+            source_name="paths.c",
+            base_dir=Path.cwd(),
+        )
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            src = d / "paths.c48b"
+            write(src, program)
+
+            existing = d / "existing.obj"
+            existing.write_bytes(b"KEEP")
+            cp = subprocess.run(
+                [sys.executable, str(cli), "--obj", str(src), str(existing)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(cp.returncode, 2)
+            self.assertIn("output already exists; use --force", cp.stderr)
+            self.assertEqual(existing.read_bytes(), b"KEEP")
+
+            directory_output = d / "dir.obj"
+            directory_output.mkdir()
+            cp = subprocess.run(
+                [sys.executable, str(cli), "--obj", "--force",
+                 str(src), str(directory_output)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(cp.returncode, 2)
+            self.assertIn("existing output must be a regular non-symlink file", cp.stderr)
+
+            named_obj = d / "named.obj"
+            cp = subprocess.run(
+                [sys.executable, str(cli), "--obj", "--name", "BAD",
+                 str(src), str(named_obj)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(cp.returncode, 2)
+            self.assertIn("--name is valid only for TAP output", cp.stderr)
+            self.assertFalse(named_obj.exists())
+
+            source_link = d / "source-link.c48b"
+            output_link = d / "output-link.obj"
+            parent_link = d / "parent-link"
+            try:
+                source_link.symlink_to(src)
+                target = d / "target.obj"
+                target.write_bytes(b"KEEP")
+                output_link.symlink_to(target)
+                real_parent = d / "real-parent"
+                real_parent.mkdir()
+                parent_link.symlink_to(real_parent, target_is_directory=True)
+            except (OSError, NotImplementedError):
+                source_link = output_link = parent_link = None
+
+            if source_link is not None:
+                cp = subprocess.run(
+                    [sys.executable, str(cli), "--obj",
+                     str(source_link), str(d / "from-link.obj")],
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(cp.returncode, 2)
+                self.assertIn("input must be an existing regular non-symlink file", cp.stderr)
+
+                cp = subprocess.run(
+                    [sys.executable, str(cli), "--obj", "--force",
+                     str(src), str(output_link)],
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(cp.returncode, 2)
+                self.assertIn("existing output must be a regular non-symlink file", cp.stderr)
+                self.assertEqual((d / "target.obj").read_bytes(), b"KEEP")
+
+                cp = subprocess.run(
+                    [sys.executable, str(cli), "--obj",
+                     str(src), str(parent_link / "child.obj")],
+                    capture_output=True,
+                    text=True,
+                )
+                self.assertEqual(cp.returncode, 2)
+                self.assertIn("output parent must be an existing regular directory", cp.stderr)
+                self.assertFalse((d / "real-parent" / "child.obj").exists())
 
     def test_cli_rejects_hardlink_output_alias_without_modifying_input(self) -> None:
         program = compile_bytes(

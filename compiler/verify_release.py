@@ -91,6 +91,7 @@ def check_required_files() -> None:
         "compiler/verify_native_execution.py",
         "compiler/native_runtime_provenance.json",
         "compiler/tests/native_large_fixture.py",
+        "compiler/tests/native_semantic_fixtures.py",
         "compiler/tests/test_native_backend.py", "compiler/tests/test_native_formats.py",
         ".github/workflows/native-interop.yml",
         "compiler/source_tape_manifest.json",
