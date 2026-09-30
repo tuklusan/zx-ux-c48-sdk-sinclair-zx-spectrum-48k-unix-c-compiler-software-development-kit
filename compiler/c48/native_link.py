@@ -71,12 +71,19 @@ def select_runtime(
                     unresolved.append(sym.name)
         if not unresolved:
             return selected
-        added = False
         for name in unresolved:
-            member = available.get(name)
-            if member is None:
+            if name not in available:
                 raise NativeFormatError(f"unresolved native symbol {name!r}")
-            if member.name not in chosen:
+
+        # Scan the archive in its frozen order. If a late member introduces
+        # a dependency on an earlier member, the next fixed-point pass finds
+        # it, matching the pinned native linker's archive semantics.
+        needed = set(unresolved)
+        added = False
+        for member in members:
+            if member.name in chosen:
+                continue
+            if any(symbol in needed for symbol in member.provides):
                 selected.append((f"runtime:{member.name}", member.obj))
                 chosen.add(member.name)
                 added = True

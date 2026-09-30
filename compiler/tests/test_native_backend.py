@@ -124,6 +124,12 @@ class NativeBackendTests(unittest.TestCase):
         selected_names = [name for name, _ in selected]
         self.assertIn("runtime:strcpy", selected_names)
         self.assertIn("runtime:strcmp", selected_names)
+        runtime_order = [
+            f"runtime:{member.name}"
+            for member in RUNTIME_MEMBERS
+            if f"runtime:{member.name}" in selected_names
+        ]
+        self.assertEqual(selected_names[1:], runtime_order)
         self.assertEqual(selected_names, [name for name, _ in select_runtime(
             [("user", user)],
             tuple(m for m in RUNTIME_MEMBERS if m.name != "startup"),
