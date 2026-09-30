@@ -602,13 +602,26 @@ def main() -> int:
 
     cases = (
         (
-            "compute",
+            "globals",
+            (
+                b"char msg[4]=\"XYZ\";int g=7;"
+                b"int main(void){if(g!=7)return 1;if(msg[2]!='Z')return 2;return 0;}"
+            ),
+            "plain",
+        ),
+        (
+            "division",
+            (
+                b"int main(void){if((-91/7)!=-13)return 1;"
+                b"if((-91%7)!=0)return 2;return 0;}"
+            ),
+            "plain",
+        ),
+        (
+            "recursion",
             (
                 b"int fact(int n){if(n<2)return 1;return n*fact(n-1);}"
-                b"char msg[4]=\"XYZ\";int g=7;"
-                b"int main(void){if(fact(5)!=120)return 1;if(g!=7)return 2;"
-                b"if(msg[2]!='Z')return 3;if((-91/7)!=-13)return 4;"
-                b"if((-91%7)!=0)return 5;return 0;}"
+                b"int main(void){if(fact(5)!=120)return 1;return 0;}"
             ),
             "plain",
         ),
