@@ -877,7 +877,14 @@ def run_namespace_case(
         f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n",
         f"breakpoint 0x{FAIL_LOAD_PC:04x}\ncommands 2\nprint z80:a\nexit 1\nend\n",
         f"breakpoint 0x{FAIL_BASE_PC:04x}\ncommands 3\nprint z80:a\nexit 2\nend\n",
-        f"breakpoint 0x{FAIL_COMMIT_PC:04x}\ncommands 4\nexit 3\nend\n",
+        (
+            f"breakpoint 0x{FAIL_COMMIT_PC:04x}\ncommands 4\n"
+            + "".join(
+                f"print [0x{syms['object_table'] + offset:04x}]\n"
+                for offset in range(20)
+            )
+            + "exit 3\nend\n"
+        ),
         f"breakpoint 0x{FAIL_PROGRAM_PC:04x}\ncommands 5\nexit 4\nend\n",
     ]
     for index, (name, status) in enumerate(
