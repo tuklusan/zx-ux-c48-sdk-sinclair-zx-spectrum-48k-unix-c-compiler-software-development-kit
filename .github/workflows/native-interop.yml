@@ -1,0 +1,50 @@
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
+#
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
+name: C48 native format interoperability
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - "compiler/c48/native_*.py"
+      - "compiler/c48b2tap.py"
+      - "compiler/verify_native_interop.py"
+      - "compiler/tests/test_native_*.py"
+      - "c48b2tap"
+      - "c48b2tap.bat"
+      - ".github/workflows/native-interop.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  oracle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out SDK candidate
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Check out pinned native reference
+        uses: actions/checkout@v4
+        with:
+          repository: tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project
+          ref: 69348ee366c48b436aa0d07237ae2e7473e55327
+          path: native-ref
+          persist-credentials: false
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Run independent native format oracles
+        run: python -B compiler/verify_native_interop.py --native-root native-ref
