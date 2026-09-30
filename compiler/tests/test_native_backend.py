@@ -79,6 +79,22 @@ class NativeBackendTests(unittest.TestCase):
         }
         self.assertEqual(actual, expected)
 
+    def test_float5_core_lowering_resolves_native_runtime(self) -> None:
+        obj = native_from_source(
+            "float sin(float);"
+            "float add(float a,float b){return a+b;}"
+            "int main(void){float x;x=1;x++;x=add(x,1);"
+            "if((int)x!=3)return 1;x=sin(x-x);if(x!=0.0)return 2;return 0;}"
+        )
+        names = {symbol.name for symbol in obj.symbols}
+        for name in ("__itof", "__ftoi", "__fadd", "__fcmp", "sin"):
+            self.assertIn(name, names)
+        startup = next(m for m in RUNTIME_MEMBERS if m.name == "startup")
+        runtime = tuple(m for m in RUNTIME_MEMBERS if m.name != "startup")
+        mex = link_mex([("startup", startup.obj), ("user", obj)], runtime)
+        self.assertEqual(decode_mex1(encode_mex1(mex)), mex)
+        self.assertGreater(mex.bss_size, 0)
+
     def test_left_to_right_six_argument_call_lowers(self) -> None:
         obj = native_from_source(
             "int f(int a,int b,int c,int d,int e,int f){return a+b+c+d+e+f;}"

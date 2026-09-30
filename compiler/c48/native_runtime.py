@@ -9,6 +9,7 @@ from .native_format import (
     ObjImage,
     ObjReloc,
     ObjSymbol,
+    OBJ_SECTION_BSS,
     OBJ_SECTION_TEXT,
     OBJ_SECTION_UNDEF,
     OBJ_SYMBOL_GLOBAL,
@@ -316,6 +317,207 @@ def _memmove() -> NativeMember:
     c.emit(0xD1, 0xE1, 0xB7, 0xC9)
     return _single("memmove", c.finish())
 
+class _RuntimeObject:
+    def __init__(self) -> None:
+        self.text = bytearray()
+        self.symbols: list[ObjSymbol] = []
+        self.index: dict[str, int] = {}
+        self.relocs: list[ObjReloc] = []
+        self.bss_size = 0
+
+    def emit(self, *values: int) -> None:
+        self.text.extend(v & 0xFF for v in values)
+
+    def word(self, value: int) -> None:
+        self.text.extend((value & 0xFF, (value >> 8) & 0xFF))
+
+    def define_text(self, name: str, *, global_: bool = True) -> int:
+        index = len(self.symbols)
+        self.index[name] = index
+        self.symbols.append(
+            ObjSymbol(name, len(self.text), OBJ_SECTION_TEXT, OBJ_SYMBOL_GLOBAL if global_ else 0)
+        )
+        return index
+
+    def define_bss(self, name: str, size: int, *, align: int = 1) -> int:
+        if align > 1:
+            self.bss_size = (self.bss_size + align - 1) & ~(align - 1)
+        index = len(self.symbols)
+        self.index[name] = index
+        self.symbols.append(ObjSymbol(name, self.bss_size, OBJ_SECTION_BSS, 0))
+        self.bss_size += size
+        return index
+
+    def absolute(self, name: str, addend: int = 0) -> None:
+        if name not in self.index:
+            raise ValueError(f"unknown runtime relocation target {name}")
+        at = len(self.text)
+        self.word(addend)
+        self.relocs.append(ObjReloc(at, self.index[name]))
+
+    def ld_hl_addr(self, name: str, addend: int = 0) -> None:
+        self.emit(0x21)
+        self.absolute(name, addend)
+
+    def ld_de_addr(self, name: str, addend: int = 0) -> None:
+        self.emit(0x11)
+        self.absolute(name, addend)
+
+    def ld_hl_mem(self, name: str, addend: int = 0) -> None:
+        self.emit(0x2A)
+        self.absolute(name, addend)
+
+    def ld_mem_hl(self, name: str, addend: int = 0) -> None:
+        self.emit(0x22)
+        self.absolute(name, addend)
+
+    def ld_a_mem(self, name: str, addend: int = 0) -> None:
+        self.emit(0x3A)
+        self.absolute(name, addend)
+
+    def ld_mem_a(self, name: str, addend: int = 0) -> None:
+        self.emit(0x32)
+        self.absolute(name, addend)
+
+    def call(self, name: str) -> None:
+        self.emit(0xCD)
+        self.absolute(name)
+
+    def finish(self) -> ObjImage:
+        return ObjImage(bytes(self.text), self.bss_size, tuple(self.symbols), tuple(self.relocs))
+
+
+def _runtime_error(c: _RuntimeObject) -> None:
+    c.emit(0x21, 0x01, 0x00)        # LD HL,1
+    c.emit(0x3E, 0x01)              # LD A,SYS_EXIT
+    c.emit(0xCD, 0x00, 0xE0)        # CALL syscall gateway
+    c.emit(0x3E, 0x01, 0x37, 0xC9)  # E_INVAL; SCF; RET if exit returned
+
+
+def _float_runtime() -> NativeMember:
+    c = _RuntimeObject()
+    c.define_bss("_fp_req", 8, align=2)
+    c.define_bss("_itof_req", 6, align=2)
+    c.define_bss("_ftoi_req", 6, align=2)
+    c.define_bss("_ftoi_result", 2, align=2)
+    c.define_bss("_fcmp_req", 6, align=2)
+    c.define_bss("_fcmp_result", 1)
+    c.define_bss("_fp_zero", 5)
+
+    provides: list[str] = []
+
+    def binary(names: tuple[str, ...], op: int) -> None:
+        for name in names:
+            c.define_text(name)
+            provides.append(name)
+        c.ld_mem_hl("_fp_req", 6)
+        c.emit(0xEB)
+        c.ld_mem_hl("_fp_req", 2)
+        c.emit(0xEB, 0xC5, 0xE1)
+        c.ld_mem_hl("_fp_req", 4)
+        c.emit(0x3E, op)
+        c.ld_mem_a("_fp_req", 0)
+        c.emit(0xAF)
+        c.ld_mem_a("_fp_req", 1)
+        c.ld_hl_addr("_fp_req")
+        c.emit(0x3E, 0x68, 0xCD, 0x00, 0xE0)
+        c.emit(0x38, 0x05)
+        c.ld_hl_mem("_fp_req", 6)
+        c.emit(0xAF, 0xC9)
+        _runtime_error(c)
+
+    def unary(names: tuple[str, ...], op: int) -> None:
+        for name in names:
+            c.define_text(name)
+            provides.append(name)
+        c.ld_mem_hl("_fp_req", 6)
+        c.emit(0xEB)
+        c.ld_mem_hl("_fp_req", 2)
+        c.emit(0x21, 0x00, 0x00)
+        c.ld_mem_hl("_fp_req", 4)
+        c.emit(0x3E, op)
+        c.ld_mem_a("_fp_req", 0)
+        c.emit(0xAF)
+        c.ld_mem_a("_fp_req", 1)
+        c.ld_hl_addr("_fp_req")
+        c.emit(0x3E, 0x68, 0xCD, 0x00, 0xE0)
+        c.emit(0x38, 0x05)
+        c.ld_hl_mem("_fp_req", 6)
+        c.emit(0xAF, 0xC9)
+        _runtime_error(c)
+
+    binary(("__fadd",), 1)
+    binary(("__fsub",), 2)
+    binary(("__fmul",), 3)
+    binary(("__fdiv",), 4)
+    binary(("__fpow", "pow"), 5)
+    unary(("__fabs", "fabs"), 6)
+    unary(("__fexp", "exp"), 9)
+    unary(("__fln", "log"), 10)
+    unary(("__fsin", "sin"), 11)
+    unary(("__fcos", "cos"), 12)
+    unary(("__ftan", "tan"), 13)
+    unary(("__fasin", "asin"), 14)
+    unary(("__facos", "acos"), 15)
+    unary(("__fatan", "atan"), 16)
+    unary(("__fsqrt", "sqrt"), 17)
+
+    c.define_text("__itof")
+    provides.append("__itof")
+    c.ld_mem_hl("_itof_req", 4)
+    c.emit(0xEB)
+    c.ld_mem_hl("_itof_req", 0)
+    c.emit(0xEB, 0x79)
+    c.ld_mem_a("_itof_req", 2)
+    c.emit(0xAF)
+    c.ld_mem_a("_itof_req", 3)
+    c.ld_hl_addr("_itof_req")
+    c.emit(0x3E, 0x6C, 0xCD, 0x00, 0xE0)
+    c.emit(0x38, 0x05)
+    c.ld_hl_mem("_itof_req", 4)
+    c.emit(0xAF, 0xC9)
+    _runtime_error(c)
+
+    c.define_text("__ftoi")
+    provides.append("__ftoi")
+    c.ld_mem_hl("_ftoi_req", 0)
+    c.emit(0x7B)
+    c.ld_mem_a("_ftoi_req", 2)
+    c.emit(0xAF)
+    c.ld_mem_a("_ftoi_req", 3)
+    c.ld_hl_addr("_ftoi_result")
+    c.ld_mem_hl("_ftoi_req", 4)
+    c.ld_hl_addr("_ftoi_req")
+    c.emit(0x3E, 0x6D, 0xCD, 0x00, 0xE0)
+    c.emit(0x38, 0x05)
+    c.ld_hl_mem("_ftoi_result")
+    c.emit(0xAF, 0xC9)
+    _runtime_error(c)
+
+    c.define_text("__fcmp")
+    provides.append("__fcmp")
+    c.ld_mem_hl("_fcmp_req", 0)
+    c.emit(0xEB)
+    c.ld_mem_hl("_fcmp_req", 2)
+    c.ld_hl_addr("_fcmp_result")
+    c.ld_mem_hl("_fcmp_req", 4)
+    c.ld_hl_addr("_fcmp_req")
+    c.emit(0x3E, 0x6E, 0xCD, 0x00, 0xE0)
+    c.emit(0x38, 0x09)
+    c.ld_a_mem("_fcmp_result")
+    c.emit(0x6F, 0x87, 0x9F, 0x67, 0xAF, 0xC9)
+    _runtime_error(c)
+
+    c.define_text("__ftruth")
+    provides.append("__ftruth")
+    c.ld_de_addr("_fp_zero")
+    c.call("__fcmp")
+    c.emit(0x7C, 0xB5, 0x21, 0x00, 0x00, 0xC8, 0x23, 0xC9)
+
+    obj = c.finish()
+    return NativeMember("float_runtime", obj, tuple(provides))
+
+
 def _graphics_attr(name: str, selector: int) -> NativeMember:
     # Native-compatible fallback for selectors without a frozen prebuilt member.
     text = bytes((
@@ -355,6 +557,7 @@ RUNTIME_MEMBERS: tuple[NativeMember, ...] = (
     _exit(),
     _mul16(),
     _div16(),
+    _float_runtime(),
     _getchar(),
     _putchar_exact(),
     _puts(),
