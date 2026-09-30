@@ -183,6 +183,7 @@ class _Function:
                 src = CType.from_dict(value["operand"]["ctype"])
                 dst = CType.from_dict(value["ctype"])
                 if dst.is_float and not src.is_float:
+                    ensure_float_slot(value["operand"])
                     ensure_float_slot(value)
             elif kind == "binary":
                 lt = CType.from_dict(value["left"]["ctype"])
@@ -206,6 +207,20 @@ class _Function:
                 rt = CType.from_dict(value["right"]["ctype"])
                 if lt.is_float and not rt.is_float:
                     ensure_float_slot(value["right"])
+            elif kind == "return" and value.get("value") is not None:
+                rt = CType.from_dict(value["return_type"])
+                vt = CType.from_dict(value["value"]["ctype"])
+                if rt.is_float and not vt.is_float:
+                    ensure_float_slot(value["value"])
+            elif kind == "scalar_initializer":
+                vt = CType.from_dict(value["value"]["ctype"])
+                if not vt.is_float:
+                    ensure_float_slot(value["value"])
+            elif kind == "init_list":
+                for item in value.get("values", []):
+                    it = CType.from_dict(item["ctype"])
+                    if not it.is_float:
+                        ensure_float_slot(item)
             for child in value.values():
                 if isinstance(child, (dict, list)):
                     walk(child)
@@ -467,20 +482,16 @@ class _Function:
                     dest = self.float_slots.get(id(n))
                     if dest is None:
                         raise NativeLoweringError("native float update scratch is missing")
-                    self.e.emit(0xE5)
+                    self.e.emit(0xE5)  # preserve lvalue address
                     if k == "postfix":
+                        self.e.emit(0xE5)
                         self._addr_slot(dest)
                         self.e.emit(0xEB, 0xE1)
                         self._store_to_de(t)
-                        self.e.emit(0xE5)
-                    else:
-                        self.e.emit(0xE1)
                     self.e.address(self.owner.float_constant("0000010000"))
-                    self.e.emit(0x44, 0x4D)
-                    self.e.emit(0xD1)
-                    self.e.emit(0xE5)
-                    self.e.emit(0xEB)
-                    self.e.emit(0xE1)
+                    self.e.emit(0x44, 0x4D)  # BC=pointer to exact Float5 one
+                    self.e.emit(0xD1)        # DE=lvalue pointer
+                    self.e.emit(0x62, 0x6B)  # HL=lvalue pointer (output aliases lhs)
                     self.e.call("__fadd" if op == "++" else "__fsub")
                     if k == "postfix":
                         self._addr_slot(dest)
@@ -878,7 +889,10 @@ class _Function:
             for index, value in enumerate(init["values"]):
                 self._slot_address_at(slot, index * t.base.size)
                 self.e.emit(0xE5)
-                self.expr(value)
+                if t.base.is_float:
+                    self._float_value(value)
+                else:
+                    self.expr(value)
                 self.e.emit(0xD1)
                 self._store_to_de(t.base)
             return
