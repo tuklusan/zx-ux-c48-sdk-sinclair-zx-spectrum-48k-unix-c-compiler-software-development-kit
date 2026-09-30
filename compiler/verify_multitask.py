@@ -102,6 +102,22 @@ def run_pair(programs: list[dict]) -> tuple[int, bytes, tuple[tuple[object, ...]
     )
     status = session.run()
     statuses = [session.descriptors[pid].exit_status for pid in (2, 3)]
+    if status != 0:
+        details = [
+            (
+                pid,
+                session.descriptors[pid].state,
+                session.descriptors[pid].exit_status,
+                session.descriptors[pid].cancelled,
+                session.descriptors[pid].error,
+            )
+            for pid in (2, 3)
+        ]
+        fail(
+            "cooperative pair stopped before proof completion: "
+            + f"status={status} steps={session.budget.steps} "
+            + f"details={details!r}"
+        )
     return status, screen.bytes(), tuple(session.trace), statuses
 
 
