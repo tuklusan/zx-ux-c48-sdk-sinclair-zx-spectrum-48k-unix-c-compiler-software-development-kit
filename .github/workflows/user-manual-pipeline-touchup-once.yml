@@ -145,9 +145,11 @@ jobs:
           actual="$(git diff --cached --name-only | LC_ALL=C sort)"
           expected="$(printf '%s\n' '.github/workflows/user-manual-pipeline-touchup-once.yml' 'docs/ZX-UX C48 SDK User Manual.docx' | LC_ALL=C sort)"
           test "$actual" = "$expected"
+          mv qa "$RUNNER_TEMP/user-manual-pipeline-qa"
           python -B compiler/check_license_headers.py
           git commit -m "Clarify User Manual native pipeline"
           git push origin HEAD:main
+          mv "$RUNNER_TEMP/user-manual-pipeline-qa" qa
 
       - name: Preserve rendered manual evidence
         uses: actions/upload-artifact@v4
