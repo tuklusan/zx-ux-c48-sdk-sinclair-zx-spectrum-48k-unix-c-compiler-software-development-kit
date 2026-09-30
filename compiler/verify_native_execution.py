@@ -36,6 +36,12 @@ FAIL_COMMIT_PC = 0x7FE3
 FAIL_RETURN_PC = 0x7FE4
 FAIL_PROGRAM_PC = 0x7FE5
 FAIL_SCREEN_PC = 0x7FE6
+FAIL_LOAD_FORMAT_PC = 0x7FD1
+FAIL_LOAD_IO_PC = 0x7FD2
+FAIL_LOAD_NOMEM_PC = 0x7FD3
+FAIL_LOAD_NOSPC_PC = 0x7FD4
+FAIL_LOAD_AGAIN_PC = 0x7FD5
+FAIL_LOAD_OTHER_PC = 0x7FD6
 SNAPSHOT_STACK = 0x79E0
 RAM_START = 0x4000
 RAM_SIZE = 0xC000
@@ -515,7 +521,17 @@ def execution_driver(syms: dict[str, int], mex_entry: int, *, counters: bool) ->
     code += bytes((0x3E, 1 if counters else 0, 0x32)) + word(syms["test_expect_screen"])
     code += b"\x21" + word(syms["test_proc1"])
     code += call(syms["zx48_p514_spawn_tape_backed"])
-    code += jp_c(FAIL_LOAD_PC)
+    load_ok = TEST_ENTRY + len(code) + 31
+    code += b"\xD2" + word(load_ok)
+    for errno, target in (
+        (0x0B, FAIL_LOAD_FORMAT_PC),
+        (0x05, FAIL_LOAD_IO_PC),
+        (0x03, FAIL_LOAD_NOMEM_PC),
+        (0x0C, FAIL_LOAD_NOSPC_PC),
+        (0x0D, FAIL_LOAD_AGAIN_PC),
+    ):
+        code += bytes((0xFE, errno)) + b"\xCA" + word(target)
+    code += jp(FAIL_LOAD_OTHER_PC)
     code += b"\x11" + word(IMAGE_BASE) + b"\xB7\xED\x52" + jp_nz(FAIL_BASE_PC)
     code += check_byte(syms["p514_committed"], 1, FAIL_COMMIT_PC)
     code += call(IMAGE_BASE + mex_entry)
@@ -564,6 +580,12 @@ def run_tape_case(
         (FAIL_RETURN_PC, 14),
         (FAIL_PROGRAM_PC, 15),
         (FAIL_SCREEN_PC, 16),
+        (FAIL_LOAD_FORMAT_PC, 21),
+        (FAIL_LOAD_IO_PC, 22),
+        (FAIL_LOAD_NOMEM_PC, 23),
+        (FAIL_LOAD_NOSPC_PC, 24),
+        (FAIL_LOAD_AGAIN_PC, 25),
+        (FAIL_LOAD_OTHER_PC, 26),
     )
     debugger_parts = [f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n"]
     for index, (address, status) in enumerate(failures, 2):
