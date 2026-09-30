@@ -1,0 +1,123 @@
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
+#
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
+from __future__ import annotations
+
+from pathlib import Path
+import subprocess
+import sys
+import tempfile
+import unittest
+
+HERE = Path(__file__).resolve().parent
+COMPILER = HERE.parent
+SDK = COMPILER.parent
+sys.path.insert(0, str(COMPILER))
+
+from c48.compiler import compile_bytes
+from c48.format import write
+from c48.native_backend import NativeBackend, NativeLoweringError
+from c48.native_format import (
+    decode_mex1,
+    decode_obj1,
+    parse_bin_tap,
+    encode_obj1,
+    encode_mex1,
+)
+from c48.native_link import link_mex
+from c48.native_runtime import RUNTIME_MEMBERS
+
+
+def native_from_source(source: str):
+    program = compile_bytes(source.encode("ascii"), source_name="native.c", base_dir=Path.cwd())
+    return NativeBackend(program).build()
+
+
+class NativeBackendTests(unittest.TestCase):
+    def test_recursive_integer_program_emits_real_obj_and_mex(self) -> None:
+        obj = native_from_source(
+            "int f(int n){if(n<2)return 1;return n*f(n-1);}"
+            "int main(void){if(f(5)==120)return 0;return 1;}"
+        )
+        obj_bytes = encode_obj1(obj)
+        self.assertEqual(decode_obj1(obj_bytes), obj)
+        self.assertIn(b"main", obj_bytes)
+        startup = next(m for m in RUNTIME_MEMBERS if m.name == "startup")
+        mex = link_mex(
+            [("startup", startup.obj), ("user", obj)],
+            tuple(m for m in RUNTIME_MEMBERS if m.name != "startup"),
+        )
+        self.assertEqual(decode_mex1(encode_mex1(mex)), mex)
+        self.assertGreater(len(mex.image), 20)
+        self.assertGreater(len(mex.relocs), 0)
+
+    def test_left_to_right_six_argument_call_lowers(self) -> None:
+        obj = native_from_source(
+            "int f(int a,int b,int c,int d,int e,int f){return a+b+c+d+e+f;}"
+            "int main(void){int i;i=1;return f(i++,i++,i++,i++,i++,i++);}"
+        )
+        self.assertGreater(len(obj.text), 40)
+
+    def test_unsupported_division_fails_before_cli_replacement(self) -> None:
+        program = compile_bytes(
+            b"int main(void){return 8/2;}",
+            source_name="div.c",
+            base_dir=Path.cwd(),
+        )
+        with self.assertRaises(NativeLoweringError):
+            NativeBackend(program).build()
+
+    def test_cli_obj_mex_and_tap_are_deterministic(self) -> None:
+        program = compile_bytes(
+            b"int main(void){int x;x=6;return x*7-42;}",
+            source_name="cli.c",
+            base_dir=Path.cwd(),
+        )
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            src = d / "p.c48b"
+            write(src, program)
+            cli = SDK / "compiler" / "c48b2tap.py"
+            outputs = []
+            for mode, suffix in (("--obj", ".obj"), ("--mex", ".mex"), ("", ".tap")):
+                out = d / ("p" + suffix)
+                cmd = [sys.executable, str(cli)]
+                if mode:
+                    cmd.append(mode)
+                cmd.extend([str(src), str(out)])
+                cp = subprocess.run(cmd, capture_output=True, text=True)
+                self.assertEqual(cp.returncode, 0, cp.stderr)
+                first = out.read_bytes()
+                out.unlink()
+                cp = subprocess.run(cmd, capture_output=True, text=True)
+                self.assertEqual(cp.returncode, 0, cp.stderr)
+                self.assertEqual(out.read_bytes(), first)
+                outputs.append(first)
+            decode_obj1(outputs[0])
+            decode_mex1(outputs[1])
+            parsed = parse_bin_tap(outputs[2])
+            decode_mex1(parsed.payload)
+
+    def test_cli_failure_does_not_replace_existing_output(self) -> None:
+        program = compile_bytes(
+            b"int main(void){return 8/2;}",
+            source_name="bad.c",
+            base_dir=Path.cwd(),
+        )
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            src = d / "bad.c48b"
+            out = d / "bad.obj"
+            write(src, program)
+            out.write_bytes(b"KEEP")
+            cp = subprocess.run(
+                [sys.executable, str(SDK / "compiler" / "c48b2tap.py"), "--obj", "--force", str(src), str(out)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertEqual(out.read_bytes(), b"KEEP")
+
+
+if __name__ == "__main__":
+    unittest.main()
