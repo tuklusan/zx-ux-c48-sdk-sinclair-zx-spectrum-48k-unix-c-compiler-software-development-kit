@@ -158,23 +158,186 @@ def _div16() -> NativeMember:
     relocs = (ObjReloc(call_pos + 1, 0),)
     return NativeMember("div16", ObjImage(text, 0, symbols, relocs), ("c48_udivmod", "c48_sdivmod"))
 
-def _putchar() -> NativeMember:
-    # Native string runtime convention: write low byte through stdout handle 1.
-    # c48_stdio_byte lives in this member's BSS and is addressed through OBJ1.
-    text = bytearray()
-    # LD DE,c48_stdio_byte ; LD A,L ; LD (DE),A
-    text.extend((0x11, 0x00, 0x00, 0x7D, 0x12))
-    # LD HL,c48_stdio_byte ; LD DE,1 ; LD BC,1 ; LD A,SYS_WRITE ; CALL E000
-    text.extend((0x21, 0x00, 0x00, 0x11, 0x01, 0x00, 0x01, 0x01, 0x00, 0x3E, 0x13, 0xCD, 0x00, 0xE0))
-    # Return written low byte is not required by current proof fixtures; zero on success.
-    text.extend((0x21, 0x00, 0x00, 0xC9))
-    symbols = (
-        _sym("putchar"),
-        ObjSymbol("c48_stdio_byte", 0, 2, 0),
-    )
-    relocs = (ObjReloc(1, 1), ObjReloc(6, 1))
-    return NativeMember("putchar", ObjImage(bytes(text), 1, symbols, relocs), ("putchar",))
 
+
+def _getchar() -> NativeMember:
+    c = _Code()
+    c.emit(0x21, 0x00, 0x00, 0xE5)  # PUSH zero word as one-byte buffer
+    c.emit(0x21, 0x00, 0x00, 0x39)  # HL=SP
+    c.emit(0x11, 0x00, 0x00, 0x01, 0x01, 0x00)
+    c.emit(0x3E, 0x12, 0xCD, 0x00, 0xE0)
+    c.emit(0xD1)                     # DE=buffer, flags retained
+    c.jr(0x38, "error")
+    c.emit(0x7C, 0xB5)
+    c.jr(0x28, "eof")
+    c.emit(0x63, 0x26, 0x00, 0xC9)  # L=E; H=0; RET
+    c.label("eof")
+    c.emit(0x21, 0xFF, 0xFF, 0xC9)
+    c.label("error")
+    c.emit(0x6F, 0x26, 0x00, 0xB7, 0xC9)
+    return _single("getchar", c.finish())
+
+
+def _putchar_exact() -> NativeMember:
+    c = _Code()
+    c.emit(0x7D, 0xF5, 0xE5)        # save char in AF; push HL as byte buffer
+    c.emit(0x21, 0x00, 0x00, 0x39)  # HL=SP
+    c.emit(0x11, 0x01, 0x00, 0x01, 0x01, 0x00)
+    c.emit(0x3E, 0x13, 0xCD, 0x00, 0xE0)
+    c.emit(0xD1)                     # discard buffer, keep syscall flags/A
+    c.jr(0x38, "error")
+    c.emit(0xF1, 0x6F, 0x26, 0x00, 0xB7, 0xC9)
+    c.label("error")
+    c.emit(0xC1, 0x6F, 0x26, 0x00, 0xB7, 0xC9)
+    return _single("putchar", c.finish())
+
+
+def _puts() -> NativeMember:
+    c = _Code()
+    call_fixups: list[int] = []
+    # Write each source byte through stdout handle 1. One-byte writes cannot
+    # short-write except as zero progress, which maps to E_IO.
+    c.label("loop")
+    c.emit(0x7E, 0xB7)
+    c.jr(0x28, "newline")
+    c.emit(0xE5)                     # save source pointer
+    c.emit(0x11, 0x01, 0x00, 0x01, 0x01, 0x00)
+    c.emit(0x3E, 0x13, 0xCD, 0x00, 0xE0)
+    c.emit(0xD1)                     # DE=source pointer
+    c.jr(0x38, "error")
+    c.emit(0x7C, 0xB5)
+    c.jr(0x28, "io_error")
+    c.emit(0xEB, 0x23)              # HL=source; advance
+    c.jr(0x18, "loop")
+    c.label("newline")
+    c.emit(0x21, 0x0A, 0x00, 0xE5)
+    c.emit(0x21, 0x00, 0x00, 0x39)
+    c.emit(0x11, 0x01, 0x00, 0x01, 0x01, 0x00)
+    c.emit(0x3E, 0x13, 0xCD, 0x00, 0xE0)
+    c.emit(0xD1)
+    c.jr(0x38, "error")
+    c.emit(0x7C, 0xB5)
+    c.jr(0x28, "io_error")
+    c.emit(0x21, 0x00, 0x00, 0xB7, 0xC9)
+    c.label("io_error")
+    c.emit(0x21, 0x05, 0x00, 0xB7, 0xC9)
+    c.label("error")
+    c.emit(0x6F, 0x26, 0x00, 0xB7, 0xC9)
+    return _single("puts", c.finish())
+
+
+def _strlen() -> NativeMember:
+    c = _Code()
+    c.emit(0x11, 0x00, 0x00)        # DE=0
+    c.label("loop")
+    c.emit(0x7E, 0xB7)
+    c.jr(0x28, "done")
+    c.emit(0x23, 0x13)
+    c.jr(0x18, "loop")
+    c.label("done")
+    c.emit(0xEB, 0xB7, 0xC9)
+    return _single("strlen", c.finish())
+
+
+def _strcmp() -> NativeMember:
+    c = _Code()
+    c.label("loop")
+    c.emit(0x7E, 0x4F, 0x1A, 0x47, 0x79, 0xB8)
+    c.jr(0x38, "less")
+    c.jr(0x20, "greater")
+    c.emit(0xB7)
+    c.jr(0x28, "equal")
+    c.emit(0x23, 0x13)
+    c.jr(0x18, "loop")
+    c.label("less")
+    c.emit(0x21, 0x00, 0x00, 0x2B, 0xB7, 0xC9)
+    c.label("greater")
+    c.emit(0x21, 0x01, 0x00, 0xB7, 0xC9)
+    c.label("equal")
+    c.emit(0x21, 0x00, 0x00, 0xB7, 0xC9)
+    return _single("strcmp", c.finish())
+
+
+def _strcpy() -> NativeMember:
+    c = _Code()
+    c.emit(0xE5)
+    c.label("loop")
+    c.emit(0x1A, 0x77, 0x13, 0x23, 0xB7)
+    c.jr(0x20, "loop")
+    c.emit(0xE1, 0xB7, 0xC9)
+    return _single("strcpy", c.finish())
+
+
+def _strncpy() -> NativeMember:
+    c = _Code()
+    c.emit(0xE5, 0x78, 0xB1)
+    c.jr(0x28, "done")
+    c.label("copy")
+    c.emit(0x1A, 0x77, 0x23, 0x13, 0x0B, 0xB7)
+    c.jr(0x28, "pad_check")
+    c.emit(0x78, 0xB1)
+    c.jr(0x20, "copy")
+    c.jr(0x18, "done")
+    c.label("pad_check")
+    c.emit(0x78, 0xB1)
+    c.jr(0x28, "done")
+    c.label("pad")
+    c.emit(0xAF, 0x77, 0x23, 0x0B, 0x78, 0xB1)
+    c.jr(0x20, "pad")
+    c.label("done")
+    c.emit(0xE1, 0xB7, 0xC9)
+    return _single("strncpy", c.finish())
+
+
+def _memcpy() -> NativeMember:
+    return _single("memcpy", bytes((0xE5, 0x78, 0xB1, 0x28, 0x03, 0xEB, 0xED, 0xB0, 0xE1, 0xB7, 0xC9)))
+
+
+def _memchr() -> NativeMember:
+    c = _Code()
+    c.emit(0x78, 0xB1)
+    c.jr(0x28, "miss")
+    c.emit(0x7B, 0xED, 0xB1)
+    c.jr(0x20, "miss")
+    c.emit(0x2B, 0xB7, 0xC9)
+    c.label("miss")
+    c.emit(0x21, 0x00, 0x00, 0xB7, 0xC9)
+    return _single("memchr", c.finish())
+
+
+def _memset() -> NativeMember:
+    c = _Code()
+    c.emit(0x53, 0xE5, 0x78, 0xB1)  # D=E; save return pointer
+    c.jr(0x28, "done")
+    c.label("loop")
+    c.emit(0x7A, 0x77, 0x23, 0x0B, 0x78, 0xB1)
+    c.jr(0x20, "loop")
+    c.label("done")
+    c.emit(0xE1, 0xB7, 0xC9)
+    return _single("memset", c.finish())
+
+
+def _memmove() -> NativeMember:
+    c = _Code()
+    c.emit(0xE5, 0xD5)              # saved return dest, saved src
+    c.emit(0x78, 0xB1)
+    c.jr(0x28, "ret_saved")
+    c.emit(0xE5, 0xB7, 0xED, 0x52, 0xE1)  # compare dest-src
+    c.jr(0x38, "forward")
+    c.jr(0x28, "ret_saved")
+    # Compare source+count to destination.
+    c.emit(0xEB, 0x09, 0xB7, 0xED, 0x52)
+    c.jr(0x38, "forward")
+    c.jr(0x28, "forward")
+    # Backward overlap.
+    c.emit(0xD1, 0xE1, 0xE5)        # DE=src, HL=dest, resave return
+    c.emit(0x09, 0x2B, 0xE5, 0xEB, 0x09, 0x2B, 0xD1, 0xED, 0xB8)
+    c.emit(0xE1, 0xB7, 0xC9)
+    c.label("forward")
+    c.emit(0xD1, 0xE1, 0xE5, 0xEB, 0xED, 0xB0, 0xE1, 0xB7, 0xC9)
+    c.label("ret_saved")
+    c.emit(0xD1, 0xE1, 0xB7, 0xC9)
+    return _single("memmove", c.finish())
 
 def _graphics_attr(name: str, selector: int) -> NativeMember:
     # HL=value. Native wrapper uses D=selector and SYS_GFX_ATTR.
@@ -194,6 +357,17 @@ RUNTIME_MEMBERS: tuple[NativeMember, ...] = (
     _exit(),
     _mul16(),
     _div16(),
+    _getchar(),
+    _putchar_exact(),
+    _puts(),
+    _strlen(),
+    _strcmp(),
+    _strcpy(),
+    _strncpy(),
+    _memcpy(),
+    _memmove(),
+    _memchr(),
+    _memset(),
     _syscall_wrapper("yield", 0x02, zero_result=True),
     _syscall_wrapper("sleep", 0x03, zero_result=True),
     _syscall_wrapper("getpid", 0x04),
@@ -211,5 +385,4 @@ RUNTIME_MEMBERS: tuple[NativeMember, ...] = (
         "plot",
         bytes((0x65, 0x6B, 0x3E, 0x40, 0xCD, 0x00, 0xE0, 0x21, 0x00, 0x00, 0xC9)),
     ),
-    _putchar(),
 )
