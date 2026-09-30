@@ -273,6 +273,8 @@ test_proc1:
     defs 2,0
 test_alloc_index:
     db 0
+test_expect_screen:
+    db 0
 current_pid:
     db 1
 path_dir:
@@ -284,6 +286,8 @@ fixture_end:
 
     ORG $E000
 gateway_start:
+    cp SYS_EXIT
+    jr z,gateway_exit
     cp SYS_WRITE
     jr z,gateway_write
     cp SYS_GFX_ATTR
@@ -324,6 +328,28 @@ gateway_udg:
     ld hl,0
     xor a
     ret
+gateway_exit:
+    ld a,h
+    or l
+    jp nz,$7FF1
+    ld a,(test_expect_screen)
+    or a
+    jp z,$7FF0
+    ld hl,(gateway_write_bytes)
+    ld de,3
+    or a
+    sbc hl,de
+    jp nz,$7FF1
+    ld a,(gateway_attr_calls)
+    cp 1
+    jp nz,$7FF1
+    ld a,(gateway_plot_calls)
+    cp 1
+    jp nz,$7FF1
+    ld a,(gateway_udg_calls)
+    cp 1
+    jp nz,$7FF1
+    jp $7FF0
 gateway_write_bytes:
     dw 0
 gateway_attr_calls:
@@ -356,6 +382,7 @@ def assemble_fixture(root: Path, temp: Path):
             "zx48_p514_spawn_tape_backed",
             "test_proc1",
             "test_alloc_index",
+            "test_expect_screen",
             "p514_committed",
             "gateway_write_bytes",
             "gateway_attr_calls",
@@ -419,8 +446,10 @@ float_g_cmp:
 float_g_exit:
     ld a,l
     ld (float_exit_seen),a
-    xor a
-    ret
+    ld a,h
+    or l
+    jp nz,$7FF1
+    jp $7FF0
 float_gateway_end:
     SAVEBIN "sdk-native-float-gateway.bin",float_gateway_start,float_gateway_end-float_gateway_start
 """
@@ -477,19 +506,16 @@ def execution_driver(syms: dict[str, int], mex_entry: int, *, counters: bool) ->
     code += b"\x31" + word(TEST_STACK)
     code += b"\xFD\x21\x3A\x5C"
     code += b"\xAF\x32" + word(syms["test_alloc_index"])
+    code += bytes((0x3E, 1 if counters else 0, 0x32)) + word(syms["test_expect_screen"])
     code += b"\x21" + word(syms["test_proc1"])
     code += call(syms["zx48_p514_spawn_tape_backed"])
     code += jp_c(FAIL_PC)
     code += b"\x11" + word(IMAGE_BASE) + b"\xB7\xED\x52" + jp_nz(FAIL_PC)
     code += check_byte(syms["p514_committed"], 1)
     code += call(IMAGE_BASE + mex_entry)
-    code += b"\x7C\xB5" + jp_nz(FAIL_PC)
-    if counters:
-        code += check_word(syms["gateway_write_bytes"], 3)
-        code += check_byte(syms["gateway_attr_calls"], 1)
-        code += check_byte(syms["gateway_plot_calls"], 1)
-        code += check_byte(syms["gateway_udg_calls"], 1)
-    code += jp(PASS_PC)
+    # A conforming exit never returns. Reaching here means the startup/exit
+    # contract failed even if main itself returned zero.
+    code += jp(FAIL_PC)
     return bytes(code)
 
 
@@ -613,7 +639,7 @@ def main() -> int:
                         "Float5 proof image would overlap pinned service fixture")
             run_tape_case(
                 root, temp, fixture,
-                screen_gateway if mode == "screen" else float_gateway if mode == "float5" else None,
+                float_gateway if mode == "float5" else screen_gateway,
                 syms, tap_bytes, decoded.entry_offset,
                 stem=stem, counters=mode == "screen",
                 service=float_service if mode == "float5" else None,

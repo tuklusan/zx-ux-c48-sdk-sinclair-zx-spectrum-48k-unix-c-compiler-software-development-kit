@@ -66,8 +66,6 @@ class NativeBackendTests(unittest.TestCase):
     def test_pinned_prebuilt_runtime_members_are_byte_exact(self) -> None:
         expected = {
             "startup": "f3af4f93f4a63ead2cdd48f10f6d3993cefca654d579c11b4af48d2874c45fee",
-            "exit": "238e23c9514b209febfddffbba611130f5654f6fce42d2be09b3821ab3a196b6",
-            "puts": "0523ac8d08e88a853112053ae7883dee8ccbdb81f22d935b9fa3457afda920e9",
             "ink": "e596b39954272458d673b6e83eee69b24cd5fbee39a24dd1c3e1ae3cdf565c1a",
             "plot": "30744b5132e0bfe353c7093c3e6a335dbc89c0b93b2765c491bc0147a1222d29",
             "udg_clear": "c154f80d7aed3572b2c08dd58ad6146cd180957255c6e64c10573d17a83bdcf4",

@@ -68,6 +68,30 @@ def _syscall_wrapper(name: str, number: int, *, zero_result: bool = False) -> Na
     return _single(name, bytes(code))
 
 
+def _errno_zero(name: str, number: int) -> NativeMember:
+    return _single(
+        name,
+        bytes((
+            0x3E, number, 0xCD, 0x00, 0xE0,
+            0x38, 0x05,
+            0x21, 0x00, 0x00, 0xAF, 0xC9,
+            0x6F, 0x26, 0x00, 0xB7, 0xC9,
+        )),
+    )
+
+
+def _errno_value(name: str, number: int) -> NativeMember:
+    return _single(
+        name,
+        bytes((
+            0x3E, number, 0xCD, 0x00, 0xE0,
+            0x38, 0x02,
+            0xB7, 0xC9,
+            0x6F, 0x26, 0x00, 0xB7, 0xC9,
+        )),
+    )
+
+
 def _startup() -> NativeMember:
     # Exact pinned crt0 TEXT: CALL main ; CALL exit ; RET
     text = bytes((0xCD, 0x00, 0x00, 0xCD, 0x00, 0x00, 0xC9))
@@ -77,8 +101,16 @@ def _startup() -> NativeMember:
 
 
 def _exit() -> NativeMember:
-    # Exact pinned compact runtime archive member.
-    return _single("exit", bytes((0xC9,)))
+    # Final pinned libc48 exit contract: successful SYS_EXIT is non-returning.
+    return _single(
+        "exit",
+        bytes((
+            0x3E, 0x01, 0xCD, 0x00, 0xE0,
+            0x38, 0x04,
+            0x21, 0x0B, 0x00, 0xC9,
+            0x6F, 0x26, 0x00, 0xB7, 0xC9,
+        )),
+    )
 
 
 def _mul16() -> NativeMember:
@@ -194,14 +226,36 @@ def _putchar_exact() -> NativeMember:
 
 
 def _puts() -> NativeMember:
-    # Exact pinned P11.35 target-native archive member.
-    return _single(
-        "puts",
-        bytes.fromhex(
-            "e50100007eb72804230318f8e11101003e13cd00e0381a210a00"
-            "e5210000391101000101003e13cd00e0c13804210000c96f2600b7c9"
-        ),
-    )
+    # Observable-equivalent translation of final pinned libc48 puts: every
+    # byte and the trailing LF must make positive write progress.
+    c = _Code()
+    c.label("loop")
+    c.emit(0x7E, 0xB7)             # LD A,(HL); OR A
+    c.jr(0x28, "newline")
+    c.emit(0xE5)                   # preserve source pointer
+    c.emit(0x11, 0x01, 0x00, 0x01, 0x01, 0x00)
+    c.emit(0x3E, 0x13, 0xCD, 0x00, 0xE0)
+    c.emit(0xD1)                   # DE=preserved source pointer
+    c.jr(0x38, "error")
+    c.emit(0x7C, 0xB5)
+    c.jr(0x28, "io_error")
+    c.emit(0xEB, 0x23)             # HL=source; advance
+    c.jr(0x18, "loop")
+    c.label("newline")
+    c.emit(0x21, 0x0A, 0x00, 0xE5)
+    c.emit(0x21, 0x00, 0x00, 0x39) # HL=SP
+    c.emit(0x11, 0x01, 0x00, 0x01, 0x01, 0x00)
+    c.emit(0x3E, 0x13, 0xCD, 0x00, 0xE0)
+    c.emit(0xD1)                   # discard newline buffer
+    c.jr(0x38, "error")
+    c.emit(0x7C, 0xB5)
+    c.jr(0x28, "io_error")
+    c.emit(0x21, 0x00, 0x00, 0xAF, 0xC9)
+    c.label("io_error")
+    c.emit(0x3E, 0x05)             # E_IO
+    c.label("error")
+    c.emit(0x6F, 0x26, 0x00, 0xB7, 0xC9)
+    return _single("puts", c.finish())
 
 
 def _strlen() -> NativeMember:
@@ -518,17 +572,62 @@ def _float_runtime() -> NativeMember:
     return NativeMember("float_runtime", obj, tuple(provides))
 
 
+def _sleep() -> NativeMember:
+    c = _RuntimeObject()
+    c.define_bss("_sleep_ticks", 4, align=2)
+    c.define_text("sleep")
+    c.ld_mem_hl("_sleep_ticks")
+    c.emit(0xAF)
+    c.ld_mem_a("_sleep_ticks", 2)
+    c.ld_mem_a("_sleep_ticks", 3)
+    c.ld_hl_addr("_sleep_ticks")
+    c.emit(0x3E, 0x03, 0xCD, 0x00, 0xE0)
+    c.emit(0x38, 0x05, 0x21, 0x00, 0x00, 0xAF, 0xC9)
+    c.emit(0x6F, 0x26, 0x00, 0xB7, 0xC9)
+    return NativeMember("sleep", c.finish(), ("sleep",))
+
+
+def _ticks() -> NativeMember:
+    c = _RuntimeObject()
+    c.define_bss("_ticks_u32", 4, align=2)
+    c.define_text("ticks")
+    c.ld_hl_addr("_ticks_u32")
+    c.emit(0x3E, 0x62, 0xCD, 0x00, 0xE0)
+    c.emit(0x38, 0x05)
+    c.ld_hl_mem("_ticks_u32")
+    c.emit(0xAF, 0xC9)
+    c.emit(0x6F, 0x26, 0x00, 0xB7, 0xC9)
+    return NativeMember("ticks", c.finish(), ("ticks",))
+
+
+def _border() -> NativeMember:
+    return _single(
+        "border",
+        bytes((
+            0x7C, 0xB7, 0x20, 0x0D,
+            0x3E, 0x44, 0xCD, 0x00, 0xE0,
+            0x38, 0x0A,
+            0x21, 0x00, 0x00, 0xAF, 0xC9,
+            0x21, 0x01, 0x00, 0xAF, 0xC9,
+            0x6F, 0x26, 0x00, 0xB7, 0xC9,
+        )),
+    )
+
+
 def _graphics_attr(name: str, selector: int) -> NativeMember:
-    # Native-compatible fallback for selectors without a frozen prebuilt member.
-    text = bytes((
-        0x16, selector,
-        0x62,
-        0x3E, 0x43,
-        0xCD, 0x00, 0xE0,
-        0x21, 0x00, 0x00,
-        0xC9,
-    ))
-    return _single(name, text)
+    # Final pinned libc48 attribute contract including u8 validation and errno.
+    return _single(
+        name,
+        bytes((
+            0x7C, 0xB7, 0x20, 0x0F,
+            0x16, selector, 0x62,
+            0x3E, 0x43, 0xCD, 0x00, 0xE0,
+            0x38, 0x0A,
+            0x21, 0x00, 0x00, 0xAF, 0xC9,
+            0x21, 0x01, 0x00, 0xAF, 0xC9,
+            0x6F, 0x26, 0x00, 0xB7, 0xC9,
+        )),
+    )
 
 
 def _ink_exact() -> NativeMember:
@@ -569,11 +668,11 @@ RUNTIME_MEMBERS: tuple[NativeMember, ...] = (
     _memmove(),
     _memchr(),
     _memset(),
-    _syscall_wrapper("yield", 0x02, zero_result=True),
-    _syscall_wrapper("sleep", 0x03, zero_result=True),
-    _syscall_wrapper("getpid", 0x04),
-    _syscall_wrapper("cls", 0x33, zero_result=True),
-    _syscall_wrapper("ticks", 0x62),
+    _errno_zero("yield", 0x02),
+    _sleep(),
+    _errno_value("getpid", 0x04),
+    _errno_zero("cls", 0x33),
+    _ticks(),
     _udg_clear_exact(),
     _ink_exact(),
     _graphics_attr("paper", 1),
@@ -581,6 +680,6 @@ RUNTIME_MEMBERS: tuple[NativeMember, ...] = (
     _graphics_attr("flash", 3),
     _graphics_attr("inverse", 4),
     _graphics_attr("over", 5),
-    _syscall_wrapper("border", 0x44, zero_result=True),
+    _border(),
     _plot_exact(),
 )
