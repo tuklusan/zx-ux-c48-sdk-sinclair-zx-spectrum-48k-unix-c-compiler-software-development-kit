@@ -222,12 +222,10 @@ class _Function:
             if not base_t.is_pointer or base_t.base is None:
                 raise NativeLoweringError("native index base lacks pointer type")
             size = base_t.base.size
-            if size == 2:
-                self.e.emit(0x29)
-            elif size == 5:
-                self.e.emit(0xD5, 0x54, 0x5D, 0x29, 0x29, 0x19, 0xD1)
-            elif size != 1:
-                raise NativeLoweringError("native pointer scaling is unsupported")
+            if size != 1:
+                self.e.emit(0x11)
+                self.e.word(size)
+                self.e.call("c48_mul16")
             self.e.emit(0xD1, 0x19)  # POP DE ; ADD HL,DE
             return CType.from_dict(n["ctype"])
         raise NativeLoweringError(f"native lvalue lowering does not support {k}")
@@ -354,6 +352,8 @@ class _Function:
             self.expr(n["right"])
             self.e.emit(0xD1)
             self._store_to_de(t)
+            if t.size == 1:
+                self.e.emit(0x26, 0x00)
             return
         if k in {"unary", "postfix"}:
             op = n["op"]
@@ -471,13 +471,16 @@ class _Function:
         if lt.is_pointer and rt.is_integer and op in {"+", "-"}:
             assert lt.base is not None
             size = lt.base.size
-            if size == 2:
-                self.e.emit(0xEB, 0x29, 0xEB)  # scale DE by 2
-            elif size == 5:
-                self.e.emit(0xEB, 0xD5, 0x54, 0x5D, 0x29, 0x29, 0x19, 0xD1, 0xEB)
-            elif size != 1:
-                raise NativeLoweringError("native pointer scaling is unsupported")
-            if op == "+":
+            if size != 1:
+                self.e.emit(0xE5, 0xEB)  # save pointer; HL=index
+                self.e.emit(0x11); self.e.word(size)
+                self.e.call("c48_mul16")
+                self.e.emit(0xD1)        # DE=pointer
+                if op == "+":
+                    self.e.emit(0x19)
+                else:
+                    self.e.emit(0xEB, 0xB7, 0xED, 0x52)
+            elif op == "+":
                 self.e.emit(0x19)
             else:
                 self.e.emit(0xB7, 0xED, 0x52)
@@ -485,16 +488,26 @@ class _Function:
         if lt.is_integer and rt.is_pointer and op == "+":
             assert rt.base is not None
             size = rt.base.size
-            # HL=integer, DE=pointer
-            if size == 2:
-                self.e.emit(0x29)
-            elif size == 5:
-                self.e.emit(0xD5, 0x54, 0x5D, 0x29, 0x29, 0x19, 0xD1)
-            elif size != 1:
-                raise NativeLoweringError("native pointer scaling is unsupported")
+            if size != 1:
+                self.e.emit(0xD5)        # save pointer
+                self.e.emit(0x11); self.e.word(size)
+                self.e.call("c48_mul16")
+                self.e.emit(0xD1)
             self.e.emit(0x19)
             return
-        raise NativeLoweringError("native pointer ordering/subtraction requires a later provenance proof")
+        if lt.is_pointer and rt.is_pointer:
+            if op in {"<", "<=", ">", ">="}:
+                self._compare(op, False)
+                return
+            if op == "-":
+                assert lt.base is not None
+                self.e.emit(0xB7, 0xED, 0x52)
+                size = lt.base.size
+                if size != 1:
+                    self.e.emit(0x11); self.e.word(size)
+                    self.e.call("c48_sdivmod")
+                return
+        raise NativeLoweringError("native pointer operation is unsupported")
 
     def _logical(self, n: dict[str, Any]) -> None:
         op = n["op"]
@@ -572,6 +585,11 @@ class _Function:
                 self.e.emit(0x21, 0x00, 0x00)
             else:
                 self.expr(s["value"])
+                rt = CType.from_dict(s["return_type"])
+                if rt.is_float:
+                    raise NativeLoweringError("native float return lowering is not yet enabled")
+                if rt.size == 1:
+                    self.e.emit(0x26, 0x00)
             self.e.jp(self.return_label)
             return
         if k == "if":
@@ -645,9 +663,43 @@ class _Function:
             return
         raise NativeLoweringError(f"native statement kind {k!r} is unsupported")
 
+    def _zero_slot(self, slot: _Slot) -> None:
+        self._addr_slot(slot)
+        left = slot.ctype.size
+        while left:
+            count = min(left, 256)
+            self.e.emit(0x06, count & 0xFF, 0xAF)  # LD B,count (0 means 256); XOR A
+            self.e.emit(0x77, 0x23, 0x10, 0xFC)    # (HL)=0; INC HL; DJNZ -4
+            left -= count
+
+    def _slot_address_at(self, slot: _Slot, offset: int) -> None:
+        self._addr_slot(slot)
+        if offset:
+            self.e.emit(0x11); self.e.word(offset)
+            self.e.emit(0x19)
+
     def _initialize_slot(self, slot: _Slot, init: dict[str, Any]) -> None:
         if slot.ctype.is_array:
-            raise NativeLoweringError("native local array initialization is not yet enabled")
+            t = slot.ctype
+            assert t.base is not None and t.length is not None
+            self._zero_slot(slot)
+            if init["kind"] == "string_initializer":
+                raw = bytes(init["value"]["bytes"]) + b"\0"
+                if len(raw) > t.size:
+                    raise NativeLoweringError("native local string initializer exceeds array")
+                self._addr_slot(slot)
+                for byte in raw:
+                    self.e.emit(0x36, byte, 0x23)  # LD (HL),n ; INC HL
+                return
+            if init["kind"] != "init_list":
+                raise NativeLoweringError("native local array initializer is unsupported")
+            for index, value in enumerate(init["values"]):
+                self._slot_address_at(slot, index * t.base.size)
+                self.e.emit(0xE5)
+                self.expr(value)
+                self.e.emit(0xD1)
+                self._store_to_de(t.base)
+            return
         value = init["value"]
         self.expr(value)
         self.e.emit(0xE5)
