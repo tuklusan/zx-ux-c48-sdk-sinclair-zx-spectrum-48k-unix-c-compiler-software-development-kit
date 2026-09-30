@@ -694,6 +694,199 @@ def run_namespace_case(
     )
 
 
+
+def resident_fixture_source(root: Path) -> str:
+    inc = root / "v1/include"
+    process = root / "v1/src/kernel/process.asm"
+    return f"""    DEVICE ZXSPECTRUM48
+    INCLUDE "{(inc / 'zx48ux.inc').as_posix()}"
+    INCLUDE "{(inc / 'mex1.inc').as_posix()}"
+PROC1_PATH_PTR EQU 0
+PROC1_ARG1_PTR EQU 2
+PROC1_ARG1_LEN EQU 4
+PROC1_ENV1_PTR EQU 6
+PROC1_ENV1_LEN EQU 8
+PROC1_STDIN_HANDLE EQU 10
+PROC1_STDOUT_HANDLE EQU 11
+PROC1_STDERR_HANDLE EQU 12
+PROC1_FLAGS EQU 13
+OBJ_NAME EQU 0
+OBJ_DIR_ID EQU 10
+OBJ_TYPE_ID EQU 11
+OBJ_FLAGS_BYTE EQU 12
+OBJ_RESERVED_BYTE EQU 13
+OBJ_LOGICAL_LENGTH EQU 14
+OBJ_STORAGE_LENGTH EQU 16
+OBJ_ALLOCATION_PTR EQU 18
+    INCLUDE "{process.as_posix()}"
+
+    ORG $4000
+resident_fixture_start:
+    EMIT_MEX1_RELOCATION_ROUTINES
+    EMIT_MEX1_IMAGE_LOAD_ROUTINES
+    EMIT_SPAWN_TRANSACTION_ROUTINES
+
+zx48_alloc:
+    ld hl,$8000
+    xor a
+    ret
+zx48_free:
+    xor a
+    ret
+zx48_process_find_free_slot:
+    ld a,E_AGAIN
+    scf
+    ret
+zx48_spawn_resolve_ram_object:
+    ld a,E_NOENT
+    scf
+    ret
+zx48_arg1_validate:
+    xor a
+    ret
+zx48_env1_validate:
+    xor a
+    ret
+zx48_handle_lookup:
+    ld a,E_NOENT
+    scf
+    ret
+zx48_process_lookup:
+    ld a,E_NOENT
+    scf
+    ret
+zx48_process_build_initial_context:
+    ld a,E_NOTSUP
+    scf
+    ret
+zx48_od_retain:
+    xor a
+    ret
+zx48_od_release:
+    xor a
+    ret
+current_pid:
+    db 1
+resident_fixture_end:
+    SAVEBIN "sdk-native-resident.bin",resident_fixture_start,resident_fixture_end-resident_fixture_start
+
+    ORG $E000
+resident_gateway_start:
+    cp SYS_EXIT
+    jr z,resident_gateway_exit
+    ld a,E_NOTSUP
+    scf
+    ret
+resident_gateway_exit:
+    ld a,h
+    or l
+    jp nz,$7FE5
+    jp $7FF0
+resident_gateway_end:
+    SAVEBIN "sdk-native-resident-gateway.bin",resident_gateway_start,resident_gateway_end-resident_gateway_start
+"""
+
+
+def assemble_resident_fixture(root: Path, temp: Path) -> tuple[bytes, bytes, dict[str, int]]:
+    source = temp / "sdk-native-resident.asm"
+    source.write_text(resident_fixture_source(root), encoding="utf-8", newline="\n")
+    assembler = root / "tools/runtime/sjasmplus/bin/sjasmplus"
+    run(
+        [assembler, "--nologo", "--sym=sdk-native-resident.sym", source.name],
+        cwd=temp,
+        timeout=60,
+    )
+    binary = (temp / "sdk-native-resident.bin").read_bytes()
+    gateway = (temp / "sdk-native-resident-gateway.bin").read_bytes()
+    require(0 < len(binary) < TEST_ENTRY - FIXTURE_BASE,
+            f"native resident fixture has unsafe size {len(binary)}")
+    require(0 < len(gateway) < 0x0200, "native resident gateway is too large")
+    syms = symbols(
+        temp / "sdk-native-resident.sym",
+        (
+            "zx48_process_spawn_validate_mex1",
+            "zx48_mex1_load_image",
+        ),
+    )
+    return binary, gateway, syms
+
+
+def resident_driver(syms: dict[str, int], mex_bytes: bytes, mex_entry: int) -> bytes:
+    mex_source = 0x9000
+    code = bytearray()
+    code += b"\xF3"
+    code += b"\x31" + word(TEST_STACK)
+    code += b"\xDD\x21" + word(mex_source)
+    code += b"\x01" + word(len(mex_bytes))
+    code += call(syms["zx48_process_spawn_validate_mex1"])
+    code += jp_c(FAIL_LOAD_PC)
+    code += b"\xDD\x21" + word(mex_source)
+    code += call(syms["zx48_mex1_load_image"])
+    code += jp_c(FAIL_LOAD_PC)
+    code += b"\x11" + word(IMAGE_BASE) + b"\xB7\xED\x52" + jp_nz(FAIL_BASE_PC)
+    code += call(IMAGE_BASE + mex_entry)
+    code += jp(FAIL_RETURN_PC)
+    return bytes(code)
+
+
+def run_resident_case(
+    root: Path,
+    temp: Path,
+    fixture: bytes,
+    gateway: bytes,
+    syms: dict[str, int],
+    mex_bytes: bytes,
+    mex_entry: int,
+) -> None:
+    mex_source = 0x9000
+    require(mex_source + len(mex_bytes) < 0xE000, "resident proof MEX is too large")
+    sna = temp / "resident.sna"
+    code = resident_driver(syms, mex_bytes, mex_entry)
+
+    def patch(ram: bytearray) -> None:
+        start = FIXTURE_BASE - RAM_START
+        ram[start:start + len(fixture)] = fixture
+        source = mex_source - RAM_START
+        ram[source:source + len(mex_bytes)] = mex_bytes
+        gate = 0xE000 - RAM_START
+        ram[gate:gate + len(gateway)] = gateway
+
+    sna.write_bytes(make_sna(code, patch))
+    fuse = root / "tools/runtime/fuse/bin/fuse"
+    failures = (
+        (FAIL_LOAD_PC, 1),
+        (FAIL_BASE_PC, 2),
+        (FAIL_RETURN_PC, 3),
+        (FAIL_PROGRAM_PC, 4),
+    )
+    parts = [f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n"]
+    for index, (address, status) in enumerate(failures, 2):
+        parts.append(
+            f"breakpoint 0x{address:04x}\ncommands {index}\nexit {status}\nend\n"
+        )
+    parts.append("continue")
+    env = dict(**__import__("os").environ)
+    env["SDL_VIDEODRIVER"] = "dummy"
+    env["SDL_AUDIODRIVER"] = "dummy"
+    cp = subprocess.run(
+        [
+            str(fuse), "--machine", "48", "--no-sound", "--no-confirm-actions",
+            "--debugger-command", "".join(parts), str(sna),
+        ],
+        cwd=root,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=90,
+    )
+    require(
+        cp.returncode == 0,
+        f"native resident MEX proof failed: exit={cp.returncode}\n"
+        f"stdout={cp.stdout}\nstderr={cp.stderr}",
+    )
+
+
 def float_service_source(root: Path) -> str:
     inc = root / "v1/include/zx48ux.inc"
     syscall = root / "v1/src/kernel/syscall.asm"
@@ -993,6 +1186,7 @@ def main() -> int:
         _, fixture, screen_gateway, syms = assemble_fixture(root, temp)
         overlay_fixture, overlay_note = apply_direct_tape_erratum_overlay(fixture, syms)
         namespace_fixture, namespace_syms = assemble_namespace_fixture(root, temp)
+        resident_fixture, resident_gateway, resident_syms = assemble_resident_fixture(root, temp)
         float_service, float_gateway = assemble_float_service(root, temp)
         records: list[str] = []
         for stem, source, mode in cases:
@@ -1026,6 +1220,10 @@ def main() -> int:
                 run_namespace_case(
                     root, temp, namespace_fixture, namespace_syms,
                     tap_bytes, mex_bytes,
+                )
+                run_resident_case(
+                    root, temp, resident_fixture, resident_gateway, resident_syms,
+                    mex_bytes, decoded.entry_offset,
                 )
                 run_tape_case(
                     root, temp, fixture, screen_gateway,
