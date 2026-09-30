@@ -218,9 +218,89 @@ class NativeBackendTests(unittest.TestCase):
             parsed = parse_bin_tap(outputs[2])
             decode_mex1(parsed.payload)
 
+    def test_cli_rejects_corrupt_unresolved_and_path_inputs_atomically(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            cli = SDK / "compiler" / "c48b2tap.py"
+
+            corrupt = d / "corrupt.c48b"
+            corrupt.write_bytes(b"C48B1\n{not-json")
+            out = d / "corrupt.obj"
+            out.write_bytes(b"KEEP")
+            cp = subprocess.run(
+                [sys.executable, str(cli), "--obj", "--force", str(corrupt), str(out)],
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertEqual(out.read_bytes(), b"KEEP")
+
+            unresolved_program = compile_bytes(
+                b"int absent(void);int main(void){return absent();}",
+                source_name="unresolved.c", base_dir=Path.cwd(),
+            )
+            unresolved = d / "unresolved.c48b"
+            write(unresolved, unresolved_program)
+            mex = d / "unresolved.mex"
+            mex.write_bytes(b"KEEP")
+            cp = subprocess.run(
+                [sys.executable, str(cli), "--mex", "--force", str(unresolved), str(mex)],
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertEqual(mex.read_bytes(), b"KEEP")
+
+            valid_program = compile_bytes(
+                b"int main(void){return 0;}", source_name="valid.c", base_dir=Path.cwd(),
+            )
+            valid = d / "valid.c48b"
+            write(valid, valid_program)
+            tap = d / "valid.tap"
+            tap.write_bytes(b"KEEP")
+            cp = subprocess.run(
+                [sys.executable, str(cli), "--name", "../BAD", "--force", str(valid), str(tap)],
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertEqual(tap.read_bytes(), b"KEEP")
+
+            wrong_suffix = d / "wrong.TAP"
+            cp = subprocess.run(
+                [sys.executable, str(cli), str(valid), str(wrong_suffix)],
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertFalse(wrong_suffix.exists())
+
+            missing_parent = d / "missing" / "x.tap"
+            cp = subprocess.run(
+                [sys.executable, str(cli), str(valid), str(missing_parent)],
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertFalse(missing_parent.exists())
+
+    def test_cli_native_overflow_does_not_replace_existing_output(self) -> None:
+        program = compile_bytes(
+            b"char huge[32768];int main(void){return huge[0];}",
+            source_name="overflow.c", base_dir=Path.cwd(),
+        )
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            src = d / "overflow.c48b"
+            out = d / "overflow.mex"
+            write(src, program)
+            out.write_bytes(b"KEEP")
+            cp = subprocess.run(
+                [sys.executable, str(SDK / "compiler" / "c48b2tap.py"),
+                 "--mex", "--force", str(src), str(out)],
+                capture_output=True, text=True,
+            )
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertEqual(out.read_bytes(), b"KEEP")
+
     def test_cli_failure_does_not_replace_existing_output(self) -> None:
         program = compile_bytes(
-            b"int main(void){return 1.0;}",
+            b"int main(void){static int x;return x;}",
             source_name="bad.c",
             base_dir=Path.cwd(),
         )

@@ -16,8 +16,11 @@ from c48.native_format import (
     ObjSymbol,
     MexImage,
     build_bin_tap,
+    crc16_ccitt_false,
+    decode_m48o_bin,
     decode_mex1,
     decode_obj1,
+    encode_m48o_bin,
     encode_mex1,
     encode_obj1,
     parse_bin_tap,
@@ -92,6 +95,20 @@ class NativeFormatTests(unittest.TestCase):
         tap[-1] ^= 1
         with self.assertRaises(NativeFormatError):
             parse_bin_tap(bytes(tap))
+
+        wrong_type = bytearray(encode_m48o_bin("OK", mex))
+        wrong_type[5] = 1
+        wrong_type[26:28] = b"\0\0"
+        wrong_type[26:28] = crc16_ccitt_false(bytes(wrong_type[:32])).to_bytes(2, "little")
+        with self.assertRaises(NativeFormatError):
+            decode_m48o_bin(bytes(wrong_type))
+
+        wrong_target = bytearray(encode_m48o_bin("OK", mex))
+        wrong_target[7] = 2
+        wrong_target[26:28] = b"\0\0"
+        wrong_target[26:28] = crc16_ccitt_false(bytes(wrong_target[:32])).to_bytes(2, "little")
+        with self.assertRaises(NativeFormatError):
+            decode_m48o_bin(bytes(wrong_target))
 
 
 if __name__ == "__main__":
