@@ -544,9 +544,13 @@ zx48_path_resolve:
     ret
 
 zx48_object_public_type_allowed:
+    ld (test_allow_dir),a
+    ld a,b
+    ld (test_allow_type),a
+    ld a,(test_allow_dir)
     cp DIR_BIN
     jr nz,namespace_perm
-    ld a,b
+    ld a,(test_allow_type)
     cp OBJ_BIN
     jr nz,namespace_perm
     xor a
@@ -622,6 +626,10 @@ test_namespace_path:
     db "/bin/NATIVE",0
 test_namespace_name:
     db "NATIVE",0,0,0,0
+test_allow_dir:
+    db $ff
+test_allow_type:
+    db $ff
 path_dir:
     db 0
 path_name:
@@ -651,6 +659,8 @@ def assemble_namespace_fixture(root: Path, temp: Path) -> tuple[bytes, dict[str,
             "zx48_objects_init",
             "zx48_p509_load_path",
             "p509_header",
+            "test_allow_dir",
+            "test_allow_type",
             "zx48_p509_locked_error",
             "zx48_p509_commit_drop_new",
             "zx48_p509_free_error",
@@ -759,6 +769,8 @@ def run_namespace_case(
             debugger_parts.append(
                 f"print [0x{header + 5:04x}]\n"
                 f"print [0x{header + 7:04x}]\n"
+                f"print [0x{syms['test_allow_dir']:04x}]\n"
+                f"print [0x{syms['test_allow_type']:04x}]\n"
                 "print z80:b\n"
             )
         debugger_parts.append(f"exit {status}\nend\n")
