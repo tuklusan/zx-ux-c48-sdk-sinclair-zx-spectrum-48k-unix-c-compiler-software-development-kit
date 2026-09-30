@@ -543,12 +543,16 @@ class _Function:
             self.e.emit(0xE5)
         if len(slots) >= 3:
             self._addr_slot(slots[2]); self._load_from_hl(slots[2].ctype)
-            self.e.emit(0x44, 0x4D)  # BC=HL
+            self.e.emit(0xE5)  # temporary arg2
         if len(slots) >= 2:
             self._addr_slot(slots[1]); self._load_from_hl(slots[1].ctype)
-            self.e.emit(0x54, 0x5D)  # DE=HL
+            self.e.emit(0xE5)  # temporary arg1
         if len(slots) >= 1:
             self._addr_slot(slots[0]); self._load_from_hl(slots[0].ctype)
+        if len(slots) >= 2:
+            self.e.emit(0xD1)  # DE=arg1
+        if len(slots) >= 3:
+            self.e.emit(0xC1)  # BC=arg2
         self.e.call(name)
         extra = max(0, len(slots) - 3)
         for _ in range(extra):
