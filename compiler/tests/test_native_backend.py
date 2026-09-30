@@ -216,6 +216,27 @@ class NativeBackendTests(unittest.TestCase):
             parsed = parse_bin_tap(outputs[2])
             decode_mex1(parsed.payload)
 
+    def test_cli_rejects_odd_native_stack_atomically(self) -> None:
+        program = compile_bytes(
+            b"int main(void){return 0;}",
+            source_name="stack.c",
+            base_dir=Path.cwd(),
+        )
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            src = d / "stack.c48b"
+            out = d / "stack.mex"
+            write(src, program)
+            out.write_bytes(b"KEEP")
+            cp = subprocess.run(
+                [sys.executable, str(SDK / "compiler" / "c48b2tap.py"),
+                 "--mex", "--stack", "65", "--force", str(src), str(out)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertEqual(out.read_bytes(), b"KEEP")
+
     def test_cli_rejects_corrupt_unresolved_and_path_inputs_atomically(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             d = Path(td)
