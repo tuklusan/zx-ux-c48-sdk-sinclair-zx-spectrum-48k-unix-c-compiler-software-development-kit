@@ -7,7 +7,10 @@
     "v1/src/libc48/int_runtime.asm",
     "v1/src/libc48/string.asm",
     "v1/src/libc48/memory.asm",
-    "v1/src/libc48/graphics.asm"
+    "v1/src/libc48/graphics.asm",
+    "v1/src/libc48/float_runtime.asm",
+    "v1/src/libc48/float_bridge.asm",
+    "v1/src/libc48/math_runtime.asm"
   ],
   "exact_obj1_sha256": {
     "startup": "f3af4f93f4a63ead2cdd48f10f6d3993cefca654d579c11b4af48d2874c45fee",
@@ -22,6 +25,7 @@
     "exit",
     "c48_mul16",
     "div16",
+    "float_runtime",
     "getchar",
     "putchar",
     "puts",
@@ -48,5 +52,127 @@
     "border",
     "plot"
   ],
+  "exports": {
+    "startup": [
+      "_start"
+    ],
+    "exit": [
+      "exit"
+    ],
+    "c48_mul16": [
+      "c48_mul16"
+    ],
+    "div16": [
+      "c48_udivmod",
+      "c48_sdivmod"
+    ],
+    "float_runtime": [
+      "__fadd",
+      "__fsub",
+      "__fmul",
+      "__fdiv",
+      "__fpow",
+      "pow",
+      "__fabs",
+      "fabs",
+      "__fexp",
+      "exp",
+      "__fln",
+      "log",
+      "__fsin",
+      "sin",
+      "__fcos",
+      "cos",
+      "__ftan",
+      "tan",
+      "__fasin",
+      "asin",
+      "__facos",
+      "acos",
+      "__fatan",
+      "atan",
+      "__fsqrt",
+      "sqrt",
+      "__itof",
+      "__ftoi",
+      "__fcmp",
+      "__ftruth"
+    ],
+    "getchar": [
+      "getchar"
+    ],
+    "putchar": [
+      "putchar"
+    ],
+    "puts": [
+      "puts"
+    ],
+    "strlen": [
+      "strlen"
+    ],
+    "strcmp": [
+      "strcmp"
+    ],
+    "strcpy": [
+      "strcpy"
+    ],
+    "strncpy": [
+      "strncpy"
+    ],
+    "memcpy": [
+      "memcpy"
+    ],
+    "memmove": [
+      "memmove"
+    ],
+    "memchr": [
+      "memchr"
+    ],
+    "memset": [
+      "memset"
+    ],
+    "yield": [
+      "yield"
+    ],
+    "sleep": [
+      "sleep"
+    ],
+    "getpid": [
+      "getpid"
+    ],
+    "cls": [
+      "cls"
+    ],
+    "ticks": [
+      "ticks"
+    ],
+    "udg_clear": [
+      "udg_clear"
+    ],
+    "ink": [
+      "ink"
+    ],
+    "paper": [
+      "paper"
+    ],
+    "bright": [
+      "bright"
+    ],
+    "flash": [
+      "flash"
+    ],
+    "inverse": [
+      "inverse"
+    ],
+    "over": [
+      "over"
+    ],
+    "border": [
+      "border"
+    ],
+    "plot": [
+      "plot"
+    ]
+  },
   "reproduction": "Construct runtime members deterministically from compiler/c48/native_runtime.py; serialize with compiler/c48/native_format.py; compare exact-member digests to the pinned prebuilt OBJ1 members."
 }

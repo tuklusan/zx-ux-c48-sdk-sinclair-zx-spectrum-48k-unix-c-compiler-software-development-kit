@@ -87,7 +87,9 @@ def check_required_files() -> None:
         "compiler/C48B2TAP-NATIVE-CONTRACT.md",
         "compiler/c48/native_backend.py", "compiler/c48/native_format.py",
         "compiler/c48/native_link.py", "compiler/c48/native_runtime.py",
-        "compiler/verify_native_interop.py",
+        "compiler/verify_native_interop.py", "compiler/verify_native_execution.py",
+        "compiler/native_runtime_provenance.json",
+        "compiler/tests/native_large_fixture.py",
         "compiler/tests/test_native_backend.py", "compiler/tests/test_native_formats.py",
         ".github/workflows/native-interop.yml",
         "compiler/source_tape_manifest.json",
@@ -252,6 +254,43 @@ def check_python_source() -> None:
     }
     if set(broad) != allowed:
         fail(f"broad exception boundary set changed: {broad!r}")
+
+
+def check_native_runtime_provenance() -> None:
+    from c48.native_runtime import RUNTIME_MEMBERS
+    from c48.native_format import encode_obj1
+
+    path = ROOT / "native_runtime_provenance.json"
+    try:
+        data = json.loads(path.read_text(encoding="ascii"))
+    except (UnicodeError, json.JSONDecodeError) as exc:
+        fail(f"invalid native runtime provenance: {exc}")
+    if data.get("schema") != 1:
+        fail("native runtime provenance schema mismatch")
+    if data.get("native_commit") != "69348ee366c48b436aa0d07237ae2e7473e55327":
+        fail("native runtime provenance commit mismatch")
+    members = {member.name: member for member in RUNTIME_MEMBERS}
+    if list(data.get("archive_order", [])) != [member.name for member in RUNTIME_MEMBERS]:
+        fail("native runtime archive ordering drift")
+    exports = data.get("exports")
+    if not isinstance(exports, dict):
+        fail("native runtime export metadata missing")
+    actual_exports = {
+        member.name: list(member.provides)
+        for member in RUNTIME_MEMBERS
+    }
+    if exports != actual_exports:
+        fail("native runtime exported-symbol metadata drift")
+    exact = data.get("exact_obj1_sha256")
+    if not isinstance(exact, dict):
+        fail("native runtime exact-member digest metadata missing")
+    for name, digest in exact.items():
+        member = members.get(name)
+        if member is None:
+            fail(f"native runtime provenance names unknown member {name!r}")
+        actual = hashlib.sha256(encode_obj1(member.obj)).hexdigest()
+        if actual != digest:
+            fail(f"native runtime exact-member digest drift: {name}")
 
 
 def check_font() -> None:
@@ -572,6 +611,7 @@ def main() -> int:
         ("Python source", check_python_source),
         ("license/header policy", check_license_policy),
         ("legacy SDK path invariant", check_legacy_path_policy),
+        ("native runtime provenance", check_native_runtime_provenance),
         ("font assets", check_font),
         ("C48 64-column sources", check_c48_source_columns),
         ("launchers", check_launchers),

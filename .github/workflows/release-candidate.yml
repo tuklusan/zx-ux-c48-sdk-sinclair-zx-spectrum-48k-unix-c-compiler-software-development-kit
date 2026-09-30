@@ -15,6 +15,7 @@ name: C48 release candidate packaging gate
       - "docs/*.docx"
       - "compiler/**/*.py"
       - "compiler/**/*.json"
+      - "compiler/**/*.md"
       - "compiler/**/*.bin"
       - "compiler/**/*.rom"
       - "usr/bin/demos/forest.c48b"
@@ -22,9 +23,12 @@ name: C48 release candidate packaging gate
       - "usr/bin/games/snake.c48b"
       - "c48run"
       - "c48run.bat"
+      - "c48b2tap"
+      - "c48b2tap.bat"
       - ".github/workflows/graphics-demos.yml"
       - ".github/workflows/gui-desktop.yml"
       - ".github/workflows/multitask.yml"
+      - ".github/workflows/native-interop.yml"
       - ".github/workflows/release-candidate.yml"
       - ".gitattributes"
   workflow_dispatch:
@@ -119,6 +123,7 @@ jobs:
           require_gate("gui-desktop.yml", "GUI")
           require_gate("graphics-demos.yml", "graphics")
           require_gate("multitask.yml", "multitask")
+          require_gate("native-interop.yml", "native interoperability")
           PY
 
       - name: Build materialized tracked-byte ZIP and metadata

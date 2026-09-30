@@ -13,6 +13,7 @@ name: C48 native format interoperability
       - ".gitattributes"
       - "compiler/**/*.py"
       - "compiler/**/*.json"
+      - "compiler/**/*.md"
       - "compiler/**/*.bin"
       - "compiler/**/*.rom"
       - "usr/src/**/*.c"
