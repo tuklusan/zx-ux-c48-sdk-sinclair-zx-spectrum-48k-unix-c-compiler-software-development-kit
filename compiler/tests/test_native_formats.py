@@ -67,6 +67,16 @@ class NativeFormatTests(unittest.TestCase):
         with self.assertRaises(NativeFormatError):
             encode_mex1(MexImage(b"\xc9", 0, 1, 256, ()))
 
+    def test_mex1_independent_native_ceilings(self) -> None:
+        stored_limit = encode_mex1(MexImage(b"\xc9" + b"\0" * (32744 - 1), 0, 0, 256, ()))
+        self.assertEqual(len(stored_limit), 32768)
+        with self.assertRaises(NativeFormatError):
+            encode_mex1(MexImage(b"\xc9" + b"\0" * 32744, 0, 0, 256, ()))
+        memory_limit = encode_mex1(MexImage(b"\xc9", 32767, 0, 256, ()))
+        self.assertLess(len(memory_limit), 32768)
+        with self.assertRaises(NativeFormatError):
+            encode_mex1(MexImage(b"\xc9", 32768, 0, 256, ()))
+
     def test_bin_tap_round_trip(self) -> None:
         mex = encode_mex1(MexImage(b"\xc9", 0, 0, 256, ()))
         tap = build_bin_tap("HELLO", mex)

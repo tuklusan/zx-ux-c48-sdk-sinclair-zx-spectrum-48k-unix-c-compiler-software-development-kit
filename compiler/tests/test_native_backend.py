@@ -26,6 +26,7 @@ from c48.native_format import (
 )
 from c48.native_link import link_mex, select_runtime
 from c48.native_runtime import RUNTIME_MEMBERS
+from tests.native_large_fixture import generate_large_native_source
 
 
 def native_from_source(source: str):
@@ -114,6 +115,24 @@ class NativeBackendTests(unittest.TestCase):
             [("user", user)],
             tuple(m for m in RUNTIME_MEMBERS if m.name != "startup"),
         )])
+
+    def test_large_cross_development_fixture_is_deterministic_and_native_sized(self) -> None:
+        source = generate_large_native_source()
+        self.assertGreaterEqual(len(source), 29 * 1024)
+        self.assertLessEqual(len(source), 31 * 1024)
+        self.assertEqual(source, generate_large_native_source())
+        program = compile_bytes(source, source_name="large.c", base_dir=Path.cwd())
+        first = NativeBackend(program).build()
+        second = NativeBackend(program).build()
+        self.assertEqual(encode_obj1(first), encode_obj1(second))
+        startup = next(m for m in RUNTIME_MEMBERS if m.name == "startup")
+        runtime = tuple(m for m in RUNTIME_MEMBERS if m.name != "startup")
+        mex = link_mex([("startup", startup.obj), ("user", first)], runtime)
+        stored = encode_mex1(mex)
+        self.assertGreaterEqual(len(stored), 29 * 1024)
+        self.assertLessEqual(len(stored), 31 * 1024)
+        self.assertLessEqual(len(mex.image) + mex.bss_size, 32768)
+        self.assertLessEqual(len(stored), 32768)
 
     def test_cli_rejects_hardlink_output_alias_without_modifying_input(self) -> None:
         program = compile_bytes(
