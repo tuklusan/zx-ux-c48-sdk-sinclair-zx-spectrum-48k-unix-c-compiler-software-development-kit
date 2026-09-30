@@ -70,6 +70,10 @@ def _validate_paths(ns) -> tuple[str, str | None]:
     if dst.exists():
         if dst.is_symlink() or not dst.is_file():
             raise NativeFormatError("existing output must be a regular non-symlink file")
+        src_stat = src.stat()
+        dst_stat = dst.stat()
+        if (src_stat.st_dev, src_stat.st_ino) == (dst_stat.st_dev, dst_stat.st_ino):
+            raise NativeFormatError("input and output paths must not alias the same file")
         if not ns.force:
             raise NativeFormatError("output already exists; use --force to replace it")
     if not dst.parent.is_dir() or dst.parent.is_symlink():

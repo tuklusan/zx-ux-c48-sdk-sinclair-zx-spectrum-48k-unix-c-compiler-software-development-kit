@@ -24,7 +24,7 @@ from c48.native_format import (
     encode_obj1,
     encode_mex1,
 )
-from c48.native_link import link_mex
+from c48.native_link import link_mex, select_runtime
 from c48.native_runtime import RUNTIME_MEMBERS
 
 
@@ -66,6 +66,52 @@ class NativeBackendTests(unittest.TestCase):
         )
         names = {s.name for s in obj.symbols}
         self.assertIn("c48_sdivmod", names)
+
+    def test_runtime_members_are_valid_obj1_and_archive_selection_is_fixed_point(self) -> None:
+        for member in RUNTIME_MEMBERS:
+            raw = encode_obj1(member.obj)
+            self.assertEqual(decode_obj1(raw), member.obj)
+        user = native_from_source(
+            "int main(void){char a[4];char b[4];"
+            "a[0]='x';a[1]=0;strcpy(b,a);return strcmp(a,b);}"
+        )
+        selected = select_runtime(
+            [("user", user)],
+            tuple(m for m in RUNTIME_MEMBERS if m.name != "startup"),
+        )
+        selected_names = [name for name, _ in selected]
+        self.assertIn("runtime:strcpy", selected_names)
+        self.assertIn("runtime:strcmp", selected_names)
+        self.assertEqual(selected_names, [name for name, _ in select_runtime(
+            [("user", user)],
+            tuple(m for m in RUNTIME_MEMBERS if m.name != "startup"),
+        )])
+
+    def test_cli_rejects_hardlink_output_alias_without_modifying_input(self) -> None:
+        program = compile_bytes(
+            b"int main(void){return 0;}",
+            source_name="alias.c",
+            base_dir=Path.cwd(),
+        )
+        with tempfile.TemporaryDirectory() as td:
+            d = Path(td)
+            src = d / "alias.c48b"
+            out = d / "alias.obj"
+            write(src, program)
+            original = src.read_bytes()
+            try:
+                out.hardlink_to(src)
+            except (OSError, NotImplementedError):
+                self.skipTest("hardlinks unavailable on this host")
+            cp = subprocess.run(
+                [sys.executable, str(SDK / "compiler" / "c48b2tap.py"),
+                 "--obj", "--force", str(src), str(out)],
+                capture_output=True,
+                text=True,
+            )
+            self.assertNotEqual(cp.returncode, 0)
+            self.assertEqual(src.read_bytes(), original)
+            self.assertEqual(out.read_bytes(), original)
 
     def test_cli_obj_mex_and_tap_are_deterministic(self) -> None:
         program = compile_bytes(

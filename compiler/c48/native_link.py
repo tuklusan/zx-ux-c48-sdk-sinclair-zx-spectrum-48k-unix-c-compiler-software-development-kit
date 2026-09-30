@@ -128,7 +128,7 @@ def link_mex(
             return sym.value, False
         raise NativeFormatError("invalid linked symbol section")
 
-    image = bytearray().join(module.obj.text for module in placed)
+    image = bytearray(b"".join(module.obj.text for module in placed))
     mex_relocs: list[int] = []
     for module in placed:
         for rel in module.obj.relocs:
