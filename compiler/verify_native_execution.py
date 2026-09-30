@@ -650,6 +650,13 @@ def assemble_namespace_fixture(root: Path, temp: Path) -> tuple[bytes, dict[str,
         (
             "zx48_objects_init",
             "zx48_p509_load_path",
+            "zx48_p509_locked_error",
+            "zx48_p509_commit_drop_new",
+            "zx48_p509_free_error",
+            "zx48_p509_format",
+            "zx48_p509_inval",
+            "zx48_p504_format",
+            "zx48_p504_cleanup",
             "zx48_object_lookup",
             "test_namespace_path",
             "test_namespace_name",
@@ -723,14 +730,31 @@ def run_namespace_case(
 
     sna.write_bytes(make_sna(code, patch))
     fuse = root / "tools/runtime/fuse/bin/fuse"
-    debugger = (
-        f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n"
-        f"breakpoint 0x{FAIL_LOAD_PC:04x}\ncommands 2\nprint z80:a\nexit 1\nend\n"
-        f"breakpoint 0x{FAIL_BASE_PC:04x}\ncommands 3\nprint z80:a\nexit 2\nend\n"
-        f"breakpoint 0x{FAIL_COMMIT_PC:04x}\ncommands 4\nexit 3\nend\n"
-        f"breakpoint 0x{FAIL_PROGRAM_PC:04x}\ncommands 5\nexit 4\nend\n"
-        "continue"
-    )
+    debugger_parts = [
+        f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n",
+        f"breakpoint 0x{FAIL_LOAD_PC:04x}\ncommands 2\nprint z80:a\nexit 1\nend\n",
+        f"breakpoint 0x{FAIL_BASE_PC:04x}\ncommands 3\nprint z80:a\nexit 2\nend\n",
+        f"breakpoint 0x{FAIL_COMMIT_PC:04x}\ncommands 4\nexit 3\nend\n",
+        f"breakpoint 0x{FAIL_PROGRAM_PC:04x}\ncommands 5\nexit 4\nend\n",
+    ]
+    for index, (name, status) in enumerate(
+        (
+            ("zx48_p509_locked_error", 11),
+            ("zx48_p509_commit_drop_new", 12),
+            ("zx48_p509_free_error", 13),
+            ("zx48_p509_format", 14),
+            ("zx48_p509_inval", 15),
+            ("zx48_p504_format", 16),
+            ("zx48_p504_cleanup", 17),
+        ),
+        6,
+    ):
+        debugger_parts.append(
+            f"breakpoint 0x{syms[name]:04x}\ncommands {index}\n"
+            f"print z80:a\nexit {status}\nend\n"
+        )
+    debugger_parts.append("continue")
+    debugger = "".join(debugger_parts)
     env = dict(**__import__("os").environ)
     env["SDL_VIDEODRIVER"] = "dummy"
     env["SDL_AUDIODRIVER"] = "dummy"
