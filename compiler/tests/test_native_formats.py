@@ -70,6 +70,16 @@ class NativeFormatTests(unittest.TestCase):
         with self.assertRaises(NativeFormatError):
             encode_mex1(MexImage(b"\xc9", 0, 1, 256, ()))
 
+    def test_mex1_rejects_odd_stack_requests(self) -> None:
+        with self.assertRaises(NativeFormatError):
+            encode_mex1(MexImage(b"\xc9", 0, 0, 65, ()))
+        raw = bytearray(encode_mex1(MexImage(b"\xc9", 0, 0, 64, ())))
+        raw[14:16] = (65).to_bytes(2, "little")
+        raw[22:24] = b"\0\0"
+        raw[22:24] = crc16_ccitt_false(bytes(raw[:24])).to_bytes(2, "little")
+        with self.assertRaises(NativeFormatError):
+            decode_mex1(bytes(raw))
+
     def test_mex1_independent_native_ceilings(self) -> None:
         stored_limit = encode_mex1(MexImage(b"\xc9" + b"\0" * (32744 - 1), 0, 0, 256, ()))
         self.assertEqual(len(stored_limit), 32768)
