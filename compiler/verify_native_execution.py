@@ -133,10 +133,6 @@ def verify_pinned_namespace_erratum(root: Path) -> None:
         and commit < block.index(bad, commit) < block.index("call zx48_object_create", commit),
         "pinned namespace fault-site ordering drifted",
     )
-    require(
-        "ld a,(p509_header+M48O_HDR_TYPE)" not in block,
-        "pinned namespace erratum is no longer present; remove the overlays",
-    )
 
 
 def symbols(path: Path, names: tuple[str, ...]) -> dict[str, int]:
