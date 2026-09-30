@@ -1,0 +1,69 @@
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
+#
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
+name: Phase 3 candidate gate dispatch
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/phase3-gates-once.yml"
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Retire dispatcher and freeze candidate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git lfs fsck
+          rm .github/workflows/phase3-gates-once.yml
+          git diff --quiet -- usr/src/demos usr/src/examples usr/src/apps
+          git config user.name "SANYALnet Labs Release Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add .github/workflows/phase3-gates-once.yml
+          test "$(git diff --cached --name-only)" = ".github/workflows/phase3-gates-once.yml"
+          python -B compiler/check_license_headers.py
+          git commit -m "Retire Phase 3 gate dispatcher"
+          git push origin HEAD:main
+
+      - name: Verify exact frozen candidate locally
+        shell: bash
+        run: |
+          set -euo pipefail
+          remote="$(git ls-remote origin refs/heads/main | cut -f1)"
+          test "$remote" = "$(git rev-parse HEAD)"
+          python -B compiler/run_tests.py
+          python -B compiler/verify_release.py
+          git diff --quiet
+          git diff --cached --quiet
+          printf '%s\n' "$(git rev-parse HEAD)" > "$RUNNER_TEMP/phase3-candidate-sha"
+
+      - name: Dispatch exact-candidate gates
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          final_sha="$(cat "$RUNNER_TEMP/phase3-candidate-sha")"
+          test "$final_sha" = "$(git rev-parse HEAD)"
+          for workflow in             verify.yml             graphics-demos.yml             recursive-demos.yml             recursive-build.yml             gui-desktop.yml             beep.yml             multitask.yml             native-interop.yml
+          do
+            gh workflow run "$workflow" --ref main
+          done
+          gh workflow run release-candidate.yml --ref main
