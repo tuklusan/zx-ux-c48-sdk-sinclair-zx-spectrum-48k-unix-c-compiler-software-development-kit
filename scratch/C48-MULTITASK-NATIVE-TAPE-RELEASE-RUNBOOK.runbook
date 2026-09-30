@@ -476,7 +476,8 @@ before composing their bounded corrections for the positive namespace-load path.
    runtime behavior, and exit for every representative execution fixture and for
    the large-program proof. If multiple native defects lie on the same execution
    route, the positive path may compose their independently bounded overlays, but
-   each overlay must also have its own isolated unmodified negative signature.
+   each fault site must first have its own isolated negative signature under the
+   staged rule in item 3.
 6. Independently keep unmodified-native proofs around each defect wherever the
    affected operation can be isolated. Generated OBJ1 must still be consumed by
    the native linker. M48O/TAP framing and payload bytes must still pass independent
@@ -513,7 +514,7 @@ wording, the large-program fallback wording, and the final completion wording mu
 be reviewed together three successive times after this revision. The pass record
 below must be replaced with actual results before implementation resumes.
 
-Pass 1: RESTARTED after finding and correcting the downstream-negative-proof gap
+Pass 1: RESTARTED after finding and correcting stale "unmodified" wording for downstream fault sites
 Pass 2: PENDING
 Pass 3: PENDING
 
@@ -562,7 +563,7 @@ Require:
 - shipped native startup/runtime support has pinned provenance, deterministic hashes, complete supported-symbol coverage, and fixed archive ordering;
 - independent decoders validate every proof artifact;
 - representative generated OBJ1 artifacts are accepted and linked by the pinned native linker;
-- native loader/execution proof passes unmodified, or Step 3.9A is active and its complete unmodified-negative, unmodified-surrounding, and bounded-overlay positive proof set passes;
+- native loader/execution proof passes unmodified, or Step 3.9A is active and its complete fully-unmodified first-fault negative, staged downstream-negative, unaffected-unmodified, and bounded-overlay positive proof set passes;
 - large-program proof passes;
 - overflow/negative tests pass;
 - `c48run` single and multitask regressions pass;
