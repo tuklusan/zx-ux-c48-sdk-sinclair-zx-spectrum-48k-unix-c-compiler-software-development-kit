@@ -396,6 +396,10 @@ def assemble_fixture(root: Path, temp: Path):
             "test_alloc_index",
             "test_expect_screen",
             "p514_committed",
+            "zx48_p511_format",
+            "zx48_p514_tape_format",
+            "zx48_p514_format_abort",
+            "zx48_p514_format_rollback",
             "gateway_write_bytes",
             "gateway_attr_calls",
             "gateway_plot_calls",
@@ -588,6 +592,16 @@ def run_tape_case(
         (FAIL_LOAD_OTHER_PC, 26),
     )
     debugger_parts = [f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n"]
+    internal_failures = (
+        (syms["zx48_p511_format"], 31),
+        (syms["zx48_p514_tape_format"], 32),
+        (syms["zx48_p514_format_abort"], 33),
+        (syms["zx48_p514_format_rollback"], 34),
+    )
+    for index, (address, status) in enumerate(internal_failures, 20):
+        debugger_parts.append(
+            f"breakpoint 0x{address:04x}\ncommands {index}\nexit {status}\nend\n"
+        )
     for index, (address, status) in enumerate(failures, 2):
         debugger_parts.append(
             f"breakpoint 0x{address:04x}\ncommands {index}\nexit {status}\nend\n"
