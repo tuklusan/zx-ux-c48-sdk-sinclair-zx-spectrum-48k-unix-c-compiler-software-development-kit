@@ -1,0 +1,93 @@
+# ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
+#
+# SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
+name: Phase 3 stack manual updater
+
+"on":
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/phase3-stack-docs-once.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install document support
+        run: |
+          set -euo pipefail
+          python -m pip install --disable-pip-version-check python-docx==1.2.0
+          if ! command -v libreoffice >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends libreoffice-writer
+          fi
+      - name: Correct stack wording
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from docx import Document
+          from pathlib import Path
+
+          docs = sorted(Path("docs").glob("*.docx"))
+          changed = 0
+          for path in docs:
+              doc = Document(path)
+              local = 0
+              for paragraph in doc.paragraphs:
+                  old = paragraph.text
+                  new = old.replace(
+                      "--stack selects the requested FAST stack within the native 64 through 4096 byte range.",
+                      "--stack selects an even requested FAST stack from 64 through 4096 bytes."
+                  )
+                  if new != old:
+                      paragraph.text = new
+                      local += 1
+              if local:
+                  doc.core_properties.author = "SANYALnet Labs"
+                  doc.core_properties.last_modified_by = "SANYALnet Labs"
+                  doc.save(path)
+                  changed += local
+          if changed != 1:
+              raise SystemExit(f"expected exactly one stack wording update, got {changed}")
+          PY
+      - name: Render and inspect structure
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/phase3-stack-render"
+          for doc in docs/*.docx; do
+            libreoffice --headless --convert-to pdf --outdir "$RUNNER_TEMP/phase3-stack-render" "$doc" >/tmp/lo.txt 2>&1 || { cat /tmp/lo.txt; exit 1; }
+          done
+          test "$(find "$RUNNER_TEMP/phase3-stack-render" -type f -name '*.pdf' | wc -l)" -eq 3
+          python - <<'PY'
+          from docx import Document
+          text = "\n".join(p.text for p in Document("docs/ZX-UX C48 SDK User Manual.docx").paragraphs)
+          required = "--stack selects an even requested FAST stack from 64 through 4096 bytes."
+          if required not in text:
+              raise SystemExit("updated native stack wording missing")
+          if "--stack selects the requested FAST stack within the native 64 through 4096 byte range." in text:
+              raise SystemExit("stale native stack wording remains")
+          PY
+          git diff --quiet -- usr/src/demos usr/src/examples usr/src/apps
+      - name: Commit corrected manuals and retire updater
+        run: |
+          set -euo pipefail
+          rm .github/workflows/phase3-stack-docs-once.yml
+          git config user.name "SANYALnet Labs Release Automation"
+          git config user.email "actions@users.noreply.github.com"
+          git add docs/*.docx .github/workflows/phase3-stack-docs-once.yml
+          actual="$(git diff --cached --name-only | LC_ALL=C sort)"
+          expected="$(printf '%s\n' '.github/workflows/phase3-stack-docs-once.yml' 'docs/ZX-UX C48 SDK User Manual.docx' | LC_ALL=C sort)"
+          test "$actual" = "$expected"
+          python -B compiler/check_license_headers.py
+          git commit -m "Clarify native stack alignment in manual"
+          git push origin HEAD:main
