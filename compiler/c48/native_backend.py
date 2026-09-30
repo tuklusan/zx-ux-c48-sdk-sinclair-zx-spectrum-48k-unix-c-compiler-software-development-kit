@@ -433,14 +433,36 @@ class _Function:
             elif op in {"==", "!=", "<", "<=", ">", ">="}:
                 common_signed = arithmetic_common(lt, rt).is_signed
                 self._compare(op, common_signed)
-            elif op in {"/", "%", "<<", ">>"}:
-                raise NativeLoweringError(f"native operator {op!r} is not yet enabled")
+            elif op in {"/", "%"}:
+                common = arithmetic_common(lt, rt)
+                self.e.call("c48_sdivmod" if common.is_signed else "c48_udivmod")
+                if op == "%":
+                    self.e.emit(0xEB)
+            elif op in {"<<", ">>"}:
+                self._shift(op, lt.is_signed, 7 if lt.bits == 8 else 15)
             else:
                 raise NativeLoweringError(f"native binary operator {op!r} is unsupported")
             if result_t.size == 1:
                 self.e.emit(0x26, 0x00)
             return
         raise NativeLoweringError(f"native expression kind {k!r} is unsupported")
+
+
+    def _shift(self, op: str, signed: bool, mask: int) -> None:
+        done = self.e.new_label_name()
+        loop = self.e.new_label_name()
+        self.e.emit(0x7B, 0xE6, mask, 0x47, 0xB7)  # A=E; mask; B=A; OR A
+        self.e.jp_cond(0xCA, done)
+        self.e.place_label(loop)
+        if op == "<<":
+            self.e.emit(0x29)
+        elif signed:
+            self.e.emit(0xCB, 0x2C, 0xCB, 0x1D)  # SRA H ; RR L
+        else:
+            self.e.emit(0xCB, 0x3C, 0xCB, 0x1D)  # SRL H ; RR L
+        self.e.emit(0x05)  # DEC B
+        self.e.jp_cond(0xC2, loop)
+        self.e.place_label(done)
 
     def _pointer_binary(self, op: str, lt: CType, rt: CType) -> None:
         if op in {"==", "!="}:
@@ -467,7 +489,7 @@ class _Function:
             if size == 2:
                 self.e.emit(0x29)
             elif size == 5:
-                self.e.emit(0x54, 0x5D, 0x29, 0x29, 0x19)
+                self.e.emit(0xD5, 0x54, 0x5D, 0x29, 0x29, 0x19, 0xD1)
             elif size != 1:
                 raise NativeLoweringError("native pointer scaling is unsupported")
             self.e.emit(0x19)

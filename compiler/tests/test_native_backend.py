@@ -58,14 +58,14 @@ class NativeBackendTests(unittest.TestCase):
         )
         self.assertGreater(len(obj.text), 40)
 
-    def test_unsupported_division_fails_before_cli_replacement(self) -> None:
-        program = compile_bytes(
-            b"int main(void){return 8/2;}",
-            source_name="div.c",
-            base_dir=Path.cwd(),
+    def test_division_modulo_and_shifts_lower(self) -> None:
+        obj = native_from_source(
+            "int main(void){int a;a=-91;"
+            "if(a/7!=-13)return 1;if(a%7!=0)return 2;"
+            "if((3<<4)!=48)return 3;if((-16>>2)!=-4)return 4;return 0;}"
         )
-        with self.assertRaises(NativeLoweringError):
-            NativeBackend(program).build()
+        names = {s.name for s in obj.symbols}
+        self.assertIn("c48_sdivmod", names)
 
     def test_cli_obj_mex_and_tap_are_deterministic(self) -> None:
         program = compile_bytes(
@@ -100,7 +100,7 @@ class NativeBackendTests(unittest.TestCase):
 
     def test_cli_failure_does_not_replace_existing_output(self) -> None:
         program = compile_bytes(
-            b"int main(void){return 8/2;}",
+            b"int main(void){return 1.0;}",
             source_name="bad.c",
             base_dir=Path.cwd(),
         )

@@ -101,6 +101,63 @@ def _mul16() -> NativeMember:
     return _single("c48_mul16", c.finish())
 
 
+
+def _div16() -> NativeMember:
+    # Unsigned core returns quotient in HL and remainder in DE. The signed entry
+    # converts magnitudes, reuses the same core, then restores C48 signs.
+    c = _Code()
+    uoff = len(c.data)
+    c.emit(0x7A, 0xB3)              # LD A,D ; OR E
+    c.jr(0x20, "u_valid")           # JR NZ
+    c.emit(0x21, 0x01, 0x00, 0x3E, 0x01, 0xCD, 0x00, 0xE0, 0x76)
+    c.label("u_valid")
+    c.emit(0x42, 0x4B)              # BC=divisor
+    c.emit(0x11, 0x00, 0x00)        # DE=remainder
+    c.emit(0x3E, 0x10)              # A=16 iterations
+    c.label("u_loop")
+    c.emit(0xF5, 0x29, 0xCB, 0x13, 0xCB, 0x12)
+    c.emit(0x7A, 0xB8)              # compare remainder high to divisor high
+    c.jr(0x38, "u_no_sub")
+    c.jr(0x20, "u_sub")
+    c.emit(0x7B, 0xB9)
+    c.jr(0x38, "u_no_sub")
+    c.label("u_sub")
+    c.emit(0xEB, 0xB7, 0xED, 0x42, 0xEB, 0xCB, 0xC5)
+    c.label("u_no_sub")
+    c.emit(0xF1, 0x3D)
+    c.jr(0x20, "u_loop")
+    c.emit(0xC9)
+
+    soff = len(c.data)
+    c.emit(0x7C, 0xE6, 0x80, 0xF5)  # save dividend sign
+    c.emit(0x7C, 0xAA, 0xE6, 0x80, 0xF5)  # save quotient sign
+    c.emit(0xCB, 0x7C)
+    c.jr(0x28, "s_lhs_ok")
+    c.emit(0x7D, 0x2F, 0x6F, 0x7C, 0x2F, 0x67, 0x23)
+    c.label("s_lhs_ok")
+    c.emit(0xCB, 0x7A)
+    c.jr(0x28, "s_rhs_ok")
+    c.emit(0xEB, 0x7D, 0x2F, 0x6F, 0x7C, 0x2F, 0x67, 0x23, 0xEB)
+    c.label("s_rhs_ok")
+    call_pos = len(c.data)
+    c.emit(0xCD, 0x00, 0x00)
+    c.emit(0xF1, 0xB7)
+    c.jr(0x28, "s_q_ok")
+    c.emit(0x7D, 0x2F, 0x6F, 0x7C, 0x2F, 0x67, 0x23)
+    c.label("s_q_ok")
+    c.emit(0xF1, 0xB7)
+    c.jr(0x28, "s_done")
+    c.emit(0xEB, 0x7D, 0x2F, 0x6F, 0x7C, 0x2F, 0x67, 0x23, 0xEB)
+    c.label("s_done")
+    c.emit(0xC9)
+    text = c.finish()
+    symbols = (
+        ObjSymbol("c48_udivmod", uoff, OBJ_SECTION_TEXT, OBJ_SYMBOL_GLOBAL),
+        ObjSymbol("c48_sdivmod", soff, OBJ_SECTION_TEXT, OBJ_SYMBOL_GLOBAL),
+    )
+    relocs = (ObjReloc(call_pos + 1, 0),)
+    return NativeMember("div16", ObjImage(text, 0, symbols, relocs), ("c48_udivmod", "c48_sdivmod"))
+
 def _putchar() -> NativeMember:
     # Native string runtime convention: write low byte through stdout handle 1.
     # c48_stdio_byte lives in this member's BSS and is addressed through OBJ1.
@@ -136,6 +193,7 @@ RUNTIME_MEMBERS: tuple[NativeMember, ...] = (
     _startup(),
     _exit(),
     _mul16(),
+    _div16(),
     _syscall_wrapper("yield", 0x02, zero_result=True),
     _syscall_wrapper("sleep", 0x03, zero_result=True),
     _syscall_wrapper("getpid", 0x04),
