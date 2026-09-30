@@ -420,17 +420,25 @@ same time. This protocol exists to separate repository-owned defects from extern
 native-runtime defects without altering the external repository or changing
 generated artifact bytes to accommodate them.
 
-For the currently observed pinned reference, two independently reproduced defects
-are active and must be carried separately in the evidence:
+For the currently observed pinned reference, three independently reproduced
+native fault sites are active and must be carried separately in the evidence:
 
 - the P514 direct-tape image loop does not preserve the loaded image byte across
-  its CRC update before storing the byte; and
-- the P509 BIN namespace placement check uses
+  its CRC update before storing the byte;
+- the P509 BIN namespace match/public-type check uses
   `ld b,(p509_header+M48O_HDR_TYPE)`, an instruction form the target Z80 does not
   provide. The pinned assembler encodes the operand as an immediate low address
   byte, so the public-type check sees the wrong object type and rejects an
-  otherwise valid BIN object with `E_PERM`. The latest observed read-only native
-  tree still contains the same instruction.
+  otherwise valid BIN object with `E_PERM`; and
+- the P509 new-object commit path repeats the same invalid
+  `ld b,(p509_header+M48O_HDR_TYPE)` form immediately before
+  `zx48_object_create`, so after the match/public-type site is corrected in
+  isolation the new-object commit still sees the wrong type and fails with
+  `E_PERM`.
+
+The exact pinned source and the latest observed read-only native tree contain both
+P509 fault sites. The verifier must prove the two P509 failures independently
+before composing their bounded corrections for the positive namespace-load path.
 
 1. Freeze the pinned native commit, latest observed native commit, exact native
    source span for every active defect, failing generated artifact hashes,
@@ -445,7 +453,7 @@ are active and must be carried separately in the evidence:
    external defect signature through the unmodified pinned path. Any different
    failure is a proof failure and must be investigated.
 4. A test-only SDK verifier may apply one independently bounded in-memory erratum
-   overlay per frozen defect after assembling the exact pinned native source.
+   overlay per frozen fault site after assembling the exact pinned native source.
    Every overlay must change only the exact instruction/call site proven
    defective, must record and check the original bytes and address before
    patching, and must fail closed if the pinned source, symbols, or assembled
@@ -453,8 +461,11 @@ are active and must be carried separately in the evidence:
    more bytes, a call/jump to a verifier-owned trampoline is permitted only when
    the original patched site remains fixed-size, the trampoline preserves all
    registers/flags required by the native contract, and the verifier proves no
-   other native path is changed. Every overlay must preserve the frozen native
-   contract rather than introduce a new one.
+   other native path is changed. When one source-level defect is duplicated at
+   multiple native fault sites, each site receives its own independently checked
+   overlay and isolated negative signature before any composed positive proof.
+   Every overlay must preserve the frozen native contract rather than introduce
+   a new one.
 5. Run the exact same unmodified generated TAP through the required bounded-overlay
    path and require complete native namespace acceptance, startup, relocation,
    runtime behavior, and exit for every representative execution fixture and for
@@ -490,10 +501,14 @@ are active and must be carried separately in the evidence:
    used to waive any repository-owned defect.
 
 Runbook-revision zero-gap record: the generalized multi-erratum wording above,
-the Phase-3 acceptance wording, the large-program fallback wording, and the final
-completion wording were reviewed together three successive times after revision.
-Pass 1: zero new gaps. Pass 2: zero new gaps. Pass 3: zero new gaps. Implementation
-may resume only against this reviewed wording.
+including independent handling of both P509 fault sites, the Phase-3 acceptance
+wording, the large-program fallback wording, and the final completion wording must
+be reviewed together three successive times after this revision. The pass record
+below must be replaced with actual results before implementation resumes.
+
+Pass 1: PENDING
+Pass 2: PENDING
+Pass 3: PENDING
 
 
 ## Step 3.10 — Large-program cross-development proof
