@@ -1,6 +1,8 @@
+<!--
 ZX-UX Unix ZX Spectrum 48K SDK © 2026 SANYALnet Labs supratim-sanyal.blogspot.com
 
 SANYALnet Labs Non-Commercial License, attribution to SANYALnet Labs required, see LICENSE for more information
+-->
 
 # C48B1 to native ZX-UX contract
 
