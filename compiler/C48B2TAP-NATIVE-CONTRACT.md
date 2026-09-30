@@ -25,7 +25,7 @@ bytes. Relocations are strictly increasing and non-overlapping. Text plus BSS
 and the complete stored object are each bounded by 32768 bytes.
 
 MEX1 is version 1 with a 24-byte header, image-relative entry point, minimum
-FAST-stack request from 64 through 4096 bytes, image-relative relocation words,
+FAST-stack request that is even and from 64 through 4096 bytes, image-relative relocation words,
 CCITT-FALSE CRC16, and no trailing bytes. Image plus BSS and complete stored
 MEX1 are each bounded by 32768 bytes.
 
