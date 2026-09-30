@@ -475,6 +475,225 @@ def apply_direct_tape_erratum_overlay(
     return bytes(out), note
 
 
+
+def namespace_fixture_source(root: Path) -> str:
+    inc = root / "v1/include"
+    kernel = root / "v1/src/kernel"
+    return f"""    DEVICE ZXSPECTRUM48
+    INCLUDE "{(inc / 'zx48ux.inc').as_posix()}"
+    INCLUDE "{(inc / 'tapeobj.inc').as_posix()}"
+    INCLUDE "{(kernel / 'objects.asm').as_posix()}"
+    INCLUDE "{(kernel / 'tape.asm').as_posix()}"
+ROM_LD_BYTES EQU $0556
+    ORG $4000
+namespace_fixture_start:
+    EMIT_OBJECT_TYPE_ROUTINES
+    EMIT_OBJECT_ROUTINES
+    EMIT_P502_CRC16_ROUTINES
+    EMIT_P503_FRAMING_ROUTINES
+    EMIT_P504_RAW_LOADER_ROUTINES
+    EMIT_P507_RAW_SAVE_ROUTINES
+    EMIT_P509_EXPLICIT_LOAD_ROUTINES
+
+zx48_alloc:
+    ld hl,$8000
+    xor a
+    ret
+zx48_free:
+    xor a
+    ret
+zx48_tape_load_block:
+    ld a,M48O_ROM_DATA_FLAG
+    scf
+    call ROM_LD_BYTES
+    jr nc,namespace_tape_error
+    xor a
+    ret
+namespace_tape_error:
+    ld a,E_IO
+    scf
+    ret
+zx48_tape_save_block:
+    ld a,E_IO
+    scf
+    ret
+zx48_process_lookup:
+    ld a,E_NOENT
+    scf
+    ret
+zx48_process_ptr:
+    ld a,E_NOENT
+    scf
+    ret
+zx48_zxpack_read:
+    ld a,E_NOTSUP
+    scf
+    ret
+zx48_zxpack_materialize:
+    ld a,E_NOTSUP
+    scf
+    ret
+zx48_zxpack_try_slot:
+    ld a,E_NOTSUP
+    scf
+    ret
+zx48_od_create:
+    ld a,E_NOTSUP
+    scf
+    ret
+zx48_handle_install:
+    ld a,E_NOTSUP
+    scf
+    ret
+zx48_od_release_id:
+    xor a
+    ret
+zx48_od_object_any_live:
+    xor a
+    or a
+    ret
+zx48_p424_candidate_clear:
+    xor a
+    ret
+zx48_p505_packed_load:
+    ld a,E_NOTSUP
+    scf
+    ret
+zx48_p513_prompt_play:
+    xor a
+    ret
+zx48_p513_prompt_record:
+    xor a
+    ret
+
+test_namespace_path:
+    db "/bin/NATIVE",0
+test_namespace_name:
+    db "NATIVE",0
+current_pid:
+    db 1
+namespace_fixture_end:
+    SAVEBIN "sdk-native-namespace.bin",namespace_fixture_start,namespace_fixture_end-namespace_fixture_start
+"""
+
+
+def assemble_namespace_fixture(root: Path, temp: Path) -> tuple[bytes, dict[str, int]]:
+    source = temp / "sdk-native-namespace.asm"
+    source.write_text(namespace_fixture_source(root), encoding="utf-8", newline="\n")
+    assembler = root / "tools/runtime/sjasmplus/bin/sjasmplus"
+    run(
+        [assembler, "--nologo", "--sym=sdk-native-namespace.sym", source.name],
+        cwd=temp,
+        timeout=60,
+    )
+    binary = (temp / "sdk-native-namespace.bin").read_bytes()
+    require(0 < len(binary) < TEST_ENTRY - FIXTURE_BASE,
+            f"native namespace fixture has unsafe size {len(binary)}")
+    syms = symbols(
+        temp / "sdk-native-namespace.sym",
+        (
+            "zx48_objects_init",
+            "zx48_p509_load_path",
+            "zx48_object_lookup",
+            "test_namespace_path",
+            "test_namespace_name",
+            "object_table",
+            "DIR_BIN",
+            "OBJ_BIN",
+            "OBJ_DIR_ID",
+            "OBJ_TYPE_ID",
+            "OBJ_FLAGS_BYTE",
+            "OBJ_RESERVED_BYTE",
+            "OBJ_LOGICAL_LENGTH",
+            "OBJ_STORAGE_LENGTH",
+            "OBJ_ALLOCATION_PTR",
+        ),
+    )
+    return binary, syms
+
+
+def namespace_driver(syms: dict[str, int], mex_bytes: bytes, expected_addr: int) -> bytes:
+    code = bytearray()
+    code += b"\xF3"
+    code += b"\x31" + word(TEST_STACK)
+    code += call(syms["zx48_objects_init"])
+    code += b"\x21" + word(syms["test_namespace_path"])
+    code += call(syms["zx48_p509_load_path"])
+    code += jp_c(FAIL_LOAD_PC)
+    code += bytes((0x3E, syms["DIR_BIN"] & 0xFF))
+    code += b"\x21" + word(syms["test_namespace_name"])
+    code += call(syms["zx48_object_lookup"])
+    code += jp_c(FAIL_LOAD_PC)
+    record = syms["object_table"]
+    code += check_byte(record + syms["OBJ_DIR_ID"], syms["DIR_BIN"])
+    code += check_byte(record + syms["OBJ_TYPE_ID"], syms["OBJ_BIN"])
+    code += check_byte(record + syms["OBJ_FLAGS_BYTE"], 0)
+    code += check_byte(record + syms["OBJ_RESERVED_BYTE"], 0)
+    code += check_word(record + syms["OBJ_LOGICAL_LENGTH"], len(mex_bytes))
+    code += check_word(record + syms["OBJ_STORAGE_LENGTH"], len(mex_bytes))
+    code += check_word(record + syms["OBJ_ALLOCATION_PTR"], IMAGE_BASE)
+    for index, value in enumerate(b"NATIVE\0\0\0\0"):
+        code += check_byte(record + index, value)
+    code += b"\x21" + word(IMAGE_BASE)
+    code += b"\x11" + word(expected_addr)
+    code += b"\x01" + word(len(mex_bytes))
+    loop = TEST_ENTRY + len(code)
+    code += b"\x1A\xBE" + jp_nz(FAIL_LOAD_PC)
+    code += b"\x23\x13\x0B\x78\xB1" + jp_nz(loop)
+    code += jp(PASS_PC)
+    return bytes(code)
+
+
+def run_namespace_case(
+    root: Path,
+    temp: Path,
+    fixture: bytes,
+    syms: dict[str, int],
+    tap: bytes,
+    mex_bytes: bytes,
+) -> None:
+    expected_addr = 0xA000
+    require(expected_addr + len(mex_bytes) < 0xC000, "namespace proof MEX is too large")
+    tape = temp / "namespace.tap"
+    sna = temp / "namespace.sna"
+    tape.write_bytes(tap)
+    code = namespace_driver(syms, mex_bytes, expected_addr)
+
+    def patch(ram: bytearray) -> None:
+        start = FIXTURE_BASE - RAM_START
+        ram[start:start + len(fixture)] = fixture
+        expected = expected_addr - RAM_START
+        ram[expected:expected + len(mex_bytes)] = mex_bytes
+
+    sna.write_bytes(make_sna(code, patch))
+    fuse = root / "tools/runtime/fuse/bin/fuse"
+    debugger = (
+        f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n"
+        f"breakpoint 0x{FAIL_LOAD_PC:04x}\ncommands 2\nexit 1\nend\n"
+        "continue"
+    )
+    env = dict(**__import__("os").environ)
+    env["SDL_VIDEODRIVER"] = "dummy"
+    env["SDL_AUDIODRIVER"] = "dummy"
+    cp = subprocess.run(
+        [
+            str(fuse), "--machine", "48", "--no-sound", "--no-confirm-actions",
+            "--tape", str(tape), "--debugger-command", debugger, str(sna),
+        ],
+        cwd=root,
+        env=env,
+        check=False,
+        capture_output=True,
+        text=True,
+        timeout=90,
+    )
+    require(
+        cp.returncode == 0,
+        f"native namespace tape proof failed: exit={cp.returncode}\n"
+        f"stdout={cp.stdout}\nstderr={cp.stderr}",
+    )
+
+
 def float_service_source(root: Path) -> str:
     inc = root / "v1/include/zx48ux.inc"
     syscall = root / "v1/src/kernel/syscall.asm"
@@ -773,6 +992,7 @@ def main() -> int:
         temp = Path(td)
         _, fixture, screen_gateway, syms = assemble_fixture(root, temp)
         overlay_fixture, overlay_note = apply_direct_tape_erratum_overlay(fixture, syms)
+        namespace_fixture, namespace_syms = assemble_namespace_fixture(root, temp)
         float_service, float_gateway = assemble_float_service(root, temp)
         records: list[str] = []
         for stem, source, mode in cases:
@@ -803,6 +1023,10 @@ def main() -> int:
                 require(len(mex.image) + mex.bss_size < 0x4000,
                         "Float5 proof image would overlap pinned service fixture")
             if stem == "globals":
+                run_namespace_case(
+                    root, temp, namespace_fixture, namespace_syms,
+                    tap_bytes, mex_bytes,
+                )
                 run_tape_case(
                     root, temp, fixture, screen_gateway,
                     syms, tap_bytes, decoded.entry_offset,
