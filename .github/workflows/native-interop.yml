@@ -47,7 +47,6 @@ jobs:
       - name: Check out SDK candidate
         uses: actions/checkout@v4
         with:
-          lfs: true
 
       - name: Check out pinned native reference
         uses: actions/checkout@v4
