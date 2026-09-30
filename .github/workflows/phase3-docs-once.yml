@@ -199,7 +199,9 @@ jobs:
           actual="$(git diff --cached --name-only | LC_ALL=C sort)"
           expected="$(printf '%s\n'             '.github/workflows/phase3-docs-once.yml'             'docs/ZX-UX C48 SDK Adversarial Security Review.docx'             'docs/ZX-UX C48 SDK Technical Reference.docx'             'docs/ZX-UX C48 SDK User Manual.docx' | LC_ALL=C sort)"
           test "$actual" = "$expected"
+          mv qa "$RUNNER_TEMP/phase3-manual-qa"
           python -B compiler/check_license_headers.py
+          mv "$RUNNER_TEMP/phase3-manual-qa" qa
           git commit -m "Document native executable tape cross-development"
           git push origin HEAD:main
 

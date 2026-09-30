@@ -93,10 +93,16 @@ semantics. An external symbol with neither an exact pinned member nor a proved
 translation is unresolved and the output transaction fails.
 
 The supported boundary is intentionally narrower than the host interpreter.
-Five-byte floating arithmetic and casts are not emitted until the native
-Float5 calling and result conventions have executable proof. Block-scope
-static storage is likewise rejected by the current target lowering. Host-only
-display conveniences are not silently translated into target calls.
+Five-byte floating arithmetic, casts, comparisons, truth testing, hidden
+Float5 returns, and the admitted public math calls are emitted through the
+pinned ZX-UX floating syscall ABI and its exact five-byte storage convention.
+Block-scope static storage is rejected by the current target lowering.
+Host-only display conveniences are not silently translated into target calls.
 
-The exact prebuilt-member provenance is `v1/src/libc48/crt0.asm` plus
-`v1/src/libc48/runtime_archive.asm` at the pinned authority commit above.
+Exact prebuilt-member provenance comes from `v1/src/libc48/crt0.asm` and
+the P10/P11 object members in `v1/src/libc48/runtime_archive.asm`. Translated
+integer, string, memory, graphics, process, Float5, and math helpers are tied
+to the corresponding pinned libc48 sources and `v1/include/zx48ux.inc`.
+`compiler/native_runtime_provenance.json` records the authority commit,
+source set, exact serialized-member digests, archive order, and complete
+exported-symbol map checked by release verification.
