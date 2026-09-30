@@ -26,6 +26,7 @@ from tests.native_semantic_fixtures import SHARED_RECURSION_SOURCE
 
 REFERENCE_COMMIT = "69348ee366c48b436aa0d07237ae2e7473e55327"
 DIRECT_TAPE_ERRATUM = "P514 image byte is not restored after CRC update"
+NAMESPACE_ERRATUM = "P509 uses invalid LD B,(nn) form for M48O type"
 IMAGE_BASE = 0x8000
 FIXTURE_BASE = 0x4000
 TEST_ENTRY = 0x7A00
@@ -115,6 +116,23 @@ def verify_pinned_direct_tape_erratum(root: Path) -> None:
         and "push af" not in between
         and "pop af" not in between,
         "pinned direct-tape erratum is no longer present; remove the overlay",
+    )
+
+
+def verify_pinned_namespace_erratum(root: Path) -> None:
+    source = (root / "v1/src/kernel/tape.asm").read_text(encoding="utf-8")
+    start = source.index("zx48_p509_match:")
+    end = source.index("zx48_p509_load_raw:", start)
+    block = source[start:end]
+    require(
+        "ld a,(p509_header+M48O_HDR_DIRECTORY)" in block
+        and "ld b,(p509_header+M48O_HDR_TYPE)" in block
+        and "call zx48_object_public_type_allowed" in block,
+        "pinned namespace placement-check shape drifted",
+    )
+    require(
+        "ld a,(p509_header+M48O_HDR_TYPE)" not in block,
+        "pinned namespace erratum is no longer present; remove the overlay",
     )
 
 
@@ -658,7 +676,9 @@ def assemble_namespace_fixture(root: Path, temp: Path) -> tuple[bytes, dict[str,
         (
             "zx48_objects_init",
             "zx48_p509_load_path",
+            "zx48_p509_match",
             "p509_header",
+            "zx48_object_public_type_allowed",
             "test_allow_dir",
             "test_allow_type",
             "zx48_p509_locked_error",
@@ -684,6 +704,55 @@ def assemble_namespace_fixture(root: Path, temp: Path) -> tuple[bytes, dict[str,
         ),
     )
     return binary, syms
+
+
+def apply_namespace_type_erratum_overlay(
+    fixture: bytes, syms: dict[str, int],
+) -> tuple[bytes, str]:
+    start = syms["zx48_p509_match"] - FIXTURE_BASE
+    end = syms["zx48_p509_locked_error"] - FIXTURE_BASE
+    require(0 <= start < end <= len(fixture), "namespace match range drifted")
+    wrong_imm = (syms["p509_header"] + 5) & 0xFF
+    original = b"\x06" + bytes((wrong_imm,)) + call(syms["zx48_object_public_type_allowed"])
+    hits: list[int] = []
+    pos = start
+    while True:
+        pos = fixture.find(original, pos, end)
+        if pos < 0:
+            break
+        hits.append(pos)
+        pos += 1
+    require(len(hits) == 1, f"expected one namespace type-check sequence, found {len(hits)}")
+    patch_offset = hits[0]
+    trampoline = FIXTURE_BASE + len(fixture)
+    trampoline_bytes = (
+        b"\xF5"
+        + b"\x3A" + word(syms["p509_header"] + 5)
+        + b"\x47"
+        + b"\xF1"
+        + call(syms["zx48_object_public_type_allowed"])
+        + b"\xC9"
+    )
+    require(
+        trampoline + len(trampoline_bytes) <= TEST_ENTRY,
+        "no safe room for namespace erratum trampoline",
+    )
+    out = bytearray(fixture)
+    require(
+        out[patch_offset:patch_offset + len(original)] == original,
+        "namespace erratum original bytes drifted",
+    )
+    replacement = call(trampoline) + b"\x00\x00"
+    require(len(replacement) == len(original), "namespace overlay must preserve patched span size")
+    out[patch_offset:patch_offset + len(original)] = replacement
+    out.extend(trampoline_bytes)
+    note = (
+        f"site=0x{FIXTURE_BASE + patch_offset:04x} "
+        f"wrong_type=0x{wrong_imm:02x} "
+        f"allow=0x{syms['zx48_object_public_type_allowed']:04x} "
+        f"trampoline=0x{trampoline:04x} original={original.hex()}"
+    )
+    return bytes(out), note
 
 
 def namespace_driver(syms: dict[str, int], mex_bytes: bytes, expected_addr: int) -> bytes:
@@ -725,7 +794,7 @@ def run_namespace_case(
     syms: dict[str, int],
     tap: bytes,
     mex_bytes: bytes,
-) -> None:
+, *, expect_erratum: bool = False) -> None:
     expected_addr = 0xA000
     require(expected_addr + len(mex_bytes) < 0xC000, "namespace proof MEX is too large")
     tape = temp / "namespace.tap"
@@ -791,6 +860,28 @@ def run_namespace_case(
         text=True,
         timeout=90,
     )
+    if expect_erratum:
+        wrong_type = (syms["p509_header"] + 5) & 0xFF
+        require(wrong_type != syms["OBJ_BIN"], "namespace erratum no longer produces a wrong type")
+        require(
+            cp.returncode == 11,
+            f"unmodified native namespace erratum signature drifted: exit={cp.returncode}\n"
+            f"stdout={cp.stdout}\nstderr={cp.stderr}",
+        )
+        values = [line.strip().lower() for line in cp.stdout.splitlines() if line.strip().lower().startswith("0x")]
+        expected_tail = [
+            "0x7",
+            f"0x{syms['OBJ_BIN'] & 0xff:x}",
+            f"0x{syms['DIR_BIN'] & 0xff:x}",
+            f"0x{syms['DIR_BIN'] & 0xff:x}",
+            f"0x{wrong_type:x}",
+            f"0x{wrong_type:x}",
+        ]
+        require(
+            values[-6:] == expected_tail,
+            f"unmodified native namespace erratum trace drifted: got={values[-6:]} expected={expected_tail}",
+        )
+        return
     require(
         cp.returncode == 0,
         f"native namespace tape proof failed: exit={cp.returncode}\n"
@@ -1237,6 +1328,7 @@ def main() -> int:
     root = args.native_root.resolve()
     verify_native_identity(root)
     verify_pinned_direct_tape_erratum(root)
+    verify_pinned_namespace_erratum(root)
 
     cases = (
         (
@@ -1286,6 +1378,9 @@ def main() -> int:
         _, fixture, screen_gateway, syms = assemble_fixture(root, temp)
         overlay_fixture, overlay_note = apply_direct_tape_erratum_overlay(fixture, syms)
         namespace_fixture, namespace_syms = assemble_namespace_fixture(root, temp)
+        namespace_overlay_fixture, namespace_overlay_note = apply_namespace_type_erratum_overlay(
+            namespace_fixture, namespace_syms,
+        )
         resident_fixture, resident_gateway, resident_syms = assemble_resident_fixture(root, temp)
         float_service, float_gateway = assemble_float_service(root, temp)
         records: list[str] = []
@@ -1319,6 +1414,10 @@ def main() -> int:
             if stem == "globals":
                 run_namespace_case(
                     root, temp, namespace_fixture, namespace_syms,
+                    tap_bytes, mex_bytes, expect_erratum=True,
+                )
+                run_namespace_case(
+                    root, temp, namespace_overlay_fixture, namespace_syms,
                     tap_bytes, mex_bytes,
                 )
                 run_resident_case(
@@ -1348,6 +1447,7 @@ def main() -> int:
 
     for record in records:
         print(record)
+    print(f"NATIVE NAMESPACE ERRATUM {NAMESPACE_ERRATUM}: {namespace_overlay_note}")
     print(f"NATIVE DIRECT TAPE ERRATUM {DIRECT_TAPE_ERRATUM}: {overlay_note}")
     print(f"NATIVE EXECUTION PASS {REFERENCE_COMMIT}")
     return 0
