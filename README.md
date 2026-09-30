@@ -6,7 +6,7 @@
 
 [![ZX-UX C48 SDK verification status](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml/badge.svg)](https://github.com/tuklusan/zx-ux-c48-sdk-sinclair-zx-spectrum-48k-unix-c-compiler-software-development-kit/actions/workflows/verify.yml)
 
-**ZX-UX C48 SDK** is a portable, host-side **C compiler, virtual machine and software development kit** for writing and testing C48 programs for [**ZX-UX Unix on the Sinclair ZX Spectrum 48K**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project). It runs on Windows, Linux and macOS, on Intel and Arm hosts, providing the desktop toolchain and Spectrum-facing services needed away from the original machine. This saves the 48K Spectrum from having to impersonate a modern workstation (a role for which it was never interviewed). The SDK remains separate from native ZX-UX: it is not the operating system, native Z80 compiler, linker, runtime or final ABI.
+**ZX-UX C48 SDK** is a portable, host-side **C compiler, virtual machine and software development kit** for writing and testing C48 programs for [**ZX-UX Unix on the Sinclair ZX Spectrum 48K**](https://github.com/tuklusan/ZX-UX-The-ZX-Spectrum-48K-Unix-Project). It runs on Windows, Linux and macOS, on Intel and Arm hosts, providing the desktop toolchain and Spectrum-facing services needed away from the original machine. This saves the 48K Spectrum from having to impersonate a modern workstation (a role for which it was never interviewed). The SDK remains separate from native ZX-UX: it is not the operating system or the resident native ZX-UX `cc`/`ld` toolchain. It does, however, include a host cross-development backend that converts validated C48B1 into native ZX-UX OBJ1, MEX1, and executable TAP artifacts.
 
 ## Download and install
 
@@ -63,8 +63,10 @@ The repository also keeps a stable [`C48 specification pointer`](docs/ZX-UX%20C4
 
 The host toolchain provides the compiler, VM, Spectrum-facing runtime services and deterministic tooling summarized below.
 
-- `c48` / `c48.bat`: command-line C48 compiler.
-- `c48run` / `c48run.bat`: C48B1 host runtime and 16-bit VM.
+- `c48` / `c48.bat`: compile C48 source into validated C48B1 for host-side development.
+- `c48run` / `c48run.bat`: execute C48B1 in the SDK host VM, including cooperative multitask mode.
+- `c48srctap` / `c48srctap.bat`: package C48 source/header files into native ZX-UX source-transfer TAP images.
+- `c48b2tap` / `c48b2tap.bat`: cross-compile validated C48B1 into native ZX-UX OBJ1, MEX1, or executable TAP artifacts.
 - C48 preprocessing, lexing, parsing, semantic/type checks, diagnostics, and deterministic output.
 - C48 data model with 16-bit `int`, 16-bit pointers, unsigned plain `char`, a 64 KiB logical address space, and five-byte Spectrum-style `float` storage.
 - Exact 6912-byte Spectrum screen state: 6144 bitmap bytes plus 768 attribute bytes.
@@ -79,6 +81,12 @@ C48 source -> portable C48 compiler -> C48B1 -> c48run -> C48 VM
 ```
 
 `C48B1` is an SDK-only host executable representation. It is not Z80 machine code, ZX-UX `OBJ1`, or ZX-UX `MEX1`—a distinction of the sort that seems pedantic right up until the moment it saves an afternoon.
+
+For native cross-development, the pipeline continues one stage further:
+
+```text
+C48 source -> c48 -> validated C48B1 -> c48b2tap -> native ZX-UX OBJ1 / MEX1 / executable TAP
+```
 
 ## Games gallery — 14 C48 games
 
@@ -185,20 +193,18 @@ fixtures where their contracts overlap, but they solve different problems:
 `c48b2tap` creates target-native single-process executable artifacts. This
 release does not claim a native concurrent-execution proof.
 
-The pinned read-only native reference currently has four independently
+The interim pinned read-only native reference has five independently
 reproduced defects on the executable-tape route: two P509 type-load sites use
-an invalid Z80 `LD B,(nn)` form and reject a valid BIN object; the P504 RAW
-success path leaves the payload CRC in DE where P509 expects the logical
-length; and the P514 image loop does not preserve the loaded image byte across
-its CRC update before storing it. The SDK does not alter generated OBJ1, MEX1,
-M48O or TAP bytes to hide those defects. Interoperability is proved with
-independent format validation and the pinned native linker; execution proof
-uses verifier-only, fail-closed in-memory corrections bounded to the exact
-native fault sites, with staged negative proofs of the unmodified failures.
-This is not a claim that the affected unmodified native revision can complete
-that tape-execution route. When the native project certifies corrections, the
-reference is requalified and the corresponding verifier corrections are
-removed.
+an invalid Z80 `LD B,(nn)` form; the P504 RAW success path leaves the payload
+CRC in DE where P509 expects the logical length; and P514 has two direct-tape
+faults, one that loses the loaded image byte across CRC update and another
+that fails to preserve the physical chunk length across the cassette-load
+call. These findings are diagnostic evidence against the interim native pin,
+not release acceptance. Phase 3 remains suspended until native ZX-UX
+stabilizes; the SDK will then repin and requalify the complete contract and
+require the unmodified ordinary cassette-load, namespace, invoke, and
+execution path to pass. Generated OBJ1, MEX1, M48O, and TAP bytes are not
+altered to route around native defects.
 
 ## Applications gallery — 4 C48 applications
 
@@ -279,9 +285,11 @@ For BEEP details and error conventions beyond this summary, see the [ZX-UX C48 S
 ## Source tree
 
 ```text
-c48 / c48.bat                 compiler launchers
-c48run / c48run.bat           runtime launchers
-compiler/                     compiler, VM, assets and verification
+c48 / c48.bat                 C48-to-C48B1 compiler launchers
+c48run / c48run.bat           C48B1 host-runtime launchers
+c48srctap / c48srctap.bat     native source-transfer TAP launchers
+c48b2tap / c48b2tap.bat       native OBJ1/MEX1/executable-TAP cross-backend
+compiler/                     compiler, VM, native backend, assets and verification
 usr/src/ailmzx48/             agentic language-model source and design
 usr/src/examples/             basic examples
 usr/src/sound/                BEEP demonstration
