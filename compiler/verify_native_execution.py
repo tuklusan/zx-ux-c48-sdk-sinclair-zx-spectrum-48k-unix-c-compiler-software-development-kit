@@ -794,7 +794,9 @@ def run_namespace_case(
     syms: dict[str, int],
     tap: bytes,
     mex_bytes: bytes,
-, *, expect_erratum: bool = False) -> None:
+    *,
+    expect_erratum: bool = False,
+) -> None:
     expected_addr = 0xA000
     require(expected_addr + len(mex_bytes) < 0xC000, "namespace proof MEX is too large")
     tape = temp / "namespace.tap"
