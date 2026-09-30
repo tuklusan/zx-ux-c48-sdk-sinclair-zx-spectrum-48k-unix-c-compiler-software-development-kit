@@ -92,18 +92,23 @@ def link_mex(
     min_stack: int = 1024,
 ) -> MexImage:
     modules = select_runtime(roots, runtime_members)
-    total_text = sum(len(obj.text) for _, obj in modules)
-    total_bss = sum(obj.bss_size for _, obj in modules)
-    if total_text + total_bss > MAX_NATIVE_IMAGE:
-        raise NativeFormatError("linked image+BSS exceeds native 32768-byte arena")
 
+    # The pinned native linker aligns every module TEXT and BSS base to an
+    # even address and rounds both final regions to even length. Zero padding
+    # is part of the deterministic linked image contract.
     placed: list[_Placed] = []
     text_cursor = 0
     bss_cursor = 0
     for name, obj in modules:
+        text_cursor = (text_cursor + 1) & ~1
+        bss_cursor = (bss_cursor + 1) & ~1
         placed.append(_Placed(name, obj, text_cursor, bss_cursor))
         text_cursor += len(obj.text)
         bss_cursor += obj.bss_size
+    total_text = (text_cursor + 1) & ~1
+    total_bss = (bss_cursor + 1) & ~1
+    if total_text + total_bss > MAX_NATIVE_IMAGE:
+        raise NativeFormatError("linked image+BSS exceeds native 32768-byte arena")
 
     definitions: dict[str, tuple[_Placed, object]] = {}
     for module in placed:
@@ -128,7 +133,10 @@ def link_mex(
             return sym.value, False
         raise NativeFormatError("invalid linked symbol section")
 
-    image = bytearray(b"".join(module.obj.text for module in placed))
+    image = bytearray(total_text)
+    for module in placed:
+        start = module.text_base
+        image[start:start + len(module.obj.text)] = module.obj.text
     mex_relocs: list[int] = []
     for module in placed:
         for rel in module.obj.relocs:

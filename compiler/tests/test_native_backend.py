@@ -132,6 +132,17 @@ class NativeBackendTests(unittest.TestCase):
             tuple(m for m in RUNTIME_MEMBERS if m.name != "startup"),
         )])
 
+    def test_linker_matches_pinned_even_module_layout(self) -> None:
+        user = native_from_source("int main(void){return 0;}")
+        startup = next(m for m in RUNTIME_MEMBERS if m.name == "startup")
+        runtime = tuple(m for m in RUNTIME_MEMBERS if m.name != "startup")
+        mex = link_mex([("startup", startup.obj), ("user", user)], runtime)
+        self.assertEqual(len(startup.obj.text), 7)
+        self.assertEqual(mex.image[7], 0)
+        self.assertEqual(int.from_bytes(mex.image[1:3], "little"), 8)
+        self.assertEqual(len(mex.image) & 1, 0)
+        self.assertEqual(mex.bss_size & 1, 0)
+
     def test_large_cross_development_fixture_is_deterministic_and_native_sized(self) -> None:
         source = generate_large_native_source()
         self.assertGreaterEqual(len(source), 29 * 1024)
