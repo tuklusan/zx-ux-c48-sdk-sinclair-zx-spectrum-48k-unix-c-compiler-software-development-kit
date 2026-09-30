@@ -514,7 +514,7 @@ wording, the large-program fallback wording, and the final completion wording mu
 be reviewed together three successive times after this revision. The pass record
 below must be replaced with actual results before implementation resumes.
 
-Pass 1: RESTARTED after finding and correcting stale "unmodified" wording for downstream fault sites
+Pass 1: RESTARTED after finding and correcting stale large-program/completion wording for staged downstream negatives
 Pass 2: PENDING
 Pass 3: PENDING
 
@@ -526,7 +526,7 @@ Pass 3: PENDING
 3. Include sufficient initialized/static data or emitted target code to force the final stored MEX1 itself into the same 29 KiB through 31 KiB band; a large source that collapses mostly into BSS is not sufficient.
 4. Enforce both independent native limits: `image_size + bss_size <= 32768` and exact stored MEX1 length `<= 32768`, including relocation-table bytes.
 5. Record exact source, C48B1, OBJ1, MEX1, and TAP sizes and hashes.
-6. Prove the native executable loads and executes successfully through the unmodified direct path, or, only when Step 3.9A is active, through its bounded erratum-overlay positive path while the required unmodified negative and surrounding proofs also pass.
+6. Prove the native executable loads and executes successfully through the unmodified direct path, or, only when Step 3.9A is active, through its bounded erratum-overlay positive path while the required fully-unmodified first-fault negative, staged downstream-negative, and unaffected-unmodified surrounding proofs also pass.
 7. Demonstrate that host compilation/code generation avoids the native compiler's self-hosting memory pressure; state this as a cross-development capability, not as a change to native ZX-UX memory limits.
 8. Add deterministic boundary fixtures immediately below each applicable native ceiling and a deliberately overflowing fixture above it; valid cases must succeed and overflow must fail atomically.
 
@@ -873,7 +873,7 @@ The runbook is complete only when all of the following are true:
 
 1. Phase 1 canonical header policy is enforced with the required README/LICENSE/Office/pinned-corpus exemptions.
 2. `c48run --multitask` is deterministic, cooperatively scheduled, documented, and fully verified, with final footer displayed only after all user processes terminate.
-3. `c48b2tap` emits independently validated native OBJ1, MEX1, M48O/TAP artifacts and passes native load/execution proof including the large-program case; if Step 3.9A is active, the release record separately carries every active external-defect signature, all unaffected unmodified native proofs, and the independently bounded overlay proofs required to complete namespace-load/direct-tape execution without claiming that the affected unmodified native revision can perform those operations.
+3. `c48b2tap` emits independently validated native OBJ1, MEX1, M48O/TAP artifacts and passes native load/execution proof including the large-program case; if Step 3.9A is active, the release record separately carries the fully-unmodified first-fault signature, every staged downstream-fault signature, all unaffected unmodified native proofs, and the independently bounded overlay proofs required to complete namespace-load/direct-tape execution without claiming that the affected unmodified native revision can perform those operations.
 4. One-time CodeQL review is complete, actionable findings are remediated, and temporary scanning workflow is removed.
 5. Full byte/line/file and cross-artifact audit closes with zero unresolved findings.
 6. The next certified release is published from the audited tree and the prior release is removed only afterward.
