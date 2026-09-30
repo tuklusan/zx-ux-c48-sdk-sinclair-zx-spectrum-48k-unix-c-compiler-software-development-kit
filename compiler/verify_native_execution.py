@@ -24,6 +24,7 @@ from c48.native_runtime import RUNTIME_MEMBERS
 from tests.native_large_fixture import generate_large_native_source
 
 REFERENCE_COMMIT = "69348ee366c48b436aa0d07237ae2e7473e55327"
+DIRECT_TAPE_ERRATUM = "P514 image byte is not restored after CRC update"
 IMAGE_BASE = 0x8000
 FIXTURE_BASE = 0x4000
 TEST_ENTRY = 0x7A00
@@ -92,6 +93,28 @@ def run(argv: list[str | Path], *, cwd: Path, timeout: float = 60.0) -> subproce
 def verify_native_identity(root: Path) -> None:
     cp = run(["git", "rev-parse", "HEAD"], cwd=root)
     require(cp.stdout.strip() == REFERENCE_COMMIT, "native reference commit drift")
+
+
+def verify_pinned_direct_tape_erratum(root: Path) -> None:
+    source = (root / "v1/src/kernel/process.asm").read_text(encoding="utf-8")
+    start = source.index("zx48_p514_image_loop:")
+    end = source.index("zx48_p514_zero_bss:", start)
+    block = source[start:end]
+    require(
+        "call zx48_p514_tape_stream_byte" in block
+        and "call zx48_p514_crc16_update" in block
+        and "ld (hl),a" in block,
+        "pinned direct-tape image loop shape drifted",
+    )
+    update = block.index("call zx48_p514_crc16_update")
+    write = block.index("ld (hl),a", update)
+    between = block[update:write]
+    require(
+        "ld a,(p514_tape_byte)" not in between
+        and "push af" not in between
+        and "pop af" not in between,
+        "pinned direct-tape erratum is no longer present; remove the overlay",
+    )
 
 
 def symbols(path: Path, names: tuple[str, ...]) -> dict[str, int]:
@@ -392,6 +415,9 @@ def assemble_fixture(root: Path, temp: Path):
         temp / "sdk-native-exec.sym",
         (
             "zx48_p514_spawn_tape_backed",
+            "zx48_p514_image_loop",
+            "zx48_p514_zero_bss",
+            "zx48_p514_crc16_update",
             "test_proc1",
             "test_alloc_index",
             "test_expect_screen",
@@ -415,6 +441,38 @@ def assemble_fixture(root: Path, temp: Path):
         ),
     )
     return cp, main, gate, syms
+
+
+def apply_direct_tape_erratum_overlay(
+    fixture: bytes, syms: dict[str, int],
+) -> tuple[bytes, str]:
+    start = syms["zx48_p514_image_loop"] - FIXTURE_BASE
+    end = syms["zx48_p514_zero_bss"] - FIXTURE_BASE
+    require(0 <= start < end <= len(fixture), "direct-tape image-loop range drifted")
+    original_call = call(syms["zx48_p514_crc16_update"])
+    hits = []
+    pos = start
+    while True:
+        pos = fixture.find(original_call, pos, end)
+        if pos < 0:
+            break
+        hits.append(pos)
+        pos += 1
+    require(len(hits) == 1, f"expected one direct-tape CRC call, found {len(hits)}")
+    call_offset = hits[0]
+    trampoline = FIXTURE_BASE + len(fixture)
+    patch = b"\xF5" + call(syms["zx48_p514_crc16_update"]) + b"\xF1\xC9"
+    require(trampoline + len(patch) <= 0x7000, "no safe room for direct-tape erratum trampoline")
+    out = bytearray(fixture)
+    require(out[call_offset:call_offset + 3] == original_call, "direct-tape call bytes drifted")
+    out[call_offset + 1:call_offset + 3] = word(trampoline)
+    out.extend(patch)
+    note = (
+        f"call=0x{FIXTURE_BASE + call_offset:04x} "
+        f"target=0x{syms['zx48_p514_crc16_update']:04x} "
+        f"trampoline=0x{trampoline:04x} original={original_call.hex()}"
+    )
+    return bytes(out), note
 
 
 def float_service_source(root: Path) -> str:
@@ -565,7 +623,8 @@ def run_tape_case(
     stem: str,
     counters: bool,
     service: bytes | None = None,
-) -> None:
+    expected_exit: int = 0,
+) -> subprocess.CompletedProcess[str]:
     tape = temp / f"{stem}.tap"
     sna = temp / f"{stem}.sna"
     tape.write_bytes(tap)
@@ -649,9 +708,11 @@ def run_tape_case(
         timeout=90,
     )
     require(
-        cp.returncode == 0,
-        f"native tape execution failed: {stem}: exit={cp.returncode}\nstdout={cp.stdout}\nstderr={cp.stderr}",
+        cp.returncode == expected_exit,
+        f"native tape execution result mismatch: {stem}: expected={expected_exit} "
+        f"exit={cp.returncode}\nstdout={cp.stdout}\nstderr={cp.stderr}",
     )
+    return cp
 
 
 def main() -> int:
@@ -660,6 +721,7 @@ def main() -> int:
     args = parser.parse_args()
     root = args.native_root.resolve()
     verify_native_identity(root)
+    verify_pinned_direct_tape_erratum(root)
 
     cases = (
         (
@@ -710,6 +772,7 @@ def main() -> int:
     with tempfile.TemporaryDirectory(prefix="c48-native-exec-") as td:
         temp = Path(td)
         _, fixture, screen_gateway, syms = assemble_fixture(root, temp)
+        overlay_fixture, overlay_note = apply_direct_tape_erratum_overlay(fixture, syms)
         float_service, float_gateway = assemble_float_service(root, temp)
         records: list[str] = []
         for stem, source, mode in cases:
@@ -739,8 +802,15 @@ def main() -> int:
             if mode == "float5":
                 require(len(mex.image) + mex.bss_size < 0x4000,
                         "Float5 proof image would overlap pinned service fixture")
+            if stem == "globals":
+                run_tape_case(
+                    root, temp, fixture, screen_gateway,
+                    syms, tap_bytes, decoded.entry_offset,
+                    stem="globals-unmodified", counters=False,
+                    expected_exit=34,
+                )
             run_tape_case(
-                root, temp, fixture,
+                root, temp, overlay_fixture,
                 float_gateway if mode == "float5" else screen_gateway,
                 syms, tap_bytes, decoded.entry_offset,
                 stem=stem, counters=mode == "screen",
@@ -755,6 +825,7 @@ def main() -> int:
 
     for record in records:
         print(record)
+    print(f"NATIVE DIRECT TAPE ERRATUM {DIRECT_TAPE_ERRATUM}: {overlay_note}")
     print(f"NATIVE EXECUTION PASS {REFERENCE_COMMIT}")
     return 0
 
