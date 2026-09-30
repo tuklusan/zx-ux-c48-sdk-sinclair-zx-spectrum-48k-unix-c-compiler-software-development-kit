@@ -123,6 +123,8 @@ class _Function:
         self.scopes: list[dict[str, _Slot]] = []
         self.decl_slots: dict[int, _Slot] = {}
         self.call_slots: dict[int, tuple[_Slot, ...]] = {}
+        self.float_slots: dict[int, _Slot] = {}
+        self.hidden_result_slot: _Slot | None = None
         self.next_bytes = 0
         self.break_stack: list[str] = []
         self.continue_stack: list[str] = []
@@ -139,8 +141,16 @@ class _Function:
 
     def _layout(self) -> None:
         suffix = self.node["declarator"].get("suffix") or {}
+        fn_type = CType.from_dict(self.node["ctype"])
+        if fn_type.ret is not None and fn_type.ret.is_float:
+            self.hidden_result_slot = self._alloc(CType("uint"))
         for param in suffix.get("params", []):
             self.decl_slots[id(param)] = self._alloc(CType.from_dict(param["ctype"]))
+
+        def ensure_float_slot(value: dict[str, Any]) -> None:
+            key = id(value)
+            if key not in self.float_slots:
+                self.float_slots[key] = self._alloc(CType("float"))
 
         def walk(value: Any) -> None:
             if isinstance(value, list):
@@ -157,14 +167,45 @@ class _Function:
                     if idecl.get("storage") == "static":
                         raise NativeLoweringError("block-scope static storage is not yet supported")
                     self.decl_slots[id(idecl)] = self._alloc(t)
-            if value.get("kind") == "call":
+            kind = value.get("kind")
+            if kind == "call":
                 slots: list[_Slot] = []
                 ft = CType.from_dict(value["function"]["ctype"])
-                for p in ft.params or ():
-                    if p.is_float or p.size > 2:
-                        raise NativeLoweringError("native float call lowering is not yet enabled")
+                if ft.ret is not None and ft.ret.is_float:
+                    ensure_float_slot(value)
+                for arg, p in zip(value["args"], ft.params or ()):
                     slots.append(self._alloc(CType("uint")))
+                    at = CType.from_dict(arg["ctype"])
+                    if p.is_float and not at.is_float:
+                        ensure_float_slot(arg)
                 self.call_slots[id(value)] = tuple(slots)
+            elif kind == "cast":
+                src = CType.from_dict(value["operand"]["ctype"])
+                dst = CType.from_dict(value["ctype"])
+                if dst.is_float and not src.is_float:
+                    ensure_float_slot(value)
+            elif kind == "binary":
+                lt = CType.from_dict(value["left"]["ctype"])
+                rt = CType.from_dict(value["right"]["ctype"])
+                result = CType.from_dict(value["ctype"])
+                if result.is_float:
+                    ensure_float_slot(value)
+                    if not lt.is_float:
+                        ensure_float_slot(value["left"])
+                    if not rt.is_float:
+                        ensure_float_slot(value["right"])
+                elif value.get("op") in {"==", "!=", "<", "<=", ">", ">="} and (lt.is_float or rt.is_float):
+                    if not lt.is_float:
+                        ensure_float_slot(value["left"])
+                    if not rt.is_float:
+                        ensure_float_slot(value["right"])
+            elif kind in {"unary", "postfix"} and CType.from_dict(value.get("ctype", {"kind":"int"})).is_float:
+                ensure_float_slot(value)
+            elif kind == "assign":
+                lt = CType.from_dict(value["left"]["ctype"])
+                rt = CType.from_dict(value["right"]["ctype"])
+                if lt.is_float and not rt.is_float:
+                    ensure_float_slot(value["right"])
             for child in value.values():
                 if isinstance(child, (dict, list)):
                     walk(child)
@@ -178,6 +219,8 @@ class _Function:
         self.e.emit(0x19)              # ADD HL,DE
 
     def _load_from_hl(self, t: CType) -> None:
+        if t.is_float:
+            return
         if t.size == 1:
             self.e.emit(0x7E, 0x6F, 0x26, 0x00)  # A=(HL); L=A; H=0
             return
@@ -187,6 +230,11 @@ class _Function:
         raise NativeLoweringError(f"native scalar load is unsupported for {t}")
 
     def _store_to_de(self, t: CType) -> None:
+        if t.is_float:
+            self.e.emit(0xD5, 0x01)
+            self.e.word(5)
+            self.e.emit(0xED, 0xB0, 0xE1)
+            return
         if t.size == 1:
             self.e.emit(0x7D, 0x12)  # A=L; (DE)=A
             return
@@ -230,13 +278,15 @@ class _Function:
             return CType.from_dict(n["ctype"])
         raise NativeLoweringError(f"native lvalue lowering does not support {k}")
 
-    def _truth_branch_false(self, n: dict[str, Any], target: str) -> None:
+    def _truth_value(self, n: dict[str, Any]) -> None:
         self.expr(n)
-        t = CType.from_dict(n["ctype"])
-        if t.is_float:
-            raise NativeLoweringError("native float truth lowering is not yet enabled")
-        self.e.emit(0x7C, 0xB5)  # LD A,H ; OR L
-        self.e.jp_cond(0xCA, target)  # JP Z
+        if CType.from_dict(n["ctype"]).is_float:
+            self.e.call("__ftruth")
+
+    def _truth_branch_false(self, n: dict[str, Any], target: str) -> None:
+        self._truth_value(n)
+        self.e.emit(0x7C, 0xB5)
+        self.e.jp_cond(0xCA, target)
 
     def _bool_from_flags(self, jump_true: int) -> None:
         yes = self.e.new_label_name()
@@ -309,11 +359,43 @@ class _Function:
         else:
             raise NativeLoweringError(f"unknown comparison {op}")
 
+    def _float_value(self, n: dict[str, Any]) -> None:
+        src = CType.from_dict(n["ctype"])
+        if src.is_float:
+            self.expr(n)
+            return
+        if not src.is_integer:
+            raise NativeLoweringError("native float conversion requires arithmetic source")
+        self.expr(n)
+        self.e.emit(0x54, 0x5D)
+        self.e.emit(0x01)
+        self.e.word(1 if src.is_signed else 0)
+        slot = self.float_slots.get(id(n))
+        if slot is None:
+            raise NativeLoweringError("native float conversion scratch is missing")
+        self._addr_slot(slot)
+        self.e.call("__itof")
+
+    def _integer_value(self, n: dict[str, Any], dst: CType) -> None:
+        src = CType.from_dict(n["ctype"])
+        if src.is_float:
+            self.expr(n)
+            self.e.emit(0x11)
+            self.e.word(1 if dst.is_signed else 0)
+            self.e.call("__ftoi")
+        else:
+            self.expr(n)
+        if dst.size == 1:
+            self.e.emit(0x26, 0x00)
+
     def expr(self, n: dict[str, Any]) -> None:
         k = n["kind"]
         if k in {"integer_literal", "character_literal"}:
             self.e.emit(0x21)
             self.e.word(int(n["value"]) & 0xFFFF)
+            return
+        if k == "floating_literal":
+            self.e.address(self.owner.float_symbol(n["float5"]))
             return
         if k == "string_literal":
             name = self.owner.string_symbol(n)
@@ -328,8 +410,6 @@ class _Function:
             if t.is_array:
                 self._lvalue(n)
                 return
-            if t.is_float:
-                raise NativeLoweringError("native float object loading is not yet enabled")
             self._lvalue(n)
             self._load_from_hl(t)
             return
@@ -340,16 +420,33 @@ class _Function:
         if k == "cast":
             src = CType.from_dict(n["operand"]["ctype"])
             dst = CType.from_dict(n["ctype"])
-            if src.is_float or dst.is_float:
-                raise NativeLoweringError("native float casts are not yet enabled")
+            if dst.is_float:
+                self._float_value(n["operand"])
+                if src.is_float:
+                    return
+                slot = self.float_slots.get(id(n))
+                if slot is not None:
+                    self.e.emit(0xE5)
+                    self._addr_slot(slot)
+                    self.e.emit(0xEB, 0xE1)
+                    self._store_to_de(dst)
+                return
+            if src.is_float:
+                self._integer_value(n["operand"], dst)
+                return
             self.expr(n["operand"])
             if dst.size == 1:
                 self.e.emit(0x26, 0x00)
             return
         if k == "assign":
             t = self._lvalue(n["left"])
-            self.e.emit(0xE5)  # captured destination address first
-            self.expr(n["right"])
+            self.e.emit(0xE5)
+            if t.is_float:
+                self._float_value(n["right"])
+            elif CType.from_dict(n["right"]["ctype"]).is_float and t.is_integer:
+                self._integer_value(n["right"], t)
+            else:
+                self.expr(n["right"])
             self.e.emit(0xD1)
             self._store_to_de(t)
             if t.size == 1:
@@ -366,6 +463,28 @@ class _Function:
                 return
             if op in {"++", "--"} or k == "postfix":
                 t = self._lvalue(n["operand"])
+                if t.is_float:
+                    dest = self.float_slots.get(id(n))
+                    if dest is None:
+                        raise NativeLoweringError("native float update scratch is missing")
+                    self.e.emit(0xE5)
+                    if k == "postfix":
+                        self._addr_slot(dest)
+                        self.e.emit(0xEB, 0xE1)
+                        self._store_to_de(t)
+                        self.e.emit(0xE5)
+                    else:
+                        self.e.emit(0xE1)
+                    self.e.address(self.owner.float_constant("0000010000"))
+                    self.e.emit(0x44, 0x4D)
+                    self.e.emit(0xD1)
+                    self.e.emit(0xE5)
+                    self.e.emit(0xEB)
+                    self.e.emit(0xE1)
+                    self.e.call("__fadd" if op == "++" else "__fsub")
+                    if k == "postfix":
+                        self._addr_slot(dest)
+                    return
                 self.e.emit(0xE5)
                 self._load_from_hl(t)
                 if k == "postfix":
@@ -384,6 +503,27 @@ class _Function:
                     self.e.emit(0xD1)
                     self._store_to_de(t)
                 return
+            operand_t = CType.from_dict(n["operand"]["ctype"])
+            if operand_t.is_float:
+                self.expr(n["operand"])
+                if op == "+":
+                    return
+                if op == "-":
+                    self.e.emit(0x44, 0x4D)
+                    self.e.address(self.owner.float_constant("0000000000"))
+                    self.e.emit(0xEB)
+                    slot = self.float_slots.get(id(n))
+                    if slot is None:
+                        raise NativeLoweringError("native float unary scratch is missing")
+                    self._addr_slot(slot)
+                    self.e.call("__fsub")
+                    return
+                if op == "!":
+                    self.e.call("__ftruth")
+                    self.e.emit(0x7C, 0xB5)
+                    self._bool_from_flags(0xCA)
+                    return
+                raise NativeLoweringError(f"native float unary operator {op!r} is unsupported")
             self.expr(n["operand"])
             if op == "+":
                 return
@@ -406,15 +546,33 @@ class _Function:
             if op in {"&&", "||"}:
                 self._logical(n)
                 return
-            self.expr(n["left"])
-            self.e.emit(0xE5)
-            self.expr(n["right"])
-            self.e.emit(0xEB, 0xE1)  # EX DE,HL ; POP HL
             lt = CType.from_dict(n["left"]["ctype"])
             rt = CType.from_dict(n["right"]["ctype"])
             result_t = CType.from_dict(n["ctype"])
             if lt.is_float or rt.is_float:
-                raise NativeLoweringError("native float arithmetic is not yet enabled")
+                self._float_value(n["left"])
+                self.e.emit(0xE5)
+                self._float_value(n["right"])
+                if op in {"==", "!=", "<", "<=", ">", ">="}:
+                    self.e.emit(0xEB, 0xE1)
+                    self.e.call("__fcmp")
+                    self.e.emit(0x11, 0x00, 0x00)
+                    self._compare(op, True)
+                    return
+                if op not in {"+", "-", "*", "/"}:
+                    raise NativeLoweringError(f"native float operator {op!r} is unsupported")
+                self.e.emit(0x44, 0x4D)
+                self.e.emit(0xD1)
+                slot = self.float_slots.get(id(n))
+                if slot is None:
+                    raise NativeLoweringError("native float result scratch is missing")
+                self._addr_slot(slot)
+                self.e.call({"+": "__fadd", "-": "__fsub", "*": "__fmul", "/": "__fdiv"}[op])
+                return
+            self.expr(n["left"])
+            self.e.emit(0xE5)
+            self.expr(n["right"])
+            self.e.emit(0xEB, 0xE1)
             if lt.is_pointer or rt.is_pointer:
                 self._pointer_binary(op, lt, rt)
                 return
@@ -513,13 +671,13 @@ class _Function:
         op = n["op"]
         short = self.e.new_label_name()
         done = self.e.new_label_name()
-        self.expr(n["left"])
+        self._truth_value(n["left"])
         self.e.emit(0x7C, 0xB5)
         if op == "&&":
             self.e.jp_cond(0xCA, short)
         else:
             self.e.jp_cond(0xC2, short)
-        self.expr(n["right"])
+        self._truth_value(n["right"])
         self.e.emit(0x7C, 0xB5, 0x21, 0x00, 0x00)
         self.e.jp_cond(0xCA, done)
         self.e.emit(0x23)
@@ -536,40 +694,54 @@ class _Function:
     def _call(self, n: dict[str, Any]) -> None:
         name = n["function"]["name"]
         ft = CType.from_dict(n["function"]["ctype"])
-        if ft.ret is not None and ft.ret.is_float:
-            raise NativeLoweringError("native float return calls are not yet enabled")
         slots = self.call_slots[id(n)]
+        params = ft.params or ()
         if len(slots) != len(n["args"]):
             raise NativeLoweringError("native call scratch layout mismatch")
-        # C48 freezes left-to-right evaluation/capture. Each call node has
-        # distinct frame scratch so nested calls cannot overwrite earlier args.
-        for arg, slot in zip(n["args"], slots):
-            self.expr(arg)
+        for arg, param, slot in zip(n["args"], params, slots):
+            if param.is_float:
+                self._float_value(arg)
+            elif CType.from_dict(arg["ctype"]).is_float and param.is_integer:
+                self._integer_value(arg, param)
+            else:
+                self.expr(arg)
             self.e.emit(0xE5)
             self._addr_slot(slot)
-            self.e.emit(0xEB, 0xE1)  # DE=scratch address; HL=captured value
-            self._store_to_de(slot.ctype)
-        # Extra ABI words are pushed right-to-left.
-        for slot in reversed(slots[3:]):
-            self._addr_slot(slot)
-            self._load_from_hl(slot.ctype)
+            self.e.emit(0xEB, 0xE1)
+            self._store_to_de(CType("uint"))
+
+        returns_float = ft.ret is not None and ft.ret.is_float
+        total = len(slots) + (1 if returns_float else 0)
+
+        def load_word(position: int) -> None:
+            if returns_float and position == 0:
+                result = self.float_slots.get(id(n))
+                if result is None:
+                    raise NativeLoweringError("native float call result scratch is missing")
+                self._addr_slot(result)
+                return
+            arg_index = position - (1 if returns_float else 0)
+            self._addr_slot(slots[arg_index])
+            self._load_from_hl(CType("uint"))
+
+        for position in range(total - 1, 2, -1):
+            load_word(position)
             self.e.emit(0xE5)
-        if len(slots) >= 3:
-            self._addr_slot(slots[2]); self._load_from_hl(slots[2].ctype)
-            self.e.emit(0xE5)  # temporary arg2
-        if len(slots) >= 2:
-            self._addr_slot(slots[1]); self._load_from_hl(slots[1].ctype)
-            self.e.emit(0xE5)  # temporary arg1
-        if len(slots) >= 1:
-            self._addr_slot(slots[0]); self._load_from_hl(slots[0].ctype)
-        if len(slots) >= 2:
-            self.e.emit(0xD1)  # DE=arg1
-        if len(slots) >= 3:
-            self.e.emit(0xC1)  # BC=arg2
+        if total >= 3:
+            load_word(2)
+            self.e.emit(0xE5)
+        if total >= 2:
+            load_word(1)
+            self.e.emit(0xE5)
+        if total >= 1:
+            load_word(0)
+        if total >= 2:
+            self.e.emit(0xD1)
+        if total >= 3:
+            self.e.emit(0xC1)
         self.e.call(name)
-        extra = max(0, len(slots) - 3)
-        for _ in range(extra):
-            self.e.emit(0xF1)  # POP AF: caller cleanup; return HL preserved
+        for _ in range(max(0, total - 3)):
+            self.e.emit(0xF1)
 
     def stmt(self, s: dict[str, Any]) -> None:
         k = s["kind"]
@@ -584,12 +756,22 @@ class _Function:
             if s["value"] is None:
                 self.e.emit(0x21, 0x00, 0x00)
             else:
-                self.expr(s["value"])
                 rt = CType.from_dict(s["return_type"])
                 if rt.is_float:
-                    raise NativeLoweringError("native float return lowering is not yet enabled")
-                if rt.size == 1:
-                    self.e.emit(0x26, 0x00)
+                    self._float_value(s["value"])
+                    if self.hidden_result_slot is None:
+                        raise NativeLoweringError("native float return pointer is missing")
+                    self.e.emit(0xE5)
+                    self._addr_slot(self.hidden_result_slot)
+                    self._load_from_hl(CType("uint"))
+                    self.e.emit(0xEB, 0xE1)
+                    self._store_to_de(rt)
+                elif CType.from_dict(s["value"]["ctype"]).is_float and rt.is_integer:
+                    self._integer_value(s["value"], rt)
+                else:
+                    self.expr(s["value"])
+                    if rt.size == 1:
+                        self.e.emit(0x26, 0x00)
             self.e.jp(self.return_label)
             return
         if k == "if":
@@ -701,7 +883,12 @@ class _Function:
                 self._store_to_de(t.base)
             return
         value = init["value"]
-        self.expr(value)
+        if slot.ctype.is_float:
+            self._float_value(value)
+        elif CType.from_dict(value["ctype"]).is_float and slot.ctype.is_integer:
+            self._integer_value(value, slot.ctype)
+        else:
+            self.expr(value)
         self.e.emit(0xE5)
         self._addr_slot(slot)
         self.e.emit(0xEB, 0xE1)  # DE=address; HL=value
@@ -742,25 +929,41 @@ class _Function:
         try:
             suffix = self.node["declarator"].get("suffix") or {}
             params = suffix.get("params", [])
+            fn_type = CType.from_dict(self.node["ctype"])
+            shifted = bool(fn_type.ret is not None and fn_type.ret.is_float)
+            if shifted:
+                if self.hidden_result_slot is None:
+                    raise NativeLoweringError("native hidden float result slot is missing")
+                self.e.emit(0xE5)
+                self._addr_slot(self.hidden_result_slot)
+                self.e.emit(0xEB, 0xE1)
+                self._store_to_de(CType("uint"))
             for index, p in enumerate(params):
                 slot = self.decl_slots[id(p)]
                 self.scopes[-1][p["name"]] = slot
-                if index == 0:
+                position = index + (1 if shifted else 0)
+                if position == 0:
                     self.e.emit(0xE5)
-                elif index == 1:
+                elif position == 1:
                     self.e.emit(0xD5)
-                elif index == 2:
+                elif position == 2:
                     self.e.emit(0xC5)
                 else:
-                    # stack arg at IX+4+2*(index-3)
                     self.e.emit(0xDD, 0xE5, 0xE1, 0x11)
-                    self.e.word(4 + 2 * (index - 3))
+                    self.e.word(4 + 2 * (position - 3))
                     self.e.emit(0x19)
                     self._load_from_hl(CType("uint"))
                     self.e.emit(0xE5)
-                self._addr_slot(slot)
-                self.e.emit(0xEB, 0xE1)
-                self._store_to_de(slot.ctype)
+                if CType.from_dict(p["ctype"]).is_float:
+                    self.e.emit(0xE1)
+                    self.e.emit(0xE5)
+                    self._addr_slot(slot)
+                    self.e.emit(0xEB, 0xE1)
+                    self._store_to_de(slot.ctype)
+                else:
+                    self._addr_slot(slot)
+                    self.e.emit(0xEB, 0xE1)
+                    self._store_to_de(slot.ctype)
             # Root compound reuses parameter scope.
             for d in self.node["body"]["declarations"]:
                 for idecl in d["declarators"]:
@@ -788,6 +991,7 @@ class NativeBackend:
         self.bss_size = 0
         self.strings: dict[int, str] = {}
         self.string_nodes: dict[int, dict[str, Any]] = {}
+        self.floats: dict[str, str] = {}
 
     def string_symbol(self, node: dict[str, Any]) -> str:
         sid = int(node["sid"])
@@ -796,6 +1000,14 @@ class NativeBackend:
             self.string_nodes[sid] = node
         return self.strings[sid]
 
+    def float_constant(self, hex_value: str) -> str:
+        if hex_value not in self.floats:
+            self.floats[hex_value] = f"_F{len(self.floats):05d}"
+        return self.floats[hex_value]
+
+    def float_symbol(self, hex_value: str) -> str:
+        return self.float_constant(hex_value)
+
     def _collect_strings(self, value: Any) -> None:
         if isinstance(value, list):
             for item in value:
@@ -803,6 +1015,8 @@ class NativeBackend:
         elif isinstance(value, dict):
             if value.get("kind") == "string_literal":
                 self.string_symbol(value)
+            elif value.get("kind") == "floating_literal" and "float5" in value:
+                self.float_constant(value["float5"])
             for child in value.values():
                 if isinstance(child, (dict, list)):
                     self._collect_strings(child)
@@ -811,9 +1025,13 @@ class NativeBackend:
         init = idecl.get("initializer")
         if init is None:
             return None
-        if t.is_float:
-            raise NativeLoweringError("native float global initialization is not yet enabled")
         if not t.is_array:
+            const = init.get("const")
+            if t.is_float and const is not None:
+                fv = const["value"].get("float5")
+                if not isinstance(fv, str) or len(fv) != 10:
+                    raise NativeLoweringError("native float initializer metadata is invalid")
+                return bytes.fromhex(fv), []
             value = init["value"]
             if value["kind"] in {"integer_literal", "character_literal"}:
                 number = int(value["value"])
@@ -832,11 +1050,20 @@ class NativeBackend:
             return bytes(out), rels
         if init["kind"] != "init_list":
             raise NativeLoweringError("native array initializer is unsupported")
+        const_items = init.get("const_items", [])
         for i, value in enumerate(init["values"]):
+            start = i * t.base.size
+            if t.base.is_float:
+                if i >= len(const_items):
+                    raise NativeLoweringError("native float aggregate initializer metadata is missing")
+                fv = const_items[i]["value"].get("float5")
+                if not isinstance(fv, str) or len(fv) != 10:
+                    raise NativeLoweringError("native float aggregate initializer metadata is invalid")
+                out[start:start + 5] = bytes.fromhex(fv)
+                continue
             if value["kind"] not in {"integer_literal", "character_literal"}:
                 raise NativeLoweringError("native aggregate initializer must be constant")
             n = int(value["value"])
-            start = i * t.base.size
             out[start:start + t.base.size] = (n & ((1 << (8 * t.base.size)) - 1)).to_bytes(t.base.size, "little")
         return bytes(out), rels
 
@@ -876,6 +1103,10 @@ class NativeBackend:
             node = self.string_nodes[sid]
             self.e.define(name, global_=False)
             self.e.text.extend(bytes(node["bytes"]) + b"\0")
+
+        for hex_value, name in sorted(self.floats.items()):
+            self.e.define(name, global_=False)
+            self.e.text.extend(bytes.fromhex(hex_value))
 
         for name, t, data, rels, global_ in data_records:
             while len(self.e.text) % max(1, t.alignment):
