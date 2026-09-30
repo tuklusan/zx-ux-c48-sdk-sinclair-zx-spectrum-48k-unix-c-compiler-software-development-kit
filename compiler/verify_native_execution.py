@@ -454,7 +454,7 @@ float_g_exit:
     ld (float_exit_seen),a
     ld a,h
     or l
-    jp nz,${FAIL_SCREEN_PC:04X}
+    jp nz,${FAIL_PROGRAM_PC:04X}
     jp $7FF0
 float_gateway_end:
     SAVEBIN "sdk-native-float-gateway.bin",float_gateway_start,float_gateway_end-float_gateway_start
