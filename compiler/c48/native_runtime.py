@@ -68,8 +68,8 @@ def _syscall_wrapper(name: str, number: int, *, zero_result: bool = False) -> Na
 
 
 def _startup() -> NativeMember:
-    # CALL main ; CALL exit ; HALT
-    text = bytes((0xCD, 0x00, 0x00, 0xCD, 0x00, 0x00, 0x76))
+    # Exact pinned crt0 TEXT: CALL main ; CALL exit ; RET
+    text = bytes((0xCD, 0x00, 0x00, 0xCD, 0x00, 0x00, 0xC9))
     symbols = (_sym("_start"), _undef("main"), _undef("exit"))
     relocs = (ObjReloc(1, 1), ObjReloc(4, 2))
     return NativeMember("startup", ObjImage(text, 0, symbols, relocs), ("_start",))

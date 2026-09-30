@@ -51,6 +51,17 @@ class NativeBackendTests(unittest.TestCase):
         self.assertGreater(len(mex.image), 20)
         self.assertGreater(len(mex.relocs), 0)
 
+    def test_startup_matches_pinned_native_crt0_obj1(self) -> None:
+        startup = next(m for m in RUNTIME_MEMBERS if m.name == "startup")
+        expected = bytes.fromhex(
+            "4f424a310100180007000000030002001f005b00512e7192"
+            "cd0000cd0000c95f7374617274000000000000000000000000"
+            "0001016d61696e000000000000000000000000000000016578"
+            "69740000000000000000000000000000010100010001000400"
+            "02000100"
+        )
+        self.assertEqual(encode_obj1(startup.obj), expected)
+
     def test_left_to_right_six_argument_call_lowers(self) -> None:
         obj = native_from_source(
             "int f(int a,int b,int c,int d,int e,int f){return a+b+c+d+e+f;}"
