@@ -650,6 +650,7 @@ def assemble_namespace_fixture(root: Path, temp: Path) -> tuple[bytes, dict[str,
         (
             "zx48_objects_init",
             "zx48_p509_load_path",
+            "p509_header",
             "zx48_p509_locked_error",
             "zx48_p509_commit_drop_new",
             "zx48_p509_free_error",
@@ -751,8 +752,16 @@ def run_namespace_case(
     ):
         debugger_parts.append(
             f"breakpoint 0x{syms[name]:04x}\ncommands {index}\n"
-            f"print z80:a\nexit {status}\nend\n"
+            f"print z80:a\n"
         )
+        if name == "zx48_p509_locked_error":
+            header = syms["p509_header"]
+            debugger_parts.append(
+                f"print [0x{header + 5:04x}]\n"
+                f"print [0x{header + 7:04x}]\n"
+                "print z80:b\n"
+            )
+        debugger_parts.append(f"exit {status}\nend\n")
     debugger_parts.append("continue")
     debugger = "".join(debugger_parts)
     env = dict(**__import__("os").environ)
