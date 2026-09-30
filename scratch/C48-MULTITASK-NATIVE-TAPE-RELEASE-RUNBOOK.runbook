@@ -311,10 +311,24 @@ Primary user forms:
 
 Exact option names may be refined during implementation, but the final interface must retain independently testable OBJ1, MEX1, and TAP outputs and must be frozen before documentation is finalized.
 
+## Step 3.0A — Native upstream stabilization barrier and mandatory Phase-3 requalification
+
+1. Phase-3 certification is suspended while the read-only native ZX-UX pre-release recovery runbook remains open or while the ordinary native C48 compiler, assembler, linker, namespace loader, cassette loader, MEX1 loader, startup/runtime path, or their governing documentation are still being corrected. Existing SDK implementation and diagnostic evidence may be retained, but no moving native checkpoint may be promoted to the final Phase-3 authority.
+2. Keep the currently pinned native commit and all Step-3.9A fault signatures as historical diagnostic evidence only while upstream is moving. Do not repin to an intermediate correction merely because it fixes one observed fault, and do not treat bounded overlays against an intermediate revision as release interoperability evidence.
+3. Do not advance to Phase 4, declare Phase 3 closed, cut a Phase-3 candidate, or publish a release while this barrier is active.
+4. Stabilization requires the native project's governing pre-release recovery runbook, or an explicitly named successor that replaces it, to close successfully and identify an exact final native commit whose ordinary user-visible C48 build and execution pipeline is the release candidate. That final checkpoint must include the ordinary compiler, assembler, linker, runtime/startup objects, OBJ1/MEX1 contracts, namespace/object handling, cassette load path, and executable launch path used by users.
+5. Once stabilization is established, return to Step 3.1. Replace the interim native pin with the exact stabilized native commit and re-read every native contract input from that commit. The earlier pin remains historical provenance only.
+6. Perform a stage-by-stage differential review between the former pin and the stabilized pin covering C48 language semantics, ABI and calling convention, startup/exit behavior, runtime entry points, assembler instruction acceptance, OBJ1 structure and relocation rules, archive/member resolution, linker layout and stack rules, MEX1 structure, M48O/TAP framing, namespace publication, cassette ingestion, relocation/allocation, and process launch.
+7. Recompare `c48b2tap` against the stabilized ordinary native pipeline using shared exact source fixtures: native `cc` must produce genuine OBJ1, native `ld` must produce genuine MEX1, and the SDK path must produce independently valid OBJ1/MEX1/TAP artifacts for the same admitted semantics. Byte identity is required only where the native contract fixes bytes; otherwise compare format validity, ABI behavior, relocations, startup/runtime behavior, and final observable program behavior.
+8. Requalify every SDK-owned native runtime/startup copy or translation against the stabilized native sources. Refresh provenance and deterministic hashes only when the stabilized authority requires it, and prove every changed member before use.
+9. Any stabilized-contract mismatch owned by the SDK returns execution to the earliest owning Phase-3 step, followed by rerun of that step and every affected later Phase-3 step. Any remaining defect in the stabilized native ordinary path is a hard Phase-3 blocker; it may be diagnosed, but it may not be converted into release acceptance by an overlay.
+10. Final interoperability requires an unmodified end-user path on the stabilized native build: take the TAP produced by `c48b2tap`, load it through the ordinary ZX-UX cassette/object mechanism, expose the resulting executable through the ordinary native namespace, invoke it through the ordinary native execution command/path, and observe the program complete with its expected behavior. Verifier-only byte injection, direct memory placement, proof-only linker paths, or in-memory correction overlays do not satisfy this requirement.
+11. After the stabilized requalification, rerun the complete Phase-3 proof set, including native linker consumption, direct load/execution, deterministic rebuilds, negative/boundary cases, the large-program proof, documentation, full repository verification, and the three-successive-zero-gap Phase-3 review. No proof inherited from the interim pin is release evidence unless it is rerun or byte/contract equivalence proves it unchanged under the stabilized pin.
+
 ## Step 3.1 — Freeze the target-native contract
 
 1. Read the native ZX-UX C48 ABI, `C48_REGCALL`, startup contract, OBJ1 format, MEX1 format, M48O format, loader constraints, runtime interfaces, supported Z80 instruction policy, and C48 system/runtime entry points from the read-only native repository.
-2. Pin the exact native reference commit in SDK metadata/tests.
+2. After Step 3.0A has cleared, pin the exact stabilized native reference commit in SDK metadata/tests. Before that point, retain the current pin only as interim diagnostic provenance and do not certify against it.
 3. Translate the required immutable target contract into a reviewed SDK-side descriptor/constants layer with source provenance.
 4. Add independent validators for OBJ1, MEX1, and M48O/TAP output. Validators must not reuse the same unchecked assumptions as the writers.
 5. Require all size/offset arithmetic to be widened before narrowing and require exact CRC validation.
@@ -407,6 +421,7 @@ Exact option names may be refined during implementation, but the final interface
 6. Compare observable results with `c48run` for the same C48B1 input where semantics overlap.
 7. Include recursion, graphics/text, integer arithmetic, globals, strings, runtime calls, startup/exit, and relocation coverage.
 8. Record exact generated OBJ1/MEX1/TAP hashes plus the pinned native toolchain/reference commit for deterministic proof fixtures.
+9. On the stabilized native checkpoint required by Step 3.0A, perform and retain a manual end-user interoperability proof in addition to automation: use the ordinary ZX-UX cassette/object load command/path on the unmodified `c48b2tap` TAP, confirm the resulting executable is present through the ordinary native namespace, invoke it normally, and record the expected completed program behavior. This manual proof must exercise the same ordinary compiler-linker-loader/execution environment users receive; verifier-only injection or overlays are not substitutes.
 
 
 ## Step 3.9A — Read-only native execution-path erratum protocol
@@ -516,13 +531,15 @@ for the positive paths.
    the corresponding overlay and restore the affected proof to a fully unmodified
    positive native proof. Remove only the overlay whose defect is actually fixed;
    any other still-active erratum remains fail-closed.
-9. Phase 3 may close under this protocol only if every ordinary Phase-3 gate is
-   clean, the fully unmodified first-fault negative proof and every staged
-   downstream negative proof match their frozen signatures, all unaffected
-   unmodified native proofs pass, every required bounded-overlay positive proof
-   passes, and the release record names each active fault site separately. External
-   defects must not be hidden, counted as SDK successes, or used to waive any
-   repository-owned defect.
+9. While Step 3.0A's stabilization barrier is active, this protocol is diagnostic
+   only and Phase 3 may not close under it. Preserve the fully unmodified first-fault
+   negative proof, every staged downstream negative proof, unaffected unmodified
+   proofs, and bounded-overlay positive proofs as historical fault-isolation
+   evidence. After stabilization, rerun against the exact final native pin and
+   require the ordinary unmodified path to succeed. Any overlay still needed on the
+   stabilized pin is a hard Phase-3 blocker rather than an alternate acceptance
+   route. External defects must not be hidden, counted as SDK successes, or used to
+   waive any repository-owned defect.
 
 Runbook-revision zero-gap record: the generalized multi-erratum wording above,
 including the staged pair of P514 direct-tape faults, both P509 type-load sites,
@@ -537,6 +554,18 @@ Pass 1: zero new gaps
 Pass 2: zero new gaps
 Pass 3: zero new gaps
 
+Runbook-revision zero-gap record: Step 3.0A now makes stabilization of the ordinary
+native compiler-linker-loader/execution path a hard prerequisite for Phase-3
+closure. The revised Step 3.1 pinning rule, Step 3.9 manual interoperability proof,
+Step 3.9A diagnostic-only status, Step 3.10 large-program rule, Phase-3 acceptance
+gate, and final completion criterion were reviewed together. The review also
+checked that no later phase can begin while the native upstream remains moving and
+that no overlay can substitute for the final unmodified end-user path.
+
+Pass 1: zero new gaps
+Pass 2: zero new gaps
+Pass 3: zero new gaps
+
 
 ## Step 3.10 — Large-program cross-development proof
 
@@ -545,7 +574,7 @@ Pass 3: zero new gaps
 3. Include sufficient initialized/static data or emitted target code to force the final stored MEX1 itself into the same 29 KiB through 31 KiB band; a large source that collapses mostly into BSS is not sufficient.
 4. Enforce both independent native limits: `image_size + bss_size <= 32768` and exact stored MEX1 length `<= 32768`, including relocation-table bytes.
 5. Record exact source, C48B1, OBJ1, MEX1, and TAP sizes and hashes.
-6. Prove the native executable loads and executes successfully through the unmodified direct path, or, only when Step 3.9A is active, through its bounded erratum-overlay positive path while the required fully-unmodified first-fault negative, staged downstream-negative, and unaffected-unmodified surrounding proofs also pass.
+6. After Step 3.0A has cleared and the stabilized native commit is pinned, prove the native executable loads and executes successfully through the unmodified ordinary direct path. Step 3.9A overlay results may remain as historical diagnostics but are not an acceptance substitute.
 7. Demonstrate that host compilation/code generation avoids the native compiler's self-hosting memory pressure; state this as a cross-development capability, not as a change to native ZX-UX memory limits.
 8. Add deterministic boundary fixtures immediately below each applicable native ceiling and a deliberately overflowing fixture above it; valid cases must succeed and overflow must fail atomically.
 
@@ -582,7 +611,7 @@ Require:
 - shipped native startup/runtime support has pinned provenance, deterministic hashes, complete supported-symbol coverage, and fixed archive ordering;
 - independent decoders validate every proof artifact;
 - representative generated OBJ1 artifacts are accepted and linked by the pinned native linker;
-- native loader/execution proof passes unmodified, or Step 3.9A is active and its complete fully-unmodified first-fault negative, staged downstream-negative, unaffected-unmodified, and bounded-overlay positive proof set passes;
+- Step 3.0A stabilization is cleared against one exact final native commit, the complete native contract/toolchain differential requalification is closed, and native loader/execution proof passes through the unmodified ordinary path, including the manual cassette-load/namespace/invoke proof required by Step 3.9;
 - large-program proof passes;
 - overflow/negative tests pass;
 - `c48run` single and multitask regressions pass;
@@ -892,7 +921,7 @@ The runbook is complete only when all of the following are true:
 
 1. Phase 1 canonical header policy is enforced with the required README/LICENSE/Office/pinned-corpus exemptions.
 2. `c48run --multitask` is deterministic, cooperatively scheduled, documented, and fully verified, with final footer displayed only after all user processes terminate.
-3. `c48b2tap` emits independently validated native OBJ1, MEX1, M48O/TAP artifacts and passes native load/execution proof including the large-program case; if Step 3.9A is active, the release record separately carries the fully-unmodified first-fault signature, every staged downstream-fault signature, all unaffected unmodified native proofs, and the independently bounded overlay proofs required to complete namespace-load/direct-tape execution without claiming that the affected unmodified native revision can perform those operations.
+3. `c48b2tap` is requalified from Step 3.1 against the exact stabilized native ZX-UX release-candidate toolchain, emits independently validated native OBJ1, MEX1, M48O/TAP artifacts, and passes unmodified native linker, manual cassette-load/namespace/invoke, execution, and large-program proofs. Step 3.9A overlays, if retained, are historical diagnostic evidence only and are never release acceptance.
 4. One-time CodeQL review is complete, actionable findings are remediated, and temporary scanning workflow is removed.
 5. Full byte/line/file and cross-artifact audit closes with zero unresolved findings.
 6. The next certified release is published from the audited tree and the prior release is removed only afterward.
