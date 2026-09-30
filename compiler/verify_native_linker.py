@@ -17,6 +17,8 @@ sys.path.insert(0, str(HERE))
 from c48.compiler import compile_bytes
 from c48.native_backend import NativeBackend
 from c48.native_format import (
+    OBJ_SECTION_BSS,
+    OBJ_SECTION_TEXT,
     OBJ_SECTION_UNDEF,
     OBJ_SYMBOL_GLOBAL,
     encode_mex1,
