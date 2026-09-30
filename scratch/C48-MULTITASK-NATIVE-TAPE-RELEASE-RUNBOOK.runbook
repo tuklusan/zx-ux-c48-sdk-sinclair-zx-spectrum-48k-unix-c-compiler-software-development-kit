@@ -420,7 +420,7 @@ same time. This protocol exists to separate repository-owned defects from extern
 native-runtime defects without altering the external repository or changing
 generated artifact bytes to accommodate them.
 
-For the currently observed pinned reference, three independently reproduced
+For the currently observed pinned reference, four independently reproduced
 native fault sites are active and must be carried separately in the evidence:
 
 - the P514 direct-tape image loop does not preserve the loaded image byte across
@@ -434,11 +434,17 @@ native fault sites are active and must be carried separately in the evidence:
   `ld b,(p509_header+M48O_HDR_TYPE)` form immediately before
   `zx48_object_create`, so after the match/public-type site is corrected in
   isolation the new-object commit still sees the wrong type and fails with
-  `E_PERM`.
+  `E_PERM`; and
+- the P504 RAW loader validates that logical length equals storage length, but on
+  success returns HL=allocation and BC=length while leaving DE holding the
+  expected payload CRC from the immediately preceding CRC comparison. P509 then
+  stores DE as `p509_new_logical`, publishing the payload CRC as the object's
+  logical length instead of the validated RAW length.
 
-The exact pinned source and the latest observed read-only native tree contain both
-P509 fault sites. The verifier must prove the two P509 failures independently
-before composing their bounded corrections for the positive namespace-load path.
+The exact pinned source and the latest observed read-only native tree contain all
+four fault sites. The verifier must prove the two P509 type-load failures and the
+P504/P509 logical-length handoff failure independently before composing their
+bounded corrections for the positive namespace-load path.
 
 1. Freeze the pinned native commit, latest observed native commit, exact native
    source span for every active defect, failing generated artifact hashes,
@@ -509,10 +515,13 @@ before composing their bounded corrections for the positive namespace-load path.
    repository-owned defect.
 
 Runbook-revision zero-gap record: the generalized multi-erratum wording above,
-including independent handling of both P509 fault sites, the Phase-3 acceptance
-wording, the large-program fallback wording, and the final completion wording must
-be reviewed together three successive times after this revision. The pass record
-below must be replaced with actual results before implementation resumes.
+including independent handling of both P509 type-load sites and the P504/P509 RAW
+logical-length handoff site, the Phase-3 acceptance wording, the large-program
+fallback wording, and the final completion wording were reviewed together after
+this revision. The staged-negative rule already covers the newly exposed
+downstream handoff site: only previously proven overlays may be applied to reach
+it, its own failure signature must remain unmodified, and its correction must be
+independently bounded before composition.
 
 Pass 1: zero new gaps
 Pass 2: zero new gaps
