@@ -27,6 +27,7 @@ from tests.native_semantic_fixtures import SHARED_RECURSION_SOURCE
 REFERENCE_COMMIT = "69348ee366c48b436aa0d07237ae2e7473e55327"
 DIRECT_TAPE_ERRATUM = "P514 image byte is not restored after CRC update"
 NAMESPACE_ERRATUM = "P509 uses invalid LD B,(nn) form for M48O type"
+RAW_LENGTH_ERRATUM = "P504 returns payload CRC in DE where P509 expects logical length"
 IMAGE_BASE = 0x8000
 FIXTURE_BASE = 0x4000
 TEST_ENTRY = 0x7A00
@@ -132,6 +133,32 @@ def verify_pinned_namespace_erratum(root: Path) -> None:
         match < block.index(bad, match) < block.index("call zx48_object_public_type_allowed", match)
         and commit < block.index(bad, commit) < block.index("call zx48_object_create", commit),
         "pinned namespace fault-site ordering drifted",
+    )
+
+
+def verify_pinned_raw_length_erratum(root: Path) -> None:
+    source = (root / "v1/src/kernel/tape.asm").read_text(encoding="utf-8")
+    raw_start = source.index("zx48_p504_complete:")
+    raw_end = source.index("zx48_p504_transport_fail:", raw_start)
+    raw = source[raw_start:raw_end]
+    require(
+        "ld hl,(p504_crc)" in raw
+        and "ld de,(p504_expected_crc)" in raw
+        and "ld hl,(p504_alloc_ptr)" in raw
+        and "ld bc,(p504_length)" in raw
+        and "ret" in raw,
+        "pinned RAW success-path shape drifted",
+    )
+    require(
+        "ld de,(p504_length)" not in raw,
+        "pinned RAW logical-length erratum is no longer present; remove the overlay",
+    )
+    load_start = source.index("zx48_p509_loaded:")
+    load_end = source.index("zx48_p509_header_basic:", load_start)
+    loaded = source[load_start:load_end]
+    require(
+        "ld (p509_new_logical),de" in loaded,
+        "pinned P509 logical-length handoff shape drifted",
     )
 
 
@@ -698,6 +725,9 @@ def assemble_namespace_fixture(root: Path, temp: Path) -> tuple[bytes, dict[str,
             "zx48_p509_free_error",
             "zx48_p509_format",
             "zx48_p509_inval",
+            "zx48_p504_complete",
+            "zx48_p504_transport_fail",
+            "p504_length",
             "zx48_p504_format",
             "zx48_p504_cleanup",
             "zx48_object_lookup",
@@ -811,6 +841,46 @@ def apply_namespace_commit_erratum_overlay(
         f"site=0x{FIXTURE_BASE + patch_offset:04x} "
         f"wrong_type=0x{wrong_imm:02x} "
         f"create=0x{syms['zx48_object_create']:04x} "
+        f"trampoline=0x{trampoline:04x} original={original.hex()}"
+    )
+    return bytes(out), note
+
+
+def apply_raw_length_erratum_overlay(
+    fixture: bytes, syms: dict[str, int],
+) -> tuple[bytes, str]:
+    start = syms["zx48_p504_complete"] - FIXTURE_BASE
+    end = syms["zx48_p504_transport_fail"] - FIXTURE_BASE
+    require(0 <= start < end <= len(fixture), "RAW success-path range drifted")
+    original = b"\xAF\xB7\xC9"
+    hits: list[int] = []
+    pos = start
+    while True:
+        pos = fixture.find(original, pos, end)
+        if pos < 0:
+            break
+        hits.append(pos)
+        pos += 1
+    require(len(hits) == 1, f"expected one RAW success return sequence, found {len(hits)}")
+    patch_offset = hits[0]
+    trampoline = FIXTURE_BASE + len(fixture)
+    trampoline_bytes = b"\xED\x5B" + word(syms["p504_length"]) + original
+    require(
+        trampoline + len(trampoline_bytes) <= TEST_ENTRY,
+        "no safe room for RAW logical-length erratum trampoline",
+    )
+    out = bytearray(fixture)
+    require(
+        out[patch_offset:patch_offset + len(original)] == original,
+        "RAW logical-length erratum original bytes drifted",
+    )
+    replacement = jp(trampoline)
+    require(len(replacement) == len(original), "RAW logical-length overlay must preserve patched span size")
+    out[patch_offset:patch_offset + len(original)] = replacement
+    out.extend(trampoline_bytes)
+    note = (
+        f"site=0x{FIXTURE_BASE + patch_offset:04x} "
+        f"length=0x{syms['p504_length']:04x} "
         f"trampoline=0x{trampoline:04x} original={original.hex()}"
     )
     return bytes(out), note
@@ -966,6 +1036,30 @@ def run_namespace_case(
                 f"0x{wrong_type:x}",
                 f"0x{wrong_type:x}",
             ]
+        elif expect_erratum == "logical":
+            require(
+                cp.returncode == 3,
+                f"staged native RAW logical-length signature drifted: exit={cp.returncode}\n"
+                f"stdout={cp.stdout}\nstderr={cp.stderr}",
+            )
+            record = values[-20:]
+            require(len(record) == 20, f"RAW logical-length trace incomplete: {record}")
+            got = [int(value, 16) for value in record]
+            logical = got[syms["OBJ_LOGICAL_LENGTH"]] | (got[syms["OBJ_LOGICAL_LENGTH"] + 1] << 8)
+            storage = got[syms["OBJ_STORAGE_LENGTH"]] | (got[syms["OBJ_STORAGE_LENGTH"] + 1] << 8)
+            allocation = got[syms["OBJ_ALLOCATION_PTR"]] | (got[syms["OBJ_ALLOCATION_PTR"] + 1] << 8)
+            require(
+                bytes(got[:10]) == b"NATIVE\0\0\0\0"
+                and got[syms["OBJ_DIR_ID"]] == syms["DIR_BIN"]
+                and got[syms["OBJ_TYPE_ID"]] == syms["OBJ_BIN"]
+                and got[syms["OBJ_FLAGS_BYTE"]] == 0
+                and got[syms["OBJ_RESERVED_BYTE"]] == 0
+                and storage == len(mex_bytes)
+                and allocation == IMAGE_BASE
+                and logical != len(mex_bytes),
+                f"RAW logical-length fault signature drifted: record={got}",
+            )
+            return
         else:
             raise RuntimeError(f"unknown namespace erratum stage: {expect_erratum}")
         require(
@@ -1421,6 +1515,7 @@ def main() -> int:
     verify_native_identity(root)
     verify_pinned_direct_tape_erratum(root)
     verify_pinned_namespace_erratum(root)
+    verify_pinned_raw_length_erratum(root)
 
     cases = (
         (
@@ -1476,6 +1571,9 @@ def main() -> int:
         namespace_overlay_fixture, namespace_commit_note = apply_namespace_commit_erratum_overlay(
             namespace_match_fixture, namespace_syms,
         )
+        namespace_length_fixture, namespace_length_note = apply_raw_length_erratum_overlay(
+            namespace_overlay_fixture, namespace_syms,
+        )
         resident_fixture, resident_gateway, resident_syms = assemble_resident_fixture(root, temp)
         float_service, float_gateway = assemble_float_service(root, temp)
         records: list[str] = []
@@ -1517,6 +1615,10 @@ def main() -> int:
                 )
                 run_namespace_case(
                     root, temp, namespace_overlay_fixture, namespace_syms,
+                    tap_bytes, mex_bytes, expect_erratum="logical",
+                )
+                run_namespace_case(
+                    root, temp, namespace_length_fixture, namespace_syms,
                     tap_bytes, mex_bytes,
                 )
                 run_resident_case(
@@ -1548,6 +1650,7 @@ def main() -> int:
         print(record)
     print(f"NATIVE NAMESPACE MATCH ERRATUM {NAMESPACE_ERRATUM}: {namespace_match_note}")
     print(f"NATIVE NAMESPACE COMMIT ERRATUM {NAMESPACE_ERRATUM}: {namespace_commit_note}")
+    print(f"NATIVE RAW LENGTH ERRATUM {RAW_LENGTH_ERRATUM}: {namespace_length_note}")
     print(f"NATIVE DIRECT TAPE ERRATUM {DIRECT_TAPE_ERRATUM}: {overlay_note}")
     print(f"NATIVE EXECUTION PASS {REFERENCE_COMMIT}")
     return 0
