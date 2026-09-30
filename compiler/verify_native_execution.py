@@ -1192,53 +1192,84 @@ def assemble_resident_fixture(root: Path, temp: Path) -> tuple[bytes, bytes, dic
     return binary, gateway, syms
 
 
-def resident_driver(syms: dict[str, int], mex_bytes: bytes, mex_entry: int) -> bytes:
+def resident_driver(
+    syms: dict[str, int], expected_addr: int, image_size: int, bss_size: int,
+) -> bytes:
     mex_source = 0x9000
     code = bytearray()
     code += b"\xF3"
     code += b"\x31" + word(TEST_STACK)
     code += b"\xDD\x21" + word(mex_source)
-    code += b"\x01" + word(len(mex_bytes))
+    code += b"\x01" + word(0)  # patched by caller
+    length_patch = len(code) - 2
     code += call(syms["zx48_process_spawn_validate_mex1"])
     code += jp_c(FAIL_LOAD_PC)
     code += b"\xDD\x21" + word(mex_source)
     code += call(syms["zx48_mex1_load_image"])
     code += jp_c(FAIL_LOAD_PC)
     code += b"\x11" + word(IMAGE_BASE) + b"\xB7\xED\x52" + jp_nz(FAIL_BASE_PC)
-    code += call(IMAGE_BASE + mex_entry)
-    code += jp(FAIL_RETURN_PC)
-    return bytes(code)
+
+    code += b"\x21" + word(IMAGE_BASE)
+    code += b"\x11" + word(expected_addr)
+    code += b"\x01" + word(image_size)
+    compare_loop = TEST_ENTRY + len(code)
+    code += b"\x1A\xBE" + jp_nz(FAIL_PROGRAM_PC)
+    code += b"\x23\x13\x0B\x78\xB1" + jp_nz(compare_loop)
+
+    if bss_size:
+        code += b"\x21" + word(IMAGE_BASE + image_size)
+        code += b"\x01" + word(bss_size)
+        bss_loop = TEST_ENTRY + len(code)
+        code += b"\x7E\xB7" + jp_nz(FAIL_SCREEN_PC)
+        code += b"\x23\x0B\x78\xB1" + jp_nz(bss_loop)
+
+    code += jp(PASS_PC)
+    return bytes(code), length_patch
 
 
 def run_resident_case(
     root: Path,
     temp: Path,
     fixture: bytes,
-    gateway: bytes,
     syms: dict[str, int],
     mex_bytes: bytes,
-    mex_entry: int,
+    decoded,
 ) -> None:
     mex_source = 0x9000
-    require(mex_source + len(mex_bytes) < 0xE000, "resident proof MEX is too large")
+    expected_addr = 0xA000
+    require(mex_source + len(mex_bytes) < expected_addr, "resident proof MEX overlaps expected image")
+    require(expected_addr + len(decoded.image) < 0xC000, "resident expected image is too large")
+
+    expected = bytearray(decoded.image)
+    for offset in decoded.relocs:
+        value = int.from_bytes(expected[offset:offset + 2], "little")
+        relocated = value + IMAGE_BASE
+        require(relocated <= 0xFFFF, "resident expected relocation overflow")
+        expected[offset:offset + 2] = word(relocated)
+
+    code, length_patch = resident_driver(
+        syms, expected_addr, len(expected), decoded.bss_size,
+    )
+    code = bytearray(code)
+    code[length_patch:length_patch + 2] = word(len(mex_bytes))
+
     sna = temp / "resident.sna"
-    code = resident_driver(syms, mex_bytes, mex_entry)
 
     def patch(ram: bytearray) -> None:
         start = FIXTURE_BASE - RAM_START
         ram[start:start + len(fixture)] = fixture
         source = mex_source - RAM_START
         ram[source:source + len(mex_bytes)] = mex_bytes
-        gate = 0xE000 - RAM_START
-        ram[gate:gate + len(gateway)] = gateway
+        exp = expected_addr - RAM_START
+        ram[exp:exp + len(expected)] = expected
 
-    sna.write_bytes(make_sna(code, patch))
+    sna.write_bytes(make_sna(bytes(code), patch))
     fuse = root / "tools/runtime/fuse/bin/fuse"
     failures = (
         (FAIL_LOAD_PC, 1),
         (FAIL_BASE_PC, 2),
-        (FAIL_RETURN_PC, 3),
-        (FAIL_PROGRAM_PC, 4),
+        (FAIL_PROGRAM_PC, 3),
+        (FAIL_SCREEN_PC, 4),
     )
     parts = [f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n"]
     for index, (address, status) in enumerate(failures, 2):
@@ -1263,7 +1294,7 @@ def run_resident_case(
     )
     require(
         cp.returncode == 0,
-        f"native resident MEX proof failed: exit={cp.returncode}\n"
+        f"native resident MEX load/relocation proof failed: exit={cp.returncode}\n"
         f"stdout={cp.stdout}\nstderr={cp.stderr}",
     )
 
@@ -1521,8 +1552,9 @@ def main() -> int:
         (
             "globals",
             (
-                b"char msg[4]=\"XYZ\";int g=7;"
-                b"int main(void){if(g!=7)return 1;if(msg[2]!='Z')return 2;return 0;}"
+                b"char msg[4]=\"XYZ\";int g=7;char zeroes[8];"
+                b"int main(void){if(g!=7)return 1;if(msg[2]!='Z')return 2;"
+                b"if(zeroes[0]!=0)return 3;return 0;}"
             ),
             "plain",
         ),
@@ -1574,7 +1606,7 @@ def main() -> int:
         namespace_length_fixture, namespace_length_note = apply_raw_length_erratum_overlay(
             namespace_overlay_fixture, namespace_syms,
         )
-        resident_fixture, resident_gateway, resident_syms = assemble_resident_fixture(root, temp)
+        resident_fixture, _resident_gateway, resident_syms = assemble_resident_fixture(root, temp)
         float_service, float_gateway = assemble_float_service(root, temp)
         records: list[str] = []
         for stem, source, mode in cases:
@@ -1622,8 +1654,8 @@ def main() -> int:
                     tap_bytes, mex_bytes,
                 )
                 run_resident_case(
-                    root, temp, resident_fixture, resident_gateway, resident_syms,
-                    mex_bytes, decoded.entry_offset,
+                    root, temp, resident_fixture, resident_syms,
+                    mex_bytes, decoded,
                 )
                 run_tape_case(
                     root, temp, fixture, screen_gateway,
