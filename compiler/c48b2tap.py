@@ -39,7 +39,7 @@ def _parser() -> argparse.ArgumentParser:
     mode.add_argument("--obj", action="store_true", help="write relocatable OBJ1 (.obj)")
     mode.add_argument("--mex", action="store_true", help="write linked MEX1 (.mex)")
     p.add_argument("--name", metavar="NAME", help="1..10 byte ZX-UX BIN object name for TAP output")
-    p.add_argument("--stack", type=int, default=1024, metavar="BYTES", help="MEX1 minimum FAST stack request (64..4096; default 1024)")
+    p.add_argument("--stack", type=int, default=1024, metavar="BYTES", help="MEX1 minimum FAST stack request (even 64..4096; default 1024)")
     p.add_argument("--force", action="store_true", help="replace an existing regular output file")
     p.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     p.add_argument(
@@ -111,8 +111,8 @@ def main(argv: list[str] | None = None) -> int:
     ns = p.parse_args(argv)
     try:
         mode, tape_name = _validate_paths(ns)
-        if not 64 <= ns.stack <= 4096:
-            raise NativeFormatError("--stack must be in the native 64..4096 byte range")
+        if not 64 <= ns.stack <= 4096 or ns.stack & 1:
+            raise NativeFormatError("--stack must be even and in the native 64..4096 byte range")
         program = read_c48b(ns.input)
         user = NativeBackend(program).build()
         if mode == "obj":
