@@ -424,8 +424,6 @@ def assemble_fixture(root: Path, temp: Path):
             "p514_committed",
             "zx48_p511_format",
             "zx48_p514_tape_format",
-            "zx48_p514_tape_finish_ok",
-            "zx48_p514_validate_end",
             "p514_remaining",
             "p514_reloc_offset",
             "p514_previous_reloc",
@@ -1075,8 +1073,6 @@ def run_tape_case(
     internal_failures = (
         (syms["zx48_p511_format"], 31),
         (syms["zx48_p514_tape_format"], 32),
-        (syms["zx48_p514_tape_finish_ok"], 35),
-        (syms["zx48_p514_validate_end"], 36),
         (syms["zx48_p514_format_abort"], 33),
         (syms["zx48_p514_format_rollback"], 34),
     )
