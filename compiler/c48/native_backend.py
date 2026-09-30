@@ -1027,9 +1027,12 @@ class NativeBackend:
             for item in value:
                 self._collect_strings(item)
         elif isinstance(value, dict):
-            if value.get("kind") == "string_literal":
+            kind = value.get("kind")
+            if kind == "string_initializer":
+                return
+            if kind == "string_literal":
                 self.string_symbol(value)
-            elif value.get("kind") == "floating_literal" and "float5" in value:
+            elif kind == "floating_literal" and "float5" in value:
                 self.float_constant(value["float5"])
             for child in value.values():
                 if isinstance(child, (dict, list)):
