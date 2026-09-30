@@ -598,11 +598,11 @@ def run_tape_case(
         (syms["zx48_p514_format_abort"], 33),
         (syms["zx48_p514_format_rollback"], 34),
     )
-    for index, (address, status) in enumerate(internal_failures, 20):
+    for index, (address, status) in enumerate(internal_failures, 2):
         debugger_parts.append(
             f"breakpoint 0x{address:04x}\ncommands {index}\nexit {status}\nend\n"
         )
-    for index, (address, status) in enumerate(failures, 2):
+    for index, (address, status) in enumerate(failures, 2 + len(internal_failures)):
         debugger_parts.append(
             f"breakpoint 0x{address:04x}\ncommands {index}\nexit {status}\nend\n"
         )
