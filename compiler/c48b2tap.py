@@ -20,8 +20,11 @@ from c48.native_backend import NativeLoweringError, NativeBackend
 from c48.native_format import (
     NativeFormatError,
     build_bin_tap,
+    decode_mex1,
+    decode_obj1,
     encode_mex1,
     encode_obj1,
+    parse_bin_tap,
 )
 from c48.native_link import link_mex
 from c48.native_runtime import RUNTIME_MEMBERS
@@ -114,6 +117,7 @@ def main(argv: list[str] | None = None) -> int:
         user = NativeBackend(program).build()
         if mode == "obj":
             output = encode_obj1(user)
+            decode_obj1(output)
         else:
             mex = link_mex(
                 [("startup", next(m.obj for m in RUNTIME_MEMBERS if m.name == "startup")), ("user", user)],
@@ -121,11 +125,16 @@ def main(argv: list[str] | None = None) -> int:
                 min_stack=ns.stack,
             )
             mex_bytes = encode_mex1(mex)
+            decode_mex1(mex_bytes)
             if mode == "mex":
                 output = mex_bytes
             else:
                 name = tape_name if tape_name is not None else ns.output.stem
                 output = build_bin_tap(name, mex_bytes)
+                parsed = parse_bin_tap(output)
+                if parsed.payload != mex_bytes:
+                    raise NativeFormatError("independent TAP validation payload mismatch")
+                decode_mex1(parsed.payload)
         _atomic_write(ns.output, output)
         print(f"c48b2tap: wrote {ns.output} ({mode}, {len(output)} bytes)")
         return 0
