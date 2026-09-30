@@ -75,16 +75,55 @@ recursion, control flow, initializers, deterministic source evaluation order,
 and the frozen Float5/runtime boundary. A dependency that has no proved native
 implementation is rejected before any destination is replaced.
 
-Host-only execution conveniences and target-only ZX-UX services are recorded
-explicitly in the Phase 3 divergence table as the backend is completed.
+## Frozen host/native semantic divergence matrix
+
+The classifications below are part of the target contract. **Exact** means the
+generated target operation has the same C48-observable result as the host VM.
+**Translated** means the host convenience is deliberately mapped onto a
+different native mechanism with the same admitted observable contract.
+**Rejected** means native generation or linking fails before an output file is
+published.
+
+| C48B1 surface | Classification | Native rule |
+|---|---|---|
+| integer/character literals, `sizeof`, identifiers, arrays and indexing | Exact | 8/16-bit C48 widths, alignment and array stride are preserved |
+| scalar assignment and integer casts | Exact | narrowing/widening follows the C48 unsigned-char and 16-bit integer model |
+| integer unary `+`, `-`, `~`, `!`, prefix/postfix `++` and `--` | Exact | 16-bit wrap and 8-bit zero extension are preserved |
+| integer `+`, `-`, `*`, `/`, `%`, shifts and bitwise operators | Exact | signed division/remainder and signed right shift use the pinned C48 rules |
+| integer comparisons and `&&`/`||` | Exact | results are canonical 0/1 and logical operators retain short-circuit order |
+| address-of, dereference, pointer indexing, pointer add/subtract/difference and relational comparison | Exact | scaling uses the pointed-to type size and 16-bit target addresses |
+| function calls, recursion and scalar returns | Exact | C48_REGCALL, left-to-right argument evaluation and caller cleanup are preserved |
+| Float5 literals, casts, arithmetic, comparisons, truth, prefix/postfix update and float returns | Translated | five-byte storage plus the pinned ZX-UX floating syscall ABI is used; host binary floating representation is never emitted |
+| `if`, `while`, `do`, `for`, `break`, `continue`, compound and expression statements | Exact | generated branches preserve C48 evaluation order |
+| scalar, array and string initializers plus zero initialization | Exact | target data bytes and BSS semantics match C48; consumed string initializers are not duplicated as anonymous data |
+| block-scope `static` or `extern` declarations | Rejected | C48 Version 1 semantic analysis rejects them before native lowering |
+| any C48B1 node/operator outside the admitted cases above | Rejected | lowering raises a target error rather than guessing a host behavior |
+
+The host runtime/builtin surface is frozen separately because a matching name
+alone is not evidence of matching semantics:
+
+| Runtime/builtin surface | Classification | Native rule |
+|---|---|---|
+| `exit` | Translated | native process-exit syscall; successful exit is non-returning |
+| `yield`, `sleep`, `getpid` | Translated | pinned cooperative process syscalls and request layouts |
+| `getchar`, `putchar`, `puts` | Translated | native read/write syscalls; host presentation side effects are not target semantics |
+| `strlen`, `strcmp`, `strcpy`, `strncpy` | Translated | deterministic target string helpers matching C48 return/copy rules |
+| `memcpy`, `memmove`, `memchr`, `memset` | Translated | deterministic target memory helpers with the C48 byte-count contract |
+| `cls`, `plot`, `ink`, `paper`, `bright`, `flash`, `inverse`, `over`, `border`, `udg_clear` | Translated | pinned graphics/UDG syscall contracts |
+| `ticks` | Translated | low 16 bits of the pinned native tick service |
+| `sin`, `cos`, `tan`, `asin`, `acos`, `atan`, `sqrt`, `exp`, `log`, `fabs`, `pow` | Translated | pinned Float5 service operations and hidden-result convention |
+| `beep`, `malloc`, `free`, `point`, `draw`, `circle`, `print_at`, `udg_define`, `udg_get`, `udg_draw`, `udg_draw_2x2` | Rejected | no admitted Phase 3 native member; unresolved use fails the link transaction |
+| any other external function without a generated definition or admitted runtime member | Rejected | fixed-point runtime selection ends in an unresolved-symbol error |
 
 ## Runtime provenance and supported-symbol policy
 
 The host linker never reads a moving native checkout. Runtime members are
-constructed deterministically inside the SDK. The startup, exit, puts, ink,
-plot, and udg_clear members are byte-exact copies of the corresponding frozen
-OBJ1 members in the pinned native tree. Release verification checks their
-complete serialized OBJ1 digests.
+constructed deterministically inside the SDK. The startup, ink, plot, and
+udg_clear members are byte-exact copies of frozen OBJ1 members in the pinned
+native tree. Release verification checks their complete serialized OBJ1
+digests. Exit, text/string, memory, process and other admitted helpers are
+target-equivalent translations of the pinned native source contracts rather
+than falsely claimed byte copies.
 
 Other accepted runtime helpers are deterministic target-equivalent
 translations of the pinned libc48 assembly contract. They are used only where
@@ -96,8 +135,9 @@ The supported boundary is intentionally narrower than the host interpreter.
 Five-byte floating arithmetic, casts, comparisons, truth testing, hidden
 Float5 returns, and the admitted public math calls are emitted through the
 pinned ZX-UX floating syscall ABI and its exact five-byte storage convention.
-Block-scope static storage is rejected by the current target lowering.
-Host-only display conveniences are not silently translated into target calls.
+C48 Version 1 rejects block-scope static/extern declarations before target
+lowering. Host-only display conveniences are not silently translated into
+target calls.
 
 Exact prebuilt-member provenance comes from `v1/src/libc48/crt0.asm` and
 the P10/P11 object members in `v1/src/libc48/runtime_archive.asm`. Translated
