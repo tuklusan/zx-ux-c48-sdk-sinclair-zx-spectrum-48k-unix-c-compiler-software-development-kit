@@ -489,10 +489,11 @@ are active and must be carried separately in the evidence:
    separately. External defects must not be hidden, counted as SDK successes, or
    used to waive any repository-owned defect.
 
-Runbook-revision zero-gap record: after the final wording above and the related
-acceptance/completion wording below are fixed, execution must perform three
-successive complete reviews of the revised Phase-3 proof contract with zero new
-gaps or contradictions before implementation resumes.
+Runbook-revision zero-gap record: the generalized multi-erratum wording above,
+the Phase-3 acceptance wording, the large-program fallback wording, and the final
+completion wording were reviewed together three successive times after revision.
+Pass 1: zero new gaps. Pass 2: zero new gaps. Pass 3: zero new gaps. Implementation
+may resume only against this reviewed wording.
 
 
 ## Step 3.10 — Large-program cross-development proof
