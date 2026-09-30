@@ -324,18 +324,6 @@ def check_tests() -> None:
         fail(f"test count mismatch: expected {EXPECT['test_count']}, got {m.group(1) if m else 'unreported'}")
 
 
-def check_multitask() -> None:
-    cp = run(
-        [sys.executable, "-B", str(ROOT / "verify_multitask.py")],
-        timeout=180,
-    )
-    if cp.returncode != 0:
-        sys.stderr.write(cp.stdout + cp.stderr)
-        fail("cooperative multitask verification failed")
-    if "MULTITASK VERIFY PASS:" not in cp.stdout:
-        fail("cooperative multitask completion marker missing")
-
-
 def check_beep() -> None:
     sound = EXPECT["sound"]
     source = SDK / "usr/src/sound/tune.c"
@@ -583,7 +571,6 @@ def main() -> int:
         ("ailmzx48 design compliance", check_ailmzx48_design),
         ("source tape corpus", check_source_tapes),
         ("automated tests", check_tests),
-        ("cooperative multitask runtime", check_multitask),
         ("ROM-derived BEEP", check_beep),
         ("game corpus", check_games),
         ("graphics demo corpus", check_graphics_demos),

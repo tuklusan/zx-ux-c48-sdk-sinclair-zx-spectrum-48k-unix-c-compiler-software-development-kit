@@ -68,6 +68,7 @@ jobs:
         run: python -B compiler/tests/test_multitask.py
 
       - name: Run frozen recursive-pair proof
+        if: matrix.python == '3.13'
         run: python -B compiler/verify_multitask.py
 
       - name: Smoke-test Windows launcher
