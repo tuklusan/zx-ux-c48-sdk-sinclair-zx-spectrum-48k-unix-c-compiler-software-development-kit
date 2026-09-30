@@ -48,7 +48,7 @@ class TickSource:
             self.value += 1
 
 
-def run_pair(programs: list[dict]) -> tuple[int, bytes, tuple[tuple[object, ...], ...], list[int | None]]:
+def run_pair(programs: list[dict]) -> tuple[int, bytes, tuple[tuple[object, ...], ...], list[int | None], int]:
     ticks = TickSource()
     screen = ZXScreen(FONT)
     session = CooperativeSession(
@@ -57,7 +57,8 @@ def run_pair(programs: list[dict]) -> tuple[int, bytes, tuple[tuple[object, ...]
         screen,
         tick_provider=ticks.now,
         idle_wait=ticks.advance_to,
-        max_steps=8000000,
+        # Aggregate guard for two complete recursive workloads in one session.
+        max_steps=16000000,
     )
     status = session.run()
     statuses = [session.descriptors[pid].exit_status for pid in (2, 3)]
@@ -77,7 +78,7 @@ def run_pair(programs: list[dict]) -> tuple[int, bytes, tuple[tuple[object, ...]
             + f"status={status} steps={session.budget.steps} "
             + f"details={details!r}"
         )
-    return status, screen.bytes(), tuple(session.trace), statuses
+    return status, screen.bytes(), tuple(session.trace), statuses, session.budget.steps
 
 
 def main() -> int:
@@ -133,6 +134,8 @@ def main() -> int:
         + digest(first[1])
         + " events="
         + str(len(first[2]))
+        + " steps="
+        + str(first[4])
     )
     return 0
 
