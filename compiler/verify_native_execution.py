@@ -971,9 +971,10 @@ def build_native(source: bytes, source_name: str):
     return program, user, mex
 
 
-def host_status(program, temp: Path, stem: str) -> int:
+def host_artifact(program, temp: Path, stem: str) -> bytes:
     path = temp / f"{stem}.c48b"
     write_c48b(path, program)
+    c48b = path.read_bytes()
     cp = subprocess.run(
         [sys.executable, str(HERE / "c48run.py"), "--headless", str(path)],
         cwd=SDK,
@@ -983,7 +984,7 @@ def host_status(program, temp: Path, stem: str) -> int:
         timeout=60,
     )
     require(cp.returncode == 0, f"host semantic fixture failed: {stem}: {cp.stderr}")
-    return cp.returncode
+    return c48b
 
 
 def check_byte(address: int, value: int, fail_pc: int = FAIL_PC) -> bytes:
@@ -1191,7 +1192,7 @@ def main() -> int:
         records: list[str] = []
         for stem, source, mode in cases:
             program, obj, mex = build_native(source, stem + ".c")
-            host_status(program, temp, stem)
+            c48b_bytes = host_artifact(program, temp, stem)
             obj_bytes = encode_obj1(obj)
             mex_bytes = encode_mex1(mex)
             tap_bytes = build_bin_tap("NATIVE", mex_bytes)
@@ -1240,6 +1241,7 @@ def main() -> int:
             )
             records.append(
                 f"{stem}:src={len(source)}:{sha256(source)} "
+                f"c48b={len(c48b_bytes)}:{sha256(c48b_bytes)} "
                 f"obj={len(obj_bytes)}:{sha256(obj_bytes)} "
                 f"mex={len(mex_bytes)}:{sha256(mex_bytes)} "
                 f"tap={len(tap_bytes)}:{sha256(tap_bytes)}"
