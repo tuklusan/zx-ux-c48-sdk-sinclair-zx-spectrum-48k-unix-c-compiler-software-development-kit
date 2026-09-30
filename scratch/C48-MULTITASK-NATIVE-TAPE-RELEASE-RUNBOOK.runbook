@@ -420,11 +420,19 @@ same time. This protocol exists to separate repository-owned defects from extern
 native-runtime defects without altering the external repository or changing
 generated artifact bytes to accommodate them.
 
-For the currently observed pinned reference, four independently reproduced
+For the currently observed pinned reference, five independently reproduced
 native fault sites are active and must be carried separately in the evidence:
 
 - the P514 direct-tape image loop does not preserve the loaded image byte across
   its CRC update before storing the byte;
+- after that P514 image-byte fault is corrected in isolation, the direct-tape
+  physical-byte refill path exposes a second independent P514 fault: it prepares
+  the current physical chunk length in DE, calls `zx48_tape_load_block` without
+  preserving that length, and then subtracts the post-load DE value from
+  `p514_tape_phys_remaining`. The cassette-load contract does not preserve DE,
+  so the stream can consume the complete chunk while the remaining-physical
+  counter stays nonzero and the otherwise complete stream is rejected as
+  `E_FORMAT`;
 - the P509 BIN namespace match/public-type check uses
   `ld b,(p509_header+M48O_HDR_TYPE)`, an instruction form the target Z80 does not
   provide. The pinned assembler encodes the operand as an immediate low address
@@ -442,9 +450,11 @@ native fault sites are active and must be carried separately in the evidence:
   logical length instead of the validated RAW length.
 
 The exact pinned source and the latest observed read-only native tree contain all
-four fault sites. The verifier must prove the two P509 type-load failures and the
-P504/P509 logical-length handoff failure independently before composing their
-bounded corrections for the positive namespace-load path.
+five fault sites. The verifier must prove the P514 image-byte failure first, then
+prove the downstream P514 physical-remaining failure using only the image-byte
+overlay; independently, it must prove the two P509 type-load failures and the
+P504/P509 logical-length handoff failure before composing the bounded corrections
+for the positive paths.
 
 1. Freeze the pinned native commit, latest observed native commit, exact native
    source span for every active defect, failing generated artifact hashes,
@@ -515,13 +525,13 @@ bounded corrections for the positive namespace-load path.
    repository-owned defect.
 
 Runbook-revision zero-gap record: the generalized multi-erratum wording above,
-including independent handling of both P509 type-load sites and the P504/P509 RAW
-logical-length handoff site, the Phase-3 acceptance wording, the large-program
-fallback wording, and the final completion wording were reviewed together after
-this revision. The staged-negative rule already covers the newly exposed
-downstream handoff site: only previously proven overlays may be applied to reach
-it, its own failure signature must remain unmodified, and its correction must be
-independently bounded before composition.
+including the staged pair of P514 direct-tape faults, both P509 type-load sites,
+the P504/P509 RAW logical-length handoff site, the Phase-3 acceptance wording,
+the large-program fallback wording, and the final completion wording were
+reviewed together after this revision. The staged-negative rule covers both
+downstream cases: only previously proven overlays may be applied to reach the
+next native-owned fault, that target fault remains unmodified for its negative
+signature, and its correction is independently bounded before composition.
 
 Pass 1: zero new gaps
 Pass 2: zero new gaps
