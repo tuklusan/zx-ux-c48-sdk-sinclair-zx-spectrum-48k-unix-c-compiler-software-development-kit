@@ -91,5 +91,8 @@ jobs:
       - name: Run independent native format oracles
         run: python -B compiler/verify_native_interop.py --native-root native-ref
 
+      - name: Run pinned native linker consumption proof
+        run: python -B compiler/verify_native_linker.py --native-root native-ref
+
       - name: Run pinned native tape execution proof
         run: python -B compiler/verify_native_execution.py --native-root native-ref
