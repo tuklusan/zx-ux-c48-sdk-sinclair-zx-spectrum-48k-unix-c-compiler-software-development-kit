@@ -129,16 +129,32 @@ def main() -> int:
     names = [item[0] for item in defs]
     require(names == ["_start", "main", "exit"], f"unexpected proof definition set: {names}")
 
-    relocation_cases: list[tuple[int, str, int]] = []
+    relocation_cases: list[tuple[int, str | None, int, int | None, int | None]] = []
+    total_text = len(host_mex.image)
     for module_index, (_, obj) in enumerate(modules):
         for rel in obj.relocs:
             sym = obj.symbols[rel.symbol]
-            require(sym.section == OBJ_SECTION_UNDEF and (sym.flags & OBJ_SYMBOL_GLOBAL),
-                    "proof fixture expects external relocations only")
             patch = expected_text_bases[module_index] + rel.offset
             addend_raw = int.from_bytes(obj.text[rel.offset:rel.offset + 2], "little")
             addend = addend_raw - 0x10000 if addend_raw & 0x8000 else addend_raw
-            relocation_cases.append((patch, sym.name, addend))
+            if sym.section == OBJ_SECTION_UNDEF:
+                require(bool(sym.flags & OBJ_SYMBOL_GLOBAL),
+                        "undefined proof relocation must be global")
+                relocation_cases.append((patch, sym.name, addend, None, None))
+            elif sym.section == OBJ_SECTION_TEXT:
+                relocation_cases.append((
+                    patch, None, addend,
+                    expected_text_bases[module_index] + sym.value,
+                    OBJ_SECTION_TEXT,
+                ))
+            elif sym.section == OBJ_SECTION_BSS:
+                relocation_cases.append((
+                    patch, None, addend,
+                    total_text + expected_bss_bases[module_index] + sym.value,
+                    OBJ_SECTION_BSS,
+                ))
+            else:
+                relocation_cases.append((patch, None, addend, sym.value, sym.section))
     require(len(relocation_cases) <= 8, "native proof exceeds pinned relocation fixture capacity")
 
     obj_records = []
@@ -163,7 +179,7 @@ def main() -> int:
 
     query_records = []
     query_labels: dict[str, str] = {}
-    for index, name in enumerate(sorted({name for _, name, _ in relocation_cases})):
+    for index, name in enumerate(sorted({name for _, name, _, _, _ in relocation_cases if name is not None})):
         label = f"p_query{index}"
         query_labels[name] = label
         query_records.append(f"{label}:\n{name_field(name)}")
@@ -178,18 +194,31 @@ def main() -> int:
         )
 
     reloc_calls = []
-    for patch, name, addend in relocation_cases:
+    for patch, name, addend, direct_value, direct_section in relocation_cases:
+        if name is not None:
+            resolve = (
+                f"    ld hl,{query_labels[name]}\n"
+                "    ld de,p_defs\n"
+                f"    ld b,{len(defs)}\n"
+                "    call ld_p1025_resolve\n"
+                "    ret c\n"
+                "    ld hl,(ld_p1025_resolved_value)\n"
+                "    ld (ld_p1026_symbol_value),hl\n"
+                "    ld a,(ld_p1025_resolved_section)\n"
+                "    ld (ld_p1026_symbol_section),a\n"
+            )
+        else:
+            require(direct_value is not None and direct_section is not None,
+                    "direct relocation proof metadata is incomplete")
+            resolve = (
+                f"    ld hl,{direct_value}\n"
+                "    ld (ld_p1026_symbol_value),hl\n"
+                f"    ld a,{direct_section}\n"
+                "    ld (ld_p1026_symbol_section),a\n"
+            )
         reloc_calls.append(
-            f"    ld hl,{query_labels[name]}\n"
-            "    ld de,p_defs\n"
-            f"    ld b,{len(defs)}\n"
-            "    call ld_p1025_resolve\n"
-            "    ret c\n"
-            "    ld hl,(ld_p1025_resolved_value)\n"
-            "    ld (ld_p1026_symbol_value),hl\n"
-            "    ld a,(ld_p1025_resolved_section)\n"
-            "    ld (ld_p1026_symbol_section),a\n"
-            f"    ld hl,{patch}\n"
+            resolve
+            + f"    ld hl,{patch}\n"
             "    ld (ld_p1026_patch_loc),hl\n"
             f"    ld hl,{addend & 0xFFFF}\n"
             "    ld (ld_p1026_addend),hl\n"
