@@ -399,6 +399,7 @@ def assemble_fixture(root: Path, temp: Path):
             "zx48_p511_format",
             "zx48_p514_tape_format",
             "zx48_p514_tape_finish_ok",
+            "zx48_p514_validate_end",
             "zx48_p514_format_abort",
             "zx48_p514_format_rollback",
             "gateway_write_bytes",
@@ -597,6 +598,7 @@ def run_tape_case(
         (syms["zx48_p511_format"], 31),
         (syms["zx48_p514_tape_format"], 32),
         (syms["zx48_p514_tape_finish_ok"], 35),
+        (syms["zx48_p514_validate_end"], 36),
         (syms["zx48_p514_format_abort"], 33),
         (syms["zx48_p514_format_rollback"], 34),
     )
@@ -696,6 +698,16 @@ def main() -> int:
             mex_bytes = encode_mex1(mex)
             tap_bytes = build_bin_tap("NATIVE", mex_bytes)
             decoded = decode_mex1(mex_bytes)
+            if stem == "globals":
+                words = [
+                    (offset, int.from_bytes(decoded.image[offset:offset + 2], "little"))
+                    for offset in decoded.relocs
+                ]
+                print(
+                    f"GLOBALS MEX image={len(decoded.image)} bss={decoded.bss_size} "
+                    f"entry={decoded.entry_offset} relocs={decoded.relocs} words={words}",
+                    flush=True,
+                )
             second = build_native(source, stem + ".c")
             require(obj_bytes == encode_obj1(second[1]), f"{stem}: OBJ1 rebuild drift")
             require(mex_bytes == encode_mex1(second[2]), f"{stem}: MEX1 rebuild drift")
