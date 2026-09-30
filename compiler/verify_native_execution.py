@@ -481,18 +481,34 @@ def namespace_fixture_source(root: Path) -> str:
     return f"""    DEVICE ZXSPECTRUM48
     INCLUDE "{(inc / 'zx48ux.inc').as_posix()}"
     INCLUDE "{(inc / 'tapeobj.inc').as_posix()}"
-    INCLUDE "{(kernel / 'objects.asm').as_posix()}"
-    INCLUDE "{(kernel / 'tape.asm').as_posix()}"
+OBJ_NAME EQU 0
+OBJ_DIR_ID EQU 10
+OBJ_TYPE_ID EQU 11
+OBJ_FLAGS_BYTE EQU 12
+OBJ_RESERVED_BYTE EQU 13
+OBJ_LOGICAL_LENGTH EQU 14
+OBJ_STORAGE_LENGTH EQU 16
+OBJ_ALLOCATION_PTR EQU 18
+OBJ_RECORD_SIZE EQU 20
+PATH_KIND_BASE EQU 1
 ROM_LD_BYTES EQU $0556
+    INCLUDE "{(kernel / 'tape.asm').as_posix()}"
     ORG $4000
 namespace_fixture_start:
-    EMIT_OBJECT_TYPE_ROUTINES
-    EMIT_OBJECT_ROUTINES
     EMIT_P502_CRC16_ROUTINES
     EMIT_P503_FRAMING_ROUTINES
     EMIT_P504_RAW_LOADER_ROUTINES
     EMIT_P507_RAW_SAVE_ROUTINES
     EMIT_P509_EXPLICIT_LOAD_ROUTINES
+
+zx48_objects_init:
+    xor a
+    ld hl,object_table
+    ld de,object_table+1
+    ld bc,OBJ_RECORD_SIZE-1
+    ld (hl),a
+    ldir
+    ret
 
 zx48_alloc:
     ld hl,$8000
@@ -516,37 +532,75 @@ zx48_tape_save_block:
     ld a,E_IO
     scf
     ret
-zx48_process_lookup:
-    ld a,E_NOENT
-    scf
-    ret
-zx48_process_ptr:
-    ld a,E_NOENT
-    scf
-    ret
-zx48_zxpack_read:
-    ld a,E_NOTSUP
-    scf
-    ret
-zx48_zxpack_materialize:
-    ld a,E_NOTSUP
-    scf
-    ret
-zx48_zxpack_try_slot:
-    ld a,E_NOTSUP
-    scf
-    ret
-zx48_od_create:
-    ld a,E_NOTSUP
-    scf
-    ret
-zx48_handle_install:
-    ld a,E_NOTSUP
-    scf
-    ret
-zx48_od_release_id:
+
+zx48_path_resolve:
+    ld a,DIR_BIN
+    ld (path_dir),a
+    ld hl,test_namespace_name
+    ld de,path_name
+    ld bc,M48O_NAME_SIZE
+    ldir
+    ld c,PATH_KIND_BASE
     xor a
     ret
+
+zx48_object_public_type_allowed:
+    cp DIR_BIN
+    jr nz,namespace_perm
+    ld a,b
+    cp OBJ_BIN
+    jr nz,namespace_perm
+    xor a
+    ret
+namespace_perm:
+    ld a,E_PERM
+    scf
+    ret
+
+zx48_object_lookup:
+    cp DIR_BIN
+    jr nz,namespace_noent
+    ld a,(object_table+OBJ_TYPE_ID)
+    or a
+    jr z,namespace_noent
+    ld ix,object_table
+    ld c,0
+    xor a
+    ret
+namespace_noent:
+    ld a,E_NOENT
+    scf
+    ret
+
+zx48_object_create:
+    cp DIR_BIN
+    jr nz,namespace_perm
+    ld a,b
+    cp OBJ_BIN
+    jr nz,namespace_perm
+    push hl
+    ld de,object_table
+    ld bc,M48O_NAME_SIZE
+    ldir
+    pop hl
+    ld a,DIR_BIN
+    ld (object_table+OBJ_DIR_ID),a
+    ld a,OBJ_BIN
+    ld (object_table+OBJ_TYPE_ID),a
+    xor a
+    ld (object_table+OBJ_FLAGS_BYTE),a
+    ld (object_table+OBJ_RESERVED_BYTE),a
+    ld (object_table+OBJ_LOGICAL_LENGTH),a
+    ld (object_table+OBJ_LOGICAL_LENGTH+1),a
+    ld (object_table+OBJ_STORAGE_LENGTH),a
+    ld (object_table+OBJ_STORAGE_LENGTH+1),a
+    ld (object_table+OBJ_ALLOCATION_PTR),a
+    ld (object_table+OBJ_ALLOCATION_PTR+1),a
+    ld ix,object_table
+    ld c,0
+    xor a
+    ret
+
 zx48_od_object_any_live:
     xor a
     or a
@@ -568,9 +622,13 @@ zx48_p513_prompt_record:
 test_namespace_path:
     db "/bin/NATIVE",0
 test_namespace_name:
-    db "NATIVE",0
-current_pid:
-    db 1
+    db "NATIVE",0,0,0,0
+path_dir:
+    db 0
+path_name:
+    defs M48O_NAME_SIZE,0
+object_table:
+    defs OBJ_RECORD_SIZE,0
 namespace_fixture_end:
     SAVEBIN "sdk-native-namespace.bin",namespace_fixture_start,namespace_fixture_end-namespace_fixture_start
 """
