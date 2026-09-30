@@ -76,8 +76,8 @@ def _startup() -> NativeMember:
 
 
 def _exit() -> NativeMember:
-    # HL already carries C48 status. SYS_EXIT consumes it.
-    return _single("exit", bytes((0x3E, 0x01, 0xCD, 0x00, 0xE0, 0x76)))
+    # Exact pinned compact runtime archive member.
+    return _single("exit", bytes((0xC9,)))
 
 
 def _mul16() -> NativeMember:
@@ -193,37 +193,14 @@ def _putchar_exact() -> NativeMember:
 
 
 def _puts() -> NativeMember:
-    c = _Code()
-    call_fixups: list[int] = []
-    # Write each source byte through stdout handle 1. One-byte writes cannot
-    # short-write except as zero progress, which maps to E_IO.
-    c.label("loop")
-    c.emit(0x7E, 0xB7)
-    c.jr(0x28, "newline")
-    c.emit(0xE5)                     # save source pointer
-    c.emit(0x11, 0x01, 0x00, 0x01, 0x01, 0x00)
-    c.emit(0x3E, 0x13, 0xCD, 0x00, 0xE0)
-    c.emit(0xD1)                     # DE=source pointer
-    c.jr(0x38, "error")
-    c.emit(0x7C, 0xB5)
-    c.jr(0x28, "io_error")
-    c.emit(0xEB, 0x23)              # HL=source; advance
-    c.jr(0x18, "loop")
-    c.label("newline")
-    c.emit(0x21, 0x0A, 0x00, 0xE5)
-    c.emit(0x21, 0x00, 0x00, 0x39)
-    c.emit(0x11, 0x01, 0x00, 0x01, 0x01, 0x00)
-    c.emit(0x3E, 0x13, 0xCD, 0x00, 0xE0)
-    c.emit(0xD1)
-    c.jr(0x38, "error")
-    c.emit(0x7C, 0xB5)
-    c.jr(0x28, "io_error")
-    c.emit(0x21, 0x00, 0x00, 0xB7, 0xC9)
-    c.label("io_error")
-    c.emit(0x21, 0x05, 0x00, 0xB7, 0xC9)
-    c.label("error")
-    c.emit(0x6F, 0x26, 0x00, 0xB7, 0xC9)
-    return _single("puts", c.finish())
+    # Exact pinned P11.35 target-native archive member.
+    return _single(
+        "puts",
+        bytes.fromhex(
+            "e50100007eb72804230318f8e11101003e13cd00e0381a210a00"
+            "e5210000391101000101003e13cd00e0c13804210000c96f2600b7c9"
+        ),
+    )
 
 
 def _strlen() -> NativeMember:
@@ -340,16 +317,37 @@ def _memmove() -> NativeMember:
     return _single("memmove", c.finish())
 
 def _graphics_attr(name: str, selector: int) -> NativeMember:
-    # HL=value. Native wrapper uses D=selector and SYS_GFX_ATTR.
+    # Native-compatible fallback for selectors without a frozen prebuilt member.
     text = bytes((
         0x16, selector,
-        0x62,             # LD H,D
+        0x62,
         0x3E, 0x43,
         0xCD, 0x00, 0xE0,
         0x21, 0x00, 0x00,
         0xC9,
     ))
     return _single(name, text)
+
+
+def _ink_exact() -> NativeMember:
+    return _single(
+        "ink",
+        bytes.fromhex("7cb7200f1600623e43cd00e0380a210000afc9210100afc96f2600b7c9"),
+    )
+
+
+def _plot_exact() -> NativeMember:
+    return _single(
+        "plot",
+        bytes.fromhex("7cb2200e656b3e40cd00e0380a210000afc9210100afc96f2600b7c9"),
+    )
+
+
+def _udg_clear_exact() -> NativeMember:
+    return _single(
+        "udg_clear",
+        bytes.fromhex("7cb7200c3e4bcd00e0380a210000afc9210100afc96f2600b7c9"),
+    )
 
 
 RUNTIME_MEMBERS: tuple[NativeMember, ...] = (
@@ -373,16 +371,13 @@ RUNTIME_MEMBERS: tuple[NativeMember, ...] = (
     _syscall_wrapper("getpid", 0x04),
     _syscall_wrapper("cls", 0x33, zero_result=True),
     _syscall_wrapper("ticks", 0x62),
-    _syscall_wrapper("udg_clear", 0x4B, zero_result=True),
-    _graphics_attr("ink", 0),
+    _udg_clear_exact(),
+    _ink_exact(),
     _graphics_attr("paper", 1),
     _graphics_attr("bright", 2),
     _graphics_attr("flash", 3),
     _graphics_attr("inverse", 4),
     _graphics_attr("over", 5),
     _syscall_wrapper("border", 0x44, zero_result=True),
-    _single(
-        "plot",
-        bytes((0x65, 0x6B, 0x3E, 0x40, 0xCD, 0x00, 0xE0, 0x21, 0x00, 0x00, 0xC9)),
-    ),
+    _plot_exact(),
 )

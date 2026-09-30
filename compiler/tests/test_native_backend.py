@@ -62,6 +62,22 @@ class NativeBackendTests(unittest.TestCase):
         )
         self.assertEqual(encode_obj1(startup.obj), expected)
 
+    def test_pinned_prebuilt_runtime_members_are_byte_exact(self) -> None:
+        expected = {
+            "startup": "f3af4f93f4a63ead2cdd48f10f6d3993cefca654d579c11b4af48d2874c45fee",
+            "exit": "238e23c9514b209febfddffbba611130f5654f6fce42d2be09b3821ab3a196b6",
+            "puts": "1becbe7b3c775a196a7b385120e95b279e43c97cae77bd96110bd186ef946dcb",
+            "ink": "3d8526be642a90bbe4e8485006f573767c3e64e65f35232ce0e637062bfb6513",
+            "plot": "7408256537bc816b2caa429156a242f96cd767e6cfb9524568b8620b7e16090c",
+            "udg_clear": "de7406c6f48542f3ae7b80c288f58d89565192e8b8d65416c38b1f15e7519623",
+        }
+        import hashlib
+        actual = {
+            member.name: hashlib.sha256(encode_obj1(member.obj)).hexdigest()
+            for member in RUNTIME_MEMBERS if member.name in expected
+        }
+        self.assertEqual(actual, expected)
+
     def test_left_to_right_six_argument_call_lowers(self) -> None:
         obj = native_from_source(
             "int f(int a,int b,int c,int d,int e,int f){return a+b+c+d+e+f;}"

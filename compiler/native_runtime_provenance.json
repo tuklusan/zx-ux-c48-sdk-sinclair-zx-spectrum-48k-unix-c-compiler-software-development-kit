@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "native_commit": "69348ee366c48b436aa0d07237ae2e7473e55327",
+  "sources": [
+    "v1/src/libc48/crt0.asm",
+    "v1/src/libc48/runtime_archive.asm",
+    "v1/src/libc48/int_runtime.asm",
+    "v1/src/libc48/string.asm",
+    "v1/src/libc48/memory.asm",
+    "v1/src/libc48/graphics.asm"
+  ],
+  "exact_obj1_sha256": {
+    "startup": "f3af4f93f4a63ead2cdd48f10f6d3993cefca654d579c11b4af48d2874c45fee",
+    "exit": "238e23c9514b209febfddffbba611130f5654f6fce42d2be09b3821ab3a196b6",
+    "puts": "1becbe7b3c775a196a7b385120e95b279e43c97cae77bd96110bd186ef946dcb",
+    "ink": "3d8526be642a90bbe4e8485006f573767c3e64e65f35232ce0e637062bfb6513",
+    "plot": "7408256537bc816b2caa429156a242f96cd767e6cfb9524568b8620b7e16090c",
+    "udg_clear": "de7406c6f48542f3ae7b80c288f58d89565192e8b8d65416c38b1f15e7519623"
+  },
+  "archive_order": [
+    "startup",
+    "exit",
+    "c48_mul16",
+    "div16",
+    "getchar",
+    "putchar",
+    "puts",
+    "strlen",
+    "strcmp",
+    "strcpy",
+    "strncpy",
+    "memcpy",
+    "memmove",
+    "memchr",
+    "memset",
+    "yield",
+    "sleep",
+    "getpid",
+    "cls",
+    "ticks",
+    "udg_clear",
+    "ink",
+    "paper",
+    "bright",
+    "flash",
+    "inverse",
+    "over",
+    "border",
+    "plot"
+  ],
+  "reproduction": "Construct runtime members deterministically from compiler/c48/native_runtime.py; serialize with compiler/c48/native_format.py; compare exact-member digests to the pinned prebuilt OBJ1 members."
+}

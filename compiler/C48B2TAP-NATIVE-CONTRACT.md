@@ -77,3 +77,26 @@ implementation is rejected before any destination is replaced.
 
 Host-only execution conveniences and target-only ZX-UX services are recorded
 explicitly in the Phase 3 divergence table as the backend is completed.
+
+## Runtime provenance and supported-symbol policy
+
+The host linker never reads a moving native checkout. Runtime members are
+constructed deterministically inside the SDK. The startup, exit, puts, ink,
+plot, and udg_clear members are byte-exact copies of the corresponding frozen
+OBJ1 members in the pinned native tree. Release verification checks their
+complete serialized OBJ1 digests.
+
+Other accepted runtime helpers are deterministic target-equivalent
+translations of the pinned libc48 assembly contract. They are used only where
+the backend has an explicit lowering and tests for the same observable C48
+semantics. An external symbol with neither an exact pinned member nor a proved
+translation is unresolved and the output transaction fails.
+
+The supported boundary is intentionally narrower than the host interpreter.
+Five-byte floating arithmetic and casts are not emitted until the native
+Float5 calling and result conventions have executable proof. Block-scope
+static storage is likewise rejected by the current target lowering. Host-only
+display conveniences are not silently translated into target calls.
+
+The exact prebuilt-member provenance is `v1/src/libc48/crt0.asm` plus
+`v1/src/libc48/runtime_archive.asm` at the pinned authority commit above.
