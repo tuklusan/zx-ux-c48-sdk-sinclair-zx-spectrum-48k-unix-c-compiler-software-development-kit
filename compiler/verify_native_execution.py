@@ -30,6 +30,12 @@ TEST_ENTRY = 0x7A00
 TEST_STACK = 0x79F0
 PASS_PC = 0x7FF0
 FAIL_PC = 0x7FF1
+FAIL_LOAD_PC = 0x7FE1
+FAIL_BASE_PC = 0x7FE2
+FAIL_COMMIT_PC = 0x7FE3
+FAIL_RETURN_PC = 0x7FE4
+FAIL_PROGRAM_PC = 0x7FE5
+FAIL_SCREEN_PC = 0x7FE6
 SNAPSHOT_STACK = 0x79E0
 RAM_START = 0x4000
 RAM_SIZE = 0xC000
@@ -331,7 +337,7 @@ gateway_udg:
 gateway_exit:
     ld a,h
     or l
-    jp nz,$7FF1
+    jp nz,${FAIL_PROGRAM_PC:04X}
     ld a,(test_expect_screen)
     or a
     jp z,$7FF0
@@ -339,16 +345,16 @@ gateway_exit:
     ld de,3
     or a
     sbc hl,de
-    jp nz,$7FF1
+    jp nz,${FAIL_SCREEN_PC:04X}
     ld a,(gateway_attr_calls)
     cp 1
-    jp nz,$7FF1
+    jp nz,${FAIL_SCREEN_PC:04X}
     ld a,(gateway_plot_calls)
     cp 1
-    jp nz,$7FF1
+    jp nz,${FAIL_SCREEN_PC:04X}
     ld a,(gateway_udg_calls)
     cp 1
-    jp nz,$7FF1
+    jp nz,${FAIL_SCREEN_PC:04X}
     jp $7FF0
 gateway_write_bytes:
     dw 0
@@ -448,7 +454,7 @@ float_g_exit:
     ld (float_exit_seen),a
     ld a,h
     or l
-    jp nz,$7FF1
+    jp nz,${FAIL_SCREEN_PC:04X}
     jp $7FF0
 float_gateway_end:
     SAVEBIN "sdk-native-float-gateway.bin",float_gateway_start,float_gateway_end-float_gateway_start
@@ -492,12 +498,12 @@ def host_status(program, temp: Path, stem: str) -> int:
     return cp.returncode
 
 
-def check_byte(address: int, value: int) -> bytes:
-    return b"\x3A" + word(address) + bytes((0xFE, value & 0xFF)) + jp_nz(FAIL_PC)
+def check_byte(address: int, value: int, fail_pc: int = FAIL_PC) -> bytes:
+    return b"\x3A" + word(address) + bytes((0xFE, value & 0xFF)) + jp_nz(fail_pc)
 
 
-def check_word(address: int, value: int) -> bytes:
-    return b"\x2A" + word(address) + b"\x11" + word(value) + b"\xB7\xED\x52" + jp_nz(FAIL_PC)
+def check_word(address: int, value: int, fail_pc: int = FAIL_PC) -> bytes:
+    return b"\x2A" + word(address) + b"\x11" + word(value) + b"\xB7\xED\x52" + jp_nz(fail_pc)
 
 
 def execution_driver(syms: dict[str, int], mex_entry: int, *, counters: bool) -> bytes:
@@ -509,13 +515,13 @@ def execution_driver(syms: dict[str, int], mex_entry: int, *, counters: bool) ->
     code += bytes((0x3E, 1 if counters else 0, 0x32)) + word(syms["test_expect_screen"])
     code += b"\x21" + word(syms["test_proc1"])
     code += call(syms["zx48_p514_spawn_tape_backed"])
-    code += jp_c(FAIL_PC)
-    code += b"\x11" + word(IMAGE_BASE) + b"\xB7\xED\x52" + jp_nz(FAIL_PC)
-    code += check_byte(syms["p514_committed"], 1)
+    code += jp_c(FAIL_LOAD_PC)
+    code += b"\x11" + word(IMAGE_BASE) + b"\xB7\xED\x52" + jp_nz(FAIL_BASE_PC)
+    code += check_byte(syms["p514_committed"], 1, FAIL_COMMIT_PC)
     code += call(IMAGE_BASE + mex_entry)
     # A conforming exit never returns. Reaching here means the startup/exit
     # contract failed even if main itself returned zero.
-    code += jp(FAIL_PC)
+    code += jp(FAIL_RETURN_PC)
     return bytes(code)
 
 
@@ -550,10 +556,22 @@ def run_tape_case(
     sna.write_bytes(make_sna(code, patch))
     fuse = root / "tools/runtime/fuse/bin/fuse"
     require(fuse.is_file(), "project-local FUSE executable missing")
-    debugger = (
-        f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n"
-        f"breakpoint 0x{FAIL_PC:04x}\ncommands 2\nexit 1\nend\ncontinue"
+    failures = (
+        (FAIL_PC, 1),
+        (FAIL_LOAD_PC, 11),
+        (FAIL_BASE_PC, 12),
+        (FAIL_COMMIT_PC, 13),
+        (FAIL_RETURN_PC, 14),
+        (FAIL_PROGRAM_PC, 15),
+        (FAIL_SCREEN_PC, 16),
     )
+    debugger_parts = [f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n"]
+    for index, (address, status) in enumerate(failures, 2):
+        debugger_parts.append(
+            f"breakpoint 0x{address:04x}\ncommands {index}\nexit {status}\nend\n"
+        )
+    debugger_parts.append("continue")
+    debugger = "".join(debugger_parts)
     env = dict(**__import__("os").environ)
     env["SDL_VIDEODRIVER"] = "dummy"
     env["SDL_AUDIODRIVER"] = "dummy"
