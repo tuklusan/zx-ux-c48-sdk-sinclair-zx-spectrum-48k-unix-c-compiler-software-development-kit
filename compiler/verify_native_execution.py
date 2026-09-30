@@ -400,6 +400,12 @@ def assemble_fixture(root: Path, temp: Path):
             "zx48_p514_tape_format",
             "zx48_p514_tape_finish_ok",
             "zx48_p514_validate_end",
+            "p514_remaining",
+            "p514_reloc_offset",
+            "p514_previous_reloc",
+            "p514_image_size",
+            "p514_image_base",
+            "p514_have_previous",
             "zx48_p514_format_abort",
             "zx48_p514_format_rollback",
             "gateway_write_bytes",
@@ -603,9 +609,24 @@ def run_tape_case(
         (syms["zx48_p514_format_rollback"], 34),
     )
     for index, (address, status) in enumerate(internal_failures, 2):
-        debugger_parts.append(
-            f"breakpoint 0x{address:04x}\ncommands {index}\nexit {status}\nend\n"
-        )
+        debugger_parts.append(f"breakpoint 0x{address:04x}\ncommands {index}\n")
+        if status == 34:
+            for field in (
+                "p514_remaining",
+                "p514_reloc_offset",
+                "p514_previous_reloc",
+                "p514_image_size",
+                "p514_image_base",
+            ):
+                address = syms[field]
+                debugger_parts.append(
+                    f"print [0x{address:04x}] + 256 * [0x{address + 1:04x}]\n"
+                )
+            debugger_parts.append(
+                f"print [0x{syms['p514_have_previous']:04x}]\n"
+                "print z80:hl\nprint z80:de\nprint z80:a\n"
+            )
+        debugger_parts.append(f"exit {status}\nend\n")
     for index, (address, status) in enumerate(failures, 2 + len(internal_failures)):
         debugger_parts.append(
             f"breakpoint 0x{address:04x}\ncommands {index}\nexit {status}\nend\n"
