@@ -57,9 +57,9 @@ class NativeBackendTests(unittest.TestCase):
         expected = bytes.fromhex(
             "4f424a310100180007000000030002001f005b00512e7192"
             "cd0000cd0000c95f7374617274000000000000000000000000"
-            "0001016d61696e000000000000000000000000000000016578"
-            "69740000000000000000000000000000010100010001000400"
-            "02000100"
+            "01016d61696e00000000000000000000000000000001657869"
+            "74000000000000000000000000000001010001000100040002"
+            "000100"
         )
         self.assertEqual(encode_obj1(startup.obj), expected)
 
@@ -319,18 +319,18 @@ class NativeBackendTests(unittest.TestCase):
 
     def test_cli_failure_does_not_replace_existing_output(self) -> None:
         program = compile_bytes(
-            b"int main(void){static int x;return x;}",
+            b"int point(int,int);int main(void){return point(1,1);}",
             source_name="bad.c",
             base_dir=Path.cwd(),
         )
         with tempfile.TemporaryDirectory() as td:
             d = Path(td)
             src = d / "bad.c48b"
-            out = d / "bad.obj"
+            out = d / "bad.mex"
             write(src, program)
             out.write_bytes(b"KEEP")
             cp = subprocess.run(
-                [sys.executable, str(SDK / "compiler" / "c48b2tap.py"), "--obj", "--force", str(src), str(out)],
+                [sys.executable, str(SDK / "compiler" / "c48b2tap.py"), "--mex", "--force", str(src), str(out)],
                 capture_output=True,
                 text=True,
             )
