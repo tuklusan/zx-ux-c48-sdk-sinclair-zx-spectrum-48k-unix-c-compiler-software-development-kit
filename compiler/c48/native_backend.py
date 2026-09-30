@@ -16,7 +16,7 @@ from .native_format import (
     OBJ_SECTION_UNDEF,
     OBJ_SYMBOL_GLOBAL,
 )
-from .typesys import CType, align_up
+from .typesys import CType, align_up, arithmetic_common
 
 
 class NativeLoweringError(NativeFormatError):
@@ -225,7 +225,7 @@ class _Function:
             if size == 2:
                 self.e.emit(0x29)
             elif size == 5:
-                self.e.emit(0x54, 0x5D, 0x29, 0x29, 0x19)
+                self.e.emit(0xD5, 0x54, 0x5D, 0x29, 0x29, 0x19, 0xD1)
             elif size != 1:
                 raise NativeLoweringError("native pointer scaling is unsupported")
             self.e.emit(0xD1, 0x19)  # POP DE ; ADD HL,DE
@@ -376,10 +376,13 @@ class _Function:
                 self.e.emit(0x11)
                 self.e.word(delta & 0xFFFF)
                 self.e.emit(0x19)
-                self.e.emit(0xD1)
-                self._store_to_de(t)
                 if k == "postfix":
-                    self.e.emit(0xE1)
+                    self.e.emit(0xC1, 0xD1)  # BC=old value, DE=address
+                    self._store_to_de(t)
+                    self.e.emit(0x60, 0x69)  # restore old value to HL
+                else:
+                    self.e.emit(0xD1)
+                    self._store_to_de(t)
                 return
             self.expr(n["operand"])
             if op == "+":
@@ -428,7 +431,7 @@ class _Function:
             elif op == "^":
                 self.e.emit(0x7D, 0xAB, 0x6F, 0x7C, 0xAA, 0x67)
             elif op in {"==", "!=", "<", "<=", ">", ">="}:
-                common_signed = lt.is_signed and rt.is_signed
+                common_signed = arithmetic_common(lt, rt).is_signed
                 self._compare(op, common_signed)
             elif op in {"/", "%", "<<", ">>"}:
                 raise NativeLoweringError(f"native operator {op!r} is not yet enabled")
@@ -449,7 +452,7 @@ class _Function:
             if size == 2:
                 self.e.emit(0xEB, 0x29, 0xEB)  # scale DE by 2
             elif size == 5:
-                self.e.emit(0xEB, 0x54, 0x5D, 0x29, 0x29, 0x19, 0xEB)
+                self.e.emit(0xEB, 0xD5, 0x54, 0x5D, 0x29, 0x29, 0x19, 0xD1, 0xEB)
             elif size != 1:
                 raise NativeLoweringError("native pointer scaling is unsupported")
             if op == "+":
@@ -517,12 +520,11 @@ class _Function:
             self._load_from_hl(slot.ctype)
             self.e.emit(0xE5)
         if len(slots) >= 3:
-            self._addr_slot(slots[2]); self._load_from_hl(slots[2].ctype); self.e.emit(0xC5)
-            # POP BC would restore the value without clobbering HL used below.
-            self.e.emit(0xC1)
+            self._addr_slot(slots[2]); self._load_from_hl(slots[2].ctype)
+            self.e.emit(0x44, 0x4D)  # BC=HL
         if len(slots) >= 2:
-            self._addr_slot(slots[1]); self._load_from_hl(slots[1].ctype); self.e.emit(0xD5)
-            self.e.emit(0xD1)
+            self._addr_slot(slots[1]); self._load_from_hl(slots[1].ctype)
+            self.e.emit(0x54, 0x5D)  # DE=HL
         if len(slots) >= 1:
             self._addr_slot(slots[0]); self._load_from_hl(slots[0].ctype)
         self.e.call(name)
