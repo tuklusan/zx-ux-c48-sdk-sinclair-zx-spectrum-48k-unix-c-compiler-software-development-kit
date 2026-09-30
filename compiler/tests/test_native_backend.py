@@ -72,6 +72,7 @@ class NativeBackendTests(unittest.TestCase):
             raw = encode_obj1(member.obj)
             self.assertEqual(decode_obj1(raw), member.obj)
         user = native_from_source(
+            "int strcmp(char *a,char *b);char *strcpy(char *d,char *s);"
             "int main(void){char a[4];char b[4];"
             "a[0]='x';a[1]=0;strcpy(b,a);return strcmp(a,b);}"
         )
