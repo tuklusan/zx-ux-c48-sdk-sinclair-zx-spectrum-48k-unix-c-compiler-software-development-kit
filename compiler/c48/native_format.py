@@ -283,8 +283,8 @@ def encode_mex1(mex: MexImage) -> bytes:
     entry = _u16(mex.entry_offset, "MEX1 entry offset")
     if entry >= len(image):
         raise NativeFormatError("MEX1 entry offset is outside the image")
-    if not MIN_FAST_STACK <= mex.min_stack <= MAX_FAST_STACK:
-        raise NativeFormatError("MEX1 minimum stack is outside the native range")
+    if not MIN_FAST_STACK <= mex.min_stack <= MAX_FAST_STACK or mex.min_stack & 1:
+        raise NativeFormatError("MEX1 minimum stack must be even and within the native range")
     reloc_bytes = _checked_mul(len(mex.relocs), MEX1_RELOC_SIZE, "MEX1 relocation table")
     reloc_offset = _checked_add(MEX1_HEADER_SIZE, len(image), "MEX1 relocation offset")
     total = _checked_add(reloc_offset, reloc_bytes, "MEX1 stored length")
@@ -341,7 +341,7 @@ def decode_mex1(data: bytes) -> MexImage:
     expected_total = _checked_add(expected_offset, reloc_bytes, "MEX1 stored length")
     if reloc_offset != expected_offset or len(raw) != expected_total:
         raise NativeFormatError("MEX1 relocation offset or stored length is invalid")
-    if entry >= image_size or not MIN_FAST_STACK <= min_stack <= MAX_FAST_STACK:
+    if entry >= image_size or not MIN_FAST_STACK <= min_stack <= MAX_FAST_STACK or min_stack & 1:
         raise NativeFormatError("MEX1 entry or stack contract is invalid")
     body = raw[MEX1_HEADER_SIZE:]
     if crc16_ccitt_false(body) != struct.unpack_from("<H", raw, 20)[0]:
