@@ -17,6 +17,29 @@ sources are `v1/docs/obj1.md`, `v1/docs/mex1.md`,
 `v1/include/zx48ux.inc`, `v1/src/libc48/crt0.asm`, and the
 `v1/src/libc48/` runtime sources. The native repository is reference-only.
 
+### Pinned-reference execution errata
+
+The pinned revision is also frozen as evidence for four native-owned execution
+fault sites that affect the BIN tape route but do not change the artifact
+formats frozen below:
+
+1. P509's match/public-type check loads the M48O type with
+   `ld b,(p509_header+M48O_HDR_TYPE)`, which is not a target Z80 memory-load
+   form and is encoded by the pinned assembler as an immediate byte.
+2. P509 repeats the same invalid type-load form in its new-object commit path.
+3. P504's successful RAW return leaves DE holding the expected payload CRC,
+   while P509 consumes DE as the new object's logical length.
+4. P514's streamed image loop calls the CRC updater without preserving the
+   just-loaded image byte before `ld (hl),a`.
+
+The SDK keeps generated OBJ1, MEX1, M48O and TAP bytes unchanged. Independent
+format oracles and native linker consumption remain unmodified. The execution
+verifier first proves each frozen native failure at the earliest reachable
+site, then uses only independently bounded, fail-closed in-memory corrections
+to reach and prove later sites and the final executable behavior. A correction
+is removed only after a new native revision is pinned and the complete native
+contract is requalified.
+
 ## Object and executable formats
 
 OBJ1 is version 1 with a 24-byte header, CCITT-FALSE CRC16, 20-byte symbol

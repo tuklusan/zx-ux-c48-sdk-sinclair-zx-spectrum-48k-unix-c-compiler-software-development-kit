@@ -185,6 +185,21 @@ fixtures where their contracts overlap, but they solve different problems:
 `c48b2tap` creates target-native single-process executable artifacts. This
 release does not claim a native concurrent-execution proof.
 
+The pinned read-only native reference currently has four independently
+reproduced defects on the executable-tape route: two P509 type-load sites use
+an invalid Z80 `LD B,(nn)` form and reject a valid BIN object; the P504 RAW
+success path leaves the payload CRC in DE where P509 expects the logical
+length; and the P514 image loop does not preserve the loaded image byte across
+its CRC update before storing it. The SDK does not alter generated OBJ1, MEX1,
+M48O or TAP bytes to hide those defects. Interoperability is proved with
+independent format validation and the pinned native linker; execution proof
+uses verifier-only, fail-closed in-memory corrections bounded to the exact
+native fault sites, with staged negative proofs of the unmodified failures.
+This is not a claim that the affected unmodified native revision can complete
+that tape-execution route. When the native project certifies corrections, the
+reference is requalified and the corresponding verifier corrections are
+removed.
+
 ## Applications gallery — 4 C48 applications
 
 The applications corpus spans writing, spreadsheets, interactive
