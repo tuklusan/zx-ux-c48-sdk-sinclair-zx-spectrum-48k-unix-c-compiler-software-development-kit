@@ -409,62 +409,90 @@ Exact option names may be refined during implementation, but the final interface
 8. Record exact generated OBJ1/MEX1/TAP hashes plus the pinned native toolchain/reference commit for deterministic proof fixtures.
 
 
-## Step 3.9A — Read-only native direct-tape erratum protocol
+## Step 3.9A — Read-only native execution-path erratum protocol
 
 This protocol is activated only when the exact pinned native reference and the
-latest observed read-only native tree both contain the same independently
-reproduced defect in the direct tape-backed MEX1 execution path, while the SDK
-artifact has already passed independent format validation and native linker
-consumption. It exists to separate a repository-owned defect from an external
-native-runtime defect without altering the external repository or changing
-generated artifact bytes to accommodate that defect.
+latest observed read-only native tree contain the same independently reproduced
+native-owned defect in a required cassette/object/MEX1 execution path, while the
+SDK artifact has already passed independent format validation and native linker
+consumption. More than one independently proven native defect may be active at the
+same time. This protocol exists to separate repository-owned defects from external
+native-runtime defects without altering the external repository or changing
+generated artifact bytes to accommodate them.
+
+For the currently observed pinned reference, two independently reproduced defects
+are active and must be carried separately in the evidence:
+
+- the P514 direct-tape image loop does not preserve the loaded image byte across
+  its CRC update before storing the byte; and
+- the P509 BIN namespace placement check uses
+  `ld b,(p509_header+M48O_HDR_TYPE)`, an instruction form the target Z80 does not
+  provide. The pinned assembler encodes the operand as an immediate low address
+  byte, so the public-type check sees the wrong object type and rejects an
+  otherwise valid BIN object with `E_PERM`. The latest observed read-only native
+  tree still contains the same instruction.
 
 1. Freeze the pinned native commit, latest observed native commit, exact native
-   source span, failing generated artifact hashes, debugger trace, and the first
-   native routine that corrupts or rejects otherwise valid bytes. Prove the
-   defect with the smallest practical native-owned fixture and prove that the
-   failure occurs before generated user code begins execution.
+   source span for every active defect, failing generated artifact hashes,
+   debugger trace, and the first native routine that corrupts or rejects otherwise
+   valid bytes. Prove each defect with the smallest practical native-owned fixture
+   and prove that the failure occurs before generated user code begins execution.
 2. Do not edit, fork, or commit to the native repository. Do not change OBJ1,
-   MEX1, M48O, TAP, ABI, relocation, CRC, or generated-code semantics merely to
-   route around the native defect.
-3. Keep an unmodified-native negative proof. The exact generated TAP used by
-   the positive proof must first reproduce the frozen external defect signature
-   through the unmodified pinned direct-tape path. Any different failure is a
-   proof failure and must be investigated.
-4. A test-only SDK verifier may apply one bounded in-memory erratum overlay
-   after assembling the exact pinned native source. The overlay must change
-   only the exact instruction/call site proven defective, must record and check
-   the original bytes and address before patching, and must fail closed if the
-   pinned source, symbols, or assembled bytes drift. The overlay must preserve
-   the native contract rather than introduce a new one.
-5. Run the exact same unmodified generated TAP through the bounded-overlay path
-   and require complete native startup, relocation, runtime behavior, and exit
-   for every representative execution fixture and for the large-program proof.
-6. Independently keep unmodified-native proofs around the defect: load the M48O
-   envelope through the native cassette object path into the BIN namespace and
-   prove the stored payload is the exact generated MEX1 bytes; consume/link
-   generated OBJ1 through the native linker; and exercise the unmodified
-   resident MEX1 validation/relocation path for fixtures that fit that path.
-   These proofs must not use the erratum overlay.
-7. Documentation must disclose the exact pinned native defect and its practical
+   MEX1, M48O, TAP, ABI, relocation, CRC, namespace, or generated-code semantics
+   merely to route around a native defect.
+3. Keep an unmodified-native negative proof for every active defect. The exact
+   generated TAP used by each positive proof must first reproduce the frozen
+   external defect signature through the unmodified pinned path. Any different
+   failure is a proof failure and must be investigated.
+4. A test-only SDK verifier may apply one independently bounded in-memory erratum
+   overlay per frozen defect after assembling the exact pinned native source.
+   Every overlay must change only the exact instruction/call site proven
+   defective, must record and check the original bytes and address before
+   patching, and must fail closed if the pinned source, symbols, or assembled
+   bytes drift. A same-size replacement is preferred. If the correction requires
+   more bytes, a call/jump to a verifier-owned trampoline is permitted only when
+   the original patched site remains fixed-size, the trampoline preserves all
+   registers/flags required by the native contract, and the verifier proves no
+   other native path is changed. Every overlay must preserve the frozen native
+   contract rather than introduce a new one.
+5. Run the exact same unmodified generated TAP through the required bounded-overlay
+   path and require complete native namespace acceptance, startup, relocation,
+   runtime behavior, and exit for every representative execution fixture and for
+   the large-program proof. If multiple native defects lie on the same execution
+   route, the positive path may compose their independently bounded overlays, but
+   each overlay must also have its own isolated unmodified negative signature.
+6. Independently keep unmodified-native proofs around each defect wherever the
+   affected operation can be isolated. Generated OBJ1 must still be consumed by
+   the native linker. M48O/TAP framing and payload bytes must still pass independent
+   validation. Resident MEX1 validation/relocation must remain unmodified. For a
+   defect that itself prevents the BIN namespace load from completing, replace the
+   former positive unmodified namespace assertion with: (a) exact unmodified
+   failure-signature proof at that namespace check, plus (b) exact positive
+   namespace-load/payload-identity proof under only that namespace overlay. Do not
+   claim an unmodified proof for an operation that the frozen native defect makes
+   impossible.
+7. Documentation must disclose every active pinned native defect and its practical
    consequence. Do not claim that the affected unmodified native revision can
-   execute these direct-tape artifacts until the native project contains and
-   certifies a correction. The SDK may claim format interoperability and
-   corrected-path execution only with that qualification.
+   complete the corresponding direct-tape or namespace-load execution path until
+   the native project contains and certifies a correction. The SDK may claim
+   format interoperability and corrected-path execution only with those
+   qualifications.
 8. When a native correction becomes available, changing the pinned reference
-   requires complete native-contract requalification. After that succeeds,
-   remove the overlay and return Step 3.9 to an unmodified direct positive
-   execution proof.
+   requires complete native-contract requalification. After that succeeds, remove
+   the corresponding overlay and restore the affected proof to a fully unmodified
+   positive native proof. Remove only the overlay whose defect is actually fixed;
+   any other still-active erratum remains fail-closed.
 9. Phase 3 may close under this protocol only if every ordinary Phase-3 gate is
-   clean, the unmodified negative proof matches the frozen external signature,
-   all unmodified surrounding native proofs pass, and every bounded-overlay
-   positive execution proof passes. The external defect must not be hidden,
-   counted as an SDK success, or used to waive any repository-owned defect.
+   clean, every unmodified negative proof matches its frozen external signature,
+   all unaffected unmodified native proofs pass, every required bounded-overlay
+   positive proof passes, and the release record names each active defect
+   separately. External defects must not be hidden, counted as SDK successes, or
+   used to waive any repository-owned defect.
 
 Runbook-revision zero-gap record: after the final wording above and the related
-acceptance/completion wording below were fixed, three successive complete
-reviews of the revised Phase-3 proof contract found zero new gaps or
-contradictions.
+acceptance/completion wording below are fixed, execution must perform three
+successive complete reviews of the revised Phase-3 proof contract with zero new
+gaps or contradictions before implementation resumes.
 
 
 ## Step 3.10 — Large-program cross-development proof
@@ -821,7 +849,7 @@ The runbook is complete only when all of the following are true:
 
 1. Phase 1 canonical header policy is enforced with the required README/LICENSE/Office/pinned-corpus exemptions.
 2. `c48run --multitask` is deterministic, cooperatively scheduled, documented, and fully verified, with final footer displayed only after all user processes terminate.
-3. `c48b2tap` emits independently validated native OBJ1, MEX1, M48O/TAP artifacts and passes native load/execution proof including the large-program case; if Step 3.9A is active, the release record also carries its explicit external-defect evidence, unmodified surrounding proofs, and bounded-overlay execution proof without claiming unpatched direct-tape execution.
+3. `c48b2tap` emits independently validated native OBJ1, MEX1, M48O/TAP artifacts and passes native load/execution proof including the large-program case; if Step 3.9A is active, the release record separately carries every active external-defect signature, all unaffected unmodified native proofs, and the independently bounded overlay proofs required to complete namespace-load/direct-tape execution without claiming that the affected unmodified native revision can perform those operations.
 4. One-time CodeQL review is complete, actionable findings are remediated, and temporary scanning workflow is removed.
 5. Full byte/line/file and cross-artifact audit closes with zero unresolved findings.
 6. The next certified release is published from the audited tree and the prior release is removed only afterward.
