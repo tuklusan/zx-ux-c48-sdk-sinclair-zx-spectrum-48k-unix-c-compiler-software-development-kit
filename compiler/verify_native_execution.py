@@ -121,18 +121,21 @@ def verify_pinned_direct_tape_erratum(root: Path) -> None:
 
 def verify_pinned_namespace_erratum(root: Path) -> None:
     source = (root / "v1/src/kernel/tape.asm").read_text(encoding="utf-8")
-    start = source.index("zx48_p509_match:")
-    end = source.index("zx48_p509_load_raw:", start)
+    start = source.index("MACRO EMIT_P509_EXPLICIT_LOAD_ROUTINES")
+    end = source.index("\n    ENDM", start)
     block = source[start:end]
+    bad = "ld b,(p509_header+M48O_HDR_TYPE)"
+    require(block.count(bad) == 2, "pinned namespace fault-site count drifted")
+    match = block.index("zx48_p509_match:")
+    commit = block.index("zx48_p509_commit_new:")
     require(
-        "ld a,(p509_header+M48O_HDR_DIRECTORY)" in block
-        and "ld b,(p509_header+M48O_HDR_TYPE)" in block
-        and "call zx48_object_public_type_allowed" in block,
-        "pinned namespace placement-check shape drifted",
+        match < block.index(bad, match) < block.index("call zx48_object_public_type_allowed", match)
+        and commit < block.index(bad, commit) < block.index("call zx48_object_create", commit),
+        "pinned namespace fault-site ordering drifted",
     )
     require(
         "ld a,(p509_header+M48O_HDR_TYPE)" not in block,
-        "pinned namespace erratum is no longer present; remove the overlay",
+        "pinned namespace erratum is no longer present; remove the overlays",
     )
 
 
@@ -594,9 +597,13 @@ namespace_noent:
     ret
 
 zx48_object_create:
+    ld (test_create_dir),a
+    ld a,b
+    ld (test_create_type),a
+    ld a,(test_create_dir)
     cp DIR_BIN
     jr nz,namespace_perm
-    ld a,b
+    ld a,(test_create_type)
     cp OBJ_BIN
     jr nz,namespace_perm
     push hl
@@ -648,6 +655,10 @@ test_allow_dir:
     db $ff
 test_allow_type:
     db $ff
+test_create_dir:
+    db $ff
+test_create_type:
+    db $ff
 path_dir:
     db 0
 path_name:
@@ -677,10 +688,15 @@ def assemble_namespace_fixture(root: Path, temp: Path) -> tuple[bytes, dict[str,
             "zx48_objects_init",
             "zx48_p509_load_path",
             "zx48_p509_match",
+            "zx48_p509_commit_new",
             "p509_header",
+            "p509_requested_name",
             "zx48_object_public_type_allowed",
+            "zx48_object_create",
             "test_allow_dir",
             "test_allow_type",
+            "test_create_dir",
+            "test_create_type",
             "zx48_p509_locked_error",
             "zx48_p509_commit_drop_new",
             "zx48_p509_free_error",
@@ -706,7 +722,7 @@ def assemble_namespace_fixture(root: Path, temp: Path) -> tuple[bytes, dict[str,
     return binary, syms
 
 
-def apply_namespace_type_erratum_overlay(
+def apply_namespace_match_erratum_overlay(
     fixture: bytes, syms: dict[str, int],
 ) -> tuple[bytes, str]:
     start = syms["zx48_p509_match"] - FIXTURE_BASE
@@ -740,16 +756,65 @@ def apply_namespace_type_erratum_overlay(
     out = bytearray(fixture)
     require(
         out[patch_offset:patch_offset + len(original)] == original,
-        "namespace erratum original bytes drifted",
+        "namespace match erratum original bytes drifted",
     )
     replacement = call(trampoline) + b"\x00\x00"
-    require(len(replacement) == len(original), "namespace overlay must preserve patched span size")
+    require(len(replacement) == len(original), "namespace match overlay must preserve patched span size")
     out[patch_offset:patch_offset + len(original)] = replacement
     out.extend(trampoline_bytes)
     note = (
         f"site=0x{FIXTURE_BASE + patch_offset:04x} "
         f"wrong_type=0x{wrong_imm:02x} "
         f"allow=0x{syms['zx48_object_public_type_allowed']:04x} "
+        f"trampoline=0x{trampoline:04x} original={original.hex()}"
+    )
+    return bytes(out), note
+
+
+def apply_namespace_commit_erratum_overlay(
+    fixture: bytes, syms: dict[str, int],
+) -> tuple[bytes, str]:
+    start = syms["zx48_p509_commit_new"] - FIXTURE_BASE
+    end = syms["zx48_p509_commit_drop_new"] - FIXTURE_BASE
+    require(0 <= start < end <= len(fixture), "namespace commit range drifted")
+    wrong_imm = (syms["p509_header"] + 5) & 0xFF
+    original = b"\x06" + bytes((wrong_imm,)) + b"\x21" + word(syms["p509_requested_name"])
+    hits: list[int] = []
+    pos = start
+    while True:
+        pos = fixture.find(original, pos, end)
+        if pos < 0:
+            break
+        hits.append(pos)
+        pos += 1
+    require(len(hits) == 1, f"expected one namespace commit type-load sequence, found {len(hits)}")
+    patch_offset = hits[0]
+    trampoline = FIXTURE_BASE + len(fixture)
+    trampoline_bytes = (
+        b"\xF5"
+        + b"\x3A" + word(syms["p509_header"] + 5)
+        + b"\x47"
+        + b"\xF1"
+        + b"\x21" + word(syms["p509_requested_name"])
+        + b"\xC9"
+    )
+    require(
+        trampoline + len(trampoline_bytes) <= TEST_ENTRY,
+        "no safe room for namespace commit erratum trampoline",
+    )
+    out = bytearray(fixture)
+    require(
+        out[patch_offset:patch_offset + len(original)] == original,
+        "namespace commit erratum original bytes drifted",
+    )
+    replacement = call(trampoline) + b"\x00\x00"
+    require(len(replacement) == len(original), "namespace commit overlay must preserve patched span size")
+    out[patch_offset:patch_offset + len(original)] = replacement
+    out.extend(trampoline_bytes)
+    note = (
+        f"site=0x{FIXTURE_BASE + patch_offset:04x} "
+        f"wrong_type=0x{wrong_imm:02x} "
+        f"create=0x{syms['zx48_object_create']:04x} "
         f"trampoline=0x{trampoline:04x} original={original.hex()}"
     )
     return bytes(out), note
@@ -795,7 +860,7 @@ def run_namespace_case(
     tap: bytes,
     mex_bytes: bytes,
     *,
-    expect_erratum: bool = False,
+    expect_erratum: str | None = None,
 ) -> None:
     expected_addr = 0xA000
     require(expected_addr + len(mex_bytes) < 0xC000, "namespace proof MEX is too large")
@@ -844,6 +909,12 @@ def run_namespace_case(
                 f"print [0x{syms['test_allow_type']:04x}]\n"
                 "print z80:b\n"
             )
+        if name == "zx48_p509_commit_drop_new":
+            debugger_parts.append(
+                f"print [0x{syms['test_create_dir']:04x}]\n"
+                f"print [0x{syms['test_create_type']:04x}]\n"
+                "print z80:b\n"
+            )
         debugger_parts.append(f"exit {status}\nend\n")
     debugger_parts.append("continue")
     debugger = "".join(debugger_parts)
@@ -862,26 +933,42 @@ def run_namespace_case(
         text=True,
         timeout=90,
     )
-    if expect_erratum:
+    if expect_erratum is not None:
         wrong_type = (syms["p509_header"] + 5) & 0xFF
         require(wrong_type != syms["OBJ_BIN"], "namespace erratum no longer produces a wrong type")
-        require(
-            cp.returncode == 11,
-            f"unmodified native namespace erratum signature drifted: exit={cp.returncode}\n"
-            f"stdout={cp.stdout}\nstderr={cp.stderr}",
-        )
         values = [line.strip().lower() for line in cp.stdout.splitlines() if line.strip().lower().startswith("0x")]
-        expected_tail = [
-            "0x7",
-            f"0x{syms['OBJ_BIN'] & 0xff:x}",
-            f"0x{syms['DIR_BIN'] & 0xff:x}",
-            f"0x{syms['DIR_BIN'] & 0xff:x}",
-            f"0x{wrong_type:x}",
-            f"0x{wrong_type:x}",
-        ]
+        if expect_erratum == "match":
+            require(
+                cp.returncode == 11,
+                f"unmodified native namespace match signature drifted: exit={cp.returncode}\n"
+                f"stdout={cp.stdout}\nstderr={cp.stderr}",
+            )
+            expected_tail = [
+                "0x7",
+                f"0x{syms['OBJ_BIN'] & 0xff:x}",
+                f"0x{syms['DIR_BIN'] & 0xff:x}",
+                f"0x{syms['DIR_BIN'] & 0xff:x}",
+                f"0x{wrong_type:x}",
+                f"0x{wrong_type:x}",
+            ]
+        elif expect_erratum == "commit":
+            require(
+                cp.returncode == 12,
+                f"staged native namespace commit signature drifted: exit={cp.returncode}\n"
+                f"stdout={cp.stdout}\nstderr={cp.stderr}",
+            )
+            expected_tail = [
+                "0x7",
+                f"0x{syms['DIR_BIN'] & 0xff:x}",
+                f"0x{wrong_type:x}",
+                f"0x{wrong_type:x}",
+            ]
+        else:
+            raise RuntimeError(f"unknown namespace erratum stage: {expect_erratum}")
         require(
-            values[-6:] == expected_tail,
-            f"unmodified native namespace erratum trace drifted: got={values[-6:]} expected={expected_tail}",
+            values[-len(expected_tail):] == expected_tail,
+            f"native namespace {expect_erratum} trace drifted: "
+            f"got={values[-len(expected_tail):]} expected={expected_tail}",
         )
         return
     require(
@@ -1380,8 +1467,11 @@ def main() -> int:
         _, fixture, screen_gateway, syms = assemble_fixture(root, temp)
         overlay_fixture, overlay_note = apply_direct_tape_erratum_overlay(fixture, syms)
         namespace_fixture, namespace_syms = assemble_namespace_fixture(root, temp)
-        namespace_overlay_fixture, namespace_overlay_note = apply_namespace_type_erratum_overlay(
+        namespace_match_fixture, namespace_match_note = apply_namespace_match_erratum_overlay(
             namespace_fixture, namespace_syms,
+        )
+        namespace_overlay_fixture, namespace_commit_note = apply_namespace_commit_erratum_overlay(
+            namespace_match_fixture, namespace_syms,
         )
         resident_fixture, resident_gateway, resident_syms = assemble_resident_fixture(root, temp)
         float_service, float_gateway = assemble_float_service(root, temp)
@@ -1416,7 +1506,11 @@ def main() -> int:
             if stem == "globals":
                 run_namespace_case(
                     root, temp, namespace_fixture, namespace_syms,
-                    tap_bytes, mex_bytes, expect_erratum=True,
+                    tap_bytes, mex_bytes, expect_erratum="match",
+                )
+                run_namespace_case(
+                    root, temp, namespace_match_fixture, namespace_syms,
+                    tap_bytes, mex_bytes, expect_erratum="commit",
                 )
                 run_namespace_case(
                     root, temp, namespace_overlay_fixture, namespace_syms,
@@ -1449,7 +1543,8 @@ def main() -> int:
 
     for record in records:
         print(record)
-    print(f"NATIVE NAMESPACE ERRATUM {NAMESPACE_ERRATUM}: {namespace_overlay_note}")
+    print(f"NATIVE NAMESPACE MATCH ERRATUM {NAMESPACE_ERRATUM}: {namespace_match_note}")
+    print(f"NATIVE NAMESPACE COMMIT ERRATUM {NAMESPACE_ERRATUM}: {namespace_commit_note}")
     print(f"NATIVE DIRECT TAPE ERRATUM {DIRECT_TAPE_ERRATUM}: {overlay_note}")
     print(f"NATIVE EXECUTION PASS {REFERENCE_COMMIT}")
     return 0
