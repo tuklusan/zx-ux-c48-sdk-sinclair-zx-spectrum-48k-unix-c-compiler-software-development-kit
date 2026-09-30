@@ -366,6 +366,79 @@ def assemble_fixture(root: Path, temp: Path):
     return cp, main, gate, syms
 
 
+def float_service_source(root: Path) -> str:
+    inc = root / "v1/include/zx48ux.inc"
+    syscall = root / "v1/src/kernel/syscall.asm"
+    rom = root / "v1/src/kernel/rom_services.asm"
+    return f"""    DEVICE ZXSPECTRUM48
+    INCLUDE "{inc.as_posix()}"
+    INCLUDE "{syscall.as_posix()}"
+    INCLUDE "{rom.as_posix()}"
+
+    ORG $C000
+float_service_start:
+altreg_busy: db 0
+    EMIT_USER_RANGE_VALIDATION_ROUTINE
+    EMIT_P1117_FP_EXEC_SYSCALL_ROUTINES
+    EMIT_P1117_ROM_FP_EXEC_ROUTINES
+    EMIT_P1118_FP_CAST_SYSCALL_ROUTINES
+    EMIT_P1118_ROM_FP_CAST_ROUTINES
+    EMIT_P1119_FP_CMP_SYSCALL_ROUTINES
+    EMIT_P1119_ROM_FP_CMP_ROUTINES
+float_exit_seen: db 0
+float_service_end:
+    SAVEBIN "sdk-native-float-service.bin",float_service_start,float_service_end-float_service_start
+
+    ORG $E000
+float_gateway_start:
+    cp SYS_FP_EXEC
+    jr z,float_g_fp
+    cp SYS_INT_TO_FP
+    jr z,float_g_itof
+    cp SYS_FP_TO_INT
+    jr z,float_g_ftoi
+    cp SYS_FP_CMP
+    jr z,float_g_cmp
+    cp SYS_EXIT
+    jr z,float_g_exit
+    ld a,E_NOTSUP
+    scf
+    ret
+float_g_fp:
+    ld (syscall_arg_hl),hl
+    jp zx48_p1117_sys_fp_exec
+float_g_itof:
+    ld (syscall_arg_hl),hl
+    jp zx48_p1118_sys_int_to_fp
+float_g_ftoi:
+    ld (syscall_arg_hl),hl
+    jp zx48_p1118_sys_fp_to_int
+float_g_cmp:
+    ld (syscall_arg_hl),hl
+    jp zx48_p1119_sys_fp_cmp
+float_g_exit:
+    ld a,l
+    ld (float_exit_seen),a
+    xor a
+    ret
+float_gateway_end:
+    SAVEBIN "sdk-native-float-gateway.bin",float_gateway_start,float_gateway_end-float_gateway_start
+"""
+
+
+def assemble_float_service(root: Path, temp: Path) -> tuple[bytes, bytes]:
+    source = temp / "sdk-native-float-service.asm"
+    source.write_text(float_service_source(root), encoding="utf-8", newline="\n")
+    assembler = root / "tools/runtime/sjasmplus/bin/sjasmplus"
+    cp = run([assembler, "--nologo", source.name], cwd=temp, timeout=60)
+    del cp
+    service = (temp / "sdk-native-float-service.bin").read_bytes()
+    gateway = (temp / "sdk-native-float-gateway.bin").read_bytes()
+    require(0 < len(service) < 0x2000, f"native Float5 service unsafe size {len(service)}")
+    require(0 < len(gateway) < 0x0200, f"native Float5 gateway unsafe size {len(gateway)}")
+    return service, gateway
+
+
 def build_native(source: bytes, source_name: str):
     program = compile_bytes(source, source_name=source_name, base_dir=SDK)
     user = NativeBackend(program).build()
@@ -424,13 +497,14 @@ def run_tape_case(
     root: Path,
     temp: Path,
     fixture: bytes,
-    gateway: bytes,
+    gateway: bytes | None,
     syms: dict[str, int],
     tap: bytes,
     mex_entry: int,
     *,
     stem: str,
     counters: bool,
+    service: bytes | None = None,
 ) -> None:
     tape = temp / f"{stem}.tap"
     sna = temp / f"{stem}.sna"
@@ -440,7 +514,10 @@ def run_tape_case(
     def patch(ram: bytearray) -> None:
         start = FIXTURE_BASE - RAM_START
         ram[start:start + len(fixture)] = fixture
-        if counters:
+        if service is not None:
+            service_start = 0xC000 - RAM_START
+            ram[service_start:service_start + len(service)] = service
+        if gateway is not None:
             gate_start = 0xE000 - RAM_START
             ram[gate_start:gate_start + len(gateway)] = gateway
 
@@ -489,7 +566,7 @@ def main() -> int:
                 b"if(msg[2]!='Z')return 3;if((-91/7)!=-13)return 4;"
                 b"if((-91%7)!=0)return 5;return 0;}"
             ),
-            False,
+            "plain",
         ),
         (
             "screen",
@@ -498,16 +575,26 @@ def main() -> int:
                 b"int main(void){if(puts(\"OK\")!=0)return 1;if(ink(2)!=0)return 2;"
                 b"if(plot(1,2)!=0)return 3;if(udg_clear(3)!=0)return 4;return 0;}"
             ),
-            True,
+            "screen",
         ),
-        ("large", generate_large_native_source(), False),
+        (
+            "float5",
+            (
+                b"float sin(float);"
+                b"int main(void){float x;x=1;x++;if(x!=2.0)return 1;"
+                b"x=sin(x-x);if(x!=0.0)return 2;return 0;}"
+            ),
+            "float5",
+        ),
+        ("large", generate_large_native_source(), "plain"),
     )
 
     with tempfile.TemporaryDirectory(prefix="c48-native-exec-") as td:
         temp = Path(td)
-        _, fixture, gateway, syms = assemble_fixture(root, temp)
+        _, fixture, screen_gateway, syms = assemble_fixture(root, temp)
+        float_service, float_gateway = assemble_float_service(root, temp)
         records: list[str] = []
-        for stem, source, counters in cases:
+        for stem, source, mode in cases:
             program, obj, mex = build_native(source, stem + ".c")
             host_status(program, temp, stem)
             obj_bytes = encode_obj1(obj)
@@ -521,9 +608,15 @@ def main() -> int:
             if stem == "large":
                 require(29 * 1024 <= len(source) <= 31 * 1024, "large source outside acceptance band")
                 require(29 * 1024 <= len(mex_bytes) <= 31 * 1024, "large MEX1 outside acceptance band")
+            if mode == "float5":
+                require(len(mex.image) + mex.bss_size < 0x4000,
+                        "Float5 proof image would overlap pinned service fixture")
             run_tape_case(
-                root, temp, fixture, gateway, syms, tap_bytes, decoded.entry_offset,
-                stem=stem, counters=counters,
+                root, temp, fixture,
+                screen_gateway if mode == "screen" else float_gateway if mode == "float5" else None,
+                syms, tap_bytes, decoded.entry_offset,
+                stem=stem, counters=mode == "screen",
+                service=float_service if mode == "float5" else None,
             )
             records.append(
                 f"{stem}:src={len(source)}:{sha256(source)} "
