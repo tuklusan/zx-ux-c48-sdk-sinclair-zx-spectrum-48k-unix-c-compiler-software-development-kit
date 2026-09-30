@@ -679,22 +679,22 @@ def namespace_driver(syms: dict[str, int], mex_bytes: bytes, expected_addr: int)
     code += bytes((0x3E, syms["DIR_BIN"] & 0xFF))
     code += b"\x21" + word(syms["test_namespace_name"])
     code += call(syms["zx48_object_lookup"])
-    code += jp_c(FAIL_LOAD_PC)
+    code += jp_c(FAIL_BASE_PC)
     record = syms["object_table"]
-    code += check_byte(record + syms["OBJ_DIR_ID"], syms["DIR_BIN"])
-    code += check_byte(record + syms["OBJ_TYPE_ID"], syms["OBJ_BIN"])
-    code += check_byte(record + syms["OBJ_FLAGS_BYTE"], 0)
-    code += check_byte(record + syms["OBJ_RESERVED_BYTE"], 0)
-    code += check_word(record + syms["OBJ_LOGICAL_LENGTH"], len(mex_bytes))
-    code += check_word(record + syms["OBJ_STORAGE_LENGTH"], len(mex_bytes))
-    code += check_word(record + syms["OBJ_ALLOCATION_PTR"], IMAGE_BASE)
+    code += check_byte(record + syms["OBJ_DIR_ID"], syms["DIR_BIN"], FAIL_COMMIT_PC)
+    code += check_byte(record + syms["OBJ_TYPE_ID"], syms["OBJ_BIN"], FAIL_COMMIT_PC)
+    code += check_byte(record + syms["OBJ_FLAGS_BYTE"], 0, FAIL_COMMIT_PC)
+    code += check_byte(record + syms["OBJ_RESERVED_BYTE"], 0, FAIL_COMMIT_PC)
+    code += check_word(record + syms["OBJ_LOGICAL_LENGTH"], len(mex_bytes), FAIL_COMMIT_PC)
+    code += check_word(record + syms["OBJ_STORAGE_LENGTH"], len(mex_bytes), FAIL_COMMIT_PC)
+    code += check_word(record + syms["OBJ_ALLOCATION_PTR"], IMAGE_BASE, FAIL_COMMIT_PC)
     for index, value in enumerate(b"NATIVE\0\0\0\0"):
-        code += check_byte(record + index, value)
+        code += check_byte(record + index, value, FAIL_COMMIT_PC)
     code += b"\x21" + word(IMAGE_BASE)
     code += b"\x11" + word(expected_addr)
     code += b"\x01" + word(len(mex_bytes))
     loop = TEST_ENTRY + len(code)
-    code += b"\x1A\xBE" + jp_nz(FAIL_LOAD_PC)
+    code += b"\x1A\xBE" + jp_nz(FAIL_PROGRAM_PC)
     code += b"\x23\x13\x0B\x78\xB1" + jp_nz(loop)
     code += jp(PASS_PC)
     return bytes(code)
@@ -725,7 +725,10 @@ def run_namespace_case(
     fuse = root / "tools/runtime/fuse/bin/fuse"
     debugger = (
         f"breakpoint 0x{PASS_PC:04x}\ncommands 1\nexit 0\nend\n"
-        f"breakpoint 0x{FAIL_LOAD_PC:04x}\ncommands 2\nexit 1\nend\n"
+        f"breakpoint 0x{FAIL_LOAD_PC:04x}\ncommands 2\nprint z80:a\nexit 1\nend\n"
+        f"breakpoint 0x{FAIL_BASE_PC:04x}\ncommands 3\nprint z80:a\nexit 2\nend\n"
+        f"breakpoint 0x{FAIL_COMMIT_PC:04x}\ncommands 4\nexit 3\nend\n"
+        f"breakpoint 0x{FAIL_PROGRAM_PC:04x}\ncommands 5\nexit 4\nend\n"
         "continue"
     )
     env = dict(**__import__("os").environ)
