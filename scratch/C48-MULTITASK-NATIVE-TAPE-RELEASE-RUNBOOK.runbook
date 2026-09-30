@@ -448,10 +448,15 @@ before composing their bounded corrections for the positive namespace-load path.
 2. Do not edit, fork, or commit to the native repository. Do not change OBJ1,
    MEX1, M48O, TAP, ABI, relocation, CRC, namespace, or generated-code semantics
    merely to route around a native defect.
-3. Keep an unmodified-native negative proof for every active defect. The exact
-   generated TAP used by each positive proof must first reproduce the frozen
-   external defect signature through the unmodified pinned path. Any different
-   failure is a proof failure and must be investigated.
+3. Keep a frozen negative proof for every active fault site. For the first
+   reachable fault on a route, the exact generated TAP must reproduce the
+   signature through the fully unmodified pinned path. For a downstream fault
+   that the earlier native defect prevents from being reached, apply only the
+   already-proven earlier-site overlay(s), leave the target fault site unmodified,
+   and require its own frozen failure signature before applying its overlay. The
+   exact generated TAP used by the positive proof must be the same bytes used by
+   these staged negative proofs. Any different failure is a proof failure and must
+   be investigated.
 4. A test-only SDK verifier may apply one independently bounded in-memory erratum
    overlay per frozen fault site after assembling the exact pinned native source.
    Every overlay must change only the exact instruction/call site proven
@@ -475,13 +480,14 @@ before composing their bounded corrections for the positive namespace-load path.
 6. Independently keep unmodified-native proofs around each defect wherever the
    affected operation can be isolated. Generated OBJ1 must still be consumed by
    the native linker. M48O/TAP framing and payload bytes must still pass independent
-   validation. Resident MEX1 validation/relocation must remain unmodified. For a
-   defect that itself prevents the BIN namespace load from completing, replace the
-   former positive unmodified namespace assertion with: (a) exact unmodified
-   failure-signature proof at that namespace check, plus (b) exact positive
-   namespace-load/payload-identity proof under only that namespace overlay. Do not
-   claim an unmodified proof for an operation that the frozen native defect makes
-   impossible.
+   validation. Resident MEX1 validation/relocation must remain unmodified. When
+   multiple fault sites block one BIN namespace load, replace the former positive
+   unmodified namespace assertion with: (a) the fully unmodified failure signature
+   at the first site; (b) a staged negative signature for every later site using
+   only the minimum earlier-site overlay(s) needed to reach it; and (c) exact
+   positive namespace-load/payload-identity proof with only the complete set of
+   independently proven namespace overlays. Do not claim an unmodified proof for
+   an operation that the frozen native defects make impossible.
 7. Documentation must disclose every active pinned native defect and its practical
    consequence. Do not claim that the affected unmodified native revision can
    complete the corresponding direct-tape or namespace-load execution path until
@@ -494,11 +500,12 @@ before composing their bounded corrections for the positive namespace-load path.
    positive native proof. Remove only the overlay whose defect is actually fixed;
    any other still-active erratum remains fail-closed.
 9. Phase 3 may close under this protocol only if every ordinary Phase-3 gate is
-   clean, every unmodified negative proof matches its frozen external signature,
-   all unaffected unmodified native proofs pass, every required bounded-overlay
-   positive proof passes, and the release record names each active defect
-   separately. External defects must not be hidden, counted as SDK successes, or
-   used to waive any repository-owned defect.
+   clean, the fully unmodified first-fault negative proof and every staged
+   downstream negative proof match their frozen signatures, all unaffected
+   unmodified native proofs pass, every required bounded-overlay positive proof
+   passes, and the release record names each active fault site separately. External
+   defects must not be hidden, counted as SDK successes, or used to waive any
+   repository-owned defect.
 
 Runbook-revision zero-gap record: the generalized multi-erratum wording above,
 including independent handling of both P509 fault sites, the Phase-3 acceptance
@@ -506,7 +513,7 @@ wording, the large-program fallback wording, and the final completion wording mu
 be reviewed together three successive times after this revision. The pass record
 below must be replaced with actual results before implementation resumes.
 
-Pass 1: PENDING
+Pass 1: RESTARTED after finding and correcting the downstream-negative-proof gap
 Pass 2: PENDING
 Pass 3: PENDING
 
